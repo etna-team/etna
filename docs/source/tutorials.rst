@@ -69,7 +69,7 @@ Intermediate
       :class-header: card-tutorial-intermediate
 
       ^^^
-      How to use ensemble pipelines
+      How to ensemble pipelines
 
    .. grid-item-card:: Outliers
       :text-align: center
