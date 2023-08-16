@@ -22,6 +22,5 @@ Contents
    user_guide
    installation
    tutorials/quickstart
-   glossary
    tutorials
    api_reference

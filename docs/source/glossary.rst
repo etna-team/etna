@@ -32,7 +32,7 @@ This page lists some common terms used in documentation of the library.
       See :doc:`tutorials/14-hierarchical_pipeline`.
 
    Segment
-      We use this term to refer to one :term:`time series` in a dataset.
+      We use this term to refer to one :term:`time series` in a :term:`dataset`.
 
    Endogenous data
       Variables which measurements we want to model. It is often referred to as the "target".
@@ -79,6 +79,7 @@ This page lists some common terms used in documentation of the library.
 
    Forecast prediction components
       In forecast decomposition each point is represented as the sum or product of some fixed terms. These terms are called components.
+      We are currently working only with additive components.
 
    Backtesting
       Type of cross-validation when we check the quality of the forecast model using historical data.
@@ -92,6 +93,10 @@ This page lists some common terms used in documentation of the library.
    Forecasting strategy
       Algorithm for using an ML model to produce a multi-step time series :term:`forecast <forecasting>`.
       See :doc:`tutorials/09-forecasting_strategies`.
+
+   Forecasting context
+      Suffix of a :term:`dataset` we want to :term:`forecast <forecasting>` that is necessary for the :term:`model` we are using.
+      Can be also be referred to as the "model context".
 
    Clustering
       The task of finding clusters of similar time series.
@@ -128,4 +133,5 @@ This page lists some common terms used in documentation of the library.
 
    Differencing
       Time series :term:`transformation <transform>` that takes the differences between consecutive time points.
+      There is also a seasonal differencing with period :math:`p`, where we take the difference between the current point and its :term:`lag <lags>` of order :math:`p`.
       See :py:class:`~etna.transforms.math.differencing.DifferencingTransform`.
