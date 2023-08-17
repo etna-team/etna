@@ -93,7 +93,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/tinkoff-ai/etna",
+            "url": "https://github.com/etna-team/etna",
             "icon": "fab fa-github",
         },
         {
@@ -149,7 +149,7 @@ autosummary_generate = True
 
 notebook_file = "{{ env.doc2path( env.docname, base=None).split('/')[-1] }}"
 notebook_url = (
-    f"https://github.com/tinkoff-ai/etna/tree/{release}/examples/{notebook_file}"  # noqa
+    f"https://github.com/etna-team/etna/tree/{release}/examples/{notebook_file}"  # noqa
 )
 
 nbsphinx_prolog_css_fix = """
@@ -198,7 +198,7 @@ def linkcode_resolve(domain, info):
         filename = "etna/%s#L%d-L%d" % find_source()
     except Exception:
         filename = info["module"].replace(".", "/") + ".py"
-    return "https://github.com/tinkoff-ai/etna/blob/{}/{}".format(
+    return "https://github.com/etna-team/etna/blob/{}/{}".format(
         release,
         filename,
     )
