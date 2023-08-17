@@ -52,4 +52,4 @@ jobs:
           S3CMD_CONFIG: ${{ secrets.DOCS_S3CMD_CONFIG }}
         run: |
           echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > .s3cfg
-          s3cmd -c .s3cfg put --recursive ./site "s3://docs.etna.ai/latest/"
+          s3cmd -c .s3cfg put --recursive ./site/ "s3://docs.etna.ai/latest/"
