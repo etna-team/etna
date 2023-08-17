@@ -5,7 +5,6 @@ name: Build docs from trunk
 #    branches:
 #      - master
 # Добавить эатп удаления
-# Добавить страницу с ошибкой 404
 
 on:
   pull_request:
@@ -34,7 +33,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E "all-dev" -vv
+          poetry install -E "all docs" -vv
       - name: Install apt docs dependencies
         run: |
           sudo apt install pandoc
@@ -54,4 +53,4 @@ jobs:
           S3CMD_CONFIG: ${{ secrets.DOCS_S3CMD_CONFIG }}
         run: |
           echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > .s3cfg
-          s3cmd -c .s3cfg put --recursive ./site/ "s3://docs.etna.ai/"
+          s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/latest"
