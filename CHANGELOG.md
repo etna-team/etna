@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
 - Add `quickstart` notebook, add `mechanics_of_forecasting` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
-- Add gallery of tutorials divided by level ([#1354](https://github.com/tinkoff-ai/etna/pull/1354))
-- Create documentation page with links to external resources ([#1350](https://github.com/tinkoff-ai/etna/pull/1350))
+- Add gallery of tutorials divided by level ([#46](https://github.com/etna-team/etna/pull/46))
+- Create documentation page with links to external resources ([#44](https://github.com/etna-team/etna/pull/44))
+- Add documentation page with glossary of terms ([#45](https://github.com/etna-team/etna/pull/45/))
 
 ### Changed
 - 
