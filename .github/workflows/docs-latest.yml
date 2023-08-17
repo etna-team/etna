@@ -44,19 +44,6 @@ jobs:
         env:
           CI_COMMIT_SHORT_SHA: ${{ github.sha }}
           WORKFLOW_NAME: ${{ github.workflow }}
-#      - name: Deploy to Netlify
-#        uses: nwtgck/actions-netlify@v1.2
-#        with:
-#          publish-dir: "./site"
-#          production-branch: master
-#          alias: "unstable"
-#          production-deploy: false
-#          deploy-message: "Deploy from GitHub Actions"
-#          github-token: ${{ secrets.GITHUB_TOKEN }}
-#          enable-commit-comment: true
-#        env:
-#          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-#          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
       - name: Install s3cmd
         run: |
           sudo apt install s3cmd
@@ -64,5 +51,6 @@ jobs:
         env:
           S3CMD_CONFIG: ${{ secrets.DOCS_S3CMD_CONFIG }}
         run: |
-          echo "$S3CMD_CONFIG" > ~/.s3cmd
+#          echo "$S3CMD_CONFIG" > ~/.s3cmd
+          echo "[default]" > ~/.s3cmd
           s3cmd put --recursive ./site "s3://docs.etna.ai/latest"
