@@ -128,7 +128,7 @@ classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
 # dev deps
 release = ["click", "semver"]
-docs = ["Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design"]
+docs = ["Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design", "jupyter"]
 tests = ["pytest-cov", "coverage", "pytest"]
 jupyter = ["jupyter", "nbconvert", "black"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "nbqa"]

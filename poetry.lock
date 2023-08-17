@@ -6247,7 +6247,7 @@ all = ["optuna", "prophet", "pytorch-forecasting", "pytorch-lightning", "pyts", 
 all-dev = ["GitPython", "Sphinx", "black", "click", "click", "codespell", "coverage", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "isort", "jupyter", "mypy", "myst-parser", "nbconvert", "nbqa", "nbsphinx", "optuna", "pep8-naming", "prophet", "pydata-sphinx-theme", "pytest", "pytest-cov", "pytorch-forecasting", "pytorch-lightning", "pyts", "semver", "semver", "sphinx-design", "sphinx-mathjax-offline", "sqlalchemy", "statsforecast", "torch", "tsfresh", "types-PyYAML", "types-setuptools", "wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
-docs = ["GitPython", "Sphinx", "myst-parser", "nbsphinx", "pydata-sphinx-theme", "sphinx-design", "sphinx-mathjax-offline"]
+docs = ["GitPython", "Sphinx", "jupyter", "myst-parser", "nbsphinx", "pydata-sphinx-theme", "sphinx-design", "sphinx-mathjax-offline"]
 jupyter = ["black", "jupyter", "nbconvert"]
 prophet = ["prophet"]
 release = ["click", "semver"]
@@ -6260,4 +6260,4 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0, <3.11.0"
-content-hash = "3d320a0513cc7d9c0d92a03cad7fd1589792d9b530ab2b838556e589d088a1d0"
+content-hash = "0f6dd03c7a5aa30597ef2aca5fc02fa4e6ca410a11f4b834b20dc630dcbd1384"
