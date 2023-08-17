@@ -49,5 +49,5 @@ jobs:
           sudo apt install s3cmd
       - name: Deploy to s3
         run: |
-          echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > ~/.s3cmd
+          echo "${{ secrets.DOCS_S3CMD_CONFIG }}" | base64 -d > ~/.s3cmd
           s3cmd put --recursive ./site "s3://docs.etna.ai/latest"
