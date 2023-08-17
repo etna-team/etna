@@ -7,32 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- `DeseasonalityTransform` ([#1307](https://github.com/tinkoff-ai/etna/pull/1307))
-- 
-- Add extension with models from `statsforecast`: `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel` ([#1295](https://github.com/tinkoff-ai/etna/pull/1297))
-- Notebook `feature_selection` ([#875](https://github.com/tinkoff-ai/etna/pull/875))
-- 
-- Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
+-
 - Add `quickstart` notebook, add `mechanics_of_forecasting` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - Add gallery of tutorials divided by level ([#46](https://github.com/etna-team/etna/pull/46))
 - Create documentation page with links to external resources ([#44](https://github.com/etna-team/etna/pull/44))
 - Add documentation page with glossary of terms ([#45](https://github.com/etna-team/etna/pull/45/))
+-
+-
 
 ### Changed
-- 
+-
+-
 - Add installation page and notes about extensions into documentation of public classes ([#1339](https://github.com/tinkoff-ai/etna/pull/1339))
-- Unify errors, warnings and checks in models ([#1312](https://github.com/tinkoff-ai/etna/pull/1312))
 - Merge User Guide and API sections in documentation, limit classes to show in API section ([#1324](https://github.com/tinkoff-ai/etna/pull/1324))
 - Unify example notebooks, rerun example notebooks ([#1330](https://github.com/tinkoff-ai/etna/pull/1330))
 - Rework `get_started` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
+-
 
 ### Fixed
-- 
+-
+-
+- Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
 - Rendering table of contents in notebooks ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
-- 
+
+### Removed
+-
+
+## [2.2.0] - 2023-08-08
+### Added
+- `DeseasonalityTransform` ([#1307](https://github.com/tinkoff-ai/etna/pull/1307))
+- Add extension with models from `statsforecast`: `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel` ([#1295](https://github.com/tinkoff-ai/etna/pull/1297))
+- Notebook `feature_selection` ([#875](https://github.com/tinkoff-ai/etna/pull/875))
+- Implementation of PatchTS model ([#1277](https://github.com/tinkoff-ai/etna/pull/1277))
+
+### Changed
+- Add modes `binary` and `category` to `HolidayTransform` ([#763](https://github.com/tinkoff-ai/etna/pull/763))
+- Add sorting by timestamp before the fit in `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` ([#1337](https://github.com/tinkoff-ai/etna/pull/1337))
+- Speed up metrics computation by optimizing segment validation, forbid NaNs during metrics computation ([#1338](https://github.com/tinkoff-ai/etna/pull/1338))
+- Unify errors, warnings and checks in models ([#1312](https://github.com/tinkoff-ai/etna/pull/1312))
+- Remove upper limitation on version of numba ([#1321](https://github.com/tinkoff-ai/etna/pull/1321))
+- Optimize `TSDataset.describe` and `TSDataset.info` by vectorization ([#1344](https://github.com/tinkoff-ai/etna/pull/1344))
+- Add documentation warning about using dill during loading ([#1346](https://github.com/tinkoff-ai/etna/pull/1346))
+- Vectorize metric computation ([#1347](https://github.com/tinkoff-ai/etna/pull/1347))
+
+### Fixed
+- Pipeline ensembles fail in `etna forecast` CLI ([#1331](https://github.com/tinkoff-ai/etna/pull/1331))
+- Fix performance of `DeepARModel` and `TFTModel` ([#1322](https://github.com/tinkoff-ai/etna/pull/1322))
 - `mrmr` feature selection working with categoricals ([#1311](https://github.com/tinkoff-ai/etna/pull/1311))
 - Fix version of `statsforecast` to 1.4 to avoid dependency conflicts during installation ([#1313](https://github.com/tinkoff-ai/etna/pull/1313))
 - Add inverse transformation into `predict` method of pipelines ([#1314](https://github.com/tinkoff-ai/etna/pull/1314))
+- Allow saving large pipelines ([#1335](https://github.com/tinkoff-ai/etna/pull/1335))
+- Fix link for dataset in classification notebook ([#1351](https://github.com/tinkoff-ai/etna/pull/1351))
 
 ### Removed
 - Building docker images with cuda 10.2 ([#1306](https://github.com/tinkoff-ai/etna/pull/1306))

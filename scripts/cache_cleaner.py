@@ -15,7 +15,7 @@ class GithubCache(BaseModel):
     size_in_bytes: int
 
 
-OWNER = "tinkoff-ai"
+OWNER = "etna-team"
 REPO = "etna"
 COMMAND_GET_LIST = f'gh api -H "Accept: application/vnd.github+json" /repos/{OWNER}/{REPO}/actions/caches'
 COMMAND_DELETE = (

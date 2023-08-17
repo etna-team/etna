@@ -14,7 +14,7 @@ def get_untagged_images(image_name: str):
                     "api",
                     "-H",
                     '"Accept: application/vnd.github+json"',
-                    f'"https://api.github.com/orgs/tinkoff-ai/packages/container/etna%2F{image_name}/versions?page={page}"',
+                    f'"https://api.github.com/orgs/etna-team/packages/container/etna%2F{image_name}/versions?page={page}"',
                 ]
             ),
             shell=True,

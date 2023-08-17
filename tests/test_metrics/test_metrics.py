@@ -1,3 +1,7 @@
+from copy import deepcopy
+from functools import partial
+
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -13,6 +17,7 @@ from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
 from etna.metrics import wape
+from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.metrics import MAE
 from etna.metrics.metrics import MAPE
@@ -109,20 +114,9 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
 def test_metrics_invalid_aggregation(metric_class):
-    """Check metrics behavior in case of invalid aggregation mode"""
+    """Check metrics behavior in case of invalid aggregation multioutput"""
     with pytest.raises(NotImplementedError):
         _ = metric_class(mode="a")
-
-
-@pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
-)
-def test_invalid_timestamps(metric_class, two_dfs_with_different_timestamps):
-    """Check metrics behavior in case of invalid timeranges"""
-    forecast_df, true_df = two_dfs_with_different_timestamps
-    metric = metric_class()
-    with pytest.raises(ValueError):
-        _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
 @pytest.mark.parametrize(
@@ -132,19 +126,56 @@ def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
     """Check metrics behavior in case of invalid segments sets"""
     forecast_df, true_df = two_dfs_with_different_segments_sets
     metric = metric_class()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="There are segments in .* that are not in .*"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
 @pytest.mark.parametrize(
     "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
 )
-def test_invalid_segments_target(metric_class, train_test_dfs):
+def test_invalid_target_columns(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
     forecast_df, true_df = train_test_dfs
-    forecast_df.df.drop(columns=[("segment_1", "target")], inplace=True)
+    columns = forecast_df.df.columns.to_list()
+    columns[0] = ("segment_1", "not_target")
+    forecast_df.df.columns = pd.MultiIndex.from_tuples(columns, names=["segment", "feature"])
     metric = metric_class()
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="All the segments in .* should contain 'target' column"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_index(metric_class, two_dfs_with_different_timestamps):
+    """Check metrics behavior in case of invalid index"""
+    forecast_df, true_df = two_dfs_with_different_timestamps
+    metric = metric_class()
+    with pytest.raises(ValueError, match="y_true and y_pred have different timestamps"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_nans_pred(metric_class, train_test_dfs):
+    """Check metrics behavior in case of nans in prediction."""
+    forecast_df, true_df = train_test_dfs
+    forecast_df.df.iloc[0, 0] = np.NaN
+    metric = metric_class()
+    with pytest.raises(ValueError, match="There are NaNs in y_pred"):
+        _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_invalid_nans_true(metric_class, train_test_dfs):
+    """Check metrics behavior in case of nans in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[0, 0] = np.NaN
+    metric = metric_class()
+    with pytest.raises(ValueError, match="There are NaNs in y_true"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
@@ -179,6 +210,79 @@ def test_metrics_values(metric_class, metric_fn, train_test_dfs):
             y_pred=forecast_df.loc[:, pd.IndexSlice[segment, "target"]],
         )
         assert value == true_metric_value
+
+
+def _create_metric_class(metric_fn, metric_fn_signature, greater_is_better):
+    def make_init(metric_fn, metric_fn_signature):
+        def init(self, mode):
+            Metric.__init__(self=self, mode=mode, metric_fn=metric_fn, metric_fn_signature=metric_fn_signature)
+
+        return init
+
+    new_class = type(
+        "NewMetric",
+        (Metric,),
+        {
+            "__init__": make_init(metric_fn=metric_fn, metric_fn_signature=metric_fn_signature),
+            "greater_is_better": lambda: greater_is_better,
+        },
+    )
+
+    return new_class
+
+
+@pytest.mark.parametrize(
+    "metric_fn, matrix_to_array_params, greater_is_better",
+    (
+        (mae, {"multioutput": "raw_values"}, False),
+        (mse, {"multioutput": "raw_values"}, False),
+        (rmse, {"multioutput": "raw_values"}, False),
+        (mape, {"multioutput": "raw_values"}, False),
+        (smape, {"multioutput": "raw_values"}, False),
+        (medae, {"multioutput": "raw_values"}, False),
+        (r2_score, {"multioutput": "raw_values"}, True),
+        (sign, {"multioutput": "raw_values"}, None),
+        (max_deviation, {"multioutput": "raw_values"}, False),
+        (wape, {"multioutput": "raw_values"}, False),
+    ),
+)
+def test_metrics_equivalence_of_signatures(metric_fn, matrix_to_array_params, greater_is_better, train_test_dfs):
+    forecast_df, true_df = train_test_dfs
+
+    metric_1_class = _create_metric_class(
+        metric_fn=metric_fn, metric_fn_signature="array_to_scalar", greater_is_better=greater_is_better
+    )
+    metric_1 = metric_1_class(mode="per-segment")
+    metric_fn_matrix_to_array = partial(metric_fn, **matrix_to_array_params)
+    metric_2_class = _create_metric_class(
+        metric_fn=metric_fn_matrix_to_array, metric_fn_signature="matrix_to_array", greater_is_better=greater_is_better
+    )
+    metric_2 = metric_2_class(mode="per-segment")
+
+    metric_1_values = metric_1(y_pred=forecast_df, y_true=true_df)
+    metric_2_values = metric_2(y_pred=forecast_df, y_true=true_df)
+
+    assert metric_1_values == metric_2_values
+
+
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+)
+def test_metric_values_with_changed_segment_order(metric_class, train_test_dfs):
+    forecast_df, true_df = train_test_dfs
+    forecast_df_new, true_df_new = deepcopy(train_test_dfs)
+    segments = np.array(forecast_df.segments)
+
+    forecast_segment_order = segments[[3, 2, 0, 1, 4]]
+    forecast_df_new.df = forecast_df_new.df.loc[:, pd.IndexSlice[forecast_segment_order, :]]
+    true_segment_order = segments[[4, 1, 3, 2, 0]]
+    true_df_new.df = true_df_new.df.loc[:, pd.IndexSlice[true_segment_order, :]]
+
+    metric = metric_class(mode="per-segment")
+    metrics_initial = metric(y_pred=forecast_df, y_true=true_df)
+    metrics_changed_order = metric(y_pred=forecast_df_new, y_true=true_df_new)
+
+    assert metrics_initial == metrics_changed_order
 
 
 @pytest.mark.parametrize(

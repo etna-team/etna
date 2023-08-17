@@ -8,8 +8,13 @@ from sklearn.metrics import r2_score
 
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+from etna.metrics.functional_metrics import mae
 from etna.metrics.functional_metrics import mape
 from etna.metrics.functional_metrics import max_deviation
+from etna.metrics.functional_metrics import medae
+from etna.metrics.functional_metrics import mse
+from etna.metrics.functional_metrics import msle
+from etna.metrics.functional_metrics import r2_score
 from etna.metrics.functional_metrics import rmse
 from etna.metrics.functional_metrics import sign
 from etna.metrics.functional_metrics import smape
