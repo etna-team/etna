@@ -2,13 +2,13 @@
 
 We have prepared a set of tutorials for an easy introduction:
 
-[Quickstart](https://github.com/tinkoff-ai/etna/tree/master/examples/quick_start.ipynb)
+[Quickstart](https://github.com/etna-team/etna/tree/master/examples/quick_start.ipynb)
 
 ## Tutorials
 
 ### Basic
 
-#### [Get started](https://github.com/tinkoff-ai/etna/tree/master/examples/101-get_started.ipynb) 
+#### [Get started](https://github.com/etna-team/etna/tree/master/examples/101-get_started.ipynb) 
 - Loading dataset
 - Plotting
 - Forecasting single time series
@@ -17,14 +17,14 @@ We have prepared a set of tutorials for an easy introduction:
   - Catboost
 - Forecasting multiple time series 
 
-#### [Backtest](https://github.com/tinkoff-ai/etna/tree/master/examples/102-backtest.ipynb)
+#### [Backtest](https://github.com/etna-team/etna/tree/master/examples/102-backtest.ipynb)
 - What is backtest and how it works
 - How to run a validation
 - Backtest with fold masks
 - Validation visualisation
 - Metrics visualisation
 
-#### [EDA](https://github.com/tinkoff-ai/etna/tree/master/examples/103-EDA.ipynb) 
+#### [EDA](https://github.com/etna-team/etna/tree/master/examples/103-EDA.ipynb) 
 - Loading dataset
 - Visualization 
   - Plotting time series 
@@ -43,7 +43,7 @@ We have prepared a set of tutorials for an easy introduction:
 
 ## Intermediate
 
-#### [Regressors and exogenous data](https://github.com/tinkoff-ai/etna/tree/master/examples/201-exogenous_data.ipynb)
+#### [Regressors and exogenous data](https://github.com/etna-team/etna/tree/master/examples/201-exogenous_data.ipynb)
 - What is regressor? 
   - What is additional data?
 - Dataset
@@ -51,7 +51,7 @@ We have prepared a set of tutorials for an easy introduction:
   - EDA
 - Forecasting with regressors
 
-#### [Deep learning models](https://github.com/tinkoff-ai/etna/tree/master/examples/202-NN_examples.ipynb)
+#### [Deep learning models](https://github.com/etna-team/etna/tree/master/examples/202-NN_examples.ipynb)
 - Loading dataset
 - Architecture
 - Testing models
@@ -62,7 +62,7 @@ We have prepared a set of tutorials for an easy introduction:
   - N-BEATS Model 
   - PatchTS Model
 
-#### [Ensembles](https://github.com/tinkoff-ai/etna/tree/master/examples/203-ensembles.ipynb)
+#### [Ensembles](https://github.com/etna-team/etna/tree/master/examples/203-ensembles.ipynb)
 - Loading dataset 
 - Building pipelines 
 - Ensembles 
@@ -70,7 +70,7 @@ We have prepared a set of tutorials for an easy introduction:
   - `StackingEnsamble`
   - Results
 
-#### [Outliers](https://github.com/tinkoff-ai/etna/tree/master/examples/204-outliers.ipynb) 
+#### [Outliers](https://github.com/etna-team/etna/tree/master/examples/204-outliers.ipynb) 
 - Loading dataset 
 - Point outliers 
   - Median method 
@@ -80,7 +80,7 @@ We have prepared a set of tutorials for an easy introduction:
 - Interactive visualization 
 - Outliers imputation
 
-#### [AutoML](https://github.com/tinkoff-ai/etna/tree/master/examples/205-automl.ipynb)
+#### [AutoML](https://github.com/etna-team/etna/tree/master/examples/205-automl.ipynb)
 - Hyperparameters tuning
   - How `Tune` works
   - Example
@@ -89,7 +89,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Example
 - Summary
 
-#### [Clustering](https://github.com/tinkoff-ai/etna/tree/master/examples/206-clustering.ipynb) 
+#### [Clustering](https://github.com/etna-team/etna/tree/master/examples/206-clustering.ipynb) 
 - Generating dataset 
 - Distances 
 - Clustering 
@@ -101,7 +101,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Custom Distance implementation 
   - Custom Distance in clustering
 
-#### [Feature selection](https://github.com/tinkoff-ai/etna/tree/master/examples/207-feature_selection.ipynb)
+#### [Feature selection](https://github.com/etna-team/etna/tree/master/examples/207-feature_selection.ipynb)
 - Loading dataset
 - Feature selection methods
   - Intro to feature selection
@@ -110,7 +110,7 @@ We have prepared a set of tutorials for an easy introduction:
   - `MRMRFeatureSelectionTransform`
 - Summary
 
-#### [Forecasting strategies](https://github.com/tinkoff-ai/etna/tree/master/examples/208-forecasting_strategies.ipynb)
+#### [Forecasting strategies](https://github.com/etna-team/etna/tree/master/examples/208-forecasting_strategies.ipynb)
 - Loading dataset 
 - Recursive strategy 
 - Direct strategy 
@@ -119,7 +119,7 @@ We have prepared a set of tutorials for an easy introduction:
 - Summary
 
 
-#### [Mechanics of forecasting](https://github.com/tinkoff-ai/etna/tree/master/examples/209-mechanics_of_forecasting.ipynb)
+#### [Mechanics of forecasting](https://github.com/etna-team/etna/tree/master/examples/209-mechanics_of_forecasting.ipynb)
 - Loading dataset
 - Forecasting
   - Context-free models
@@ -129,7 +129,7 @@ We have prepared a set of tutorials for an easy introduction:
 
 ### Advanced
 
-#### [Custom model and transform](https://github.com/tinkoff-ai/etna/tree/master/examples/301-custom_transform_and_model.ipynb)
+#### [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/301-custom_transform_and_model.ipynb)
 - What is transform and how it works
 - Custom transform 
   - Per-segment custom transform 
@@ -138,7 +138,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Creating a new model from scratch 
   - Creating a new model using sklearn interface
 
-#### [Inference: using saved pipeline on a new data](https://github.com/tinkoff-ai/etna/tree/master/examples/302-inference.ipynb) 
+#### [Inference: using saved pipeline on a new data](https://github.com/etna-team/etna/tree/master/examples/302-inference.ipynb) 
 - Preparing data
 - Fitting and saving pipeline 
   - Fitting pipeline 
@@ -148,7 +148,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Loading pipeline 
   - Forecast on a new data
 
-#### [Hierarchical time series](https://github.com/tinkoff-ai/etna/tree/master/examples/303-hierarchical_pipeline.ipynb)
+#### [Hierarchical time series](https://github.com/etna-team/etna/tree/master/examples/303-hierarchical_pipeline.ipynb)
 - Hierarchical time series 
 - Preparing dataset 
   - Manually setting hierarchical structure 
@@ -158,7 +158,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Top-down approach 
 - Exogenous variables for hierarchical forecasts
 
-#### [Forecast interpretation](https://github.com/tinkoff-ai/etna/tree/master/examples/304-forecast_interpretation.ipynb)
+#### [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecast_interpretation.ipynb)
 - Loading dataset
 - Forecast decomposition 
   - CatBoost 
@@ -170,7 +170,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Feature relevance 
   - Components relevance
 
-#### [Classification](https://github.com/tinkoff-ai/etna/tree/master/examples/305-classification.ipynb)
+#### [Classification](https://github.com/etna-team/etna/tree/master/examples/305-classification.ipynb)
 - Classification 
   - Loading dataset
   - Feature extraction 
@@ -183,5 +183,5 @@ We have prepared a set of tutorials for an easy introduction:
 ## Scripts
 
 ### Hyperparameter search
-- [Optuna](https://github.com/tinkoff-ai/etna/tree/master/examples/optuna)
-- [WandB sweeps](https://github.com/tinkoff-ai/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)
+- [Optuna](https://github.com/etna-team/etna/tree/master/examples/optuna)
+- [WandB sweeps](https://github.com/etna-team/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)

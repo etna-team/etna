@@ -3,7 +3,7 @@
 ## How to start?
 
 Contributing is quite easy: suggest ideas and make them done.
-We use [GitHub issues](https://github.com/tinkoff-ai/etna/issues) for bug reports and feature requests.
+We use [GitHub issues](https://github.com/etna-team/etna/issues) for bug reports and feature requests.
 
 Every good PR usually consists of:
 - feature implementation :)
@@ -15,15 +15,15 @@ Every good PR usually consists of:
 ### 1. Before the PR
 Please ensure that you have read the following docs:
 - [documentation](https://etna-docs.netlify.app/)
-- [tutorials](https://github.com/tinkoff-ai/etna/tree/master/examples)
-- [changelog](https://github.com/tinkoff-ai/etna/blob/master/CHANGELOG.md)
+- [tutorials](https://github.com/etna-team/etna/tree/master/examples)
+- [changelog](https://github.com/etna-team/etna/blob/master/CHANGELOG.md)
 
 ### 2. Setting up your development environment
 
 Before writing any code it is useful to set up a development environment.
 1. Clone etna library to some folder and go inside:
 ```bash
-git clone https://github.com/tinkoff-ai/etna.git etna/
+git clone https://github.com/etna-team/etna.git etna/
 cd etna
 ```
 2. Run installation with `poetry` ([poetry installation guide](https://python-poetry.org/docs/#installation)):
@@ -47,8 +47,8 @@ This is an optional step, you could skip it if you want to take some of the exis
 
 ### 4. Choosing a task
 
-1. Goto [GitHub issues](https://github.com/tinkoff-ai/etna/issues);
-2. Pick an issue with status "Todo" on a [board](https://github.com/orgs/tinkoff-ai/projects/2)
+1. Goto [GitHub issues](https://github.com/etna-team/etna/issues);
+2. Pick an issue with status "Todo" on a [board](https://github.com/orgs/etna-team/projects/1)
 3. Leave a comment in the issue that you want to work on this task;
 4. If you need more context on a specific issue, please ask, and we will discuss the details.
 
@@ -92,7 +92,7 @@ During creation of Pull Request make sure that your documentation looks good, ch
 4. Listings of code, e.g. variable names, are typed with monospaced font;
 5. Mathematical formulas are rendered correctly;
 6. Links to external sources are active;
-7. References to python objects should be active if library is listed in [`intersphinx_mapping`](https://github.com/tinkoff-ai/etna/blob/master/docs/source/conf.py#L68)
+7. References to python objects should be active if library is listed in [`intersphinx_mapping`](https://github.com/etna-team/etna/blob/master/docs/source/conf.py#L68)
 
 Useful links:
 1. [ReST Quickref](https://docutils.sourceforge.io/docs/user/rst/quickref.html)
