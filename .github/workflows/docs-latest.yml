@@ -1,16 +1,9 @@
 name: Build docs from trunk
 
-#on:
-#  push:
-#    branches:
-#      - master
-
-# TODO:
-#   Поправить правило запуска
-
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches:
+      - master
 
 jobs:
   build-docs:
