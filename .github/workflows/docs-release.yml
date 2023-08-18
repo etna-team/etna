@@ -1,9 +1,8 @@
 name: Build docs from trunk
 
 on:
-  push:
-    branches:
-      - master
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   build-docs:
@@ -42,7 +41,12 @@ jobs:
           CI_COMMIT_SHORT_SHA: ${{ github.sha }}
           WORKFLOW_NAME: ${{ github.workflow }}
       - name: Deploy to s3
+        env:
+          CUR_REF: "refs/tags/2.2.0"
         run: |
           echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > .s3cfg
-          s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/latest/"
-          s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/latest/"
+          s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/stable/"
+          s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/stable/"
+          VERSION=$(echo "$CUR_REF" | sed -e 's,.*/\(.*\),\1,')
+          s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/$VERSION/"
+          s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/$VERSION/"
