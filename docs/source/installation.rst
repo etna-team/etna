@@ -44,7 +44,7 @@ ETNA can also be installed from the repository. It allows you to get the latest 
 
 .. code-block:: console
 
-    pip install "etna[all]@git+https://github.com/tinkoff-ai/etna.git@master"
+    pip install "etna[all]@git+https://github.com/etna-team/etna.git@master"
 
 where you could replace ``master`` branch with some other identifier.
 

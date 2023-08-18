@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add gallery of tutorials divided by level ([#46](https://github.com/etna-team/etna/pull/46))
 - Create documentation page with links to external resources ([#44](https://github.com/etna-team/etna/pull/44))
 - Add documentation page with glossary of terms ([#45](https://github.com/etna-team/etna/pull/45/))
--
+- Add publishing into s3 for the latest documentation version ([#50](https://github.com/etna-team/etna/pull/50))
 -
 
 ### Changed
