@@ -51,9 +51,7 @@ jobs:
         run: |
           sudo apt install s3cmd
       - name: Deploy to s3
-        env:
-          S3CMD_CONFIG: ${{ secrets.DOCS_S3CMD_CONFIG }}
         run: |
           echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > .s3cfg
-          s3cmd rm -r "s3://docs.etna.ai/latest/"
+          s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/latest/"
           s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/latest/"
