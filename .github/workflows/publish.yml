@@ -36,56 +36,41 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: "3.8"
-      - name: Check tag is latest
-        id: check-tag
-        run: |
-          git fetch --tags -f
-          TAGS=$(git tag -l --sort=-version:refname '1.*')
-          UNSTABLE_TAGS_MATCH='\-dev\|\-alpha\|\-beta\|\-rc'
-          if [[ ${{ github.event.release.prerelease }} == true ]]; then
-            TAGS=$(echo "$TAGS" | grep $UNSTABLE_TAGS_MATCH)
-          else
-            TAGS=$(echo "$TAGS" | grep -v $UNSTABLE_TAGS_MATCH)
-          fi
-          LATEST_TAG=$(echo "$TAGS" | head -n 1)
-          if [[ ${{ github.event.release.tag_name }} == $LATEST_TAG ]]; then
-            echo "::set-output name=IS_LATEST::true"
-          else
-            echo "::set-output name=IS_LATEST::false"
-          fi
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-docs-${{ hashFiles('**/poetry.lock') }}
       - name: Install dependencies
-        if: steps.check-tag.outputs.IS_LATEST == 'true'
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: |
+          poetry install -E "all docs" -vv
+      - name: Install apt docs dependencies
         run: |
           sudo apt install pandoc
-          pip install poetry
-          poetry --version
-          poetry config virtualenvs.in-project true
-          poetry install -vv
-          poetry install -E "docs all"
+          sudo apt install s3cmd
       - name: Build docs
-        if: steps.check-tag.outputs.IS_LATEST == 'true'
         run: |
           cd docs
-          cp ../examples/*.ipynb source/tutorials
-          poetry run make clean ; poetry run make html
+          poetry run make build-docs
           mv build/html/ ../site
         env:
           CI_COMMIT_SHORT_SHA: ${{ github.sha }}
           WORKFLOW_NAME: ${{ github.workflow }}
-      - name: Deploy to Netlify
-        if: steps.check-tag.outputs.IS_LATEST == 'true'
-        uses: nwtgck/actions-netlify@v1.2
-        with:
-          publish-dir: './site'
-          production-branch: master
-          alias: ${{ github.event.release.prerelease && 'unstable' }}
-          production-deploy: ${{ !github.event.release.prerelease }}
-          deploy-message: "Deploy from GitHub Actions"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          enable-commit-comment: true
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Deploy to s3
+        run: |
+          echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > .s3cfg
+          s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/stable/"
+          s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/stable/"
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/$VERSION/"
+          s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/$VERSION/"
 
   docker-build-and-push:
     needs: publish

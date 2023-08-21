@@ -32,6 +32,7 @@ jobs:
       - name: Install apt docs dependencies
         run: |
           sudo apt install pandoc
+          sudo apt install s3cmd
       - name: Build docs
         run: |
           cd docs
@@ -40,9 +41,6 @@ jobs:
         env:
           CI_COMMIT_SHORT_SHA: ${{ github.sha }}
           WORKFLOW_NAME: ${{ github.workflow }}
-      - name: Install s3cmd
-        run: |
-          sudo apt install s3cmd
       - name: Deploy to s3
         run: |
           echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > .s3cfg
