@@ -39,8 +39,10 @@ with open(PROJECT_PATH / "pyproject.toml", "r") as f:
 
 if WORKFLOW_NAME == "Publish":
     release = pyproject_toml["tool"]["poetry"]["version"]
+    version_match = release
 else:
     release = f"{COMMIT_SHORT_SHA}"
+    version_match = "latest"
 
 # -- General configuration ---------------------------------------------------
 
@@ -103,6 +105,11 @@ html_theme_options = {
         },
     ],
     "show_prev_next": False,
+    "switcher": {
+        "json_url": "https://docs.etna.ai/latest/_static/switcher.json",
+        "version_match": version_match,
+    },
+    "navbar_start": ["navbar-logo", "version-switcher"],
 }
 
 # -- Extension configuration -------------------------------------------------
