@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add documentation page with glossary of terms ([#45](https://github.com/etna-team/etna/pull/45/))
 - Add publishing into s3 for the latest documentation version ([#50](https://github.com/etna-team/etna/pull/50))
 - Add publishing into s3 during release ([#53](https://github.com/etna-team/etna/pull/53))
+- Add multiversion switcher into documentation ([#55](https://github.com/etna-team/etna/pull/55))
 
 ### Changed
 -
