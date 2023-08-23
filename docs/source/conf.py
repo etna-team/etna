@@ -118,10 +118,10 @@ html_theme_options = {
 
 intersphinx_mapping = {
     "python": (f"https://docs.python.org/{sys.version_info.major}", None),
-    "numpy": ("https://docs.scipy.org/doc/numpy/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     "scipy": ("https://docs.scipy.org/doc/scipy/", None),
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
-    "scikit-learn": ("http://scikit-learn.org/stable", None),
+    "scikit-learn": ("https://scikit-learn.org/stable", None),
     "torch": ("https://pytorch.org/docs/stable/", None),
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "statsmodels": ("https://www.statsmodels.org/stable/", None),
