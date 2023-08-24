@@ -1,14 +1,12 @@
 import os
 import tempfile
+import urllib.request
 import warnings
 import zipfile
-from io import BytesIO
 from pathlib import Path
-from typing import Callable
 from typing import Dict
 
 import pandas as pd
-import requests
 
 from etna.datasets import TSDataset
 
@@ -49,9 +47,10 @@ def _download_dataset_zip(url: str, file_name: str, **kwargs) -> pd.DataFrame:
         any error during downloading, saving and reading dataset from url
     """
     try:
-        req = requests.get(url)
-        with zipfile.ZipFile(BytesIO(req.content)) as f:
-            with tempfile.TemporaryDirectory() as td:
+        with tempfile.TemporaryDirectory() as td:
+            temp_path = os.path.join(td, "temp.zip")
+            urllib.request.urlretrieve(url, temp_path)
+            with zipfile.ZipFile(temp_path) as f:
                 f.extractall(td)
                 df = pd.read_csv(os.path.join(td, file_name), **kwargs)
     except Exception as err:
@@ -76,6 +75,11 @@ def load_dataset(name: str, download_path: Path = _DOWNLOAD_PATH, rebuild_datase
     -------
     result:
         internal dataset
+
+    Raises
+    ------
+    NotImplementedError:
+        if name not from available list of dataset names
     """
     if name not in datasets_dict:
         raise NotImplementedError(f"Dataset {name} is not available. You can use one from: {sorted(datasets_dict)}.")
@@ -128,6 +132,4 @@ def get_electricity_dataset(dataset_dir) -> TSDataset:
     return ts
 
 
-datasets_dict: Dict[str : Dict[Callable, str]] = {
-    "electricity": {"get_dataset_function": get_electricity_dataset, "freq": "15T"}
-}
+datasets_dict: Dict[str, Dict] = {"electricity": {"get_dataset_function": get_electricity_dataset, "freq": "15T"}}
