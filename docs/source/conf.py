@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import json
+from urllib.request import urlopen
 
 import toml
 from sphinx.application import Sphinx
@@ -98,6 +100,16 @@ html_theme = "sphinx_rtd_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_favicon = "_static/etna_favicon.ico"
+
+versions = json.loads(urlopen("https://docs.etna.ai/latest/_static/switcher.json").read())
+versions = [(x["name"], x["url"]) for x in versions]
+
+html_context = {
+    "display_versions": True,
+    "current_version": release,
+    "versions": versions,
+}
 
 
 # setup configuration
