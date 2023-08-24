@@ -1,22 +1,23 @@
-import requests
+import os
+import tempfile
+import warnings
 import zipfile
 from io import BytesIO
-import tempfile
 from pathlib import Path
-import os
-import warnings
+from typing import Dict
+from typing import Callable
 
 import pandas as pd
+import requests
 
 from etna.datasets import TSDataset
-
 
 _DOWNLOAD_PATH = Path.home() / ".etna"
 
 
 def _check_dataset_local(dataset_path: Path) -> bool:
     """
-    Check dataset is local
+    Check dataset is local.
 
     Parameters
     ----------
@@ -28,7 +29,7 @@ def _check_dataset_local(dataset_path: Path) -> bool:
 
 def _download_dataset_zip(url: str, file_name: str, **kwargs) -> pd.DataFrame:
     """
-    Downloads zipped csv file
+    Download zipped csv file.
 
     Parameters
     ----------
@@ -93,6 +94,7 @@ def load_dataset(name: str, download_path: Path = _DOWNLOAD_PATH, rebuild_datase
 
 def get_electricity_dataset(dataset_dir) -> TSDataset:
     """
+    Download6 save and load electricity dataset.
     The electricity dataset is a 15 minutes time series of electricity consumption (in kW)
     of 370 customers.
 
@@ -114,11 +116,11 @@ def get_electricity_dataset(dataset_dir) -> TSDataset:
     os.makedirs(dataset_dir, exist_ok=True)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        data = _download_dataset_zip(url=url, file_name="LD2011_2014.txt", sep=';')
+        data = _download_dataset_zip(url=url, file_name="LD2011_2014.txt", sep=";")
     data = data.rename({"Unnamed: 0": "timestamp"}, axis=1)
     data["timestamp"] = pd.to_datetime(data["timestamp"])
     data.loc[:, data.columns != "timestamp"] = (
-        data.loc[:, data.columns != "timestamp"].replace(',', '.', regex=True).astype(float)
+        data.loc[:, data.columns != "timestamp"].replace(",", ".", regex=True).astype(float)
     )
     data = data.melt("timestamp", var_name="segment", value_name="target")
     data.to_csv(dataset_dir / "electricity.csv", index=False)
@@ -126,6 +128,4 @@ def get_electricity_dataset(dataset_dir) -> TSDataset:
     return ts
 
 
-datasets_dict = {
-    "electricity":  {"get_dataset_function": get_electricity_dataset, "freq": "15T"}
-}
+datasets_dict: Dict[str: Dict[Callable, str]] = {"electricity": {"get_dataset_function": get_electricity_dataset, "freq": "15T"}}
