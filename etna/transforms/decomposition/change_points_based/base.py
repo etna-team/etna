@@ -10,7 +10,6 @@ from typing import Tuple
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversiblePerSegmentWrapper
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
@@ -211,7 +210,7 @@ class ReversibleChangePointsTransform(BaseChangePointsTransform, ReversiblePerSe
         return []
 
 
-class IrreversibleChangePointsTransform(BaseChangePointsTransform, IrreversiblePerSegmentWrapper, FutureMixin):
+class IrreversibleChangePointsTransform(BaseChangePointsTransform, IrreversiblePerSegmentWrapper):
     """IrreversibleChangePointsTransform class is a base class for all irreversible transforms that work with change point."""
 
     out_column: Optional[str] = None

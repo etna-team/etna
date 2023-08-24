@@ -9,11 +9,10 @@ import pandas as pd
 
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
-class FourierTransform(IrreversibleTransform, FutureMixin):
+class FourierTransform(IrreversibleTransform):
     """Adds fourier features to the dataset.
 
     Notes

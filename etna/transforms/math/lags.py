@@ -8,11 +8,10 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.models.utils import determine_num_steps
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
-class LagTransform(IrreversibleTransform, FutureMixin):
+class LagTransform(IrreversibleTransform):
     """Generates series of lags from given dataframe."""
 
     def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
@@ -102,7 +101,7 @@ class LagTransform(IrreversibleTransform, FutureMixin):
         return [self._get_column_name(lag) for lag in self.lags]
 
 
-class ExogShiftTransform(IrreversibleTransform, FutureMixin):
+class ExogShiftTransform(IrreversibleTransform):
     """Shifts exogenous variables from a given dataframe."""
 
     def __init__(self, lag: Union[int, Literal["auto"]], horizon: Optional[int] = None):

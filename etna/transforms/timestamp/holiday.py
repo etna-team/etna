@@ -7,7 +7,6 @@ import holidays
 import numpy as np
 import pandas as pd
 
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
@@ -24,7 +23,7 @@ class HolidayTransformMode(str, Enum):
         )
 
 
-class HolidayTransform(IrreversibleTransform, FutureMixin):
+class HolidayTransform(IrreversibleTransform):
     """
     HolidayTransform generates series that indicates holidays in given dataset.
 

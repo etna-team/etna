@@ -9,7 +9,6 @@ import pandas as pd
 
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversiblePerSegmentWrapper
 from etna.transforms.base import OneSegmentTransform
 
@@ -175,7 +174,7 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
         return df
 
 
-class SpecialDaysTransform(IrreversiblePerSegmentWrapper, FutureMixin):
+class SpecialDaysTransform(IrreversiblePerSegmentWrapper):
     """SpecialDaysTransform generates series that indicates is weekday/monthday is special in given dataframe.
 
     Creates columns 'anomaly_weekdays' and 'anomaly_monthdays'.

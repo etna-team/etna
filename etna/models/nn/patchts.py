@@ -50,7 +50,7 @@ class PositionalEncoding(nn.Module):
         x = torch.reshape(x, (x.shape[0] * x.shape[1], x.shape[2], x.shape[3]))
         # x.shape == (batch_size * input_size, patch_num, embedding_dim)
         x = x.permute(1, 0, 2)  # (patch_num, batch_size * input_size, embedding_dim)
-        x = x + self.pe[: x.size(0)]
+        x = x + self.pe[: x.size(0)]  # type: ignore
         return self.dropout(x)
 
 
