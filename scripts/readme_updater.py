@@ -16,7 +16,7 @@ from typing import Dict
 from typing import List
 
 ROOT_PATH = pathlib.Path(__file__).parent.resolve().parent
-REPO = "/repos/tinkoff-ai/etna/contributors"
+REPO = "/repos/etna-team/etna/contributors"
 OLD_TEAM = [
     "[Artem Levashov](https://github.com/soft1q)",
     "[Aleksey Podkidyshev](https://github.com/alekseyen)",

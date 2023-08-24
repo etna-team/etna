@@ -7,7 +7,7 @@ from semver import VersionInfo as Version
 from .shell import shell
 from .shell import ShellError
 
-REPO = 'https://github.com/tinkoff-ai/etna'
+REPO = 'https://github.com/etna-team/etna'
 
 
 class Rule(str, Enum):

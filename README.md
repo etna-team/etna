@@ -11,25 +11,25 @@
 </p>
  
 <p align="center">
-  <a href="https://codecov.io/gh/tinkoff-ai/etna"><img alt="Coverage" src="https://img.shields.io/codecov/c/github/tinkoff-ai/etna.svg" /></a>
-  <a href="https://github.com/tinkoff-ai/etna/actions/workflows/test.yml?query=branch%3Amaster++"><img alt="Test passing" src="https://img.shields.io/github/actions/workflow/status/tinkoff-ai/etna/test.yml?branch=master&label=tests" /></a>
-  <a href="https://github.com/tinkoff-ai/etna/actions/workflows/publish.yml"><img alt="Docs publish" src="https://img.shields.io/github/actions/workflow/status/tinkoff-ai/etna/publish.yml?label=docs" /></a>
-  <a href="https://github.com/tinkoff-ai/etna/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/tinkoff-ai/etna.svg" /></a>
+  <a href="https://codecov.io/gh/etna-team/etna"><img alt="Coverage" src="https://img.shields.io/codecov/c/github/etna-team/etna.svg" /></a>
+  <a href="https://github.com/etna-team/etna/actions/workflows/test.yml?query=branch%3Amaster++"><img alt="Test passing" src="https://img.shields.io/github/actions/workflow/status/etna-team/etna/test.yml?branch=master&label=tests" /></a>
+  <a href="https://github.com/etna-team/etna/actions/workflows/publish.yml"><img alt="Docs publish" src="https://img.shields.io/github/actions/workflow/status/etna-team/etna/publish.yml?label=docs" /></a>
+  <a href="https://github.com/etna-team/etna/blob/master/LICENSE"><img alt="License" src="https://img.shields.io/github/license/etna-team/etna.svg" /></a>
 </p>
 
 <p align="center">
   <a href="https://t.me/etna_support"><img alt="Telegram" src="https://img.shields.io/badge/channel-telegram-blue" /></a>
-  <a href="https://github.com/tinkoff-ai/etna/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/github/discussions/tinkoff-ai/etna" /></a>
-  <a href="https://github.com/tinkoff-ai/etna/graphs/contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/tinkoff-ai/etna.svg" /></a>
-  <a href="https://github.com/tinkoff-ai/etna/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/tinkoff-ai/etna?style=social" /></a>
+  <a href="https://github.com/etna-team/etna/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/github/discussions/etna-team/etna" /></a>
+  <a href="https://github.com/etna-team/etna/graphs/contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/etna-team/etna.svg" /></a>
+  <a href="https://github.com/etna-team/etna/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/etna-team/etna?style=social" /></a>
 </p>
 
 <p align="center">
   <a href="https://etna.tinkoff.ru">Homepage</a> | 
   <a href="https://etna-docs.netlify.app/">Documentation</a> |
-  <a href="https://github.com/tinkoff-ai/etna/tree/master/examples">Tutorials</a> |
-  <a href="https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md">Contribution Guide</a> |
-  <a href="https://github.com/tinkoff-ai/etna/releases">Release Notes</a>
+  <a href="https://github.com/etna-team/etna/tree/master/examples">Tutorials</a> |
+  <a href="https://github.com/etna-team/etna/blob/master/CONTRIBUTING.md">Contribution Guide</a> |
+  <a href="https://github.com/etna-team/etna/releases">Release Notes</a>
 </p>
   
 ETNA is an easy-to-use time series forecasting framework. 
@@ -43,7 +43,7 @@ ETNA is the first python open source framework of
 Artificial Intelligence Center. 
 The library started as an internal product in our company - 
 we use it in over 10+ projects now, so we often release updates. 
-Contributions are welcome - check our [Contribution Guide](https://github.com/tinkoff-ai/etna/blob/master/CONTRIBUTING.md).
+Contributions are welcome - check our [Contribution Guide](https://github.com/etna-team/etna/blob/master/CONTRIBUTING.md).
 
 ## Get started
 
@@ -155,7 +155,7 @@ Install all extensions:
 pip install etna[all]
 ```
 
-There are also developer extensions. All the extensions are listed in [`pyproject.toml`](https://github.com/tinkoff-ai/etna/blob/master/pyproject.toml#L93).
+There are also developer extensions. All the extensions are listed in [`pyproject.toml`](https://github.com/etna-team/etna/blob/master/pyproject.toml#L93).
 
 Without the appropriate extension you will get an `ImportError` trying to import the model that needs it.
 For example, `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
@@ -164,7 +164,7 @@ For example, `etna.models.ProphetModel` needs `prophet` extension and can't be u
 
 ETNA supports configuration files. It means that library will check that all the specified packages are installed prior to script start and NOT during runtime. 
 
-To set up a configuration for your project you should create a `.etna` file at the project's root. To see the available options look at [`Settings`](https://github.com/tinkoff-ai/etna/blob/master/etna/settings.py#L68). There is an [example](https://github.com/tinkoff-ai/etna/tree/master/examples/configs/.etna) of configuration file.
+To set up a configuration for your project you should create a `.etna` file at the project's root. To see the available options look at [`Settings`](https://github.com/etna-team/etna/blob/master/etna/settings.py#L94). There is an [example](https://github.com/etna-team/etna/tree/master/examples/configs/.etna) of configuration file.
 
 ## Tutorials
 
@@ -172,22 +172,22 @@ We have also prepared a set of tutorials for an easy introduction:
 
 | Notebook     | Interactive launch  |
 |:----------|------:|
-| [Get started](https://github.com/tinkoff-ai/etna/tree/master/examples/get_started.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/get_started.ipynb) |
-| [Backtest](https://github.com/tinkoff-ai/etna/tree/master/examples/backtest.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/backtest.ipynb) |
-| [EDA](https://github.com/tinkoff-ai/etna/tree/master/examples/EDA.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/EDA.ipynb) |
-| [Regressors and exogenous data](https://github.com/tinkoff-ai/etna/tree/master/examples/exogenous_data.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/exogenous_data.ipynb) |
-| [Custom model and transform](https://github.com/tinkoff-ai/etna/tree/master/examples/custom_transform_and_model.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/custom_transform_and_model.ipynb) |
-| [Deep learning models](https://github.com/tinkoff-ai/etna/tree/master/examples/NN_examples.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/NN_examples.ipynb) |
-| [Ensembles](https://github.com/tinkoff-ai/etna/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/ensembles.ipynb) |
-| [Outliers](https://github.com/tinkoff-ai/etna/tree/master/examples/outliers.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/outliers.ipynb) |
-| [Forecasting strategies](https://github.com/tinkoff-ai/etna/tree/master/examples/forecasting_strategies.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/forecasting_strategies.ipynb) |
-| [Forecast interpretation](https://github.com/tinkoff-ai/etna/tree/master/examples/forecast_interpretation.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/forecast_interpretation.ipynb) |
-| [Clustering](https://github.com/tinkoff-ai/etna/tree/master/examples/clustering.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/clustering.ipynb) |
-| [AutoML](https://github.com/tinkoff-ai/etna/tree/master/examples/automl.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/automl.ipynb) |
-| [Inference: using saved pipeline on a new data](https://github.com/tinkoff-ai/etna/tree/master/examples/inference.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/inference.ipynb) |
-| [Hierarchical time series](https://github.com/tinkoff-ai/etna/blob/master/examples/hierarchical_pipeline.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/hierarchical_pipeline.ipynb) |
-| [Classification](https://github.com/tinkoff-ai/etna/blob/master/examples/classification.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/classification.ipynb) |
-| [Feature selection](https://github.com/tinkoff-ai/etna/blob/master/examples/feature_selection.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/tinkoff-ai/etna/master?filepath=examples/feature_selection.ipynb) |
+| [Get started](https://github.com/etna-team/etna/tree/master/examples/get_started.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/get_started.ipynb) |
+| [Backtest](https://github.com/etna-team/etna/tree/master/examples/backtest.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/backtest.ipynb) |
+| [EDA](https://github.com/etna-team/etna/tree/master/examples/EDA.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/EDA.ipynb) |
+| [Regressors and exogenous data](https://github.com/etna-team/etna/tree/master/examples/exogenous_data.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/exogenous_data.ipynb) |
+| [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/custom_transform_and_model.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/custom_transform_and_model.ipynb) |
+| [Deep learning models](https://github.com/etna-team/etna/tree/master/examples/NN_examples.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/NN_examples.ipynb) |
+| [Ensembles](https://github.com/etna-team/etna/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/ensembles.ipynb) |
+| [Outliers](https://github.com/etna-team/etna/tree/master/examples/outliers.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/outliers.ipynb) |
+| [Forecasting strategies](https://github.com/etna-team/etna/tree/master/examples/forecasting_strategies.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/forecasting_strategies.ipynb) |
+| [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/forecast_interpretation.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/forecast_interpretation.ipynb) |
+| [Clustering](https://github.com/etna-team/etna/tree/master/examples/clustering.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/clustering.ipynb) |
+| [AutoML](https://github.com/etna-team/etna/tree/master/examples/automl.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/automl.ipynb) |
+| [Inference: using saved pipeline on a new data](https://github.com/etna-team/etna/tree/master/examples/inference.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/inference.ipynb) |
+| [Hierarchical time series](https://github.com/etna-team/etna/blob/master/examples/hierarchical_pipeline.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/hierarchical_pipeline.ipynb) |
+| [Classification](https://github.com/etna-team/etna/blob/master/examples/classification.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/classification.ipynb) |
+| [Feature selection](https://github.com/etna-team/etna/blob/master/examples/feature_selection.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/feature_selection.ipynb) |
 
 ## Documentation
 
@@ -196,7 +196,6 @@ ETNA documentation is available [here](https://etna-docs.netlify.app/).
 ## Community
 
 To ask the questions or discuss the library you can join our [telegram chat](https://t.me/etna_support). 
-[Discussions section](https://github.com/tinkoff-ai/etna/discussions) on github is also open for this purpose.
 
 ## Resources
 
