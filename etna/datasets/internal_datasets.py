@@ -4,8 +4,8 @@ import warnings
 import zipfile
 from io import BytesIO
 from pathlib import Path
-from typing import Dict
 from typing import Callable
+from typing import Dict
 
 import pandas as pd
 import requests
@@ -128,4 +128,6 @@ def get_electricity_dataset(dataset_dir) -> TSDataset:
     return ts
 
 
-datasets_dict: Dict[str: Dict[Callable, str]] = {"electricity": {"get_dataset_function": get_electricity_dataset, "freq": "15T"}}
+datasets_dict: Dict[str : Dict[Callable, str]] = {
+    "electricity": {"get_dataset_function": get_electricity_dataset, "freq": "15T"}
+}
