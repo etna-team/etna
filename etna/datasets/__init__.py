@@ -7,3 +7,4 @@ from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
 from etna.datasets.utils import duplicate_data
 from etna.datasets.utils import set_columns_wide
+from etna.datasets.internal_datasets import load_dataset

@@ -1,4 +1,3 @@
-import os
 import shutil
 
 import numpy as np
@@ -6,14 +5,14 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import load_dataset
 from etna.datasets.internal_datasets import _DOWNLOAD_PATH
 from etna.datasets.internal_datasets import datasets_dict
-from etna.datasets.internal_datasets import load_dataset
 
 
 def get_custom_dataset(dataset_dir):
     np.random.seed(1)
-    os.makedirs(dataset_dir, exist_ok=True)
+    dataset_dir.mkdir(exist_ok=True, parents=True)
     df = pd.DataFrame(np.random.normal(0, 10, size=(30, 5)))
     df["timestamp"] = pd.date_range("2021-01-01", periods=30, freq="D")
     df = df.melt("timestamp", var_name="segment", value_name="target")
@@ -40,8 +39,8 @@ def test_load_custom_dataset():
     ts_local = load_dataset("custom_internal_dataset", rebuild_dataset=False)
     ts_rebuild = load_dataset("custom_internal_dataset", rebuild_dataset=True)
     shutil.rmtree(dataset_path)
-    pd.util.testing.assert_frame_equal(ts_init.df, ts_local.df)
-    pd.util.testing.assert_frame_equal(ts_init.df, ts_rebuild.df)
+    pd.util.testing.assert_frame_equal(ts_init.to_pandas(), ts_local.to_pandas())
+    pd.util.testing.assert_frame_equal(ts_init.to_pandas(), ts_rebuild.to_pandas())
 
 
 @pytest.mark.parametrize(

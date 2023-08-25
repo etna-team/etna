@@ -1,4 +1,3 @@
-import os
 import tempfile
 import urllib.request
 import warnings
@@ -22,7 +21,7 @@ def _check_dataset_local(dataset_path: Path) -> bool:
     dataset_path:
         path to dataset
     """
-    return os.path.isfile(dataset_path)
+    return dataset_path.exists()
 
 
 def _download_dataset_zip(url: str, file_name: str, **kwargs) -> pd.DataFrame:
@@ -48,11 +47,11 @@ def _download_dataset_zip(url: str, file_name: str, **kwargs) -> pd.DataFrame:
     """
     try:
         with tempfile.TemporaryDirectory() as td:
-            temp_path = os.path.join(td, "temp.zip")
+            temp_path = Path(td) / "temp.zip"
             urllib.request.urlretrieve(url, temp_path)
             with zipfile.ZipFile(temp_path) as f:
                 f.extractall(td)
-                df = pd.read_csv(os.path.join(td, file_name), **kwargs)
+                df = pd.read_csv(Path(td) / file_name, **kwargs)
     except Exception as err:
         raise Exception(f"Error during downloading and reading dataset. Reason: {repr(err)}")
     return df
@@ -69,7 +68,8 @@ def load_dataset(name: str, download_path: Path = _DOWNLOAD_PATH, rebuild_datase
     download_path:
         The path for saving dataset locally.
     rebuild_dataset:
-        Whether to rebuild dataset from the initial source.
+        Whether to rebuild the dataset from the original source. If rebuild_dataset = False and the dataset was saved
+        locally, then it would be loaded from disk.
 
     Returns
     -------
@@ -98,7 +98,7 @@ def load_dataset(name: str, download_path: Path = _DOWNLOAD_PATH, rebuild_datase
 
 def get_electricity_dataset(dataset_dir) -> TSDataset:
     """
-    Download6 save and load electricity dataset.
+    Download save and load electricity dataset.
     The electricity dataset is a 15 minutes time series of electricity consumption (in kW)
     of 370 customers.
 
@@ -117,7 +117,7 @@ def get_electricity_dataset(dataset_dir) -> TSDataset:
     .. [1] https://archive.ics.uci.edu/ml/datasets/ElectricityLoadDiagrams20112014
     """
     url = "https://archive.ics.uci.edu/static/public/321/electricityloaddiagrams20112014.zip"
-    os.makedirs(dataset_dir, exist_ok=True)
+    dataset_dir.mkdir(exist_ok=True, parents=True)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         data = _download_dataset_zip(url=url, file_name="LD2011_2014.txt", sep=";")
