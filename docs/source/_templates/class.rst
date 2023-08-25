@@ -1,6 +1,6 @@
 .. Template is based on github.com/jdb78/pytorch-forecasting/tree/v0.9.2/docs/source under MIT License
 
-{{ objname | escape | underline }}
+{{ fullname | escape | underline }}
 
 .. currentmodule:: {{ module }}
 
