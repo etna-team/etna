@@ -59,7 +59,7 @@ class MeanPerIntervalModel(StatisticsPerIntervalModel):
     """MeanPerIntervalModel.
 
     MeanPerIntervalModel is a shortcut for
-    :py:class:`etna.transforms.decomposition.change_points_based.per_interval_models.statistics_based.StatisticsPerIntervalModel
+    :py:class:`~etna.transforms.decomposition.change_points_based.per_interval_models.statistics_based.StatisticsPerIntervalModel`
     that uses mean value as statistics function.
     """
 
@@ -71,7 +71,7 @@ class MedianPerIntervalModel(StatisticsPerIntervalModel):
     """MedianPerIntervalModel.
 
     MedianPerIntervalModel is a shortcut for
-    :py:class:`etna.transforms.decomposition.change_points_based.per_interval_models.statistics_based.StatisticsPerIntervalModel
+    :py:class:`~etna.transforms.decomposition.change_points_based.per_interval_models.statistics_based.StatisticsPerIntervalModel`
     that uses median value as statistics function.
     """
 

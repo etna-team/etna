@@ -10,9 +10,9 @@ from etna.transforms.decomposition.change_points_based.change_points_models.base
 class RupturesChangePointsModel(BaseChangePointsModelAdapter):
     """RupturesChangePointsModel is ruptures change point models adapter."""
 
+    # TODO: add arg names for pen/eps/n_bkps or clear error message about its validation
     def __init__(self, change_points_model: BaseEstimator, **change_points_model_predict_params):
         """Init RupturesChangePointsModel.
-        @ TODO: add arg names for pen/eps/n_bkps or clear error message about its validation
 
         Parameters
         ----------

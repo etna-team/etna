@@ -24,7 +24,7 @@ Base:
    ReversiblePerSegmentWrapper
    OneSegmentTransform
 
-Decomposition transforms:
+Decomposition transforms and their utilities:
 
 .. autosummary::
    :toctree: api/
@@ -46,6 +46,12 @@ Decomposition transforms:
    STLTransform
    TheilSenTrendTransform
    TrendTransform
+   decomposition.RupturesChangePointsModel
+   decomposition.StatisticsPerIntervalModel
+   decomposition.MeanPerIntervalModel
+   decomposition.MedianPerIntervalModel
+   decomposition.SklearnPreprocessingPerIntervalModel
+   decomposition.SklearnRegressionPerIntervalModel
 
 Categorical encoding transforms:
 
