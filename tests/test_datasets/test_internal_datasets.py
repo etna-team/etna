@@ -43,6 +43,7 @@ def test_load_custom_dataset():
     pd.util.testing.assert_frame_equal(ts_init.to_pandas(), ts_rebuild.to_pandas())
 
 
+@pytest.mark.skip(reason="Dataset is too large for testing in GitHub.")
 @pytest.mark.parametrize(
     "dataset_name, expected_shape, expected_min_date, expected_max_date",
     [("electricity", (140256, 370), pd.to_datetime("2011-01-01 00:15:00"), pd.to_datetime("2015-01-01 00:00:00"))],
