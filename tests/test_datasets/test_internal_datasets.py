@@ -5,9 +5,9 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
-from etna.datasets.internal_datasets import load_dataset
 from etna.datasets.internal_datasets import _DOWNLOAD_PATH
 from etna.datasets.internal_datasets import datasets_dict
+from etna.datasets.internal_datasets import load_dataset
 
 
 def get_custom_dataset(dataset_dir):
