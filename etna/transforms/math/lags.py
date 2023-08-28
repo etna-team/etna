@@ -119,7 +119,7 @@ class ExogShiftTransform(IrreversibleTransform, FutureMixin):
               the prediction horizon and available timeline
 
         horizon:
-            prediction horizon. Mandatory when set to `lag="auto"`, ignored otherwise
+            prediction horizon. Mandatory when set to ``lag="auto"``, ignored otherwise
         """
         super().__init__(required_features="all")
 

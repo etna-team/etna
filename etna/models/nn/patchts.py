@@ -287,7 +287,7 @@ class PatchTSModel(DeepBaseModel):
 
         Parameters
         ----------
-         encoder_length:
+        encoder_length:
             encoder length
         decoder_length:
             decoder length

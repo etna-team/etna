@@ -45,7 +45,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
             number of steps back to calculate the difference with, it should be >= 1
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if True, apply transformation inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 
@@ -312,7 +312,7 @@ class DifferencingTransform(ReversibleTransform):
             number of differences to make, it should be >= 1
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if True, apply transformation inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 

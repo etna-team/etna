@@ -92,10 +92,10 @@ class TrendTransform(IrreversibleChangePointsTransform):
             name of column to apply transform to
         change_points_model:
             model to get trend change points,
-            by default :py:class:`ruptures.detection.Binseg` in a wrapper with ``n_bkps=5`` is used
+            by default :py:class:`ruptures.detection.binseg.Binseg` in a wrapper with ``n_bkps=5`` is used
         per_interval_model:
             model to process intervals of segment,
-            by default :py:class:`sklearn.linear_models.LinearRegression` in a wrapper is used
+            by default :py:class:`sklearn.linear_model.LinearRegression` in a wrapper is used
         out_column:
             name of added column.
             If not given, use ``self.__repr__()``

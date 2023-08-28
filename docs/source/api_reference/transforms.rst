@@ -38,14 +38,6 @@ Decomposition transforms and their utilities:
    STLTransform
    TheilSenTrendTransform
    TrendTransform
-   ChangePointsLevelTransform
-   ChangePointsSegmentationTransform
-   ChangePointsTrendTransform
-   DeseasonalityTransform
-   LinearTrendTransform
-   STLTransform
-   TheilSenTrendTransform
-   TrendTransform
    decomposition.RupturesChangePointsModel
    decomposition.StatisticsPerIntervalModel
    decomposition.MeanPerIntervalModel

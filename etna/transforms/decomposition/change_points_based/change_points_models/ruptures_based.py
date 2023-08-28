@@ -16,7 +16,7 @@ class RupturesChangePointsModel(BaseChangePointsModelAdapter):
 
         Parameters
         ----------
-        change_point_model:
+        change_points_model:
             model to get change points
         change_point_model_predict_params:
             params for ``change_point_model.predict`` method

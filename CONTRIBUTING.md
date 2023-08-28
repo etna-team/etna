@@ -14,7 +14,7 @@ Every good PR usually consists of:
 
 ### 1. Before the PR
 Please ensure that you have read the following docs:
-- [documentation](https://etna-docs.netlify.app/)
+- [documentation](https://docs.etna.ai/stable/)
 - [tutorials](https://github.com/etna-team/etna/tree/master/examples)
 - [changelog](https://github.com/etna-team/etna/blob/master/CHANGELOG.md)
 

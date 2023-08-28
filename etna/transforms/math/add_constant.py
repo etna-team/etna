@@ -25,7 +25,7 @@ class AddConstTransform(ReversibleTransform):
             value that should be added to the series
         inplace:
 
-            * if True, apply add constant transformation inplace to in_column,
+            * if True, apply add constant transformation inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 

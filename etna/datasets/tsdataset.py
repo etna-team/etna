@@ -650,8 +650,9 @@ class TSDataset:
             * If False, return pd.DataFrame with multiindex
 
             * If True, return with flatten index,
-            its order of columns is (timestamp, segment, target,
-            features in alphabetical order).
+              its order of columns is (timestamp, segment, target,
+              features in alphabetical order).
+
         features:
             List of features to return.
             If "all", return all the features in the dataset.
@@ -1017,8 +1018,8 @@ class TSDataset:
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
         """Update the existing columns in the dataset with the new values from pandas dataframe.
 
-        Before updating columns in df, columns of df_update will be cropped by the last timestamp in df.
-        Columns in df_exog are not updated. If you wish to update the df_exog, create the new
+        Before updating columns in ``df``, columns of ``df_update`` will be cropped by the last timestamp in ``df``.
+        Columns in ``df_exog`` are not updated. If you wish to update the ``df_exog``, create the new
         instance of TSDataset.
 
         Parameters

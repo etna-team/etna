@@ -26,7 +26,7 @@
 
 <p align="center">
   <a href="https://etna.tinkoff.ru">Homepage</a> | 
-  <a href="https://etna-docs.netlify.app/">Documentation</a> |
+  <a href="https://docs.etna.ai/stable/">Documentation</a> |
   <a href="https://github.com/etna-team/etna/tree/master/examples">Tutorials</a> |
   <a href="https://github.com/etna-team/etna/blob/master/CONTRIBUTING.md">Contribution Guide</a> |
   <a href="https://github.com/etna-team/etna/releases">Release Notes</a>
@@ -199,7 +199,7 @@ We have also prepared a set of tutorials for an easy introduction:
 
 ## Documentation
 
-ETNA documentation is available [here](https://etna-docs.netlify.app/).
+ETNA documentation is available [here](https://docs.etna.ai/stable/).
 
 ## Community
 

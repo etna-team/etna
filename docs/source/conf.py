@@ -126,7 +126,8 @@ intersphinx_mapping = {
     "matplotlib": ("https://matplotlib.org/stable/", None),
     "statsmodels": ("https://www.statsmodels.org/stable/", None),
     "pytorch_forecasting": ("https://pytorch-forecasting.readthedocs.io/en/stable/", None),
-    "optuna": ("https://optuna.readthedocs.io/en/v2.10.1/", None)
+    "optuna": ("https://optuna.readthedocs.io/en/v2.10.1/", None),
+    "ruptures": ("https://centre-borelli.github.io/ruptures-docs/", None),
 }
 
 # -- Options for autodoc extension -------------------------------------------

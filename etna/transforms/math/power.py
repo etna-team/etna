@@ -37,7 +37,7 @@ class YeoJohnsonTransform(SklearnTransform):
             columns to be transformed, if None - all columns will be transformed.
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if True, apply transformation inplace to ``in_column``,
 
             * if False, add column to dataset.
 
@@ -106,7 +106,7 @@ class BoxCoxTransform(SklearnTransform):
             columns to be transformed, if None - all columns will be transformed.
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if True, apply transformation inplace to ``in_column``,
 
             * if False, add column to dataset.
 
