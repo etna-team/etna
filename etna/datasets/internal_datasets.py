@@ -1,13 +1,12 @@
 import tempfile
 import urllib.request
-import warnings
 import zipfile
 from pathlib import Path
 from typing import Dict
 
 import pandas as pd
 
-from etna.datasets import TSDataset
+from etna.datasets.tsdataset import TSDataset
 
 _DOWNLOAD_PATH = Path.home() / ".etna"
 
@@ -68,8 +67,8 @@ def load_dataset(name: str, download_path: Path = _DOWNLOAD_PATH, rebuild_datase
     download_path:
         The path for saving dataset locally.
     rebuild_dataset:
-        Whether to rebuild the dataset from the original source. If rebuild_dataset = False and the dataset was saved
-        locally, then it would be loaded from disk.
+        Whether to rebuild the dataset from the original source. If ``rebuild_dataset=False`` and the dataset was saved
+        locally, then it would be loaded from disk. If ``rebuild_dataset=True``, then data
 
     Returns
     -------
@@ -99,6 +98,7 @@ def load_dataset(name: str, download_path: Path = _DOWNLOAD_PATH, rebuild_datase
 def get_electricity_dataset(dataset_dir) -> TSDataset:
     """
     Download save and load electricity dataset.
+
     The electricity dataset is a 15 minutes time series of electricity consumption (in kW)
     of 370 customers.
 
@@ -118,9 +118,7 @@ def get_electricity_dataset(dataset_dir) -> TSDataset:
     """
     url = "https://archive.ics.uci.edu/static/public/321/electricityloaddiagrams20112014.zip"
     dataset_dir.mkdir(exist_ok=True, parents=True)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        data = _download_dataset_zip(url=url, file_name="LD2011_2014.txt", sep=";")
+    data = _download_dataset_zip(url=url, file_name="LD2011_2014.txt", sep=";", dtype=str)
     data = data.rename({"Unnamed: 0": "timestamp"}, axis=1)
     data["timestamp"] = pd.to_datetime(data["timestamp"])
     data.loc[:, data.columns != "timestamp"] = (
