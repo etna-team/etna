@@ -68,7 +68,8 @@ def load_dataset(name: str, download_path: Path = _DOWNLOAD_PATH, rebuild_datase
         The path for saving dataset locally.
     rebuild_dataset:
         Whether to rebuild the dataset from the original source. If ``rebuild_dataset=False`` and the dataset was saved
-        locally, then it would be loaded from disk. If ``rebuild_dataset=True``, then data
+        locally, then it would be loaded from disk. If ``rebuild_dataset=True``, then the dataset will be downloaded and
+        saved locally.
 
     Returns
     -------
