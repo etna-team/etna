@@ -8,11 +8,10 @@ import pandas as pd
 
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
-class TimeFlagsTransform(IrreversibleTransform, FutureMixin):
+class TimeFlagsTransform(IrreversibleTransform):
     """TimeFlagsTransform is a class that implements extraction of the main time-based features from datetime column."""
 
     def __init__(

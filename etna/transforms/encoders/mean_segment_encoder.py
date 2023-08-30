@@ -7,11 +7,10 @@ import numpy as np
 import pandas as pd
 
 from etna.transforms import IrreversibleTransform
-from etna.transforms.base import FutureMixin
 from etna.transforms.math.statistics import MeanTransform
 
 
-class MeanSegmentEncoderTransform(IrreversibleTransform, FutureMixin):
+class MeanSegmentEncoderTransform(IrreversibleTransform):
     """Makes expanding mean target encoding of the segment. Creates column 'segment_mean'."""
 
     idx = pd.IndexSlice

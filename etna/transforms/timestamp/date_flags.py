@@ -10,11 +10,10 @@ import pandas as pd
 
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
-class DateFlagsTransform(IrreversibleTransform, FutureMixin):
+class DateFlagsTransform(IrreversibleTransform):
     """DateFlagsTransform is a class that implements extraction of the main date-based features from datetime column.
 
     Notes

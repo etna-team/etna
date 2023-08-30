@@ -5,11 +5,10 @@ import numpy as np
 import pandas as pd
 from sklearn import preprocessing
 
-from etna.transforms.base import FutureMixin
 from etna.transforms.base import IrreversibleTransform
 
 
-class SegmentEncoderTransform(IrreversibleTransform, FutureMixin):
+class SegmentEncoderTransform(IrreversibleTransform):
     """Encode segment label to categorical. Creates column 'segment_code'."""
 
     idx = pd.IndexSlice
