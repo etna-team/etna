@@ -89,7 +89,7 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         Parameters
         ----------
         ts:
-            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
+            Dataset to forecast. If not given, dataset given during :py:meth:`fit` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:

@@ -36,18 +36,14 @@ class LambdaTransform(ReversibleTransform):
             inverse function of ``transform_func``
         inplace:
 
-            * if `True`, apply transformation inplace to ``in_column``,
+            * if True, apply transformation inplace to ``in_column``,
 
-            * if `False`, add column and apply transformation to ``out_column``
-
-        Warnings
-        --------
-        throws if `inplace=True` and ``out_column`` is initialized, transformation will be applied inplace
+            * if False, add column and apply transformation to ``out_column``
 
         Raises
         ------
         Value error:
-            if `inplace=True` and ``inverse_transform_func`` is not defined
+            if ``inplace=True`` and ``inverse_transform_func`` is not defined
         """
         super().__init__(required_features=[in_column])
         self.in_column = in_column

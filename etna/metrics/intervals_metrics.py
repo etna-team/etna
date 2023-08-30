@@ -31,7 +31,7 @@ class Coverage(Metric, _QuantileMetricMixin):
 
     Notes
     -----
-    Works just if quantiles presented in y_pred
+    Works just if ``quantiles`` presented in ``y_pred``
     """
 
     def __init__(
@@ -41,6 +41,8 @@ class Coverage(Metric, _QuantileMetricMixin):
 
         Parameters
         ----------
+        quantiles:
+            lower and upper quantiles
         mode: 'macro' or 'per-segment'
             metrics aggregation mode
         kwargs:
@@ -102,7 +104,7 @@ class Width(Metric, _QuantileMetricMixin):
 
     Notes
     -----
-    Works just if quantiles presented in y_pred
+    Works just if quantiles presented in ``y_pred``
     """
 
     def __init__(
@@ -112,6 +114,8 @@ class Width(Metric, _QuantileMetricMixin):
 
         Parameters
         ----------
+        quantiles:
+            lower and upper quantiles
         mode: 'macro' or 'per-segment'
             metrics aggregation mode
         kwargs:

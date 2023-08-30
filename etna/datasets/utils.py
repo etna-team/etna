@@ -40,7 +40,7 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
 
     Returns
     -------
-    result: pd.DataFrame
+    result:
         result of duplication for all the segments
 
     Raises

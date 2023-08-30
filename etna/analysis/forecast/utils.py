@@ -27,7 +27,7 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Returns
     -------
-    new_ts:
+    :
         TSDataset with residuals in forecasts
 
     Raises

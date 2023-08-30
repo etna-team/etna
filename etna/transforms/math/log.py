@@ -25,7 +25,7 @@ class LogTransform(ReversibleTransform):
             base of logarithm to apply to series
         inplace:
 
-            * if True, apply logarithm transformation inplace to in_column,
+            * if True, apply logarithm transformation inplace to ``in_column``,
 
             * if False, add column add transformed column to dataset
 

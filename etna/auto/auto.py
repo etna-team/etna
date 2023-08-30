@@ -351,7 +351,7 @@ class Auto(AutoBase):
         There are two stages:
 
         - Pool stage: trying every pipeline in a pool
-        - Tuning stage: tuning ``tune_size`` best pipelines from a previous stage by using :py:class`~etna.auto.auto.Tune`.
+        - Tuning stage: tuning ``tune_size`` best pipelines from a previous stage by using :py:class:`~etna.auto.auto.Tune`.
 
         Tuning stage starts only if limits on ``n_trials`` and ``timeout`` aren't exceeded.
         Tuning goes from the best pipeline to the worst, and

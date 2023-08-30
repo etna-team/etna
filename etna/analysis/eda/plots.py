@@ -301,8 +301,8 @@ def plot_holidays(
     figsize:
         size of the figure per subplot with one segment in inches
     as_is:
-        * | Use this option if DataFrame is represented as a dataframe with a timestamp index and holiday names columns.
-          | In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+        Use this option if DataFrame is represented as a dataframe with a timestamp index and holiday names columns.
+        In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
     start:
         start timestamp for plot
     end:
@@ -311,12 +311,15 @@ def plot_holidays(
     Raises
     ------
     ValueError:
-        * Holiday nor pd.DataFrame or String.
-        * Holiday is an empty pd.DataFrame.
-        * `as_is=True` while holiday is String.
-        * If upper_window is negative.
-        * If lower_window is positive.
-
+        Holiday nor ``pd.DataFrame`` or ``str``.
+    ValueError:
+        Holiday is an empty ``pd.DataFrame``.
+    ValueError:
+        If ``as_is=True`` while holiday is string.
+    ValueError:
+        If ``upper_window`` is negative.
+    ValueError:
+        If ``lower_window`` is positive.
     """
     start, end = _get_borders_ts(ts, start, end)
 
@@ -552,7 +555,7 @@ def acf_plot(
     Raises
     ------
     ValueError:
-        If partial=True and there is a NaN in the middle of the time series
+        If ``partial=True`` and there is a NaN in the middle of the time series
     """
     if segments is None:
         exist_segments = sorted(ts.segments)

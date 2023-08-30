@@ -201,9 +201,9 @@ class STLTransform(ReversiblePerSegmentWrapper):
         robust:
             flag indicating whether to use robust version of STL
         model_kwargs:
-            parameters for the model like in :py:class:`statsmodels.tsa.seasonal.STLForecast`
+            parameters for the model like in :py:class:`statsmodels.tsa.forecasting.stl.STLForecast`
         stl_kwargs:
-            additional parameters for :py:class:`statsmodels.tsa.seasonal.STLForecast`
+            additional parameters for :py:class:`statsmodels.tsa.forecasting.stl.STLForecast`
         """
         self.in_column = in_column
         self.period = period

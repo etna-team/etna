@@ -24,7 +24,7 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
             name of column to obtain the distribution from
         inplace:
 
-            * if True, apply resampling inplace to in_column,
+            * if True, apply resampling inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 
@@ -130,7 +130,7 @@ class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
             name of column to obtain the distribution from
         inplace:
 
-            * if True, apply resampling inplace to in_column,
+            * if True, apply resampling inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 
