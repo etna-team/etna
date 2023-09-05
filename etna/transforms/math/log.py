@@ -27,7 +27,7 @@ class LogTransform(ReversibleTransform):
 
             * if True, apply logarithm transformation inplace to ``in_column``,
 
-            * if False, add column add transformed column to dataset
+            * if False, add column and transformed column to dataset
 
         out_column:
             name of added column. If not given, use ``self.__repr__()``

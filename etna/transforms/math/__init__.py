@@ -3,6 +3,7 @@ from etna.transforms.math.apply_lambda import LambdaTransform
 from etna.transforms.math.differencing import DifferencingTransform
 from etna.transforms.math.lags import ExogShiftTransform
 from etna.transforms.math.lags import LagTransform
+from etna.transforms.math.limit import LimitTransform
 from etna.transforms.math.log import LogTransform
 from etna.transforms.math.power import BoxCoxTransform
 from etna.transforms.math.power import YeoJohnsonTransform

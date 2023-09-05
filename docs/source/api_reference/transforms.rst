@@ -146,3 +146,4 @@ Functional transforms:
    YeoJohnsonTransform
    BoxCoxTransform
    DifferencingTransform
+   LimitTransform

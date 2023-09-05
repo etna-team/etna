@@ -24,6 +24,7 @@ from etna.transforms import HolidayTransform
 from etna.transforms import LabelEncoderTransform
 from etna.transforms import LagTransform
 from etna.transforms import LambdaTransform
+from etna.transforms import LimitTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import LogTransform
 from etna.transforms import MADTransform
@@ -151,6 +152,7 @@ class TestTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (LimitTransform(in_column="target"), "regular_ts"),
             (LogTransform(in_column="target", inplace=False), "positive_ts"),
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
             (DifferencingTransform(in_column="target", inplace=False), "regular_ts"),
@@ -336,6 +338,8 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "ts_with_exog",
             ),
+            (LimitTransform(in_column="target"), "regular_ts"),
+            (LimitTransform(in_column="positive"), "ts_with_exog"),
             (LogTransform(in_column="target", inplace=False), "positive_ts"),
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
             (LogTransform(in_column="positive", inplace=True), "ts_with_exog"),
@@ -455,11 +459,6 @@ class TestTransformTrainNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            (
-                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
-                "regular_ts",
-                {"create": {"res"}},
-            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -520,6 +519,8 @@ class TestTransformTrainNewSegments:
                 "regular_ts",
                 {"change": {"target"}},
             ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {"create": {"res"}}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
             (
@@ -807,6 +808,13 @@ class TestTransformFutureNewSegments:
                     inverse_transform_func=lambda x: x - 1,
                     inplace=True,
                 ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="positive"), "ts_with_exog", {}),
+            (
+                LimitTransform(in_column="positive", lower_bound=-50, upper_bound=50),
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
@@ -1157,6 +1165,8 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"change": {"target"}},
             ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {"create": {"res"}}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
             (
@@ -1496,6 +1506,13 @@ class TestTransformFutureWithoutTarget:
                     inverse_transform_func=lambda x: x - 1,
                     inplace=True,
                 ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="positive"), "ts_with_exog", {}),
+            (
+                LimitTransform(in_column="positive", lower_bound=-50, upper_bound=50),
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
