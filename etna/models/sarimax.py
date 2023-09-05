@@ -1,12 +1,12 @@
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
-from typing import Any
 
 import numpy as np
 import pandas as pd
