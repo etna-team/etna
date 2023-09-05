@@ -564,7 +564,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
-        self.fit_params = fit_params
+        self.fit_params = fit_params if fit_params else {}
         self.kwargs = kwargs
         super().__init__()
 
@@ -593,7 +593,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        result = model.fit(**self.fit_params if self.fit_params else {})
+        result = model.fit(**self.fit_params)
         return result
 
 
@@ -608,7 +608,7 @@ class SARIMAXModel(
 
     Notes
     -----
-    We use :py:class:`tatsmodels.tsa.statespace.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
+    We use :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
@@ -749,7 +749,7 @@ class SARIMAXModel(
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
-        self.fit_params = fit_params
+        self.fit_params = fit_params if fit_params else {}
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
             base_model=_SARIMAXAdapter(
