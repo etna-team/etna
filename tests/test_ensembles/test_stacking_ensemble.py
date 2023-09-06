@@ -148,6 +148,17 @@ def test_make_features(
     assert (y == targets).all()
 
 
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, naive_pipeline_1, naive_pipeline_2, save_ts):
+    ensemble = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert ensemble.ts is example_tsds
+    else:
+        assert ensemble.ts is None
+
+
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (

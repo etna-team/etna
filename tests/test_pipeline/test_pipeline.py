@@ -80,16 +80,30 @@ def test_init_fail(horizon):
         )
 
 
-def test_fit(example_tsds):
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit(example_tsds, save_ts):
     """Test that Pipeline correctly transforms dataset on fit stage."""
     original_ts = deepcopy(example_tsds)
     model = LinearPerSegmentModel()
     transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
-    pipeline.fit(example_tsds)
+    pipeline.fit(example_tsds, save_ts=save_ts)
     original_ts.fit_transform(transforms)
     original_ts.inverse_transform(transforms)
-    assert np.all(original_ts.df.values == pipeline.ts.df.values)
+    assert np.all(original_ts.df.values == example_tsds.df.values)
+
+
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, save_ts):
+    model = LinearPerSegmentModel()
+    transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
+    pipeline.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert pipeline.ts is example_tsds
+    else:
+        assert pipeline.ts is None
 
 
 @patch("etna.pipeline.pipeline.Pipeline._forecast")

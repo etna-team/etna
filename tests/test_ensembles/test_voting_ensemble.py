@@ -44,6 +44,7 @@ def test_validate_weights_fail():
     ((None, 5, [0.2, 0.2, 0.2, 0.2, 0.2]), ([0.2, 0.3, 0.5], 3, [0.2, 0.3, 0.5]), ([1, 1, 2], 3, [0.25, 0.25, 0.5])),
 )
 def test_process_weights(
+    example_tsdf: TSDataset,
     naive_pipeline_1: Pipeline,
     weights: Optional[List[float]],
     pipelines_number: int,
@@ -51,7 +52,7 @@ def test_process_weights(
 ):
     """Check that _process_weights processes weights correctly."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1 for _ in range(pipelines_number)], weights=weights)
-    result = ensemble._process_weights()
+    result = ensemble._process_weights(ts=example_tsdf)
     assert isinstance(result, list)
     assert result == expected
 
@@ -60,7 +61,7 @@ def test_process_weights_auto(example_tsdf: TSDataset, naive_pipeline_1: Pipelin
     """Check that _process_weights processes weights correctly in "auto" mode."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights="auto")
     ensemble.ts = example_tsdf
-    result = ensemble._process_weights()
+    result = ensemble._process_weights(ts=example_tsdf)
     assert isinstance(result, list)
     assert result[0] > result[1]
 
@@ -81,6 +82,17 @@ def test_fit_interface(
     result = ensemble.processed_weights
     assert isinstance(result, list)
     assert len(result) == 2
+
+
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, naive_pipeline_1, naive_pipeline_2, save_ts):
+    ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert ensemble.ts is example_tsds
+    else:
+        assert ensemble.ts is None
 
 
 def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):

@@ -1,5 +1,3 @@
-import pathlib
-from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -50,9 +48,9 @@ class HierarchicalPipeline(Pipeline):
         """
         super().__init__(model=model, transforms=transforms, horizon=horizon)
         self.reconciliator = reconciliator
-        self._fit_ts: Optional[TSDataset] = None
+        self._fitted: bool = False
 
-    def fit(self, ts: TSDataset) -> "HierarchicalPipeline":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "HierarchicalPipeline":
         """Fit the HierarchicalPipeline.
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
@@ -61,18 +59,23 @@ class HierarchicalPipeline(Pipeline):
         Parameters
         ----------
         ts:
-            Dataset with hierarchical timeseries data
+            Dataset with hierarchical timeseries data.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         :
             Fitted HierarchicalPipeline instance
         """
-        self._fit_ts = deepcopy(ts)
+        if save_ts:
+            self.ts = ts
 
         self.reconciliator.fit(ts=ts)
         ts = self.reconciliator.aggregate(ts=ts)
-        super().fit(ts=ts)
+        super().fit(ts=ts, save_ts=False)
+
+        self._fitted = True
         return self
 
     def raw_forecast(
@@ -220,11 +223,11 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the target level of hierarchy.
         """
         if ts is None:
-            if self._fit_ts is None:
+            if self.ts is None:
                 raise ValueError(
-                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline contains ts."
                 )
-            ts = self._fit_ts
+            ts = self.ts
 
         forecast = self.raw_forecast(
             ts=ts,
@@ -276,11 +279,11 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the target level in ``[start_timestamp, end_timestamp]`` range.
         """
         if ts is None:
-            if self._fit_ts is None:
+            if self.ts is None:
                 raise ValueError(
                     "There is no ts to predict! Pass ts into predict method or make sure that pipeline is loaded with ts."
                 )
-            ts = self._fit_ts
+            ts = self.ts
 
         forecast = self.raw_predict(
             ts=ts,
@@ -312,7 +315,7 @@ class HierarchicalPipeline(Pipeline):
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        if self.ts is None:
+        if not self._fitted:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
 
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
@@ -330,46 +333,3 @@ class HierarchicalPipeline(Pipeline):
 
         finally:
             self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
-
-    def save(self, path: pathlib.Path):
-        """Save the object.
-
-        Parameters
-        ----------
-        path:
-            Path to save object to.
-        """
-        fit_ts = self._fit_ts
-
-        try:
-            # extract attributes we can't easily save
-            delattr(self, "_fit_ts")
-
-            # save the remaining part
-            super().save(path=path)
-        finally:
-            self._fit_ts = fit_ts
-
-    @classmethod
-    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> "HierarchicalPipeline":
-        """Load an object.
-
-        Parameters
-        ----------
-        path:
-            Path to load object from.
-        ts:
-            TSDataset to set into loaded pipeline.
-
-        Returns
-        -------
-        :
-            Loaded object.
-        """
-        obj = super().load(path=path)
-        obj._fit_ts = deepcopy(ts)
-        if ts is not None:
-            obj.ts = obj.reconciliator.aggregate(ts=ts)
-        else:
-            obj.ts = None
-        return obj

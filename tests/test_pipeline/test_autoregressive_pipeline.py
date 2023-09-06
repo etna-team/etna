@@ -37,12 +37,26 @@ from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_pr
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
-def test_fit(example_tsds):
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit(example_tsds, save_ts):
     """Test that AutoRegressivePipeline pipeline makes fit without failing."""
     model = LinearPerSegmentModel()
     transforms = [LagTransform(in_column="target", lags=[1]), DateFlagsTransform()]
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=5, step=1)
-    pipeline.fit(example_tsds)
+    pipeline.fit(example_tsds, save_ts=save_ts)
+
+
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, save_ts):
+    model = LinearPerSegmentModel()
+    transforms = [LagTransform(in_column="target", lags=[1]), DateFlagsTransform()]
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=5, step=1)
+    pipeline.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert pipeline.ts is example_tsds
+    else:
+        assert pipeline.ts is None
 
 
 def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None, return_components: bool = False):

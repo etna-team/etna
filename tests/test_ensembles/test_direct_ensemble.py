@@ -50,6 +50,16 @@ def test_get_horizon_raise_error_on_same_horizons():
         _ = DirectEnsemble(pipelines=[Mock(horizon=1), Mock(horizon=1)])
 
 
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(direct_ensemble_pipeline, simple_ts_train, save_ts):
+    direct_ensemble_pipeline.fit(simple_ts_train, save_ts=save_ts)
+
+    if save_ts:
+        assert direct_ensemble_pipeline.ts is simple_ts_train
+    else:
+        assert direct_ensemble_pipeline.ts is None
+
+
 def test_forecast(direct_ensemble_pipeline, simple_ts_train, simple_ts_forecast):
     direct_ensemble_pipeline.fit(simple_ts_train)
     forecast = direct_ensemble_pipeline.forecast()
