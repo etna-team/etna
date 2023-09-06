@@ -1,6 +1,7 @@
 from copy import deepcopy
 from unittest.mock import Mock
 from unittest.mock import patch
+
 import numpy as np
 import pytest
 from statsmodels.tsa.statespace.sarimax import SARIMAX
