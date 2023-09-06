@@ -15,17 +15,6 @@ from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
 
 
-def spy_decorator(method_to_decorate):
-    mock = Mock()
-
-    def wrapper(self, *args, **kwargs):
-        mock(*args, **kwargs)
-        return method_to_decorate(self, *args, **kwargs)
-
-    wrapper.mock = mock
-    return wrapper
-
-
 def _check_forecast(ts, model, horizon):
     model.fit(ts)
     future_ts = ts.make_future(future_steps=horizon)
@@ -360,8 +349,8 @@ def test_params_to_tune(model, example_tsds):
 
 
 def test_fit_params_passed_to_fit_method(example_tsds):
+
     model = SARIMAXModel(fit_params={"disp": False})
-    fit = spy_decorator(SARIMAX.fit)
-    with patch.object(SARIMAX, "fit", fit):
+    with patch("statsmodels.tsa.statespace.sarimax.SARIMAX.fit", Mock()):
         model.fit(example_tsds)
-    fit.mock.assert_called_with(disp=False)
+        SARIMAX.fit.assert_called_with(disp=False)
