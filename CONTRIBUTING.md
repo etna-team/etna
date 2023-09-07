@@ -79,6 +79,7 @@ If any of checks fails, the CI will fail and your Pull Request won't be merged.
 
 ### 7. Writing a documentation
 
+If you update the code the documentation should be updated accordingly. 
 ETNA uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings. 
 The documentation is written in ReST.
 Length of a line inside docstrings block must be limited to 100 characters to fit into Jupyter documentation popups.
@@ -92,7 +93,7 @@ During creation of Pull Request make sure that your documentation looks good, ch
 4. Listings of code, e.g. variable names, are typed with monospaced font;
 5. Mathematical formulas are rendered correctly;
 6. Links to external sources are active;
-7. References to python objects should be active if library is listed in [`intersphinx_mapping`](https://github.com/etna-team/etna/blob/master/docs/source/conf.py#L68)
+7. References to python objects should be active if library is listed in [`intersphinx_mapping`](https://github.com/etna-team/etna/blob/master/docs/source/conf.py#L119)
 
 Useful links:
 1. [ReST Quickref](https://docutils.sourceforge.io/docs/user/rst/quickref.html)
@@ -104,16 +105,35 @@ Useful links:
 The simplest way to check how documentation is rendered is to make a pull request. 
 CI will build it, publish and attach a link to the pull request.
 
-#### 7.1 Adding tutorials (optional)
+#### 7.1 Standard scenarios
 
-If you are going to add a jupyter notebook tutorial:
-1. Add the notebook into `examples` folder with its prepended number.
-2. Add "launch binder" button to the notebook.
-3. Add "Table of contents" for headings of the levels 2 and 3.
-4. Install extensions that are necessary for this notebook to run.
-5. Add imports that are unrelated to the topic of the tutorial at the very top.
-6. Add new notebook with its table of contents to the `examples/README.md`
-7. Add new notebook with to the `README.md`
+You are adding a new method to the class:
+- Update the docstrings of the class / method.
+
+You are adding a new public class / function:
+- Go to the [`api_reference`](https://github.com/etna-team/etna/tree/master/docs/source/api_reference) directory.
+- Find a source page for a relevant module, e.g. `models.rst` is responsible for the `etna.models` module.
+- Find a relevant `autosummary` block within the source page and place your new entity there.
+  - Make sure you are using the correct `template`. The `class.rst` template should be used for classes, `base.rst` for everything else.
+  - Make sure you are using the correct path for the new entity taking into account the `currentmodule` directive.
+
+You are adding a new module:
+- Go to the [`api_reference`](https://github.com/etna-team/etna/tree/master/docs/source/api_reference) directory.
+- Create a new source page in that directory.
+
+You are adding a new jupyter notebook tutorial:
+- Add the notebook to the [`examples`](https://github.com/etna-team/etna/tree/master/examples) directory with its prepended number.
+- Add a "launch binder" button to the notebook.
+- Add a "Table of contents" for level 2 and 3 headings.
+- Install extensions that are necessary for this notebook to run.
+- Add imports that aren't related to the topic of the tutorial at the very top.
+- Add the new notebook and its table of contents to the `examples/README.md`.
+- Add the new notebook to the `README.md`.
+- Add a card for the created notebook according to its level of difficulty to [`tutorials.rst`](https://github.com/etna-team/etna/blob/master/docs/source/tutorials.rst).
+
+You are adding a new custom documentation page:
+- Create a new page in a [`source`](https://github.com/etna-team/etna/tree/master/docs/source) directory.
+- Add a link to the new page to [`user_guide.rst`](https://github.com/etna-team/etna/blob/master/docs/source/user_guide.rst) or any other page responsible for the documentation sections.
 
 #### 7.2 Building locally (optional)
 
@@ -139,3 +159,17 @@ make build-docs
 You could check the result in your browser by opening `build/html/index.html` file.
 
 If you have some issues with building docs - please make sure that you installed the required packages.
+
+## How to make a release
+
+This is only available for the repository members. Steps:
+1. Update `docs/source/_static/switcher.json`
+  - If you are going to release a new stable version an entry for the current stable version should be created
+2. Update `CHANGELOG.md` file:
+  - Collect all changes and delete empty bullets
+  - Specify version and date of the release
+3. Update the version in `poetry.toml`
+4. Create pull request with the changes above
+5. Merge the pull request
+6. [Create a release](https://github.com/etna-team/etna/releases) with a tag corresponding to a new version 
+7. That's all! Our CI/CD will take care of everything else.
