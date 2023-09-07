@@ -58,3 +58,4 @@ from etna.transforms.timestamp import FourierTransform
 from etna.transforms.timestamp import HolidayTransform
 from etna.transforms.timestamp import SpecialDaysTransform
 from etna.transforms.timestamp import TimeFlagsTransform
+from etna.transforms.timestamp import EventTransform
