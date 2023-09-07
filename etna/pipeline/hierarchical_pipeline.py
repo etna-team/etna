@@ -72,8 +72,8 @@ class HierarchicalPipeline(Pipeline):
             self.ts = ts
 
         self.reconciliator.fit(ts=ts)
-        ts = self.reconciliator.aggregate(ts=ts)
-        super().fit(ts=ts, save_ts=False)
+        aggregated_ts = self.reconciliator.aggregate(ts=ts)
+        super().fit(ts=aggregated_ts, save_ts=False)
 
         self._fitted = True
         return self
