@@ -97,6 +97,7 @@ Transforms to work with time-related features:
    SpecialDaysTransform
    HolidayTransform
    FourierTransform
+   EventTransform
 
 Shift transforms:
 
