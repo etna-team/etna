@@ -82,7 +82,7 @@ def load_dataset(
         Parts of the dataset to load. Each dataset has specific parts (e.g. ``("train", "test", "full")`` for
         ``electricity_15T`` dataset). By default, all datasets have "full" part, other parts may vary.
 
-        - If parts is str, then the function will return a single ``TSDataset'' object.
+        - If parts is str, then the function will return a single ``TSDataset`` object.
         - If parts is a tuple of multiple elements, then the function will return a list of ``TSDataset`` objects.
 
     Returns
