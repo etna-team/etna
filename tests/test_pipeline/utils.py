@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Tuple
 
 import pandas as pd
+import pytest
 from lightning_fabric.utilities.seed import seed_everything
 
 from etna.datasets import TSDataset
@@ -44,6 +45,34 @@ def assert_pipeline_equals_loaded_original(
     pd.testing.assert_frame_equal(forecast_ts_1.to_pandas(), forecast_ts_2.to_pandas())
 
     return pipeline, loaded_pipeline
+
+
+def assert_pipeline_forecast_raise_error_if_no_ts(pipeline: AbstractPipeline, ts: TSDataset):
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
+        _ = pipeline.forecast()
+
+    pipeline.fit(ts, save_ts=False)
+    with pytest.raises(ValueError, match="There is no ts to forecast!"):
+        _ = pipeline.forecast()
+
+
+def assert_pipeline_forecasts_without_self_ts(
+    pipeline: AbstractPipeline, ts: TSDataset, horizon: int
+) -> AbstractPipeline:
+    pipeline.fit(ts=ts, save_ts=False)
+    forecast_ts = pipeline.forecast(ts=ts)
+    forecast_df = forecast_ts.to_pandas(flatten=True)
+
+    if ts.has_hierarchy():
+        expected_segments = ts.hierarchical_structure.get_level_segments(forecast_ts.current_df_level)
+    else:
+        expected_segments = ts.segments
+    assert forecast_ts.segments == expected_segments
+    expected_index = pd.date_range(start=ts.index[-1], periods=horizon + 1, freq=ts.freq, name="timestamp")[1:]
+    pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+    assert not forecast_df["target"].isna().any()
+
+    return pipeline
 
 
 def assert_pipeline_forecasts_given_ts(pipeline: AbstractPipeline, ts: TSDataset, horizon: int) -> AbstractPipeline:

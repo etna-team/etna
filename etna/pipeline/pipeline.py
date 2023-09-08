@@ -37,7 +37,7 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         self.transforms = transforms
         super().__init__(horizon=horizon)
 
-    def fit(self, ts: TSDataset) -> "Pipeline":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "Pipeline":
         """Fit the Pipeline.
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
@@ -45,17 +45,22 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         Parameters
         ----------
         ts:
-            Dataset with timeseries data
+            Dataset with timeseries data.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         :
             Fitted Pipeline instance
         """
-        self.ts = ts
-        self.ts.fit_transform(self.transforms)
-        self.model.fit(self.ts)
-        self.ts.inverse_transform(self.transforms)
+        ts.fit_transform(self.transforms)
+        self.model.fit(ts)
+        ts.inverse_transform(self.transforms)
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
@@ -110,7 +115,7 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         if ts is None:
             if self.ts is None:
                 raise ValueError(
-                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline contains ts."
                 )
             ts = self.ts
 

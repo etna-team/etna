@@ -15,8 +15,10 @@ from etna.ensembles.stacking_ensemble import StackingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 
 HORIZON = 7
 
@@ -146,6 +148,17 @@ def test_make_features(
     assert isinstance(y, pd.Series)
     assert features == expected_features
     assert (y == targets).all()
+
+
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, naive_pipeline_1, naive_pipeline_2, save_ts):
+    ensemble = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert ensemble.ts is example_tsds
+    else:
+        assert ensemble.ts is None
 
 
 @pytest.mark.parametrize(
@@ -317,15 +330,19 @@ def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TS
         assert isinstance(df, pd.DataFrame)
 
 
-def test_forecast_raise_error_if_no_ts(naive_ensemble: StackingEnsemble):
-    """Test that StackingEnsemble raises error when calling forecast without ts."""
-    with pytest.raises(ValueError, match="There is no ts to forecast!"):
-        _ = naive_ensemble.forecast()
-
-
 @pytest.mark.parametrize("load_ts", [True, False])
 def test_save_load(stacking_ensemble_pipeline, example_tsds, load_ts):
     assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_raise_error_if_no_ts(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
+
+
+def test_forecasts_without_self_ts(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_without_self_ts(
+        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
+    )
 
 
 def test_forecast_given_ts(stacking_ensemble_pipeline, example_tsds):

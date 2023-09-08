@@ -90,23 +90,28 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             raise ValueError("All the pipelines should have pairwise different horizons.")
         return max(horizons)
 
-    def fit(self, ts: TSDataset) -> "DirectEnsemble":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "DirectEnsemble":
         """Fit pipelines in ensemble.
 
         Parameters
         ----------
         ts:
-            TSDataset to fit ensemble
+            TSDataset to fit ensemble.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         self:
             Fitted ensemble
         """
-        self.ts = ts
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _merge(self, forecasts: List[TSDataset]) -> TSDataset:
