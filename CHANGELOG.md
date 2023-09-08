@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
--
+- Add `fit_params` parameter to `etna.models.sarimax.SARIMAXModel` ([#69](https://github.com/etna-team/etna/pull/69))
 - Add `quickstart` notebook, add `mechanics_of_forecasting` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - Add gallery of tutorials divided by level ([#46](https://github.com/etna-team/etna/pull/46))
 - Create documentation page with links to external resources ([#44](https://github.com/etna-team/etna/pull/44))
