@@ -77,6 +77,9 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
             self.model = cast(ContextIgnorantModelType, self.model)
             future = ts.make_future(future_steps=self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future, return_components=return_components)
+
+        predictions.inverse_transform(self.transforms)
+
         return predictions
 
     def forecast(
@@ -127,6 +130,8 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
                 quantiles=quantiles,
                 return_components=return_components,
             )
+            predictions.inverse_transform(self.transforms)
+
         elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
             future = ts.make_future(
                 future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.context_size
@@ -138,6 +143,8 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
                 quantiles=quantiles,
                 return_components=return_components,
             )
+            predictions.inverse_transform(self.transforms)
+
         else:
             predictions = super().forecast(
                 ts=ts,
@@ -146,5 +153,5 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
                 n_folds=n_folds,
                 return_components=return_components,
             )
-        predictions.inverse_transform(self.transforms)
+
         return predictions

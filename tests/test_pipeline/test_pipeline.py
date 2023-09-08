@@ -38,6 +38,7 @@ from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import LogTransform
+from etna.transforms import ReversibleTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
@@ -219,6 +220,31 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     base_forecast.assert_called_with(
         ts=ts, prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3, return_components=False
     )
+
+
+@pytest.mark.parametrize(
+    "model_class",
+    [
+        PredictionIntervalContextIgnorantAbstractModel,
+        PredictionIntervalContextRequiredAbstractModel,
+        NonPredictionIntervalContextIgnorantAbstractModel,
+    ],
+)
+def test_forecast_inverse_transformed(model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+    transform = MagicMock(spec=ReversibleTransform)
+    interval_method = MagicMock(side_effect=lambda *args, **kwargs: kwargs["predictions"])
+
+    pipeline = Pipeline(model=model, transforms=[transform], horizon=5)
+
+    # mocking default interval estimation method
+    pipeline._forecast_prediction_interval = interval_method
+
+    pipeline.fit(ts)
+    predictions = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+
+    predictions.inverse_transform.assert_called()
 
 
 def test_forecast_values(example_tsds):
