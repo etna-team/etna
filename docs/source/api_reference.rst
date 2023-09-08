@@ -15,6 +15,7 @@ For more user-friendly manual please use :doc:`tutorials` section.
    api_reference/metrics
    api_reference/pipeline
    api_reference/ensembles
+   api_reference/prediction_intervals
    api_reference/analysis
    api_reference/distributions
    api_reference/auto
