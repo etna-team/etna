@@ -31,8 +31,10 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -218,13 +220,6 @@ def test_forecast_with_fit_transforms(example_tsds):
     pipeline.forecast()
 
 
-def test_forecast_raise_error_if_no_ts():
-    """Test that AutoRegressivePipeline raises error when calling forecast without ts."""
-    pipeline = AutoRegressivePipeline(model=LinearPerSegmentModel(), horizon=5)
-    with pytest.raises(ValueError, match="There is no ts to forecast!"):
-        _ = pipeline.forecast()
-
-
 @pytest.mark.long_1
 def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     """Check that AutoRegressivePipeline.backtest gives the same results in case of single and multiple jobs modes."""
@@ -334,6 +329,33 @@ def test_save_load(load_ts, model, transforms, example_tsds):
     horizon = 3
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon, step=1)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_raise_error_if_no_ts(example_tsds):
+    pipeline = AutoRegressivePipeline(model=NaiveModel(), horizon=5)
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=pipeline, ts=example_tsds)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecasts_without_self_ts(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
 
 
 @pytest.mark.parametrize(

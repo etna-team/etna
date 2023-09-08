@@ -15,8 +15,10 @@ from etna.ensembles.stacking_ensemble import StackingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 
 HORIZON = 7
 
@@ -328,15 +330,19 @@ def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TS
         assert isinstance(df, pd.DataFrame)
 
 
-def test_forecast_raise_error_if_no_ts(naive_ensemble: StackingEnsemble):
-    """Test that StackingEnsemble raises error when calling forecast without ts."""
-    with pytest.raises(ValueError, match="There is no ts to forecast!"):
-        _ = naive_ensemble.forecast()
-
-
 @pytest.mark.parametrize("load_ts", [True, False])
 def test_save_load(stacking_ensemble_pipeline, example_tsds, load_ts):
     assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_raise_error_if_no_ts(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
+
+
+def test_forecasts_without_self_ts(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_without_self_ts(
+        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
+    )
 
 
 def test_forecast_given_ts(stacking_ensemble_pipeline, example_tsds):

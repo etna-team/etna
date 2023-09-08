@@ -23,8 +23,10 @@ from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 
 
 @pytest.mark.parametrize(
@@ -143,6 +145,18 @@ def test_raw_predict_level(market_level_simple_hierarchical_ts, reconciliator):
     pipeline.fit(ts=ts)
     forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.index[1])
     assert forecast.current_df_level == pipeline.reconciliator.source_level
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+def test_forecast_raise_error_if_no_ts(market_level_constant_hierarchical_ts, reconciliator):
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=pipeline, ts=market_level_constant_hierarchical_ts)
 
 
 @pytest.mark.parametrize(
@@ -452,6 +466,38 @@ def test_save_load(model, transforms, reconciliator, product_level_constant_hier
     horizon = 1
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=product_level_constant_hierarchical_ts)
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (NaiveModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecasts_without_self_ts(model, transforms, reconciliator, product_level_constant_hierarchical_ts):
+    horizon = 1
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_without_self_ts(
+        pipeline=pipeline, ts=product_level_constant_hierarchical_ts, horizon=horizon
+    )
 
 
 @pytest.mark.parametrize(

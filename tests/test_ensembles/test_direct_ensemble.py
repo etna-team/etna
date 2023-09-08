@@ -9,8 +9,10 @@ from etna.ensembles import DirectEnsemble
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 
 
 @pytest.fixture
@@ -82,6 +84,16 @@ def test_predict(direct_ensemble_pipeline, simple_ts_train):
 @pytest.mark.parametrize("load_ts", [True, False])
 def test_save_load(load_ts, direct_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=direct_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_raise_error_if_no_ts(direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=direct_ensemble_pipeline, ts=example_tsds)
+
+
+def test_forecasts_without_self_ts(direct_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecasts_without_self_ts(
+        pipeline=direct_ensemble_pipeline, ts=example_tsds, horizon=direct_ensemble_pipeline.horizon
+    )
 
 
 def test_forecast_given_ts(direct_ensemble_pipeline, example_tsds):
