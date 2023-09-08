@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unify example notebooks, rerun example notebooks ([#1330](https://github.com/tinkoff-ai/etna/pull/1330))
 - Rework `get_started` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - Add missing classes from decomposition into API Reference, add modules into page titles in API Reference ([#61](https://github.com/etna-team/etna/pull/61))
+- Update `CONTRIBUTING.md` with scenarios of documentation updates and release instruction ([#77](https://github.com/etna-team/etna/pull/77))
 
 ### Fixed
 -
