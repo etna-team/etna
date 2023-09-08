@@ -107,21 +107,21 @@ CI will build it, publish and attach a link to the pull request.
 
 #### 7.1 Standard scenarios
 
-**You are adding a new method to the class**
+**Adding a new method to the class**
 - Update the docstrings of the class / method.
 
-**You are adding a new public class / function**
+**Adding a new public class / function**
 - Go to the [`api_reference`](https://github.com/etna-team/etna/tree/master/docs/source/api_reference) directory.
 - Find a source page for a relevant module, e.g. `models.rst` is responsible for the `etna.models` module.
 - Find a relevant `autosummary` block within the source page and place your new entity there.
   - Make sure you are using the correct `template`. The `class.rst` template should be used for classes, `base.rst` for everything else.
   - Make sure you are using the correct path for the new entity taking into account the `currentmodule` directive.
 
-**You are adding a new module**
+**Adding a new module**
 - Go to the [`api_reference`](https://github.com/etna-team/etna/tree/master/docs/source/api_reference) directory.
 - Create a new source page in that directory.
 
-**You are adding a new jupyter notebook tutorial**
+**Adding a new jupyter notebook tutorial**
 - Add the notebook to the [`examples`](https://github.com/etna-team/etna/tree/master/examples) directory with its prepended number.
 - Add a "launch binder" button to the notebook.
 - Add a "Table of contents" for level 2 and 3 headings.
@@ -131,7 +131,7 @@ CI will build it, publish and attach a link to the pull request.
 - Add the new notebook to the `README.md`.
 - Add a card for the created notebook according to its level of difficulty to [`tutorials.rst`](https://github.com/etna-team/etna/blob/master/docs/source/tutorials.rst).
 
-**You are adding a new custom documentation page**
+**Adding a new custom documentation page**
 - Create a new page in a [`source`](https://github.com/etna-team/etna/tree/master/docs/source) directory.
 - Add a link to the new page to [`user_guide.rst`](https://github.com/etna-team/etna/blob/master/docs/source/user_guide.rst) or any other page responsible for the documentation sections.
 
