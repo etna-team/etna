@@ -116,13 +116,21 @@ def load_dataset(
         get_dataset_function(dataset_dir)
 
     if len(parts_) == 1:
-        data = pd.read_csv(dataset_dir / f"{name}_{parts_[0]}.csv.gz", compression="gzip", header=[0, 1], index_col=[0])
+        data = pd.read_csv(
+            dataset_dir / f"{name}_{parts_[0]}.csv.gz",
+            compression="gzip",
+            header=[0, 1],
+            index_col=[0],
+            parse_dates=[0],
+        )
         ts = TSDataset(data, freq=freq)
         return ts
     else:
         ts_out = []
         for part in parts_:
-            data = pd.read_csv(dataset_dir / f"{name}_{part}.csv.gz", compression="gzip", header=[0, 1], index_col=[0])
+            data = pd.read_csv(
+                dataset_dir / f"{name}_{part}.csv.gz", compression="gzip", header=[0, 1], index_col=[0], parse_dates=[0]
+            )
             ts = TSDataset(data, freq=freq)
             ts_out.append(ts)
         return ts_out
