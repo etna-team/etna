@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Add `electricity` to internal datasets ([#60](https://github.com/etna-team/etna/pull/60))
--
+- Add `parts` argument to `load_dataset` function ([#79](https://github.com/etna-team/etna/pull/79))
 -
 -
 
