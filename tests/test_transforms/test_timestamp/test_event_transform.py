@@ -159,6 +159,6 @@ def test_backtest(ts_check_pipeline_with_event_transform: TSDataset):
 
 
 def test_params_to_tune(ts_check_pipeline_with_event_transform: TSDataset):
-    transform = EventTransform(in_column='holiday', out_column='holiday')
+    transform = EventTransform(in_column="holiday", out_column="holiday")
     assert len(transform.params_to_tune()) == 3
     assert_sampling_is_valid(transform=transform, ts=ts_check_pipeline_with_event_transform)
