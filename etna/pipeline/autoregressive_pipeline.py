@@ -78,7 +78,7 @@ class AutoRegressivePipeline(
         self.step = step
         super().__init__(horizon=horizon)
 
-    def fit(self, ts: TSDataset) -> "AutoRegressivePipeline":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "AutoRegressivePipeline":
         """Fit the AutoRegressivePipeline.
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
@@ -86,17 +86,22 @@ class AutoRegressivePipeline(
         Parameters
         ----------
         ts:
-            Dataset with timeseries data
+            Dataset with timeseries data.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         :
             Fitted Pipeline instance
         """
-        self.ts = ts
         ts.fit_transform(self.transforms)
         self.model.fit(ts)
-        self.ts.inverse_transform(self.transforms)
+        ts.inverse_transform(self.transforms)
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _create_predictions_template(self, ts: TSDataset) -> pd.DataFrame:

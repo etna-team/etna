@@ -124,13 +124,15 @@ class AbstractPipeline(AbstractSaveable):
     """Interface for pipeline."""
 
     @abstractmethod
-    def fit(self, ts: TSDataset) -> "AbstractPipeline":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "AbstractPipeline":
         """Fit the Pipeline.
 
         Parameters
         ----------
         ts:
             Dataset with timeseries data
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
@@ -443,7 +445,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         if ts is None:
             if self.ts is None:
                 raise ValueError(
-                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline contains ts."
                 )
             ts = self.ts
 
@@ -684,7 +686,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Fit pipeline for a given data in backtest."""
         tslogger.start_experiment(job_type="training", group=str(fold_number))
         pipeline = deepcopy(self)
-        pipeline.fit(ts=ts)
+        pipeline.fit(ts=ts, save_ts=False)
         tslogger.finish_experiment()
         return pipeline
 
