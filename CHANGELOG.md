@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `CONTRIBUTING.md` with scenarios of documentation updates and release instruction ([#77](https://github.com/etna-team/etna/pull/77))
 
 ### Fixed
--
+- Fix `ResampleWithDistributionTransform` working with holidays transform([#82](https://github.com/etna-team/etna/pull/82))
 -
 - Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
 - 
