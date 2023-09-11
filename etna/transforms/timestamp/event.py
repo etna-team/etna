@@ -33,6 +33,30 @@ class EventTransform(IrreversibleTransform):
     * In `'binary'` mode shows whether there will be or were events regarding current date.
 
     * In `'distance'` mode shows distance to the previous and future events regarding current date. Computed as :math:`1 / x`, where x is a distance to the nearest event.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import pandas as pd
+    >>> from etna.datasets import TSDataset
+    >>> from etna.transforms import EventTransform
+    >>> periods = 5
+    >>> df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
+    >>> df["segment"] = ["segment_1"] * periods
+    >>> df["target"] = np.arange(periods)
+    >>> df["holiday"] = np.array([0, 1, 1, 0, 0])
+    >>> df = TSDataset.to_dataset(df)
+    >>> tsds = TSDataset(df, freq="D")
+    >>> transform = EventTransform(in_column='holiday', out_column='holiday')
+    >>> transform.fit_transform(tsds)
+    segment    segment_1
+    feature      holiday holiday_post holiday_prev target
+    timestamp
+    2020-01-01         0          0.0          1.0      0
+    2020-01-02         1          0.0          0.0      1
+    2020-01-03         1          0.0          0.0      2
+    2020-01-04         0          1.0          0.0      3
+    2020-01-05         0          0.0          0.0      4
     """
 
     def __init__(
@@ -53,6 +77,7 @@ class EventTransform(IrreversibleTransform):
             number of days after the event to react.
         mode:
             mode of marking events:
+
             - `'binary'`: whether there will be or were events regarding current date in binary type;
             - `'distance'`: distance to the previous and future events regarding current date;
 

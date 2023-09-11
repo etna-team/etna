@@ -9,6 +9,7 @@ from etna.metrics import MSE
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from etna.transforms.timestamp import EventTransform
+from tests.test_transforms.utils import assert_sampling_is_valid
 
 
 @pytest.fixture
@@ -155,3 +156,9 @@ def test_backtest(ts_check_pipeline_with_event_transform: TSDataset):
     transform = EventTransform(in_column="holiday", out_column="holiday")
     pipeline = Pipeline(model=model, transforms=[transform], horizon=10)
     pipeline.backtest(ts=ts_check_pipeline_with_event_transform, metrics=[MSE()], n_folds=2)
+
+
+def test_params_to_tune(ts_check_pipeline_with_event_transform: TSDataset):
+    transform = EventTransform(in_column='holiday', out_column='holiday')
+    assert len(transform.params_to_tune()) == 3
+    assert_sampling_is_valid(transform=transform, ts=ts_check_pipeline_with_event_transform)
