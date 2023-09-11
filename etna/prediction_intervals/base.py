@@ -32,7 +32,7 @@ class BasePredictionIntervals(BasePipeline):
         super().__init__(pipeline.horizon)
         self.pipeline.ts = ts
 
-    def fit(self, ts: TSDataset) -> "BasePredictionIntervals":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "BasePredictionIntervals":
         """Fit the pipeline or ensemble of pipelines.
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
@@ -41,13 +41,15 @@ class BasePredictionIntervals(BasePipeline):
         ----------
         ts:
             Dataset with timeseries data.
+        save_ts:
+            Whether to save ``ts`` in the pipeline during ``fit``.
 
         Returns
         -------
         :
             Fitted instance.
         """
-        self.pipeline.fit(ts=ts)
+        self.pipeline.fit(ts=ts, save_ts=save_ts)
         return self
 
     @property
