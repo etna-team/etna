@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
--
+- Add `fit_params` parameter to `etna.models.sarimax.SARIMAXModel` ([#69](https://github.com/etna-team/etna/pull/69))
 - Add `quickstart` notebook, add `mechanics_of_forecasting` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - Add gallery of tutorials divided by level ([#46](https://github.com/etna-team/etna/pull/46))
 - Create documentation page with links to external resources ([#44](https://github.com/etna-team/etna/pull/44))
@@ -17,16 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add multiversion switcher into documentation ([#55](https://github.com/etna-team/etna/pull/55))
 - Add error page into documentation ([#57](https://github.com/etna-team/etna/pull/57))
 - Add `LimitTransform` ([#63](https://github.com/etna-team/etna/pull/63))
+- Add config for Codecov to control CI ([#80](https://github.com/etna-team/etna/pull/80)) 
 - Add `EventTransform` ([#78](https://github.com/etna-team/etna/pull/78))
 
 ### Changed
 -
--
+- Refactored transform inversion logic in `Pipeline` `forecast` method ([#72](https://github.com/etna-team/etna/pull/72))
+- Add parameter `save_ts` to pipeline method `fit` ([#73](https://github.com/etna-team/etna/pull/73))
 - Add installation page and notes about extensions into documentation of public classes ([#1339](https://github.com/tinkoff-ai/etna/pull/1339))
 - Merge User Guide and API sections in documentation, limit classes to show in API section ([#1324](https://github.com/tinkoff-ai/etna/pull/1324))
 - Unify example notebooks, rerun example notebooks ([#1330](https://github.com/tinkoff-ai/etna/pull/1330))
 - Rework `get_started` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - Add missing classes from decomposition into API Reference, add modules into page titles in API Reference ([#61](https://github.com/etna-team/etna/pull/61))
+- Update `CONTRIBUTING.md` with scenarios of documentation updates and release instruction ([#77](https://github.com/etna-team/etna/pull/77))
 
 ### Fixed
 -

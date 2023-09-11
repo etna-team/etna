@@ -1,7 +1,10 @@
 from copy import deepcopy
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
@@ -343,3 +346,11 @@ def test_params_to_tune(model, example_tsds):
     ts = example_tsds
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
+
+
+def test_fit_params_passed_to_fit_method(example_tsds):
+
+    model = SARIMAXModel(fit_params={"disp": False})
+    with patch("statsmodels.tsa.statespace.sarimax.SARIMAX.fit", Mock()):
+        model.fit(example_tsds)
+        SARIMAX.fit.assert_called_with(disp=False)

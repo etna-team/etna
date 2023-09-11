@@ -38,10 +38,13 @@ from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import LogTransform
+from etna.transforms import ReversibleTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -80,16 +83,30 @@ def test_init_fail(horizon):
         )
 
 
-def test_fit(example_tsds):
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit(example_tsds, save_ts):
     """Test that Pipeline correctly transforms dataset on fit stage."""
     original_ts = deepcopy(example_tsds)
     model = LinearPerSegmentModel()
     transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
-    pipeline.fit(example_tsds)
+    pipeline.fit(example_tsds, save_ts=save_ts)
     original_ts.fit_transform(transforms)
     original_ts.inverse_transform(transforms)
-    assert np.all(original_ts.df.values == pipeline.ts.df.values)
+    assert np.all(original_ts.df.values == example_tsds.df.values)
+
+
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, save_ts):
+    model = LinearPerSegmentModel()
+    transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
+    pipeline.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert pipeline.ts is example_tsds
+    else:
+        assert pipeline.ts is None
 
 
 @patch("etna.pipeline.pipeline.Pipeline._forecast")
@@ -203,6 +220,31 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     base_forecast.assert_called_with(
         ts=ts, prediction_interval=True, quantiles=(0.025, 0.975), n_folds=3, return_components=False
     )
+
+
+@pytest.mark.parametrize(
+    "model_class",
+    [
+        PredictionIntervalContextIgnorantAbstractModel,
+        PredictionIntervalContextRequiredAbstractModel,
+        NonPredictionIntervalContextIgnorantAbstractModel,
+    ],
+)
+def test_forecast_inverse_transformed(model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+    transform = MagicMock(spec=ReversibleTransform)
+    interval_method = MagicMock(side_effect=lambda *args, **kwargs: kwargs["predictions"])
+
+    pipeline = Pipeline(model=model, transforms=[transform], horizon=5)
+
+    # mocking default interval estimation method
+    pipeline._forecast_prediction_interval = interval_method
+
+    pipeline.fit(ts)
+    predictions = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+
+    predictions.inverse_transform.assert_called()
 
 
 def test_forecast_values(example_tsds):
@@ -715,13 +757,6 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
     assert np.all(forecast_df == expected_forecast_df)
 
 
-def test_forecast_raise_error_if_no_ts():
-    """Test that Pipeline raises error when calling forecast without ts."""
-    pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    with pytest.raises(ValueError, match="There is no ts to forecast!"):
-        _ = pipeline.forecast()
-
-
 def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
     """Test that Pipeline can forecast with datasets with nans at the end."""
     pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
@@ -1181,6 +1216,33 @@ def test_save_load(load_ts, model, transforms, example_tsds):
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_raise_error_if_no_ts(example_tsds):
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=pipeline, ts=example_tsds)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecasts_without_self_ts(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
 
 
 @pytest.mark.parametrize(

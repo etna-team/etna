@@ -131,16 +131,13 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 
-    def _process_weights(self) -> List[float]:
+    def _process_weights(self, ts: TSDataset) -> List[float]:
         """Get the weights of base estimators depending on the weights mode."""
         if self.weights is None:
             weights = [1.0 for _ in range(len(self.pipelines))]
         elif self.weights == "auto":
-            if self.ts is None:
-                raise ValueError("Something went wrong, ts is None!")
-
             forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-                delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(self.ts)) for pipeline in self.pipelines
+                delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
             )
 
             x = pd.concat(
@@ -150,13 +147,10 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
                 ],
                 axis=1,
             )
-            x = pd.concat([x.loc[:, segment] for segment in self.ts.segments], axis=0)
+            x = pd.concat([x.loc[:, segment] for segment in ts.segments], axis=0)
 
             y = pd.concat(
-                [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"]
-                    for segment in self.ts.segments
-                ],
+                [ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"] for segment in ts.segments],
                 axis=0,
             )
 
@@ -168,24 +162,29 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         weights = [w / common_weight for w in weights]
         return weights
 
-    def fit(self, ts: TSDataset) -> "VotingEnsemble":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "VotingEnsemble":
         """Fit pipelines in ensemble.
 
         Parameters
         ----------
         ts:
-            TSDataset to fit ensemble
+            TSDataset to fit ensemble.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         self:
             Fitted ensemble
         """
-        self.ts = ts
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
-        self.processed_weights = self._process_weights()
+        self.processed_weights = self._process_weights(ts=ts)
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _vote(self, forecasts: List[TSDataset]) -> TSDataset:
