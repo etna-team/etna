@@ -7,6 +7,39 @@ from etna.datasets import duplicate_data
 
 
 @pytest.fixture
+def ts_with_binary_exoc(random_seed) -> TSDataset:
+    periods_df = 100
+    periods_df_exoc = periods_df + 10
+    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods_df)})
+    df_1["segment"] = ["segment_1"] * periods_df
+    df_1["target"] = np.arange(periods_df)
+    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods_df)})
+    df_2["segment"] = ["segment_2"] * periods_df
+    df_2["target"] = np.arange(periods_df)
+    df_3 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods_df)})
+    df_3["segment"] = ["segment_3"] * periods_df
+    df_3["target"] = np.arange(periods_df)
+
+    df_exoc_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods_df_exoc)})
+    df_exoc_1["segment"] = ["segment_1"] * periods_df_exoc
+    df_exoc_1["exoc"] = np.random.choice([0, 1], size=periods_df_exoc)
+    df_exoc_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods_df_exoc)})
+    df_exoc_2["segment"] = ["segment_2"] * periods_df_exoc
+    df_exoc_2["exoc"] = np.random.choice([0, 1], size=periods_df_exoc)
+    df_exoc_3 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods_df_exoc)})
+    df_exoc_3["segment"] = ["segment_3"] * periods_df_exoc
+    df_exoc_3["exoc"] = np.random.choice([0, 1], size=periods_df_exoc)
+
+    df = pd.concat([df_1, df_2, df_3])
+    df_exoc = pd.concat([df_exoc_1, df_exoc_2, df_exoc_3])
+
+    df = TSDataset.to_dataset(df)
+    df_exoc = TSDataset.to_dataset(df_exoc)
+    tsds = TSDataset(df, freq="D", df_exog=df_exoc, known_future=["exoc"])
+    return tsds
+
+
+@pytest.fixture
 def regular_ts(random_seed) -> TSDataset:
     periods = 100
     df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})

@@ -17,6 +17,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EventTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
@@ -217,6 +218,8 @@ class TestTransformTrainSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
         ],
     )
     def test_transform_train_subset_segments(self, transform, dataset_name, request):
@@ -418,6 +421,8 @@ class TestTransformFutureSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
         ],
     )
     def test_transform_future_subset_segments(self, transform, dataset_name, request):
@@ -614,6 +619,16 @@ class TestTransformTrainNewSegments:
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
+            (
+                EventTransform(in_column="exoc", out_column="exoc"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
+            ),
+            (
+                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
             ),
         ],
     )
@@ -942,6 +957,16 @@ class TestTransformFutureNewSegments:
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
+            (
+                EventTransform(in_column="exoc", out_column="exoc"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
+            ),
+            (
+                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
             ),
         ],
     )
@@ -1348,6 +1373,16 @@ class TestTransformFutureWithTarget:
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                EventTransform(in_column="exoc", out_column="exoc"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
+            ),
+            (
+                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
+            ),
         ],
     )
     def test_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
@@ -1735,6 +1770,16 @@ class TestTransformFutureWithoutTarget:
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                EventTransform(in_column="exoc", out_column="exoc"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
+            ),
+            (
+                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
+                "ts_with_binary_exoc",
+                {"create": {"exoc_prev", "exoc_post"}},
+            ),
         ],
     )
     def test_transform_future_without_target(self, transform, dataset_name, expected_changes, request):

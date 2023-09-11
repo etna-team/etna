@@ -17,6 +17,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EventTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
@@ -225,6 +226,8 @@ class TestInverseTransformTrainSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
         ],
     )
     def test_inverse_transform_train_subset_segments(self, transform, dataset_name, request):
@@ -436,6 +439,8 @@ class TestInverseTransformFutureSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
         ],
     )
     def test_inverse_transform_future_subset_segments(self, transform, dataset_name, request):
@@ -669,6 +674,8 @@ class TestInverseTransformTrainNewSegments:
                 "regular_ts",
                 {},
             ),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
         ],
     )
     def test_inverse_transform_train_new_segments(self, transform, dataset_name, expected_changes, request):
@@ -1005,6 +1012,8 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
         ],
     )
     def test_inverse_transform_future_new_segments(self, transform, dataset_name, expected_changes, request):
@@ -1493,6 +1502,8 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
         ],
     )
     def test_inverse_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
@@ -1920,6 +1931,8 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
+            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
         ],
     )
     def test_inverse_transform_future_without_target(self, transform, dataset_name, expected_changes, request):

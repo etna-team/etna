@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add multiversion switcher into documentation ([#55](https://github.com/etna-team/etna/pull/55))
 - Add error page into documentation ([#57](https://github.com/etna-team/etna/pull/57))
 - Add `LimitTransform` ([#63](https://github.com/etna-team/etna/pull/63))
+- Add `EventTransform` ([#78](https://github.com/etna-team/etna/pull/78))
 
 ### Changed
 -

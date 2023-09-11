@@ -54,8 +54,8 @@ from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.outliers import PredictionIntervalOutliersTransform
 from etna.transforms.timestamp import DateFlagsTransform
+from etna.transforms.timestamp import EventTransform
 from etna.transforms.timestamp import FourierTransform
 from etna.transforms.timestamp import HolidayTransform
 from etna.transforms.timestamp import SpecialDaysTransform
 from etna.transforms.timestamp import TimeFlagsTransform
-from etna.transforms.timestamp import EventTransform
