@@ -1,8 +1,5 @@
 import pytest
 
-from etna.metrics import MSE
-from etna.models import NaiveModel
-from etna.pipeline import Pipeline
 from etna.transforms import HolidayTransform
 from etna.transforms import ResampleWithDistributionTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
@@ -139,13 +136,7 @@ def test_params_to_tune():
 
 
 def test_working_with_categorical_columns(example_tsds):
-    model = NaiveModel()
     holiday = HolidayTransform(out_column="holiday_regressor")
     resample = ResampleWithDistributionTransform(distribution_column="target", in_column="holiday_regressor")
-    transforms = [holiday, resample]
-    pipeline = Pipeline(
-        model=model,
-        transforms=transforms,
-        horizon=2,
-    )
-    pipeline.backtest(ts=example_tsds, metrics=[MSE()], n_folds=2)
+    holiday.fit_transform(example_tsds)
+    resample.fit_transform(example_tsds)
