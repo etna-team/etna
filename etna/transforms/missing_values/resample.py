@@ -96,6 +96,7 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
         :
             result dataframe
         """
+        df = df.apply(pd.to_numeric)
         df["fold"] = self._get_folds(df)
         df = df.reset_index().merge(self.distribution, on="fold").set_index("timestamp").sort_index()
         df[self.out_column] = df[self.in_column].ffill() * df["distribution"]
