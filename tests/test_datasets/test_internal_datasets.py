@@ -73,10 +73,16 @@ def test_not_present_part():
         _ = load_dataset("custom_internal_dataset", parts="val")
 
 
-@pytest.mark.skip(reason="Dataset is too large for testing in GitHub.")
 @pytest.mark.parametrize(
     "dataset_name, expected_shape, expected_min_date, expected_max_date",
-    [("electricity_15T", (140256, 370), pd.to_datetime("2011-01-01 00:15:00"), pd.to_datetime("2015-01-01 00:00:00"))],
+    [
+        ("m4_hourly", (1008, 414), pd.to_datetime("2021-11-20 01:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+        ("m4_daily", (9933, 4227), pd.to_datetime("1994-10-23 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+        ("m4_weekly", (2610, 359), pd.to_datetime("1971-12-27 00:00:00"), pd.to_datetime("2021-12-27 00:00:00")),
+        ("m4_monthly", (2812, 48000), pd.to_datetime("1787-09-30 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+        ("m4_quarterly", (874, 24000), pd.to_datetime("1803-10-01 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+        ("m4_yearly", (841, 23000), pd.to_datetime("2019-09-14 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+    ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date):
     ts = load_dataset(dataset_name, parts="full")
