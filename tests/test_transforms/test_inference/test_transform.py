@@ -218,8 +218,11 @@ class TestTransformTrainSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_transform_train_subset_segments(self, transform, dataset_name, request):
@@ -421,8 +424,11 @@ class TestTransformFutureSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_transform_future_subset_segments(self, transform, dataset_name, request):
@@ -621,14 +627,14 @@ class TestTransformTrainNewSegments:
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (
-                EventTransform(in_column="exoc", out_column="exoc"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
             (
-                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
         ],
     )
@@ -959,14 +965,14 @@ class TestTransformFutureNewSegments:
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (
-                EventTransform(in_column="exoc", out_column="exoc"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
             (
-                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
         ],
     )
@@ -1374,14 +1380,14 @@ class TestTransformFutureWithTarget:
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
             (
-                EventTransform(in_column="exoc", out_column="exoc"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
             (
-                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
         ],
     )
@@ -1771,14 +1777,14 @@ class TestTransformFutureWithoutTarget:
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
             (
-                EventTransform(in_column="exoc", out_column="exoc"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
             (
-                EventTransform(in_column="exoc", out_column="exoc", mode="distance"),
-                "ts_with_binary_exoc",
-                {"create": {"exoc_prev", "exoc_post"}},
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
         ],
     )

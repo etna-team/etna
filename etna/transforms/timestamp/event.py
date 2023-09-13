@@ -28,6 +28,7 @@ class ImputerMode(str, Enum):
 
 class EventTransform(IrreversibleTransform):
     """EventTransform marks days before and after event depending on ``mode``.
+
      It creates two columns for future and past.
 
     * In `'binary'` mode shows whether there will be or were events regarding current date.
@@ -36,32 +37,52 @@ class EventTransform(IrreversibleTransform):
 
     Examples
     --------
+    >>> from copy import deepcopy
     >>> import numpy as np
     >>> import pandas as pd
+    >>> from etna.datasets import generate_const_df
     >>> from etna.datasets import TSDataset
     >>> from etna.transforms import EventTransform
-    >>> periods = 5
-    >>> df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
-    >>> df["segment"] = ["segment_1"] * periods
-    >>> df["target"] = np.arange(periods)
-    >>> df["holiday"] = np.array([0, 1, 1, 0, 0])
+    >>>
+    >>> df = generate_const_df(start_time="2020-01-01", periods=10, freq="D", scale=1, n_segments=1)
+    >>> df["holiday"] = np.array([0, 1, 0, 1, 1, 0, 0, 0, 1, 0])
     >>> df = TSDataset.to_dataset(df)
     >>> tsds = TSDataset(df, freq="D")
-    >>> transform = EventTransform(in_column='holiday', out_column='holiday')
+    >>> ts_copy = deepcopy(tsds)
+    >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=1, n_post=1)
     >>> transform.fit_transform(tsds)
-    segment    segment_1
-    feature      holiday holiday_post holiday_prev target
+    segment    segment_0
+    feature      holiday holiday_post holiday_pre target
     timestamp
-    2020-01-01         0          0.0          1.0      0
-    2020-01-02         1          0.0          0.0      1
-    2020-01-03         1          0.0          0.0      2
-    2020-01-04         0          1.0          0.0      3
-    2020-01-05         0          0.0          0.0      4
+    2020-01-01         0          0.0          1.0    1.0
+    2020-01-02         1          0.0          0.0    1.0
+    2020-01-03         0          1.0          1.0    1.0
+    2020-01-04         1          0.0          0.0    1.0
+    2020-01-05         1          0.0          0.0    1.0
+    2020-01-06         0          1.0          0.0    1.0
+    2020-01-07         0          0.0          0.0    1.0
+    2020-01-08         0          0.0          1.0    1.0
+    2020-01-09         1          0.0          0.0    1.0
+    2020-01-10         0          1.0          0.0    1.0
+
+    >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=2, n_post=2)
+    >>> transform.fit_transform(ts_copy)
+    segment    segment_0
+    feature      holiday holiday_post holiday_pre target
+    timestamp
+    2020-01-01         0          0.0          1.0    1.0
+    2020-01-02         1          0.0          0.0    1.0
+    2020-01-03         0          1.0          1.0    1.0
+    2020-01-04         1          0.0          0.0    1.0
+    2020-01-05         1          0.0          0.0    1.0
+    2020-01-06         0          1.0          0.0    1.0
+    2020-01-07         0          1.0          1.0    1.0
+    2020-01-08         0          0.0          1.0    1.0
+    2020-01-09         1          0.0          0.0    1.0
+    2020-01-10         0          1.0          0.0    1.0
     """
 
-    def __init__(
-        self, in_column: str, out_column: str, n_pre: int = 1, n_post: int = 1, mode: str = ImputerMode.binary
-    ):
+    def __init__(self, in_column: str, out_column: str, n_pre: int, n_post: int, mode: str = ImputerMode.binary):
         """
         Init EventTransform.
 
@@ -90,14 +111,15 @@ class EventTransform(IrreversibleTransform):
         NotImplementedError:
             Given ``mode`` value is not supported.
         """
+        if n_pre < 1 or n_post < 1:
+            raise ValueError(f"`n_pre` and `n_post` must be greater than zero, given {n_pre} and {n_post}")
         super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
         self.n_pre = n_pre
         self.n_post = n_post
-        self.mode = mode
+        self.mode = ImputerMode(mode)
         self.in_column_regressor: Optional[bool] = None
-        self._mode = ImputerMode(mode)
 
     def fit(self, ts: TSDataset) -> "EventTransform":
         """Fit the transform."""
@@ -122,15 +144,11 @@ class EventTransform(IrreversibleTransform):
 
         col = indexes.copy()
         col.mask(df != 1, None, inplace=True)
-        if column == "prev":
-            col = col.bfill().fillna(indexes)
-            col = col - indexes
-        else:
-            col = col.ffill().fillna(indexes)
-            col = indexes - col
+        col = (col.bfill() if column == "pre" else col.ffill()).fillna(indexes)
+        col = (col - indexes).abs()
         distance = 1 if self.mode == "binary" else 1 / col
         col.mask(col > max_distance, 0, inplace=True)
-        col.mask((col >= 1) & (col <= max_distance), distance, inplace=True)
+        col = col.mask((col >= 1) & (col <= max_distance), distance).astype(float)
 
         col.rename(columns={self.in_column: f"{self.out_column}_{column}"}, inplace=True, level="feature")
         return col
@@ -149,15 +167,13 @@ class EventTransform(IrreversibleTransform):
             transformed dataframe
 
         """
-        if set(df.values.reshape(-1)) != {0, 1}:
+        if not set(df.values.reshape(-1)).issubset({0, 1}):
             raise ValueError("Input columns must be binary")
-        if self.n_pre < 1 or self.n_post < 1:
-            raise ValueError(f"`n_pre` and `n_post` must be greater than zero, given {self.n_pre} and {self.n_post}")
 
-        prev = self._compute_event_column(df, column="prev", max_distance=self.n_pre)
+        pre = self._compute_event_column(df, column="pre", max_distance=self.n_pre)
         post = self._compute_event_column(df, column="post", max_distance=self.n_post)
 
-        df = pd.concat([df, prev, post], axis=1)
+        df = pd.concat([df, pre, post], axis=1)
 
         return df
 

@@ -803,3 +803,17 @@ def total_level_constant_forecast_with_target_components(hierarchical_structure)
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     ts.add_target_components(target_components_df=target_components_df)
     return ts
+
+
+@pytest.fixture
+def ts_with_binary_exog() -> TSDataset:
+    periods = 100
+    periods_exog = periods + 10
+    df = generate_const_df(start_time="2020-01-01", periods=periods, freq="D", scale=1, n_segments=3)
+    df_exog = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
+    df_exog.rename(columns={"target": "holiday"}, inplace=True)
+
+    df = TSDataset.to_dataset(df)
+    df_exog = TSDataset.to_dataset(df_exog)
+    tsds = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
+    return tsds

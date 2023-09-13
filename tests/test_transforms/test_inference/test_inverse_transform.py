@@ -226,8 +226,11 @@ class TestInverseTransformTrainSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_inverse_transform_train_subset_segments(self, transform, dataset_name, request):
@@ -439,8 +442,11 @@ class TestInverseTransformFutureSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc"),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_inverse_transform_future_subset_segments(self, transform, dataset_name, request):
@@ -674,8 +680,12 @@ class TestInverseTransformTrainNewSegments:
                 "regular_ts",
                 {},
             ),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_train_new_segments(self, transform, dataset_name, expected_changes, request):
@@ -1012,8 +1022,12 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_future_new_segments(self, transform, dataset_name, expected_changes, request):
@@ -1502,8 +1516,12 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
@@ -1931,8 +1949,12 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
-            (EventTransform(in_column="exoc", out_column="exoc"), "ts_with_binary_exoc", {}),
-            (EventTransform(in_column="exoc", out_column="exoc", mode="distance"), "ts_with_binary_exoc", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_future_without_target(self, transform, dataset_name, expected_changes, request):
