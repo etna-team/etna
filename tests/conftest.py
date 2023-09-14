@@ -812,6 +812,7 @@ def ts_with_binary_exog() -> TSDataset:
     df = generate_const_df(start_time="2020-01-01", periods=periods, freq="D", scale=1, n_segments=3)
     df_exog = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
     df_exog.rename(columns={"target": "holiday"}, inplace=True)
+    df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 3)
 
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)

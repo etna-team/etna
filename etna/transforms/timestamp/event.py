@@ -51,9 +51,8 @@ class EventTransform(IrreversibleTransform):
     >>> df = TSDataset.to_dataset(df)
     >>> df_exog = TSDataset.to_dataset(df_exog)
     >>> ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
-    >>> ts_copy = deepcopy(ts)
     >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=1, n_post=1)
-    >>> transform.fit_transform(ts)
+    >>> transform.fit_transform(deepcopy(ts))
     segment    segment_0
     feature      holiday holiday_post holiday_pre target
     timestamp
@@ -64,7 +63,7 @@ class EventTransform(IrreversibleTransform):
     2020-01-05         0          0.0          0.0    1.0
 
     >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=2, n_post=2)
-    >>> transform.fit_transform(ts_copy)
+    >>> transform.fit_transform(deepcopy(ts))
     segment    segment_0
     feature      holiday holiday_post holiday_pre target
     timestamp
