@@ -815,5 +815,5 @@ def ts_with_binary_exog() -> TSDataset:
 
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
-    tsds = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
-    return tsds
+    ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
+    return ts

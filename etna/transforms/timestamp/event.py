@@ -44,26 +44,24 @@ class EventTransform(IrreversibleTransform):
     >>> from etna.datasets import TSDataset
     >>> from etna.transforms import EventTransform
     >>>
-    >>> df = generate_const_df(start_time="2020-01-01", periods=10, freq="D", scale=1, n_segments=1)
-    >>> df["holiday"] = np.array([0, 1, 0, 1, 1, 0, 0, 0, 1, 0])
+    >>> df = generate_const_df(start_time="2020-01-01", periods=5, freq="D", scale=1, n_segments=1)
+    >>> df_exog = generate_const_df(start_time="2020-01-01", periods=10, freq="D", scale=1, n_segments=1)
+    >>> df_exog.rename(columns={"target": "holiday"}, inplace=True)
+    >>> df_exog["holiday"] = np.array([0, 0, 1, 0, 0, 0, 0, 1, 1, 0])
     >>> df = TSDataset.to_dataset(df)
-    >>> tsds = TSDataset(df, freq="D")
-    >>> ts_copy = deepcopy(tsds)
+    >>> df_exog = TSDataset.to_dataset(df_exog)
+    >>> ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
+    >>> ts_copy = deepcopy(ts)
     >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=1, n_post=1)
-    >>> transform.fit_transform(tsds)
+    >>> transform.fit_transform(ts)
     segment    segment_0
     feature      holiday holiday_post holiday_pre target
     timestamp
-    2020-01-01         0          0.0          1.0    1.0
-    2020-01-02         1          0.0          0.0    1.0
-    2020-01-03         0          1.0          1.0    1.0
-    2020-01-04         1          0.0          0.0    1.0
-    2020-01-05         1          0.0          0.0    1.0
-    2020-01-06         0          1.0          0.0    1.0
-    2020-01-07         0          0.0          0.0    1.0
-    2020-01-08         0          0.0          1.0    1.0
-    2020-01-09         1          0.0          0.0    1.0
-    2020-01-10         0          1.0          0.0    1.0
+    2020-01-01         0          0.0          0.0    1.0
+    2020-01-02         0          0.0          1.0    1.0
+    2020-01-03         1          0.0          0.0    1.0
+    2020-01-04         0          1.0          0.0    1.0
+    2020-01-05         0          0.0          0.0    1.0
 
     >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=2, n_post=2)
     >>> transform.fit_transform(ts_copy)
@@ -71,15 +69,10 @@ class EventTransform(IrreversibleTransform):
     feature      holiday holiday_post holiday_pre target
     timestamp
     2020-01-01         0          0.0          1.0    1.0
-    2020-01-02         1          0.0          0.0    1.0
-    2020-01-03         0          1.0          1.0    1.0
-    2020-01-04         1          0.0          0.0    1.0
-    2020-01-05         1          0.0          0.0    1.0
-    2020-01-06         0          1.0          0.0    1.0
-    2020-01-07         0          1.0          1.0    1.0
-    2020-01-08         0          0.0          1.0    1.0
-    2020-01-09         1          0.0          0.0    1.0
-    2020-01-10         0          1.0          0.0    1.0
+    2020-01-02         0          0.0          1.0    1.0
+    2020-01-03         1          0.0          0.0    1.0
+    2020-01-04         0          1.0          0.0    1.0
+    2020-01-05         0          1.0          0.0    1.0
     """
 
     def __init__(self, in_column: str, out_column: str, n_pre: int, n_post: int, mode: str = ImputerMode.binary):
