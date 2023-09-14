@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import pandas as pd
 import pytest
 
@@ -8,8 +6,8 @@ from etna.datasets import generate_const_df
 from etna.metrics import MSE
 from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
-from etna.transforms.timestamp import EventTransform
 from etna.transforms.feature_selection import FilterFeaturesTransform
+from etna.transforms.timestamp import EventTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 
 
@@ -22,7 +20,7 @@ def ts_check_event_transform_expected_binary_pre_2_post_2(ts_check_event_transfo
     holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
     holiday.drop(columns=["target"], inplace=True)
     holiday["holiday_pre"] = [1, 0, 1, 0, 0, 0, 1, 1, 0, 0] + [0] * 10 + [0] * 10
-    holiday['holiday_post'] = [0, 0, 1, 0, 0, 1, 1, 0, 0, 1] + [0] * 10 + [0] * 10
+    holiday["holiday_post"] = [0, 0, 1, 0, 0, 1, 1, 0, 0, 1] + [0] * 10 + [0] * 10
     holiday = TSDataset.to_dataset(holiday).astype(float)
     df_exog = pd.concat([holiday, df_exog], axis=1)
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
@@ -38,7 +36,7 @@ def ts_check_event_transform_expected_binary_pre_1_post_1(ts_check_event_transfo
     holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
     holiday.drop(columns=["target"], inplace=True)
     holiday["holiday_pre"] = [1, 0, 1, 0, 0, 0, 0, 1, 0, 0] + [0] * 10 + [0] * 10
-    holiday['holiday_post'] = [0, 0, 1, 0, 0, 1, 0, 0, 0, 1] + [0] * 10 + [0] * 10
+    holiday["holiday_post"] = [0, 0, 1, 0, 0, 1, 0, 0, 0, 1] + [0] * 10 + [0] * 10
     holiday = TSDataset.to_dataset(holiday).astype(float)
     df_exog = pd.concat([holiday, df_exog], axis=1)
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
@@ -54,7 +52,7 @@ def ts_check_event_transform_expected_distance_pre_3_post_3(ts_check_event_trans
     holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
     holiday.drop(columns=["target"], inplace=True)
     holiday["holiday_pre"] = [1, 0, 1, 0, 0, 1 / 3, 1 / 2, 1, 0, 0] + [0] * 10 + [0] * 10
-    holiday['holiday_post'] = [0, 0, 1, 0, 0, 1, 1 / 2, 1 / 3, 0, 1] + [0] * 10 + [0] * 10
+    holiday["holiday_post"] = [0, 0, 1, 0, 0, 1, 1 / 2, 1 / 3, 0, 1] + [0] * 10 + [0] * 10
     holiday = TSDataset.to_dataset(holiday).astype(float)
     df_exog = pd.concat([holiday, df_exog], axis=1)
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
@@ -118,7 +116,7 @@ def test_pipeline_with_event_transform(ts_with_binary_exog: TSDataset):
     """Check that pipeline executes without errors"""
     model = LinearPerSegmentModel()
     event = EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1)
-    filter_feature = FilterFeaturesTransform(exclude=['holiday'])
+    filter_feature = FilterFeaturesTransform(exclude=["holiday"])
     pipeline = Pipeline(model=model, transforms=[event, filter_feature], horizon=10)
     pipeline.fit(ts_with_binary_exog)
     pipeline.forecast()
@@ -128,7 +126,7 @@ def test_backtest(ts_with_binary_exog: TSDataset):
     """Check that backtest function executes without errors"""
     model = LinearPerSegmentModel()
     event = EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1)
-    filter_feature = FilterFeaturesTransform(exclude=['holiday'])
+    filter_feature = FilterFeaturesTransform(exclude=["holiday"])
     pipeline = Pipeline(model=model, transforms=[event, filter_feature], horizon=10)
     pipeline.backtest(ts=ts_with_binary_exog, metrics=[MSE()], n_folds=2)
 
