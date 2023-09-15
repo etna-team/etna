@@ -62,16 +62,16 @@ class EventTransform(IrreversibleTransform):
     2020-01-04         0          1.0          0.0    1.0
     2020-01-05         0          0.0          0.0    1.0
 
-    >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=2, n_post=2)
+    >>> transform = EventTransform(in_column='holiday', out_column='holiday', n_pre=2, n_post=2, mode='distance')
     >>> transform.fit_transform(deepcopy(ts))
     segment    segment_0
     feature      holiday holiday_post holiday_pre target
     timestamp
-    2020-01-01         0          0.0          1.0    1.0
+    2020-01-01         0          0.0          0.5    1.0
     2020-01-02         0          0.0          1.0    1.0
     2020-01-03         1          0.0          0.0    1.0
     2020-01-04         0          1.0          0.0    1.0
-    2020-01-05         0          1.0          0.0    1.0
+    2020-01-05         0          0.5          0.0    1.0
     """
 
     def __init__(self, in_column: str, out_column: str, n_pre: int, n_post: int, mode: str = ImputerMode.binary):
