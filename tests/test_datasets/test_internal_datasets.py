@@ -74,18 +74,57 @@ def test_not_present_part():
 
 
 @pytest.mark.parametrize(
-    "dataset_name, expected_shape, expected_min_date, expected_max_date",
+    "dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts",
     [
-        ("m4_hourly", (1008, 414), pd.to_datetime("2021-11-20 01:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
-        ("m4_daily", (9933, 4227), pd.to_datetime("1994-10-23 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
-        ("m4_weekly", (2610, 359), pd.to_datetime("1971-12-27 00:00:00"), pd.to_datetime("2021-12-27 00:00:00")),
-        ("m4_monthly", (2812, 48000), pd.to_datetime("1787-09-30 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-        ("m4_quarterly", (874, 24000), pd.to_datetime("1803-10-01 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
-        ("m4_yearly", (841, 23000), pd.to_datetime("2019-09-14 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+        (
+            "m4_hourly",
+            (960 + 48, 414),
+            pd.to_datetime("2021-11-20 01:00:00"),
+            pd.to_datetime("2022-01-01 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m4_daily",
+            (9919 + 14, 4227),
+            pd.to_datetime("1994-10-23 00:00:00"),
+            pd.to_datetime("2022-01-01 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m4_weekly",
+            (2597 + 13, 359),
+            pd.to_datetime("1971-12-27 00:00:00"),
+            pd.to_datetime("2021-12-27 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m4_monthly",
+            (2794 + 18, 48000),
+            pd.to_datetime("1787-09-30 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m4_quarterly",
+            (866 + 8, 24000),
+            pd.to_datetime("1803-10-01 00:00:00"),
+            pd.to_datetime("2022-01-01 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m4_yearly",
+            (835 + 6, 23000),
+            pd.to_datetime("2019-09-14 00:00:00"),
+            pd.to_datetime("2022-01-01 00:00:00"),
+            ("train", "test"),
+        ),
     ],
 )
-def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date):
-    ts = load_dataset(dataset_name, parts="full")
-    assert ts.df.shape == expected_shape
-    assert ts.index.min() == expected_min_date
-    assert ts.index.max() == expected_max_date
+def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
+    ts_full = load_dataset(dataset_name, parts="full")
+    ts_parts = load_dataset(dataset_name, parts=dataset_parts)
+    parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
+    assert ts_full.df.shape == expected_shape
+    assert ts_full.index.min() == expected_min_date
+    assert ts_full.index.max() == expected_max_date
+    assert ts_full.df.shape[0] == parts_rows

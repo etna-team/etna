@@ -179,7 +179,8 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
 
     The M4 dataset is a collection of 100,000 time series used for the fourth edition of the Makridakis forecasting
     Competition. The M4 dataset consists of time series of yearly, quarterly, monthly and other (weekly, daily and
-    hourly) data.
+    hourly) data. Each frequency mode has its own specific prediction horizon: 6 for yearly, 8 for quarterly,
+    18 for monthly, 13 for weekly, 14 for daily and 48 for hourly.
 
     Parameters
     ----------
@@ -192,8 +193,10 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     ----------
     .. [1] https://github.com/Mcompetitions/M4-methods
     """
-    get_freq = {"Hourly": "H", "Daily": "D", "Weekly": "W-MON", "Monthly": "M", "Quarterly": "QS-JAN", "Yearly": "D"}
-    url_data = "https://raw.githubusercontent.com/Mcompetitions/M4-methods/master/Dataset/"
+    get_freq = {"Hourly": "H", "Daily": "D", "Weekly": "W-MON", "Monthly": "M", "Quarterly": "QS-OCT", "Yearly": "D"}
+    url_data = (
+        "https://raw.githubusercontent.com/Mcompetitions/M4-methods/6c1067e5a57161249b17289a565178dc7a3fb3ca/Dataset/"
+    )
     end_date = "2022-01-01"
     freq = get_freq[dataset_freq]
 
