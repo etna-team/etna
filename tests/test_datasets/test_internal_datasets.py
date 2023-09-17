@@ -82,7 +82,7 @@ def test_not_present_part():
             pd.to_datetime("2011-01-01 00:15:00"),
             pd.to_datetime("2015-01-01 00:00:00"),
             ("train", "test"),
-            marks=pytest.mark.xfail(reason="Dataset is too large for testing in GitHub."),
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
         ),
         (
             "m4_hourly",
