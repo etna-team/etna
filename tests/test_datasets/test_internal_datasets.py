@@ -76,6 +76,14 @@ def test_not_present_part():
 @pytest.mark.parametrize(
     "dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts",
     [
+        pytest.param(
+            "electricity_15T",
+            (139896 + 360, 370),
+            pd.to_datetime("2011-01-01 00:15:00"),
+            pd.to_datetime("2015-01-01 00:00:00"),
+            ("train", "test"),
+            marks=pytest.mark.xfail(reason="Dataset is too large for testing in GitHub."),
+        ),
         (
             "m4_hourly",
             (960 + 48, 414),
