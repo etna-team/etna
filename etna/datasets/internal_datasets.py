@@ -1,12 +1,14 @@
 import tempfile
 import urllib.request
 import zipfile
+from functools import partial
 from pathlib import Path
 from typing import Dict
 from typing import List
 from typing import Tuple
 from typing import Union
 
+import numpy as np
 import pandas as pd
 
 from etna.datasets.tsdataset import TSDataset
@@ -171,10 +173,106 @@ def get_electricity_dataset_15t(dataset_dir) -> None:
     TSDataset.to_dataset(data_test).to_csv(dataset_dir / "electricity_15T_test.csv.gz", index=True, compression="gzip")
 
 
+def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
+    """
+    Download and save M4 dataset in different frequency modes.
+
+    The M4 dataset is a collection of 100,000 time series used for the fourth edition of the Makridakis forecasting
+    Competition. The M4 dataset consists of time series of yearly, quarterly, monthly and other (weekly, daily and
+    hourly) data. Each frequency mode has its own specific prediction horizon: 6 for yearly, 8 for quarterly,
+    18 for monthly, 13 for weekly, 14 for daily and 48 for hourly.
+
+    Parameters
+    ----------
+    dataset_dir:
+        The path for saving dataset locally.
+    dataset_freq:
+        Frequency mode.
+
+    References
+    ----------
+    .. [1] https://github.com/Mcompetitions/M4-methods
+    """
+    get_freq = {"Hourly": "H", "Daily": "D", "Weekly": "W-MON", "Monthly": "M", "Quarterly": "QS-OCT", "Yearly": "D"}
+    url_data = (
+        "https://raw.githubusercontent.com/Mcompetitions/M4-methods/6c1067e5a57161249b17289a565178dc7a3fb3ca/Dataset/"
+    )
+    end_date = "2022-01-01"
+    freq = get_freq[dataset_freq]
+
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    data_train = pd.read_csv(f"{url_data}/Train/{dataset_freq}-train.csv", index_col=0)
+    data_test = pd.read_csv(f"{url_data}/Test/{dataset_freq}-test.csv", index_col=0)
+
+    segments = data_test.index
+    test_target = data_test.values
+
+    df_list = []
+    test_timestamps = pd.date_range(end=end_date, freq=freq, periods=test_target.shape[1])
+    for segment, target in zip(segments, test_target):
+        df_segment = pd.DataFrame({"target": target})
+        df_segment["segment"] = segment
+        df_segment["timestamp"] = test_timestamps
+        df_list.append(df_segment)
+    df_test = pd.concat(df_list, axis=0)
+
+    train_target = [x[~np.isnan(x)] for x in data_train.values]
+    df_list = []
+    for segment, target in zip(segments, train_target):
+        df_segment = pd.DataFrame({"target": target})
+        df_segment["segment"] = segment
+        df_segment["timestamp"] = pd.date_range(end=test_timestamps[0], freq=freq, periods=len(target) + 1)[:-1]
+        df_list.append(df_segment)
+    df_train = pd.concat(df_list, axis=0)
+
+    df_full = pd.concat([df_train, df_test], axis=0)
+
+    TSDataset.to_dataset(df_full).to_csv(
+        dataset_dir / f"m4_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_train).to_csv(
+        dataset_dir / f"m4_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_test).to_csv(
+        dataset_dir / f"m4_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip"
+    )
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
         "freq": "15T",
         "parts": ("train", "test", "full"),
-    }
+    },
+    "m4_hourly": {
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Hourly"),
+        "freq": "H",
+        "parts": ("train", "test", "full"),
+    },
+    "m4_daily": {
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Daily"),
+        "freq": "D",
+        "parts": ("train", "test", "full"),
+    },
+    "m4_weekly": {
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Weekly"),
+        "freq": "W-MON",
+        "parts": ("train", "test", "full"),
+    },
+    "m4_monthly": {
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Monthly"),
+        "freq": "M",
+        "parts": ("train", "test", "full"),
+    },
+    "m4_quarterly": {
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Quarterly"),
+        "freq": "QS-JAN",
+        "parts": ("train", "test", "full"),
+    },
+    "m4_yearly": {
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Yearly"),
+        "freq": "D",
+        "parts": ("train", "test", "full"),
+    },
 }
