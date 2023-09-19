@@ -1,1 +1,0 @@
-from etna.prediction_intervals.base import BasePredictionIntervals

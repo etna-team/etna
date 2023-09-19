@@ -13,7 +13,7 @@ from etna.pipeline import Pipeline
 from etna.reconciliation import BottomUpReconciliator
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
-from tests.test_prediction_intervals.common import DummyPredictionIntervals
+from tests.test_experimental.test_prediction_intervals.common import DummyPredictionIntervals
 
 
 def run_base_pipeline_compat_check(ts, pipeline, expected_columns):

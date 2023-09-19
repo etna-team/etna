@@ -3,11 +3,11 @@ from typing import Sequence
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.experimental.prediction_intervals import BasePredictionIntervals
+from etna.experimental.prediction_intervals.mixins import SavePredictionIntervalsMixin
 from etna.models import NaiveModel
 from etna.pipeline import BasePipeline
 from etna.pipeline import Pipeline
-from etna.prediction_intervals import BasePredictionIntervals
-from etna.prediction_intervals.mixins import SavePredictionIntervalsMixin
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 
