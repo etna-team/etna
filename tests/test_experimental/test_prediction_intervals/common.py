@@ -4,7 +4,6 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.experimental.prediction_intervals import BasePredictionIntervals
-from etna.experimental.prediction_intervals.mixins import SavePredictionIntervalsMixin
 from etna.models import NaiveModel
 from etna.pipeline import BasePipeline
 from etna.pipeline import Pipeline
@@ -21,7 +20,7 @@ def get_naive_pipeline_with_transforms(horizon):
     return Pipeline(model=NaiveModel(), transforms=transforms, horizon=horizon)
 
 
-class DummyPredictionIntervals(SavePredictionIntervalsMixin, BasePredictionIntervals):
+class DummyPredictionIntervals(BasePredictionIntervals):
     """Dummy class for testing."""
 
     def __init__(self, pipeline: BasePipeline, width: float = 0.0):
