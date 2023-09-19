@@ -27,6 +27,13 @@ class BasePredictionIntervals(BasePipeline):
     """
 
     def __init__(self, pipeline: BasePipeline):
+        """Initialize instance of ``BasePredictionIntervals`` with given parameters.
+
+        Parameters
+        ----------
+        pipeline:
+            Base pipeline or ensemble for prediction intervals estimation.
+        """
         ts = pipeline.ts
         self.pipeline = pipeline
         super().__init__(pipeline.horizon)

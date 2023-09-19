@@ -26,3 +26,11 @@ Classification of time-series:
    classification.PredictabilityAnalyzer
    classification.feature_extraction.TSFreshFeatureExtractor
    classification.feature_extraction.WEASELFeatureExtractor
+
+Prediction Intervals:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   prediction_intervals.BasePredictionIntervals
