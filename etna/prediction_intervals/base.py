@@ -58,9 +58,9 @@ class BasePredictionIntervals(BasePipeline):
         return self.pipeline.ts
 
     @ts.setter
-    def ts(self, ts_: Optional[TSDataset]):
+    def ts(self, ts: Optional[TSDataset]):
         """Set internal pipeline dataset."""
-        self.pipeline.ts = ts_
+        self.pipeline.ts = ts
 
     def _predict(
         self,
@@ -104,7 +104,7 @@ class BasePredictionIntervals(BasePipeline):
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make point forecasts using base pipeline or ensemble."""
-        return self.pipeline._forecast(ts, return_components)
+        return self.pipeline._forecast(ts=ts, return_components=return_components)
 
     def save(self, path: pathlib.Path):
         """Implement in SavePredictionIntervalsMixin."""
