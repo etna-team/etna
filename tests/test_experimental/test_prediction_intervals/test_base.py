@@ -2,18 +2,24 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.ensembles import DirectEnsemble
 from etna.ensembles import StackingEnsemble
 from etna.ensembles import VotingEnsemble
 from etna.models import CatBoostPerSegmentModel
+from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
 from etna.pipeline import AutoRegressivePipeline
 from etna.pipeline import HierarchicalPipeline
 from etna.pipeline import Pipeline
 from etna.reconciliation import BottomUpReconciliator
-from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from tests.test_experimental.test_prediction_intervals.common import DummyPredictionIntervals
+from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline
+from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline_with_transforms
+from tests.test_experimental.test_prediction_intervals.utils import assert_sampling_is_valid
 
 
 def run_base_pipeline_compat_check(ts, pipeline, expected_columns):
@@ -93,14 +99,7 @@ def test_forecast_with_fitted_pipeline(example_tsds, pipeline_name, request):
 @pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
 def test_forecast_intervals_exists(example_tsds, pipeline_name, expected_columns, request):
     pipeline = request.getfixturevalue(pipeline_name)
-
-    intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
-    intervals_pipeline.fit(ts=example_tsds)
-
-    intervals_pipeline_pred = intervals_pipeline.forecast(prediction_interval=True)
-    columns = intervals_pipeline_pred.df.columns.get_level_values("feature")
-
-    assert len(expected_columns - set(columns)) == 0
+    run_base_pipeline_compat_check(ts=example_tsds, pipeline=pipeline, expected_columns=expected_columns)
 
 
 @pytest.mark.parametrize(
@@ -144,20 +143,55 @@ def test_ensembles_forecast_intervals(example_tsds, ensemble, expected_columns):
 @pytest.mark.parametrize(
     "pipeline",
     (
-        get_naive_pipeline(horizon=1),
-        get_naive_pipeline_with_transforms(horizon=2),
-        Pipeline(model=CatBoostPerSegmentModel()),
-        AutoRegressivePipeline(model=CatBoostPerSegmentModel(), horizon=1),
+        Pipeline(model=CatBoostPerSegmentModel(), transforms=[DateFlagsTransform()]),
+        AutoRegressivePipeline(model=CatBoostPerSegmentModel(), transforms=[DateFlagsTransform()], horizon=1),
         HierarchicalPipeline(
-            model=NaiveModel(),
+            model=CatBoostPerSegmentModel(),
+            transforms=[DateFlagsTransform()],
             horizon=1,
             reconciliator=BottomUpReconciliator(target_level="market", source_level="product"),
         ),
     ),
 )
-def test_default_params_to_tune(pipeline):
+@pytest.mark.parametrize(
+    "expected_params_to_tune",
+    (
+        {
+            "pipeline.model.learning_rate": FloatDistribution(low=1e-4, high=0.5, log=True),
+            "pipeline.model.depth": IntDistribution(low=1, high=11, step=1),
+            "pipeline.model.l2_leaf_reg": FloatDistribution(low=0.1, high=200.0, log=True),
+            "pipeline.model.random_strength": FloatDistribution(low=1e-05, high=10.0, log=True),
+            "pipeline.transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.season_number": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.year_number": CategoricalDistribution([False, True]),
+            "pipeline.transforms.0.is_weekend": CategoricalDistribution([False, True]),
+            "width": FloatDistribution(low=-5.0, high=5.0),
+        },
+    ),
+)
+def test_params_to_tune(pipeline, expected_params_to_tune):
     intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
-    assert intervals_pipeline.params_to_tune() == pipeline.params_to_tune()
+
+    params_to_tune = intervals_pipeline.params_to_tune()
+
+    assert params_to_tune == expected_params_to_tune
+
+
+@pytest.mark.parametrize(
+    "pipeline",
+    (
+        Pipeline(model=LinearPerSegmentModel(), transforms=[DateFlagsTransform()]),
+        AutoRegressivePipeline(model=LinearPerSegmentModel(), transforms=[DateFlagsTransform()], horizon=1),
+    ),
+)
+def test_valid_params_sampling(example_tsds, pipeline):
+    intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
+    assert_sampling_is_valid(intervals_pipeline=intervals_pipeline, ts=example_tsds)
 
 
 @pytest.mark.parametrize(
