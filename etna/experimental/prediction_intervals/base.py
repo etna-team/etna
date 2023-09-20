@@ -170,7 +170,9 @@ class BasePredictionIntervals(BasePipeline):
         :
             Grid with hyperparameters.
         """
-        return self.pipeline.params_to_tune()
+        pipeline_params = self.pipeline.params_to_tune()
+        pipeline_params = {f"pipeline.{key}": value for key, value in pipeline_params.items()}
+        return pipeline_params
 
     @abstractmethod
     def _forecast_prediction_interval(

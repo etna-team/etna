@@ -1,8 +1,11 @@
+from typing import Dict
 from typing import Sequence
 
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
 from etna.experimental.prediction_intervals import BasePredictionIntervals
 from etna.models import NaiveModel
 from etna.pipeline import BasePipeline
@@ -41,3 +44,8 @@ class DummyPredictionIntervals(BasePredictionIntervals):
         predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
 
         return predictions
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        params = super().params_to_tune()
+        params["width"] = FloatDistribution(low=-5.0, high=5.0)
+        return params
