@@ -17,6 +17,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EventTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
@@ -225,6 +226,11 @@ class TestInverseTransformTrainSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_inverse_transform_train_subset_segments(self, transform, dataset_name, request):
@@ -436,6 +442,11 @@ class TestInverseTransformFutureSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_inverse_transform_future_subset_segments(self, transform, dataset_name, request):
@@ -667,6 +678,12 @@ class TestInverseTransformTrainNewSegments:
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
                 {},
             ),
         ],
@@ -1003,6 +1020,12 @@ class TestInverseTransformFutureNewSegments:
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
                 {},
             ),
         ],
@@ -1493,6 +1516,12 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
@@ -1920,6 +1949,12 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_future_without_target(self, transform, dataset_name, expected_changes, request):
