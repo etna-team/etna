@@ -94,22 +94,13 @@ def test_forecast_with_fitted_pipeline(example_tsds, pipeline_name, request):
 
 @pytest.mark.parametrize(
     "expected_columns",
-    ({"target_lower", "target_upper"},),
-)
-@pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
-def test_forecast_intervals_exists(example_tsds, pipeline_name, expected_columns, request):
-    pipeline = request.getfixturevalue(pipeline_name)
-    run_base_pipeline_compat_check(ts=example_tsds, pipeline=pipeline, expected_columns=expected_columns)
-
-
-@pytest.mark.parametrize(
-    "expected_columns",
     ({"target", "target_lower", "target_upper"},),
 )
 @pytest.mark.parametrize(
     "pipeline",
     (
-        Pipeline(model=NaiveModel(), horizon=1),
+        get_naive_pipeline(horizon=1),
+        get_naive_pipeline_with_transforms(horizon=1),
         AutoRegressivePipeline(model=NaiveModel(), horizon=1),
         HierarchicalPipeline(
             model=NaiveModel(),
