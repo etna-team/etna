@@ -11,11 +11,13 @@ from etna.ensembles import VotingEnsemble
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
+from etna.models import SeasonalMovingAverageModel
 from etna.pipeline import AutoRegressivePipeline
 from etna.pipeline import HierarchicalPipeline
 from etna.pipeline import Pipeline
 from etna.reconciliation import BottomUpReconciliator
 from etna.transforms import DateFlagsTransform
+from etna.transforms import DeseasonalityTransform
 from tests.test_experimental.test_prediction_intervals.common import DummyPredictionIntervals
 from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline
 from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline_with_transforms
@@ -132,37 +134,50 @@ def test_ensembles_forecast_intervals(example_tsds, ensemble, expected_columns):
 
 
 @pytest.mark.parametrize(
-    "pipeline",
+    "pipeline,expected_params_to_tune",
     (
-        Pipeline(model=CatBoostPerSegmentModel(), transforms=[DateFlagsTransform()]),
-        AutoRegressivePipeline(model=CatBoostPerSegmentModel(), transforms=[DateFlagsTransform()], horizon=1),
-        HierarchicalPipeline(
-            model=CatBoostPerSegmentModel(),
-            transforms=[DateFlagsTransform()],
-            horizon=1,
-            reconciliator=BottomUpReconciliator(target_level="market", source_level="product"),
+        (
+            Pipeline(
+                model=SeasonalMovingAverageModel(), transforms=[DeseasonalityTransform(in_column="target", period=7)]
+            ),
+            {
+                "pipeline.model.window": IntDistribution(low=1, high=10),
+                "pipeline.transforms.0.model": CategoricalDistribution(["additive", "multiplicative"]),
+                "width": FloatDistribution(low=-5.0, high=5.0),
+            },
         ),
-    ),
-)
-@pytest.mark.parametrize(
-    "expected_params_to_tune",
-    (
-        {
-            "pipeline.model.learning_rate": FloatDistribution(low=1e-4, high=0.5, log=True),
-            "pipeline.model.depth": IntDistribution(low=1, high=11, step=1),
-            "pipeline.model.l2_leaf_reg": FloatDistribution(low=0.1, high=200.0, log=True),
-            "pipeline.model.random_strength": FloatDistribution(low=1e-05, high=10.0, log=True),
-            "pipeline.transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.season_number": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.year_number": CategoricalDistribution([False, True]),
-            "pipeline.transforms.0.is_weekend": CategoricalDistribution([False, True]),
-            "width": FloatDistribution(low=-5.0, high=5.0),
-        },
+        (
+            AutoRegressivePipeline(model=CatBoostPerSegmentModel(), transforms=[DateFlagsTransform()], horizon=1),
+            {
+                "pipeline.model.learning_rate": FloatDistribution(low=1e-4, high=0.5, log=True),
+                "pipeline.model.depth": IntDistribution(low=1, high=11, step=1),
+                "pipeline.model.l2_leaf_reg": FloatDistribution(low=0.1, high=200.0, log=True),
+                "pipeline.model.random_strength": FloatDistribution(low=1e-05, high=10.0, log=True),
+                "pipeline.transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.season_number": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.year_number": CategoricalDistribution([False, True]),
+                "pipeline.transforms.0.is_weekend": CategoricalDistribution([False, True]),
+                "width": FloatDistribution(low=-5.0, high=5.0),
+            },
+        ),
+        (
+            HierarchicalPipeline(
+                model=SeasonalMovingAverageModel(),
+                transforms=[DeseasonalityTransform(in_column="target", period=7)],
+                horizon=1,
+                reconciliator=BottomUpReconciliator(target_level="market", source_level="product"),
+            ),
+            {
+                "pipeline.model.window": IntDistribution(low=1, high=10),
+                "pipeline.transforms.0.model": CategoricalDistribution(["additive", "multiplicative"]),
+                "width": FloatDistribution(low=-5.0, high=5.0),
+            },
+        ),
     ),
 )
 def test_params_to_tune(pipeline, expected_params_to_tune):
@@ -178,11 +193,17 @@ def test_params_to_tune(pipeline, expected_params_to_tune):
     (
         Pipeline(model=LinearPerSegmentModel(), transforms=[DateFlagsTransform()]),
         AutoRegressivePipeline(model=LinearPerSegmentModel(), transforms=[DateFlagsTransform()], horizon=1),
+        HierarchicalPipeline(
+            model=LinearPerSegmentModel(),
+            transforms=[DateFlagsTransform()],
+            horizon=1,
+            reconciliator=BottomUpReconciliator(target_level="market", source_level="product"),
+        ),
     ),
 )
-def test_valid_params_sampling(example_tsds, pipeline):
+def test_valid_params_sampling(product_level_constant_hierarchical_ts, pipeline):
     intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
-    assert_sampling_is_valid(intervals_pipeline=intervals_pipeline, ts=example_tsds)
+    assert_sampling_is_valid(intervals_pipeline=intervals_pipeline, ts=product_level_constant_hierarchical_ts)
 
 
 @pytest.mark.parametrize(
