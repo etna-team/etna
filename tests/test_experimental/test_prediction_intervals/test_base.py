@@ -22,6 +22,7 @@ from tests.test_experimental.test_prediction_intervals.common import DummyPredic
 from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline
 from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline_with_transforms
 from tests.test_experimental.test_prediction_intervals.utils import assert_sampling_is_valid
+from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 
 
 def run_base_pipeline_compat_check(ts, pipeline, expected_columns):
@@ -205,3 +206,26 @@ def test_default_params_to_tune_error(pipeline):
 
     with pytest.raises(NotImplementedError, match=f"{pipeline.__class__.__name__} doesn't support"):
         _ = intervals_pipeline.params_to_tune()
+
+
+@pytest.mark.parametrize("load_ts", (True, False))
+@pytest.mark.parametrize(
+    "pipeline",
+    (
+        Pipeline(model=LinearPerSegmentModel(), transforms=[DateFlagsTransform()]),
+        AutoRegressivePipeline(model=LinearPerSegmentModel(), transforms=[DateFlagsTransform()], horizon=1),
+        HierarchicalPipeline(
+            model=LinearPerSegmentModel(),
+            transforms=[DateFlagsTransform()],
+            horizon=1,
+            reconciliator=BottomUpReconciliator(target_level="total", source_level="market"),
+        ),
+        DirectEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=2)]),
+        VotingEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=1)]),
+        StackingEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=1)]),
+    ),
+)
+def test_save_load(load_ts, pipeline, market_level_constant_hierarchical_ts_w_exog):
+    ts = market_level_constant_hierarchical_ts_w_exog
+    intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
+    assert_pipeline_equals_loaded_original(pipeline=intervals_pipeline, ts=ts, load_ts=load_ts)
