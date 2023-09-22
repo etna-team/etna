@@ -35,16 +35,6 @@ def run_base_pipeline_compat_check(ts, pipeline, expected_columns):
     assert np.sum(intervals_pipeline_pred.df.isna().values) == 0
 
 
-@pytest.fixture()
-def naive_pipeline():
-    return get_naive_pipeline(horizon=5)
-
-
-@pytest.fixture()
-def naive_pipeline_with_transforms():
-    return get_naive_pipeline_with_transforms(horizon=5)
-
-
 def test_pipeline_ref_initialized(naive_pipeline):
     intervals_pipeline = DummyPredictionIntervals(pipeline=naive_pipeline)
 
