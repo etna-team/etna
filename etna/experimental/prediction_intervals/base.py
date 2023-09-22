@@ -1,4 +1,3 @@
-import pathlib
 from abc import abstractmethod
 from typing import Dict
 from typing import Optional
@@ -8,10 +7,11 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
+from etna.experimental.prediction_intervals.mixins import SavePredictionIntervalsMixin
 from etna.pipeline.base import BasePipeline
 
 
-class BasePredictionIntervals(BasePipeline):
+class BasePredictionIntervals(SavePredictionIntervalsMixin, BasePipeline):
     """Base class for prediction intervals methods.
 
     This class implements a wrapper interface for pipelines and ensembles that provides the ability to
@@ -112,15 +112,6 @@ class BasePredictionIntervals(BasePipeline):
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
         """Make point forecasts using base pipeline or ensemble."""
         return self.pipeline._forecast(ts=ts, return_components=return_components)
-
-    def save(self, path: pathlib.Path):
-        """Implement in SavePredictionIntervalsMixin."""
-        pass
-
-    @classmethod
-    def load(cls, path: pathlib.Path):
-        """Implement in SavePredictionIntervalsMixin."""
-        pass
 
     def forecast(
         self,
