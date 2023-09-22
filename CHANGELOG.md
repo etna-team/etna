@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Save mixin for the `BasePredictionIntervals`. ([#87](https://github.com/etna-team/etna/pull/87))
 - Base class `BasePredictionIntervals` for prediction intervals into experimental module. ([#86](https://github.com/etna-team/etna/pull/86))
 - Add `fit_params` parameter to `etna.models.sarimax.SARIMAXModel` ([#69](https://github.com/etna-team/etna/pull/69))
 - Add `quickstart` notebook, add `mechanics_of_forecasting` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
