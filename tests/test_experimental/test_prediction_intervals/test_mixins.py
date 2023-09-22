@@ -29,6 +29,7 @@ def test_save(naive_pipeline_with_transforms, example_tsds, tmp_path, expected_f
             loaded_obj = pickle.load(file)
         assert loaded_obj.width == dummy.width
 
+    # basic check that we didn't break dummy object itself
     assert dummy.width == initial_dummy.width
     assert pickle.dumps(dummy.ts) == pickle.dumps(initial_dummy.ts)
     assert pickle.dumps(dummy.pipeline.model) == pickle.dumps(initial_dummy.pipeline.model)
@@ -41,7 +42,7 @@ def test_load_file_not_found_error():
         DummyPredictionIntervals.load(non_existent_path)
 
 
-def test_load_with_ts(naive_pipeline_with_transforms, example_tsds, tmp_path):
+def test_load_with_ts(naive_pipeline_with_transforms, example_tsds, recwarn, tmp_path):
     dummy = DummyPredictionIntervals(pipeline=naive_pipeline_with_transforms, width=4)
 
     path = pathlib.Path(tmp_path) / "dummy.zip"
@@ -55,9 +56,10 @@ def test_load_with_ts(naive_pipeline_with_transforms, example_tsds, tmp_path):
     assert isinstance(loaded_obj.pipeline, Pipeline)
     assert isinstance(loaded_obj.pipeline.model, NaiveModel)
     assert len(loaded_obj.pipeline.transforms) == 2
+    assert len(recwarn) == 0
 
 
-def test_load_without_ts(naive_pipeline_with_transforms, tmp_path):
+def test_load_without_ts(naive_pipeline_with_transforms, recwarn, tmp_path):
     dummy = DummyPredictionIntervals(pipeline=naive_pipeline_with_transforms, width=4)
 
     path = pathlib.Path(tmp_path) / "dummy.zip"
@@ -70,13 +72,16 @@ def test_load_without_ts(naive_pipeline_with_transforms, tmp_path):
     assert isinstance(loaded_obj.pipeline, Pipeline)
     assert isinstance(loaded_obj.pipeline.model, NaiveModel)
     assert len(loaded_obj.pipeline.transforms) == 2
+    assert len(recwarn) == 0
 
 
 @pytest.mark.parametrize(
     "save_version, load_version", [((1, 5, 0), (2, 5, 0)), ((2, 5, 0), (1, 5, 0)), ((1, 5, 0), (1, 3, 0))]
 )
 @patch("etna.core.mixins.get_etna_version")
-def test_load_warning(get_version_mock, naive_pipeline_with_transforms, save_version, load_version, tmp_path):
+def test_save_mixin_load_warning(
+    get_version_mock, naive_pipeline_with_transforms, save_version, load_version, tmp_path
+):
     dummy = DummyPredictionIntervals(pipeline=naive_pipeline_with_transforms, width=4)
     path = pathlib.Path(tmp_path) / "dummy.zip"
 

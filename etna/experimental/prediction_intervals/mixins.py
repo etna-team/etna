@@ -36,8 +36,10 @@ class SavePredictionIntervalsMixin(SaveMixin):
         pipeline = self.pipeline
 
         try:
+            # extract pipeline to save it with its own method later
             delattr(self, "pipeline")
 
+            # save the remaining part
             super().save(path=path)
 
         finally:
@@ -47,6 +49,7 @@ class SavePredictionIntervalsMixin(SaveMixin):
             with tempfile.TemporaryDirectory() as _temp_dir:
                 temp_dir = pathlib.Path(_temp_dir)
 
+                # save pipeline separately and add to the archive
                 pipeline_save_path = temp_dir / "pipeline.zip"
                 pipeline.save(path=pipeline_save_path)
 
@@ -82,6 +85,7 @@ class SavePredictionIntervalsMixin(SaveMixin):
 
                 archive.extractall(temp_dir)
 
+                # load pipeline and add to the object
                 pipeline_path = temp_dir / "pipeline.zip"
                 obj.pipeline = load(path=pipeline_path, ts=ts)
 
