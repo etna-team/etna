@@ -239,6 +239,67 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     )
 
 
+def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
+    """
+    Download and save M3 dataset in different frequency modes.
+
+    The M3 dataset is a collection of 3,003 time series used for the third edition of the Makridakis forecasting
+    Competition. The M3 dataset consists of time series of yearly, quarterly, monthly and other data.
+    Each frequency mode has its own specific prediction horizon: 6 for yearly, 8 for quarterly,
+    18 for monthly, and 8 for other.
+
+    Parameters
+    ----------
+    dataset_dir:
+        The path for saving dataset locally.
+    dataset_freq:
+        Frequency mode.
+
+    References
+    ----------
+    .. [1] https://forvis.github.io/datasets/m3-data/
+    .. [2] https://forecasters.org/resources/time-series-data/m3-competition/
+    """
+    get_freq = {"monthly": "M", "quarterly": "Q", "yearly": "Y", "other": "Q"}
+    get_horizon = {"monthly": 18, "quarterly": 8, "yearly": 6, "other": 8}
+    url_data = "https://forvis.github.io/data"
+    end_date = "2022-01-01"
+    freq = get_freq[dataset_freq]
+
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    data = pd.read_csv(f"{url_data}/M3_{dataset_freq}_TSTS.csv")
+
+    df_full = pd.DataFrame()
+    df_train = pd.DataFrame()
+    df_test = pd.DataFrame()
+    horizon = get_horizon[dataset_freq]
+    for _, group in data.groupby("series_id"):
+        group_copy = group.copy()
+        timestamps = pd.date_range(end=end_date, freq=freq, periods=group.shape[0])
+        group_copy.rename(columns={"timestamp": "origin_timestamp"}, inplace=True)
+        group_copy.rename(columns={"series_id": "segment"}, inplace=True)
+        group_copy.rename(columns={"value": "target"}, inplace=True)
+        group_copy["timestamp"] = timestamps
+
+        train_part = group_copy.iloc[:-horizon]
+        test_part = group_copy.iloc[-horizon:]
+
+        df_full = pd.concat([df_full, group_copy])
+        df_train = pd.concat([df_train, train_part])
+        df_test = pd.concat([df_test, test_part])
+
+    TSDataset.to_dataset(df_full).to_csv(
+        dataset_dir / f"m3_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_train).to_csv(
+        dataset_dir / f"m3_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_test).to_csv(
+        dataset_dir / f"m3_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip"
+    )
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
@@ -273,6 +334,26 @@ datasets_dict: Dict[str, Dict] = {
     "m4_yearly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Yearly"),
         "freq": "D",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_monthly": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="monthly"),
+        "freq": "M",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_quarterly": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="quarterly"),
+        "freq": "Q",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_yearly": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="yearly"),
+        "freq": "Y",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_other": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="other"),
+        "freq": "Q",
         "parts": ("train", "test", "full"),
     },
 }

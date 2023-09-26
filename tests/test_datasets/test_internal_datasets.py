@@ -126,9 +126,40 @@ def test_not_present_part():
             pd.to_datetime("2022-01-01 00:00:00"),
             ("train", "test"),
         ),
+        (
+            "m3_monthly",
+            (144, 4284),
+            pd.to_datetime("2010-01-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m3_quarterly",
+            (72, 2268),
+            pd.to_datetime("2004-03-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m3_other",
+            (104, 522),
+            pd.to_datetime("1996-03-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m3_yearly",
+            (47, 1935),
+            pd.to_datetime("1975-12-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
+    import ssl
+
+    ssl._create_default_https_context = ssl._create_unverified_context
     ts_full = load_dataset(dataset_name, parts="full")
     ts_parts = load_dataset(dataset_name, parts=dataset_parts)
     parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
