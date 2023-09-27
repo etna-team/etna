@@ -128,28 +128,28 @@ def test_not_present_part():
         ),
         (
             "m3_monthly",
-            (144, 4284),
+            (144, 2856),
             pd.to_datetime("2010-01-31 00:00:00"),
             pd.to_datetime("2021-12-31 00:00:00"),
             ("train", "test"),
         ),
         (
             "m3_quarterly",
-            (72, 2268),
+            (72, 1512),
             pd.to_datetime("2004-03-31 00:00:00"),
             pd.to_datetime("2021-12-31 00:00:00"),
             ("train", "test"),
         ),
         (
             "m3_other",
-            (104, 522),
+            (104, 348),
             pd.to_datetime("1996-03-31 00:00:00"),
             pd.to_datetime("2021-12-31 00:00:00"),
             ("train", "test"),
         ),
         (
             "m3_yearly",
-            (47, 1935),
+            (47, 1290),
             pd.to_datetime("1975-12-31 00:00:00"),
             pd.to_datetime("2021-12-31 00:00:00"),
             ("train", "test"),
@@ -167,3 +167,56 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, exp
     assert ts_full.index.min() == expected_min_date
     assert ts_full.index.max() == expected_max_date
     assert ts_full.df.shape[0] == parts_rows
+
+
+@pytest.mark.parametrize(
+    "dataset_name, expected_train_df_exog_shape, expected_test_df_exog_shape, expected_train_df_exog_dates, expected_test_df_exog_dates",
+    [
+        (
+            "m3_monthly",
+            (144, 1428),
+            (18, 1428),
+            (pd.to_datetime("2010-01-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            (pd.to_datetime("2020-07-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+        ),
+        (
+            "m3_quarterly",
+            (72, 756),
+            (8, 756),
+            (pd.to_datetime("2004-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+        ),
+        (
+            "m3_other",
+            (104, 174),
+            (8, 174),
+            (pd.to_datetime("1996-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+        ),
+        (
+            "m3_yearly",
+            (47, 645),
+            (6, 645),
+            (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            (pd.to_datetime("2016-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+        ),
+    ],
+)
+def test_m3_contains_df_exog(
+    dataset_name,
+    expected_train_df_exog_shape,
+    expected_test_df_exog_shape,
+    expected_train_df_exog_dates,
+    expected_test_df_exog_dates,
+):
+    import ssl
+
+    ssl._create_default_https_context = ssl._create_unverified_context
+    ts_full = load_dataset(dataset_name, parts="full")
+    ts_train, ts_test = load_dataset(dataset_name, parts=("train", "test"))
+    assert ts_full.df_exog.shape == expected_train_df_exog_shape
+    assert ts_train.df_exog.shape == expected_train_df_exog_shape
+    assert ts_test.df_exog.shape == expected_test_df_exog_shape
+    assert (ts_full.df_exog.index.min(), ts_full.df_exog.index.max()) == expected_train_df_exog_dates
+    assert (ts_train.df_exog.index.min(), ts_train.df_exog.index.max()) == expected_train_df_exog_dates
+    assert (ts_test.df_exog.index.min(), ts_test.df_exog.index.max()) == expected_test_df_exog_dates
