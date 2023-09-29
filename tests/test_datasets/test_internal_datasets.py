@@ -157,9 +157,6 @@ def test_not_present_part():
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
-    import ssl
-
-    ssl._create_default_https_context = ssl._create_unverified_context
     ts_full = load_dataset(dataset_name, parts="full")
     ts_parts = load_dataset(dataset_name, parts=dataset_parts)
     parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
@@ -209,9 +206,6 @@ def test_df_exog_statistics(
     expected_train_df_exog_dates,
     expected_test_df_exog_dates,
 ):
-    import ssl
-
-    ssl._create_default_https_context = ssl._create_unverified_context
     ts_full = load_dataset(dataset_name, parts="full")
     ts_train, ts_test = load_dataset(dataset_name, parts=("train", "test"))
     assert ts_full.df_exog.shape == expected_train_df_exog_shape
