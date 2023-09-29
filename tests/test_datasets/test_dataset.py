@@ -1280,5 +1280,7 @@ def test_get_target_quantiles_names(fixture_name, expected_quantiles, request):
 
 
 def test_target_quantiles_names_deprecation_warning(ts_with_prediction_intervals):
-    with pytest.warns(DeprecationWarning, match="Usage of this property may mislead while accessing prediction intervals."):
+    with pytest.warns(
+        DeprecationWarning, match="Usage of this property may mislead while accessing prediction intervals."
+    ):
         _ = ts_with_prediction_intervals.target_quantiles_names
