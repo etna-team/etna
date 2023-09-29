@@ -16,6 +16,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from deprecated import deprecated
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
@@ -24,7 +25,6 @@ from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import inverse_transform_target_components
-from etna.datasets.utils import match_target_quantiles
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -167,6 +167,7 @@ class TSDataset:
                 self.df = self._merge_exog(self.df)
 
         self._target_components_names: Tuple[str, ...] = tuple()
+        self._prediction_intervals_names: Tuple[str, ...] = tuple()
 
         self.df = self.df.sort_index(axis=1, level=("segment", "feature"))
 
@@ -301,11 +302,19 @@ class TSDataset:
 
         # remove components and quantiles
         # it should be done if we have quantiles and components in raw_df
-        # TODO: fix this after making quantiles to work like components, with special methods
         if len(self.target_components_names) > 0:
-            df = df.drop(columns=list(self.target_components_names), level="feature")
-        if len(self.target_quantiles_names) > 0:
-            df = df.drop(columns=list(self.target_quantiles_names), level="feature")
+            df_components_columns = set(self.target_components_names).intersection(
+                df.columns.get_level_values(level="feature")
+            )
+            if len(df_components_columns) > 0:
+                df = df.drop(columns=list(df_components_columns), level="feature")
+
+        if len(self.prediction_intervals_names) > 0:
+            df_intervals_columns = set(self.prediction_intervals_names).intersection(
+                df.columns.get_level_values(level="feature")
+            )
+            if len(df_intervals_columns) > 0:
+                df = df.drop(columns=list(df_intervals_columns), level="feature")
 
         # Here only df is required, other metadata is not necessary to build the dataset
         ts = TSDataset(df=df, freq=self.freq)
@@ -349,6 +358,7 @@ class TSDataset:
         if self.df_exog is not None:
             tsdataset_slice.df_exog = self.df_exog.copy(deep=True)
         tsdataset_slice._target_components_names = deepcopy(self._target_components_names)
+        tsdataset_slice._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
         return tsdataset_slice
 
     @staticmethod
@@ -515,9 +525,15 @@ class TSDataset:
         return self._target_components_names
 
     @property
+    @deprecated(reason="Usage of this property may mislead while accessing prediction intervals. Use `prediction_intervals_names` property to access intervals names!")
     def target_quantiles_names(self) -> Tuple[str, ...]:
         """Get tuple with target quantiles names. Return the empty tuple in case of quantile absence."""
-        return tuple(match_target_quantiles(features=set(self.columns.get_level_values("feature"))))
+        return self._prediction_intervals_names
+
+    @property
+    def prediction_intervals_names(self) -> Tuple[str, ...]:
+        """Get a tuple with prediction intervals names. Return an empty tuple in the case of intervals absence."""
+        return self._prediction_intervals_names
 
     def plot(
         self,
@@ -1000,6 +1016,7 @@ class TSDataset:
         train.raw_df = train_raw_df
         train._regressors = deepcopy(self.regressors)
         train._target_components_names = deepcopy(self.target_components_names)
+        train._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
 
         test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
         test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
@@ -1013,6 +1030,7 @@ class TSDataset:
         test.raw_df = test_raw_df
         test._regressors = deepcopy(self.regressors)
         test._target_components_names = deepcopy(self.target_components_names)
+        test._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
@@ -1074,10 +1092,18 @@ class TSDataset:
         ValueError:
             If ``features`` list contains target components
         """
-        features_contain_target_components = len(set(features).intersection(self.target_components_names)) > 0
+        features_set = set(features)
+
+        features_contain_target_components = len(features_set.intersection(self.target_components_names)) > 0
         if features_contain_target_components:
             raise ValueError(
                 "Target components can't be dropped from the dataset using this method! Use `drop_target_components` method!"
+            )
+
+        features_contain_prediction_intervals = len(features_set.intersection(self.prediction_intervals_names)) > 0
+        if features_contain_prediction_intervals:
+            raise ValueError(
+                "Prediction intervals can't be dropped from the dataset using this method! Use `drop_prediction_intervals` method!"
             )
 
         dfs = [("df", self.df)]
@@ -1086,13 +1112,13 @@ class TSDataset:
 
         for name, df in dfs:
             columns_in_df = df.columns.get_level_values("feature")
-            columns_to_remove = list(set(columns_in_df) & set(features))
-            unknown_columns = set(features) - set(columns_to_remove)
+            columns_to_remove = list(set(columns_in_df) & features_set)
+            unknown_columns = features_set - set(columns_to_remove)
             if len(unknown_columns) > 0:
                 warnings.warn(f"Features {unknown_columns} are not present in {name}!")
             if len(columns_to_remove) > 0:
                 df.drop(columns=columns_to_remove, level="feature", inplace=True)
-        self._regressors = list(set(self._regressors) - set(features))
+        self._regressors = list(set(self._regressors) - features_set)
 
     @property
     def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
@@ -1140,7 +1166,7 @@ class TSDataset:
         if target_level_index > current_level_index:
             raise ValueError("Target level should be higher in the hierarchy than the current level of dataframe!")
 
-        target_names = self.target_quantiles_names + self.target_components_names + ("target",)
+        target_names = self.prediction_intervals_names + self.target_components_names + ("target",)
 
         if target_level_index < current_level_index:
             summing_matrix = self.hierarchical_structure.get_summing_matrix(
@@ -1161,6 +1187,10 @@ class TSDataset:
         if len(self.target_components_names) > 0:  # for pandas >=1.1, <1.2
             target_level_df = target_level_df.drop(columns=list(self.target_components_names), level="feature")
 
+        prediction_intervals_df = target_level_df.loc[:, pd.IndexSlice[:, self.prediction_intervals_names]]
+        if len(self.prediction_intervals_names) > 0:  # for pandas >=1.1, <1.2
+            target_level_df = target_level_df.drop(columns=list(self.prediction_intervals_names), level="feature")
+
         ts = TSDataset(
             df=target_level_df,
             freq=self.freq,
@@ -1171,6 +1201,10 @@ class TSDataset:
 
         if len(self.target_components_names) > 0:
             ts.add_target_components(target_components_df=target_components_df)
+
+        if len(self.prediction_intervals_names) > 0:
+            ts.add_prediction_intervals(prediction_intervals_df=prediction_intervals_df)
+
         return ts
 
     def add_target_components(self, target_components_df: pd.DataFrame):
@@ -1229,6 +1263,59 @@ class TSDataset:
         if len(self.target_components_names) > 0:  # for pandas >=1.1, <1.2
             self.df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
             self._target_components_names = ()
+
+    def add_prediction_intervals(self, prediction_intervals_df: pd.DataFrame):
+        """Add target components into dataset.
+
+        Parameters
+        ----------
+        prediction_intervals_df:
+            Dataframe in etna wide format with prediction intervals
+
+        Raises
+        ------
+        ValueError:
+            If dataset already contains prediction intervals
+        ValueError:
+            If prediction intervals names differs between segments
+        """
+        if len(self.prediction_intervals_names) > 0:
+            raise ValueError("Dataset already contains prediction intervals!")
+
+        intervals_names = sorted(prediction_intervals_df[self.segments[0]].columns.get_level_values("feature"))
+        for segment in self.segments:
+            segment_intervals_names = sorted(prediction_intervals_df[segment].columns.get_level_values("feature"))
+
+            if intervals_names != segment_intervals_names:
+                raise ValueError(
+                    f"Set of prediction intervals differs between segments '{self.segments[0]}' and '{segment}'!"
+                )
+
+        self._prediction_intervals_names = tuple(intervals_names)
+        self.df = (
+            pd.concat((self.df, prediction_intervals_df), axis=1)
+            .loc[self.df.index]
+            .sort_index(axis=1, level=("segment", "feature"))
+        )
+
+    def get_prediction_intervals(self) -> Optional[pd.DataFrame]:
+        """Get ``pandas.DataFrame`` with prediction intervals.
+
+        Returns
+        -------
+        :
+            ``pandas.DataFrame`` with prediction intervals for target variable.
+        """
+        if len(self.prediction_intervals_names) == 0:
+            return None
+
+        return self.to_pandas(features=self.prediction_intervals_names)
+
+    def drop_prediction_intervals(self):
+        """Drop prediction intervals from dataset."""
+        if len(self.prediction_intervals_names) > 0:  # for pandas >=1.1, <1.2
+            self.df.drop(columns=list(self.prediction_intervals_names), level="feature", inplace=True)
+            self._prediction_intervals_names = tuple()
 
     @property
     def columns(self) -> pd.core.indexes.multi.MultiIndex:
