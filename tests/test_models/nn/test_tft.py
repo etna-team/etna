@@ -102,6 +102,8 @@ def test_prediction_interval_run_infuture(example_tsds):
     model.fit(example_tsds)
     future = example_tsds.make_future(future_steps=horizon, tail_steps=pfdb.max_encoder_length)
     forecast = model.forecast(ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.02, 0.98])
+
+    assert forecast.prediction_intervals_names == ("target_0.02", "target_0.98")
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
@@ -120,6 +122,8 @@ def test_prediction_interval_run_infuture_warning_not_found_quantiles(example_ts
         forecast = model.forecast(
             ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.02, 0.4, 0.98]
         )
+
+    assert forecast.prediction_intervals_names == ("target_0.02", "target_0.98")
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
@@ -136,6 +140,8 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
     future = example_tsds.make_future(future_steps=horizon, tail_steps=pfdb.max_encoder_length)
     with pytest.warns(UserWarning, match="Quantiles can't be computed"):
         forecast = model.forecast(ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.02, 0.98])
+
+    assert len(forecast.prediction_intervals_names) == 0
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target"}.issubset(segment_slice.columns)
@@ -160,6 +166,7 @@ def test_forecast_model_equals_pipeline(example_tsds):
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast(prediction_interval=True, quantiles=[0.02, 0.98])
 
+    assert forecast_model.prediction_intervals_names == forecast_pipeline.prediction_intervals_names
     pd.testing.assert_frame_equal(forecast_model.to_pandas(), forecast_pipeline.to_pandas())
 
 
