@@ -175,8 +175,6 @@ def ts_with_target_components():
         {
             "timestamp": timestamp,
             "target": 3,
-            "target_component_a": 1,
-            "target_component_b": 2,
             "exog": 10,
             "segment": 1,
         }
@@ -185,16 +183,36 @@ def ts_with_target_components():
         {
             "timestamp": timestamp,
             "target": 7,
-            "target_component_a": 3,
-            "target_component_b": 4,
             "exog": 10,
             "segment": 2,
         }
     )
+
+    components_df_1 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 1,
+            "target_component_b": 2,
+            "segment": 1,
+        }
+    )
+    components_df_2 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 3,
+            "target_component_b": 4,
+            "segment": 2,
+        }
+    )
+
     df = pd.concat([df_1, df_2])
-    df = TSDataset.to_dataset(df)
+    components_df = pd.concat([components_df_1, components_df_2])
+
+    df = TSDataset.to_dataset(df=df)
+    components_df = TSDataset.to_dataset(df=components_df)
+
     ts = TSDataset(df=df, freq="D")
-    ts._target_components_names = ["target_component_a", "target_component_b"]
+    ts.add_target_components(target_components_df=components_df)
     return ts
 
 
