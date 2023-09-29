@@ -202,7 +202,7 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, exp
         ),
     ],
 )
-def test_m3_contains_df_exog(
+def test_df_exog_statistics(
     dataset_name,
     expected_train_df_exog_shape,
     expected_test_df_exog_shape,
