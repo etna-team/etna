@@ -525,7 +525,9 @@ class TSDataset:
         return self._target_components_names
 
     @property
-    @deprecated(reason="Usage of this property may mislead while accessing prediction intervals. Use `prediction_intervals_names` property to access intervals names!")
+    @deprecated(
+        reason="Usage of this property may mislead while accessing prediction intervals. Use `prediction_intervals_names` property to access intervals names!"
+    )
     def target_quantiles_names(self) -> Tuple[str, ...]:
         """Get tuple with target quantiles names. Return the empty tuple in case of quantile absence."""
         return self._prediction_intervals_names
