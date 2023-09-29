@@ -129,6 +129,8 @@ def test_prediction_interval_run_infuture(example_tsds):
     model.fit(example_tsds)
     future = example_tsds.make_future(future_steps=horizon, tail_steps=horizon)
     forecast = model.forecast(ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
@@ -155,6 +157,7 @@ def test_forecast_model_equals_pipeline(example_tsds):
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast(prediction_interval=True, quantiles=[0.02, 0.98])
 
+    assert forecast_model.prediction_intervals_names == forecast_pipeline.prediction_intervals_names
     pd.testing.assert_frame_equal(forecast_model.to_pandas(), forecast_pipeline.to_pandas())
 
 
