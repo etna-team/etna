@@ -1,13 +1,17 @@
 import tempfile
 import urllib.request
 import zipfile
+from datetime import date
 from functools import partial
 from pathlib import Path
+from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Tuple
 from typing import Union
 
+import holidays
 import numpy as np
 import pandas as pd
 
@@ -28,37 +32,47 @@ def _check_dataset_local(dataset_path: Path) -> bool:
     return dataset_path.exists()
 
 
-def _download_dataset_zip(url: str, file_name: str, **kwargs) -> pd.DataFrame:
+def _download_dataset_zip(
+    url: str, file_names: Union[str, Tuple[str, ...]], read_functions: Union[Callable, Tuple[Callable, ...]]
+) -> Any:
     """
-    Download zipped csv file.
+    Download zipped files.
 
     Parameters
     ----------
     url:
         url of the dataset
-    file_name:
-        csv file name in zip archive
+    file_names:
+        file names in zip archive to load
+    read_functions:
+        functions for loading files from zip archive
 
     Returns
     -------
     result:
-        dataframe with data
+        data from zip archive
 
     Raises
     ------
     Exception:
         any error during downloading, saving and reading dataset from url
     """
+    file_names_ = (file_names,) if isinstance(file_names, str) else file_names
+    read_functions_ = (read_functions,) if callable(read_functions) else read_functions
     try:
         with tempfile.TemporaryDirectory() as td:
             temp_path = Path(td) / "temp.zip"
             urllib.request.urlretrieve(url, temp_path)
             with zipfile.ZipFile(temp_path) as f:
                 f.extractall(td)
-                df = pd.read_csv(Path(td) / file_name, **kwargs)
+                out = []
+                for file_name, read_function in zip(file_names_, read_functions_):
+                    data = read_function(Path(td) / file_name)
+                    out.append(data)
+                out = out[0] if len(out) == 1 else out
     except Exception as err:
         raise Exception(f"Error during downloading and reading dataset. Reason: {repr(err)}")
-    return df
+    return out
 
 
 def load_dataset(
@@ -156,8 +170,9 @@ def get_electricity_dataset_15t(dataset_dir) -> None:
     """
     url = "https://archive.ics.uci.edu/static/public/321/electricityloaddiagrams20112014.zip"
     dataset_dir.mkdir(exist_ok=True, parents=True)
-    data = _download_dataset_zip(url=url, file_name="LD2011_2014.txt", sep=";", dtype=str)
-
+    data = _download_dataset_zip(
+        url=url, file_names="LD2011_2014.txt", read_functions=partial(pd.read_csv, sep=";", dtype=str)
+    )
     data = data.rename({"Unnamed: 0": "timestamp"}, axis=1)
     data["timestamp"] = pd.to_datetime(data["timestamp"])
     dt_list = sorted(data["timestamp"].unique())
@@ -239,6 +254,99 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     )
 
 
+def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
+    """
+    Download and save traffic (2008-2009) dataset in different frequency modes.
+
+    15 months worth of daily data (440 daily records) that describes the occupancy rate, between 0 and 1, of different
+    car lanes of the San Francisco bay area freeways across time. Data was collected by 963 sensors from
+    Jan. 1st 2008 to Mar. 30th 2009 (15 days were dropped from this period: public holidays and two days with
+    anomalies, we set zero values for these days). Initial dataset has 10 min frequency, we create traffic with hour
+    frequency by mean aggregation. Each frequency mode has its own specific prediction horizon: 6 * 24 for 10T,
+    24 for hourly.
+
+    Parameters
+    ----------
+    dataset_dir:
+        The path for saving dataset locally.
+    dataset_freq:
+        Frequency mode.
+
+    Notes
+    -----
+    There is another "traffic" dataset that is also popular and used in papers for time series tasks. This
+    dataset is also from the California Department of Transportation PEMS website, http://pems.dot.ca.gov, however for
+    different time period: from 2015 to 2016.
+
+    References
+    ----------
+    .. [1] https://archive.ics.uci.edu/dataset/204/pems+sf
+    .. [2] http://pems.dot.ca.gov
+    """
+
+    def read_data(path: Path, part: str) -> np.ndarray:
+        with open(path, "r") as f:
+            if part in ("randperm", "stations_list"):
+                data = f.read().lstrip("[").rstrip("]\n").split(" ")
+                out = np.array(map(int, data)) if part == "randperm" else np.array(data)
+                return out
+            else:
+                lines = []
+                for line in f:
+                    line_segments = line.lstrip("[").rstrip("]\n").split(";")
+                    line_target = [list(map(float, segment.split(" "))) for segment in line_segments]
+                    lines.append(line_target)
+                out = np.array(lines)
+                return out
+
+    url = "https://archive.ics.uci.edu/static/public/204/pems+sf.zip"
+
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    file_names = ("randperm", "stations_list", "PEMS_train", "PEMS_test")
+    read_functions = tuple(partial(read_data, part=file_name) for file_name in file_names)
+
+    ts_indecies, stations, targets_train, targets_test = _download_dataset_zip(
+        url=url, file_names=file_names, read_functions=read_functions
+    )
+
+    targets = np.concatenate([targets_train, targets_test], axis=0)
+    targets = targets[np.argsort(ts_indecies)].reshape(-1, 963)
+
+    drop_days = (
+        list(holidays.UnitedStates(years=2008).keys())
+        + list(holidays.UnitedStates(years=2009).keys())[:3]
+        + [date(2009, 3, 8), date(2009, 3, 10)]
+    )
+
+    dates_df = pd.DataFrame({"timestamp": pd.date_range("2008-01-01 00:00:00", "2009-03-30 23:50:00", freq="10T")})
+    dates_df["dt"] = dates_df["timestamp"].dt.date
+    dates_df_cropped = dates_df[~dates_df["dt"].isin(drop_days)]
+    dates_df = dates_df.drop(["dt"], axis=1)
+
+    df = pd.DataFrame(targets, columns=stations)
+    df["timestamp"] = dates_df_cropped["timestamp"].values
+    df = df.merge(dates_df, on=["timestamp"], how="right").fillna(0)
+    df = df.melt("timestamp", var_name="segment", value_name="target")
+
+    if dataset_freq == "10T":
+        df_full = TSDataset.to_dataset(df)
+        df_test = df_full.tail(6 * 24)
+        df_train = df_full[~df_full.index.isin(df_test.index)]
+    elif dataset_freq == "hourly":
+        df["timestamp"] = df["timestamp"].dt.floor("h")
+        df = df.groupby(["timestamp", "segment"], as_index=False)[["target"]].mean()
+        df_full = TSDataset.to_dataset(df)
+        df_test = df_full.tail(24)
+        df_train = df_full[~df_full.index.isin(df_test.index)]
+    else:
+        raise NotImplementedError(f"traffic_2008 with {dataset_freq} frequency is not available.")
+
+    df_full.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip")
+    df_train.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip")
+    df_test.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip")
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
@@ -273,6 +381,16 @@ datasets_dict: Dict[str, Dict] = {
     "m4_yearly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Yearly"),
         "freq": "D",
+        "parts": ("train", "test", "full"),
+    },
+    "traffic_2008_10T": {
+        "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="10T"),
+        "freq": "10T",
+        "parts": ("train", "test", "full"),
+    },
+    "traffic_2008_hourly": {
+        "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="hourly"),
+        "freq": "H",
         "parts": ("train", "test", "full"),
     },
 }

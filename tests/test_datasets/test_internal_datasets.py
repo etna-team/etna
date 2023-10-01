@@ -126,6 +126,22 @@ def test_not_present_part():
             pd.to_datetime("2022-01-01 00:00:00"),
             ("train", "test"),
         ),
+        pytest.param(
+            "traffic_2008_10T",
+            (65376 + 144, 963),
+            pd.to_datetime("2008-01-01 00:00:00"),
+            pd.to_datetime("2009-03-30 23:50:00"),
+            ("train", "test"),
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        pytest.param(
+            "traffic_2008_hourly",
+            (10896 + 24, 963),
+            pd.to_datetime("2008-01-01 00:00:00"),
+            pd.to_datetime("2009-03-30 23:00:00"),
+            ("train", "test"),
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
