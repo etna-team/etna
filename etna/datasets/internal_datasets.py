@@ -125,7 +125,6 @@ def load_dataset(
             index_col=[0],
             parse_dates=[0],
         )
-        ts = TSDataset(data, freq=freq)
         if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
             df_exog = pd.read_csv(
                 dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{parts_[0]}_exog.csv.gz",
@@ -135,6 +134,8 @@ def load_dataset(
                 parse_dates=[0],
             )
             ts = TSDataset(data, df_exog=df_exog, freq=freq)
+        else:
+            ts = TSDataset(data, freq=freq)
         return ts
     else:
         ts_out = []
@@ -142,7 +143,6 @@ def load_dataset(
             data = pd.read_csv(
                 dataset_dir / f"{name}_{part}.csv.gz", compression="gzip", header=[0, 1], index_col=[0], parse_dates=[0]
             )
-            ts = TSDataset(data, freq=freq)
             if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
                 df_exog = pd.read_csv(
                     dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz",
@@ -152,6 +152,8 @@ def load_dataset(
                     parse_dates=[0],
                 )
                 ts = TSDataset(data, df_exog=df_exog, freq=freq)
+            else:
+                ts = TSDataset(data, freq=freq)
             ts_out.append(ts)
         return ts_out
 
@@ -285,7 +287,6 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     freq = get_freq[dataset_freq]
     exog_dir = dataset_dir / EXOG_SUBDIRECTORY
 
-    dataset_dir.mkdir(exist_ok=True, parents=True)
     exog_dir.mkdir(exist_ok=True, parents=True)
 
     data = pd.read_csv(f"{url_data}/M3_{dataset_freq}_TSTS.csv")
