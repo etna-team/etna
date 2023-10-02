@@ -1,10 +1,7 @@
 name: Delete old untagged images
-#on:
-#  schedule:
-#    - cron: '0 8 * * 1'
-on:
-  pull_request:
-    types: [opened, synchronize]
+on: 
+  schedule: 
+    - cron: '0 8 * * 1'
 jobs:
   comment:
     runs-on: ubuntu-latest
