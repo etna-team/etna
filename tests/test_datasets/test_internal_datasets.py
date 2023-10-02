@@ -142,6 +142,34 @@ def test_not_present_part():
             ("train", "test"),
             marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
         ),
+        (
+            "m3_monthly",
+            (126 + 18, 2856),
+            pd.to_datetime("2010-01-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m3_quarterly",
+            (64 + 8, 1512),
+            pd.to_datetime("2004-03-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m3_other",
+            (96 + 8, 348),
+            pd.to_datetime("1996-03-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "m3_yearly",
+            (41 + 6, 1290),
+            pd.to_datetime("1975-12-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
@@ -152,3 +180,61 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, exp
     assert ts_full.index.min() == expected_min_date
     assert ts_full.index.max() == expected_max_date
     assert ts_full.df.shape[0] == parts_rows
+
+
+@pytest.mark.parametrize(
+    "dataset_name, expected_df_exog_shapes, expected_df_exog_dates, dataset_parts",
+    [
+        (
+            "m3_monthly",
+            ((144, 1428), (144, 1428), (18, 1428)),
+            (
+                (pd.to_datetime("2010-01-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2010-01-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2020-07-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
+        ),
+        (
+            "m3_quarterly",
+            ((72, 756), (72, 756), (8, 756)),
+            (
+                (pd.to_datetime("2004-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2004-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
+        ),
+        (
+            "m3_other",
+            ((104, 174), (104, 174), (8, 174)),
+            (
+                (pd.to_datetime("1996-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("1996-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
+        ),
+        (
+            "m3_yearly",
+            ((47, 645), (47, 645), (6, 645)),
+            (
+                (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2016-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
+        ),
+    ],
+)
+def test_df_exog_statistics(
+    dataset_name,
+    expected_df_exog_shapes,
+    expected_df_exog_dates,
+    dataset_parts,
+):
+    ts_parts = load_dataset(dataset_name, parts=dataset_parts)
+    for i, part in enumerate(ts_parts):
+        assert part.df_exog.shape == expected_df_exog_shapes[i]
+    for i, part in enumerate(ts_parts):
+        assert (part.df_exog.index.min(), part.df_exog.index.max()) == expected_df_exog_dates[i]
