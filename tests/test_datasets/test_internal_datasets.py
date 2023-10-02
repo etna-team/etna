@@ -167,55 +167,58 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, exp
 
 
 @pytest.mark.parametrize(
-    "dataset_name, expected_train_df_exog_shape, expected_test_df_exog_shape, expected_train_df_exog_dates, expected_test_df_exog_dates, dataset_parts",
+    "dataset_name, expected_df_exog_shapes, expected_df_exog_dates, dataset_parts",
     [
         (
             "m3_monthly",
-            (126 + 18, 1428),
-            (18, 1428),
-            (pd.to_datetime("2010-01-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            (pd.to_datetime("2020-07-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            ("train", "test"),
+            ((144, 1428), (144, 1428), (18, 1428)),
+            (
+                (pd.to_datetime("2010-01-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2010-01-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2020-07-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
         ),
         (
             "m3_quarterly",
-            (64 + 8, 756),
-            (8, 756),
-            (pd.to_datetime("2004-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            ("train", "test"),
+            ((72, 756), (72, 756), (8, 756)),
+            (
+                (pd.to_datetime("2004-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2004-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
         ),
         (
             "m3_other",
-            (96 + 8, 174),
-            (8, 174),
-            (pd.to_datetime("1996-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            ("train", "test"),
+            ((104, 174), (104, 174), (8, 174)),
+            (
+                (pd.to_datetime("1996-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("1996-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
         ),
         (
             "m3_yearly",
-            (41 + 6, 645),
-            (6, 645),
-            (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            (pd.to_datetime("2016-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
-            ("train", "test"),
+            ((47, 645), (47, 645), (6, 645)),
+            (
+                (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2016-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
         ),
     ],
 )
 def test_df_exog_statistics(
     dataset_name,
-    expected_train_df_exog_shape,
-    expected_test_df_exog_shape,
-    expected_train_df_exog_dates,
-    expected_test_df_exog_dates,
+    expected_df_exog_shapes,
+    expected_df_exog_dates,
     dataset_parts,
 ):
-    ts_full = load_dataset(dataset_name, parts="full")
-    ts_train, ts_test = load_dataset(dataset_name, parts=dataset_parts)
-    assert ts_full.df_exog.shape == expected_train_df_exog_shape
-    assert ts_train.df_exog.shape == expected_train_df_exog_shape
-    assert ts_test.df_exog.shape == expected_test_df_exog_shape
-    assert (ts_full.df_exog.index.min(), ts_full.df_exog.index.max()) == expected_train_df_exog_dates
-    assert (ts_train.df_exog.index.min(), ts_train.df_exog.index.max()) == expected_train_df_exog_dates
-    assert (ts_test.df_exog.index.min(), ts_test.df_exog.index.max()) == expected_test_df_exog_dates
+    ts_parts = load_dataset(dataset_name, parts=dataset_parts)
+    for i, part in enumerate(ts_parts):
+        assert part.df_exog.shape == expected_df_exog_shapes[i]
+    for i, part in enumerate(ts_parts):
+        assert (part.df_exog.index.min(), part.df_exog.index.max()) == expected_df_exog_dates[i]
