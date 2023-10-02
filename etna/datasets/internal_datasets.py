@@ -14,6 +14,7 @@ import pandas as pd
 from etna.datasets.tsdataset import TSDataset
 
 _DOWNLOAD_PATH = Path.home() / ".etna"
+EXOG_SUBDIRECTORY = "exog"
 
 
 def _check_dataset_local(dataset_path: Path) -> bool:
@@ -116,7 +117,6 @@ def load_dataset(
 
     if not _check_dataset_local(dataset_path) or rebuild_dataset:
         get_dataset_function(dataset_dir)
-
     if len(parts_) == 1:
         data = pd.read_csv(
             dataset_dir / f"{name}_{parts_[0]}.csv.gz",
@@ -125,7 +125,17 @@ def load_dataset(
             index_col=[0],
             parse_dates=[0],
         )
-        ts = TSDataset(data, freq=freq)
+        if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
+            df_exog = pd.read_csv(
+                dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{parts_[0]}_exog.csv.gz",
+                compression="gzip",
+                header=[0, 1],
+                index_col=[0],
+                parse_dates=[0],
+            )
+            ts = TSDataset(data, df_exog=df_exog, freq=freq)
+        else:
+            ts = TSDataset(data, freq=freq)
         return ts
     else:
         ts_out = []
@@ -133,7 +143,17 @@ def load_dataset(
             data = pd.read_csv(
                 dataset_dir / f"{name}_{part}.csv.gz", compression="gzip", header=[0, 1], index_col=[0], parse_dates=[0]
             )
-            ts = TSDataset(data, freq=freq)
+            if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
+                df_exog = pd.read_csv(
+                    dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz",
+                    compression="gzip",
+                    header=[0, 1],
+                    index_col=[0],
+                    parse_dates=[0],
+                )
+                ts = TSDataset(data, df_exog=df_exog, freq=freq)
+            else:
+                ts = TSDataset(data, freq=freq)
             ts_out.append(ts)
         return ts_out
 
@@ -239,10 +259,114 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     )
 
 
+def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
+    """
+    Download and save M3 dataset in different frequency modes.
+
+    The M3 dataset is a collection of 3,003 time series used for the third edition of the Makridakis forecasting
+    Competition. The M3 dataset consists of time series of yearly, quarterly, monthly and other data. Dataset with other
+    data originally does not have any particular frequency, but we assume it as a quarterly data. Each frequency mode
+    has its own specific prediction horizon: 6 for yearly, 8 for quarterly, 18 for monthly, and 8 for other.
+
+    M3 dataset has series ending on different dates. As to the specificity of TSDataset we should add custom dates
+    to make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
+    dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
+
+    Parameters
+    ----------
+    dataset_dir:
+        The path for saving dataset locally.
+    dataset_freq:
+        Frequency mode.
+
+    References
+    ----------
+    .. [1] https://forvis.github.io/datasets/m3-data/
+    .. [2] https://forecasters.org/resources/time-series-data/m3-competition/
+    """
+    get_freq = {"monthly": "M", "quarterly": "Q-DEC", "yearly": "A-DEC", "other": "Q-DEC"}
+    get_horizon = {"monthly": 18, "quarterly": 8, "yearly": 6, "other": 8}
+    url_data = "https://forvis.github.io/data"
+    end_date = "2022-01-01"
+    freq = get_freq[dataset_freq]
+    exog_dir = dataset_dir / EXOG_SUBDIRECTORY
+
+    exog_dir.mkdir(exist_ok=True, parents=True)
+
+    data = pd.read_csv(f"{url_data}/M3_{dataset_freq}_TSTS.csv")
+
+    df_full = pd.DataFrame()
+    df_train = pd.DataFrame()
+    df_test = pd.DataFrame()
+
+    df_full_exog = pd.DataFrame()
+    df_test_exog = pd.DataFrame()
+    horizon = get_horizon[dataset_freq]
+    for _, group in data.groupby("series_id"):
+        timestamps = pd.date_range(end=end_date, freq=freq, periods=group.shape[0])
+        group.rename(columns={"timestamp": "origin_timestamp", "series_id": "segment", "value": "target"}, inplace=True)
+        group["segment"] = group["segment"] + "_" + group["category"]
+        group.drop(columns=["category"], inplace=True)
+        group["timestamp"] = timestamps
+
+        df_full_part_exog = group.copy()
+        df_full_part_exog.drop(columns=["target"], inplace=True)
+        group.drop(columns=["origin_timestamp"], inplace=True)
+
+        train_part = group.iloc[:-horizon]
+        test_part = group.iloc[-horizon:]
+        df_test_part_exog = df_full_part_exog.iloc[-horizon:]
+
+        df_full = pd.concat([df_full, group])
+        df_train = pd.concat([df_train, train_part])
+        df_test = pd.concat([df_test, test_part])
+        df_full_exog = pd.concat([df_full_exog, df_full_part_exog])
+        df_test_exog = pd.concat([df_test_exog, df_test_part_exog])
+
+    TSDataset.to_dataset(df_full).to_csv(
+        dataset_dir / f"m3_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_train).to_csv(
+        dataset_dir / f"m3_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_test).to_csv(
+        dataset_dir / f"m3_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_full_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_full_exog.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_full_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_train_exog.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_test_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_test_exog.csv.gz", index=True, compression="gzip"
+    )
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
         "freq": "15T",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_monthly": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="monthly"),
+        "freq": "M",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_quarterly": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="quarterly"),
+        "freq": "Q-DEC",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_yearly": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="yearly"),
+        "freq": "A-DEC",
+        "parts": ("train", "test", "full"),
+    },
+    "m3_other": {
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="other"),
+        "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
     },
     "m4_hourly": {
