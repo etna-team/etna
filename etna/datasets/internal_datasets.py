@@ -314,8 +314,8 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     targets = targets[np.argsort(ts_indecies)].reshape(-1, 963)
 
     drop_days = (
-        list(holidays.UnitedStates(years=2008).keys())
-        + list(holidays.UnitedStates(years=2009).keys())[:3]
+        list(holidays.country_holidays(country="US", years=2008).keys())
+        + list(holidays.country_holidays(country="US", years=2009).keys())[:3]
         + [date(2009, 3, 8), date(2009, 3, 10)]
     )
 
