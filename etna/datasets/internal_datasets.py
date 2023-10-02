@@ -264,9 +264,13 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     Download and save M3 dataset in different frequency modes.
 
     The M3 dataset is a collection of 3,003 time series used for the third edition of the Makridakis forecasting
-    Competition. The M3 dataset consists of time series of yearly, quarterly, monthly and other data.
-    Each frequency mode has its own specific prediction horizon: 6 for yearly, 8 for quarterly,
-    18 for monthly, and 8 for other.
+    Competition. The M3 dataset consists of time series of yearly, quarterly, monthly and other data. Dataset with other
+    data originally does not have any particular frequency, but we assume it as a quarterly data. Each frequency mode
+    has its own specific prediction horizon: 6 for yearly, 8 for quarterly, 18 for monthly, and 8 for other.
+
+    M3 dataset has series ending on different dates. As to the specificity of TSDataset we should add custom dates
+    to make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
+    dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
 
     Parameters
     ----------
