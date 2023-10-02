@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `ResampleWithDistributionTransform` working with categorical columns ([#82](https://github.com/etna-team/etna/pull/82))
 -
 - Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
-- 
+- Fix CI job `cron-delete-untagged-images` ([#95](https://github.com/etna-team/etna/pull/95))
 - Rendering table of contents in notebooks ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - Fix formatting of docstrings, fix links from netlify to docs.etna.ai ([#62](https://github.com/etna-team/etna/pull/62))
 
