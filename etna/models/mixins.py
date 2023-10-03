@@ -15,6 +15,7 @@ from typing_extensions import Self
 
 from etna.core.mixins import SaveMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import match_target_quantiles
 from etna.models.decorators import log_decorator
 
 
@@ -442,7 +443,17 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         df = df.combine_first(result_df).reset_index()
 
         df = TSDataset.to_dataset(df)
+
+        quantile_columns = match_target_quantiles(df.columns.get_level_values("feature"))
+        if len(quantile_columns) > 0:
+            columns_list = list(quantile_columns)
+            quantile_df = df.loc[:, pd.IndexSlice[:, columns_list]]
+            df = df.drop(columns=columns_list, level="feature")
+
         ts.df = df
+
+        if len(quantile_columns) > 0:
+            ts.add_prediction_intervals(prediction_intervals_df=quantile_df)
 
         prediction_size = kwargs.get("prediction_size")
         if prediction_size is not None:
