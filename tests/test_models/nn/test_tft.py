@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import numpy as np
 import pandas as pd
 import pytest
 from lightning_fabric.utilities.seed import seed_everything
@@ -104,12 +105,17 @@ def test_prediction_interval_run_infuture(example_tsds):
     forecast = model.forecast(ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.02, 0.98])
 
     assert forecast.prediction_intervals_names == ("target_0.02", "target_0.98")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.98"] - segment_slice["target_0.02"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.02"] >= 0).all()
         assert (segment_slice["target_0.98"] - segment_slice["target"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.98"], segment_intervals["target_0.98"])
+        assert np.allclose(segment_slice["target_0.02"], segment_intervals["target_0.02"])
 
 
 def test_prediction_interval_run_infuture_warning_not_found_quantiles(example_tsds):
@@ -124,10 +130,15 @@ def test_prediction_interval_run_infuture_warning_not_found_quantiles(example_ts
         )
 
     assert forecast.prediction_intervals_names == ("target_0.02", "target_0.98")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.02", "target_0.98", "target"}.issubset(segment_slice.columns)
         assert {"target_0.4"}.isdisjoint(segment_slice.columns)
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.98"], segment_intervals["target_0.98"])
+        assert np.allclose(segment_slice["target_0.02"], segment_intervals["target_0.02"])
 
 
 def test_prediction_interval_run_infuture_warning_loss(example_tsds):

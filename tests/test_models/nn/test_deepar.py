@@ -1,5 +1,6 @@
 from unittest.mock import Mock
 
+import numpy as np
 import pandas as pd
 import pytest
 from lightning_fabric.utilities.seed import seed_everything
@@ -131,12 +132,17 @@ def test_prediction_interval_run_infuture(example_tsds):
     forecast = model.forecast(ts=future, prediction_size=horizon, prediction_interval=True, quantiles=[0.025, 0.975])
 
     assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
 def test_forecast_model_equals_pipeline(example_tsds):
