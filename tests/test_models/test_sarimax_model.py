@@ -222,7 +222,6 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
     assert sorted(components.columns) == sorted(expected_components)
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "components_method_name,predict_method_name,in_sample",
     (("predict_components", "predict", True), ("forecast_components", "forecast", False)),

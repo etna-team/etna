@@ -271,9 +271,7 @@ doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
 #    "ignore: All-NaN slice encountered",
 #]
 markers = [
-    "smoke",
-    "long_1",
-    "long_2"
+    "smoke"
 ]
 
 [tool.coverage.report]

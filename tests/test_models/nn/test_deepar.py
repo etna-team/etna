@@ -28,7 +28,6 @@ def _get_default_dataset_builder(horizon: int):
     )
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize("horizon", [8, 21])
 def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon, encoder_length=21):
     """
@@ -67,7 +66,6 @@ def test_deepar_model_run_weekly_overfit(weekly_period_df, horizon, encoder_leng
     assert mae(ts_test, ts_pred) < 0.2207
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize("horizon", [8])
 def test_deepar_model_run_weekly_overfit_with_scaler(
     ts_dataset_weekly_function_with_horizon, horizon, encoder_length=21
