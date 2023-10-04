@@ -2,13 +2,13 @@ import warnings
 from typing import Callable
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.datasets import set_columns_wide
 from etna.transforms.base import ReversibleTransform
-from etna.transforms.utils import match_target_quantiles
 
 
 class LambdaTransform(ReversibleTransform):
@@ -113,13 +113,15 @@ class LambdaTransform(ReversibleTransform):
             result = result.sort_index(axis=1)
         return result
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """Apply inverse transformation to the series from df.
 
         Parameters
         ----------
         df:
             series to transform
+        prediction_intervals:
+            tuple with prediction intervals names
 
         Returns
         -------
@@ -134,16 +136,14 @@ class LambdaTransform(ReversibleTransform):
                 result_df, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
             )
             if self.in_column == "target":
-                segment_columns = result_df.columns.get_level_values("feature").tolist()
-                quantiles = match_target_quantiles(set(segment_columns))
-                for quantile_column_nm in quantiles:
-                    features = df.loc[:, pd.IndexSlice[:, quantile_column_nm]].sort_index(axis=1)
+                for interval_border_column_nm in prediction_intervals:
+                    features = df.loc[:, pd.IndexSlice[:, interval_border_column_nm]].sort_index(axis=1)
                     transformed_features = self.inverse_transform_func(features)
                     result_df = set_columns_wide(
                         result_df,
                         transformed_features,
-                        features_left=[quantile_column_nm],
-                        features_right=[quantile_column_nm],
+                        features_left=[interval_border_column_nm],
+                        features_right=[interval_border_column_nm],
                     )
         return result_df
 

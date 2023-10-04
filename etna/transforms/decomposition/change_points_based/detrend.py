@@ -1,5 +1,6 @@
 from typing import Dict
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -15,7 +16,6 @@ from etna.transforms.decomposition.change_points_based.change_points_models impo
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnRegressionPerIntervalModel
-from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentChangePointsTrendTransform(_OneSegmentChangePointsTransform):
@@ -32,12 +32,13 @@ class _OneSegmentChangePointsTrendTransform(_OneSegmentChangePointsTransform):
         df.loc[:, self.in_column] -= transformed_series
         return df
 
-    def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
+    def _apply_inverse_transformation(
+        self, df: pd.DataFrame, transformed_series: pd.Series, prediction_intervals: Tuple[str, ...]
+    ) -> pd.DataFrame:
         df.loc[:, self.in_column] += transformed_series
         if self.in_column == "target":
-            quantiles = match_target_quantiles(set(df.columns))
-            for quantile_column_nm in quantiles:
-                df.loc[:, quantile_column_nm] += transformed_series
+            for interval_border_column_nm in prediction_intervals:
+                df.loc[:, interval_border_column_nm] += transformed_series
         return df
 
 

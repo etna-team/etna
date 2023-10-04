@@ -1,6 +1,7 @@
 import warnings
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import pandas as pd
 
@@ -103,7 +104,7 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
         df = df.drop(["fold", "distribution"], axis=1)
         return df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """Inverse transform Dataframe."""
         return df
 

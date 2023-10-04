@@ -1,5 +1,6 @@
 from typing import Dict
 from typing import List
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,7 +14,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
@@ -111,7 +111,7 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         """
         return self.fit(df).transform(df)
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """
         Inverse transformation for trend subtraction: add trend to prediction.
 
@@ -119,6 +119,8 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         ----------
         df:
             data to transform
+        prediction_intervals:
+            tuple with prediction intervals names
 
         Returns
         -------
@@ -133,9 +135,8 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         add_trend_timeseries = y + trend
         result[self.in_column] = add_trend_timeseries
         if self.in_column == "target":
-            quantiles = match_target_quantiles(set(result.columns))
-            for quantile_column_nm in quantiles:
-                result.loc[:, quantile_column_nm] += trend
+            for interval_border_column_nm in prediction_intervals:
+                result.loc[:, interval_border_column_nm] += trend
         return result
 
 

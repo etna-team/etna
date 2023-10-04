@@ -1,6 +1,7 @@
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Tuple
 
 import pandas as pd
 
@@ -90,13 +91,15 @@ class FilterFeaturesTransform(ReversibleTransform):
         result = result.sort_index(axis=1)
         return result
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """Apply inverse transform to the data.
 
         Parameters
         ----------
         df:
             dataframe to apply inverse transformation
+        prediction_intervals:
+            tuple with prediction intervals names
 
         Returns
         -------

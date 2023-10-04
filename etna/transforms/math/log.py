@@ -1,6 +1,7 @@
 import warnings
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -8,7 +9,6 @@ import pandas as pd
 from etna.datasets import TSDataset
 from etna.datasets import set_columns_wide
 from etna.transforms.base import ReversibleTransform
-from etna.transforms.utils import match_target_quantiles
 
 
 class LogTransform(ReversibleTransform):
@@ -101,13 +101,15 @@ class LogTransform(ReversibleTransform):
             result = result.sort_index(axis=1)
         return result
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """Apply inverse transformation to the dataset.
 
         Parameters
         ----------
         df:
             dataframe with data to transform.
+        prediction_intervals:
+            tuple with prediction intervals names.
 
         Returns
         -------
@@ -122,16 +124,14 @@ class LogTransform(ReversibleTransform):
                 result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
             )
             if self.in_column == "target":
-                segment_columns = result.columns.get_level_values("feature").tolist()
-                quantiles = match_target_quantiles(set(segment_columns))
-                for quantile_column_nm in quantiles:
-                    features = df.loc[:, pd.IndexSlice[:, quantile_column_nm]]
+                for interval_border_column_nm in prediction_intervals:
+                    features = df.loc[:, pd.IndexSlice[:, interval_border_column_nm]]
                     transformed_features = np.expm1(features * np.log(self.base))
                     result = set_columns_wide(
                         result,
                         transformed_features,
-                        features_left=[quantile_column_nm],
-                        features_right=[quantile_column_nm],
+                        features_left=[interval_border_column_nm],
+                        features_right=[interval_border_column_nm],
                     )
 
         return result

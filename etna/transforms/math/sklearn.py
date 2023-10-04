@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 from typing import cast
 
@@ -17,7 +18,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
-from etna.transforms.utils import match_target_quantiles
 
 
 class TransformMode(StringEnumWithRepr):
@@ -175,7 +175,7 @@ class SklearnTransform(ReversibleTransform):
 
         return df
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """
         Apply inverse transformation to DataFrame.
 
@@ -183,6 +183,8 @@ class SklearnTransform(ReversibleTransform):
         ----------
         df:
             DataFrame to apply inverse transform.
+        prediction_intervals:
+            Tuple with prediction intervals names.
 
         Returns
         -------
@@ -203,30 +205,30 @@ class SklearnTransform(ReversibleTransform):
 
         df = df.sort_index(axis=1)
 
-        if "target" in self.in_column:
-            quantiles = match_target_quantiles(set(df.columns.get_level_values("feature")))
-        else:
-            quantiles = set()
+        if "target" not in self.in_column:
+            prediction_intervals = tuple()
 
         if self.inplace:
-            quantiles_arrays: Dict[str, pd.DataFrame] = dict()
+            intervals_arrays: Dict[str, pd.DataFrame] = dict()
             transformed = self._make_inverse_transform(df)
 
-            # quantiles inverse transformation
-            for quantile_column_nm in quantiles:
+            # intervals borders inverse transformation
+            for interval_border_column_nm in prediction_intervals:
                 df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
                 df_slice_copy = set_columns_wide(
-                    df_slice_copy, df, features_left=["target"], features_right=[quantile_column_nm]
+                    df_slice_copy, df, features_left=["target"], features_right=[interval_border_column_nm]
                 )
-                transformed_quantile = self._make_inverse_transform(df_slice_copy)
-                df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_quantile
-                quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
-                    columns={"target": quantile_column_nm}
+                transformed_border = self._make_inverse_transform(df_slice_copy)
+                df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_border
+                intervals_arrays[interval_border_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
+                    columns={"target": interval_border_column_nm}
                 )
 
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
-            for quantile_column_nm in quantiles:
-                df.loc[:, pd.IndexSlice[:, quantile_column_nm]] = quantiles_arrays[quantile_column_nm].values
+            for interval_border_column_nm in prediction_intervals:
+                df.loc[:, pd.IndexSlice[:, interval_border_column_nm]] = intervals_arrays[
+                    interval_border_column_nm
+                ].values
 
         return df
 

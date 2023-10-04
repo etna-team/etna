@@ -2,6 +2,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
+from typing import Tuple
 from typing import Union
 from typing import cast
 
@@ -13,7 +14,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
-from etna.transforms.utils import match_target_quantiles
 
 
 class _SingleDifferencingTransform(ReversibleTransform):
@@ -233,13 +233,15 @@ class _SingleDifferencingTransform(ReversibleTransform):
         """
         return self._fit(df=df)._transform(df=df)
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """Apply inverse transformation to DataFrame.
 
         Parameters
         ----------
         df:
             DataFrame to apply inverse transform.
+        prediction_intervals:
+            Tuple with prediction intervals names.
 
         Returns
         -------
@@ -261,9 +263,9 @@ class _SingleDifferencingTransform(ReversibleTransform):
 
         columns_to_inverse = {self.in_column}
 
-        # if we are working with in_column="target" then there can be quantiles to inverse too
+        # if we are working with in_column="target" then there can be prediction intervals to inverse too
         if self.in_column == "target":
-            columns_to_inverse.update(match_target_quantiles(set(df.columns.get_level_values("feature"))))
+            columns_to_inverse.update(set(prediction_intervals))
 
         # determine if we are working with train or test
         if self._train_timestamp.shape[0] == df.index.shape[0] and np.all(self._train_timestamp == df.index):
@@ -440,13 +442,15 @@ class DifferencingTransform(ReversibleTransform):
             result_df = transform._transform(result_df)
         return result_df
 
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """Apply inverse transformation to DataFrame.
 
         Parameters
         ----------
         df:
             DataFrame to apply inverse transform.
+        prediction_intervals:
+            Tuple with prediction intervals names.
 
         Returns
         -------
@@ -473,7 +477,7 @@ class DifferencingTransform(ReversibleTransform):
 
         result_df = df
         for transform in self._differencing_transforms[::-1]:
-            result_df = transform._inverse_transform(result_df)
+            result_df = transform._inverse_transform(df=result_df, prediction_intervals=prediction_intervals)
         return result_df
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:

@@ -140,7 +140,9 @@ class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
         pass
 
     @abstractmethod
-    def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
+    def _apply_inverse_transformation(
+        self, df: pd.DataFrame, transformed_series: pd.Series, prediction_intervals: Tuple[str, ...]
+    ) -> pd.DataFrame:
         """Apply inverse transformation given by per_interval_model.
 
         Parameters
@@ -149,6 +151,8 @@ class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
             transformed dataframe to apply inverse transformation
         transformed_series:
             transformed series to be applied to df
+        prediction_intervals:
+            Tuple with prediction intervals names.
 
         Returns
         -------
@@ -176,13 +180,15 @@ class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
         transformed_df = self._apply_transformation(df=df, transformed_series=transformed_series)
         return transformed_df
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """Split df to intervals of stable trend according to previous change point detection and add trend to each one.
 
         Parameters
         ----------
         df:
             one segment dataframe to turn trend back
+        prediction_intervals:
+            tuple with prediction intervals names
 
         Returns
         -------
@@ -192,7 +198,9 @@ class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
         df._is_copy = False
         series = df[self.in_column]
         trend_series = self._predict_per_interval_model(series=series)
-        self._apply_inverse_transformation(df=df, transformed_series=trend_series)
+        self._apply_inverse_transformation(
+            df=df, transformed_series=trend_series, prediction_intervals=prediction_intervals
+        )
         return df
 
 

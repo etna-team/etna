@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Literal
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -14,7 +15,6 @@ from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.utils import match_target_quantiles
 
 
 class DeseasonalModel(str, Enum):
@@ -131,7 +131,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
             result[self.in_column] /= seasonal
         return result
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """
         Add seasonal component.
 
@@ -139,6 +139,8 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         ----------
         df:
             Features dataframe with time
+        prediction_intervals:
+            Tuple with prediction intervals names
 
         Returns
         -------
@@ -150,7 +152,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         ValueError:
             if input column contains zero or negative values
         ValueError:
-            if quantile columns contains zero or negative values
+            if prediction intervals columns contains zero or negative values
         """
         result = df
         seasonal = self._roll_seasonal(result[self.in_column])
@@ -164,17 +166,16 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
                 )
             result[self.in_column] *= seasonal
         if self.in_column == "target":
-            quantiles = match_target_quantiles(set(result.columns))
-            for quantile_column_nm in quantiles:
+            for interval_border_column_nm in prediction_intervals:
                 if self.model == "additive":
-                    result.loc[:, quantile_column_nm] += seasonal
+                    result.loc[:, interval_border_column_nm] += seasonal
                 else:
-                    if np.any(result.loc[quantile_column_nm] <= 0):
+                    if np.any(result.loc[interval_border_column_nm] <= 0):
                         raise ValueError(
-                            f"The {quantile_column_nm} column contains zero or negative values,"
+                            f"The {interval_border_column_nm} column contains zero or negative values,"
                             "but multiplicative seasonality can not work with such values."
                         )
-                    result.loc[:, quantile_column_nm] *= seasonal
+                    result.loc[:, interval_border_column_nm] *= seasonal
         return result
 
 

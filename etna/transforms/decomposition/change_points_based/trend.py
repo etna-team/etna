@@ -1,5 +1,6 @@
 from typing import Dict
 from typing import Optional
+from typing import Tuple
 
 import pandas as pd
 from ruptures import Binseg
@@ -52,7 +53,9 @@ class _OneSegmentTrendTransform(_OneSegmentChangePointsTrendTransform):
         df.loc[:, self.out_column] = transformed_series
         return df
 
-    def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
+    def _apply_inverse_transformation(
+        self, df: pd.DataFrame, transformed_series: pd.Series, prediction_intervals: Tuple[str, ...]
+    ) -> pd.DataFrame:
         return df
 
 

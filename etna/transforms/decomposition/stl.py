@@ -2,6 +2,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import pandas as pd
@@ -15,7 +16,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentSTLTransform(OneSegmentTransform):
@@ -134,7 +134,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         result[self.in_column] -= season_trend
         return result
 
-    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
         """
         Add trend and seasonal component.
 
@@ -142,6 +142,8 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         ----------
         df:
             Features dataframe with time
+        prediction_intervals:
+            Tuple with prediction intervals names
 
         Returns
         -------
@@ -156,9 +158,8 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         ).predicted_mean
         result[self.in_column] += season_trend
         if self.in_column == "target":
-            quantiles = match_target_quantiles(set(result.columns))
-            for quantile_column_nm in quantiles:
-                result.loc[:, quantile_column_nm] += season_trend
+            for interval_border_column_nm in prediction_intervals:
+                result.loc[:, interval_border_column_nm] += season_trend
         return result
 
 
