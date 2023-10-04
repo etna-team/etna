@@ -280,7 +280,7 @@ def _test_inverse_transform_one_segment(
     Test that trend_transform can correctly make inverse_transform in one segment.
     """
     df_transformed = trend_transform.fit_transform(df)
-    df_inverse_transformed = trend_transform.inverse_transform(df_transformed)
+    df_inverse_transformed = trend_transform.inverse_transform(df=df_transformed, prediction_intervals=tuple())
     npt.assert_allclose(df["target"], df_inverse_transformed["target"], **comparison_kwargs)
 
 

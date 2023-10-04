@@ -52,7 +52,9 @@ def test_inverse_transform_one_segment(df_one_segment: pd.DataFrame) -> None:
         out_column="test",
     )
     df_one_segment_transformed = trend_transform.fit_transform(df_one_segment)
-    df_one_segment_inverse_transformed = trend_transform.inverse_transform(df_one_segment)
+    df_one_segment_inverse_transformed = trend_transform.inverse_transform(
+        df=df_one_segment, prediction_intervals=tuple()
+    )
     pd.testing.assert_frame_equal(df_one_segment_transformed, df_one_segment_inverse_transformed)
 
 
