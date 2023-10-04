@@ -1,10 +1,10 @@
 from unittest.mock import Mock
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
-from etna.datasets.utils import match_target_quantiles
 from etna.distributions import CategoricalDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
@@ -346,8 +346,7 @@ def test_forecast_interval_presented(product_level_constant_hierarchical_ts, rec
 
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast(prediction_interval=True, n_folds=1, quantiles=[0.025, 0.5, 0.975])
-    quantiles = match_target_quantiles(set(forecast.columns.get_level_values(1)))
-    assert quantiles == {"target_0.025", "target_0.5", "target_0.975"}
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.5", "target_0.975")
 
 
 @pytest.mark.parametrize(
@@ -365,8 +364,7 @@ def test_predict_interval_presented(product_level_constant_hierarchical_ts, reco
     forecast = pipeline.predict(
         ts=ts, start_timestamp=ts.index[1], prediction_interval=True, quantiles=[0.025, 0.5, 0.975]
     )
-    quantiles = match_target_quantiles(set(forecast.columns.get_level_values(1)))
-    assert quantiles == {"target_0.025", "target_0.5", "target_0.975"}
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.5", "target_0.975")
 
 
 @pytest.mark.parametrize(
@@ -385,6 +383,8 @@ def test_forecast_prediction_intervals(product_level_constant_hierarchical_ts, r
 
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast(prediction_interval=True, n_folds=1)
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     for segment in forecast.segments:
         target = forecast[:, segment, "target"]
         np.testing.assert_allclose(target, forecast[:, segment, "target_0.025"])
@@ -407,6 +407,8 @@ def test_predict_confidence_intervals(product_level_constant_hierarchical_ts, re
 
     pipeline.fit(ts=ts)
     forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1], prediction_interval=True)
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     for segment in forecast.segments:
         target = forecast[:, segment, "target"]
         np.testing.assert_allclose(target, forecast[:, segment, "target_0.025"])
@@ -658,3 +660,22 @@ def test_params_to_tune(reconciliator, model, transforms, expected_params_to_tun
     obtained_params_to_tune = pipeline.params_to_tune()
 
     assert obtained_params_to_tune == expected_params_to_tune
+
+@pytest.mark.parametrize(
+    "ts_name",
+    (
+        "market_level_constant_forecast_with_target_components",
+        "market_level_constant_forecast_with_quantiles",
+        "market_level_constant_hierarchical_ts_w_exog",
+        "market_level_constant_hierarchical_ts"
+    )
+)
+def test_make_hierarchical_dataset(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+
+    new_ts = HierarchicalPipeline._make_hierarchical_dataset(ts, hierarchical_structure=ts.hierarchical_structure)
+
+    assert new_ts is not ts
+    assert new_ts.target_components_names == ts.target_components_names
+    assert new_ts.prediction_intervals_names == new_ts.prediction_intervals_names
+    pd.testing.assert_frame_equal(new_ts.df, ts.df)
