@@ -379,7 +379,6 @@ def get_traffic_2015_dataset(dataset_dir: Path) -> None:
     .. [1] https://github.com/laiguokun/multivariate-time-series-data
     .. [2] http://pems.dot.ca.gov
     """
-
     url = (
         "https://raw.githubusercontent.com/laiguokun/multivariate-time-series-data/"
         "7f402f185cc2435b5e66aed13a3b560ed142e023/traffic/traffic.txt.gz"
