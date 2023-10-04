@@ -5,6 +5,7 @@ from typing import Sequence
 
 import pandas as pd
 
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
 from etna.loggers import tslogger
 from etna.metrics import MAE
@@ -13,7 +14,6 @@ from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
 from etna.reconciliation.base import BaseReconciliator
 from etna.transforms.base import Transform
-from etna.datasets.hierarchical_structure import HierarchicalStructure
 
 
 class HierarchicalPipeline(Pipeline):
@@ -118,7 +118,9 @@ class HierarchicalPipeline(Pipeline):
                 ts=ts, predictions=forecast, quantiles=quantiles, n_folds=n_folds
             )
 
-        hierarchical_forecast = self._make_hierarchical_dataset(ts=forecast, hierarchical_structure=ts.hierarchical_structure)
+        hierarchical_forecast = self._make_hierarchical_dataset(
+            ts=forecast, hierarchical_structure=ts.hierarchical_structure  # type: ignore
+        )
 
         return hierarchical_forecast
 
@@ -166,7 +168,9 @@ class HierarchicalPipeline(Pipeline):
             return_components=return_components,
         )
 
-        hierarchical_forecast = self._make_hierarchical_dataset(ts=forecast, hierarchical_structure=ts.hierarchical_structure)
+        hierarchical_forecast = self._make_hierarchical_dataset(
+            ts=forecast, hierarchical_structure=ts.hierarchical_structure  # type: ignore
+        )
 
         return hierarchical_forecast
 
@@ -313,6 +317,7 @@ class HierarchicalPipeline(Pipeline):
 
         finally:
             self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
+
     @staticmethod
     def _make_hierarchical_dataset(ts: TSDataset, hierarchical_structure: HierarchicalStructure) -> TSDataset:
         """Create hierarchical dataset from given ``ts`` and structure."""
@@ -321,7 +326,7 @@ class HierarchicalPipeline(Pipeline):
             freq=ts.freq,
             df_exog=ts.df_exog,
             known_future=ts.known_future,
-            hierarchical_structure=hierarchical_structure
+            hierarchical_structure=hierarchical_structure,
         )
 
         if len(ts.prediction_intervals_names) != 0:

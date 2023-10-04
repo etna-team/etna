@@ -661,14 +661,15 @@ def test_params_to_tune(reconciliator, model, transforms, expected_params_to_tun
 
     assert obtained_params_to_tune == expected_params_to_tune
 
+
 @pytest.mark.parametrize(
     "ts_name",
     (
         "market_level_constant_forecast_with_target_components",
         "market_level_constant_forecast_with_quantiles",
         "market_level_constant_hierarchical_ts_w_exog",
-        "market_level_constant_hierarchical_ts"
-    )
+        "market_level_constant_hierarchical_ts",
+    ),
 )
 def test_make_hierarchical_dataset(ts_name, request):
     ts = request.getfixturevalue(ts_name)
