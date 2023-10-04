@@ -557,14 +557,3 @@ datasets_dict: Dict[str, Dict] = {
         "parts": ("train", "test", "full"),
     },
 }
-
-
-if __name__ == "__main__":
-    import time
-    st = time.time()
-    ts = load_dataset("traffic_2015_hourly", parts="test")
-    ed = time.time()
-    print((ed - st) / 60)
-    print(ts.df.shape)
-    print(ts.index.min())
-    print(ts.index.max())
