@@ -2,7 +2,6 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 
 import pandas as pd
 
@@ -13,7 +12,7 @@ from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.models.base import log_decorator
-from etna.models.mixins import SaveNNMixin
+from etna.models.mixins import SavePytorchForecastingMixin
 from etna.models.nn.utils import PytorchForecastingDatasetBuilder
 from etna.models.nn.utils import PytorchForecastingMixin
 from etna.models.nn.utils import _DeepCopyMixin
@@ -25,9 +24,12 @@ if SETTINGS.torch_required:
     from pytorch_forecasting.metrics import NormalDistributionLoss
     from pytorch_forecasting.models import DeepAR
     from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
 
 
-class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
+class DeepARModel(
+    _DeepCopyMixin, PytorchForecastingMixin, SavePytorchForecastingMixin, PredictionIntervalContextRequiredAbstractModel
+):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
 
     Note
@@ -123,7 +125,8 @@ class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, Predicti
         self.loss = loss
         self.trainer_params = trainer_params if trainer_params is not None else dict()
         self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
-        self.model: Optional[Union[LightningModule, DeepAR]] = None
+        self.model: Optional[DeepAR] = None
+        self.trainer: Optional[Trainer] = None
         self._last_train_timestamp = None
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:

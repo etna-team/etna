@@ -20,7 +20,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.models.decorators import log_decorator
-from etna.models.mixins import SaveNNMixin
+from etna.models.mixins import SaveDeepBaseModelMixin
 
 if SETTINGS.torch_required:
     import torch
@@ -470,7 +470,7 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         return loss
 
 
-class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalContextRequiredAbstractModel):
+class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPredictionIntervalContextRequiredAbstractModel):
     """Class for partially implemented interfaces for holding deep models."""
 
     def __init__(

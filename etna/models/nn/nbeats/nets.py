@@ -210,6 +210,7 @@ class NBeatsInterpretableNet(NBeatsBaseNet):
             lr=lr,
             optimizer_params=optimizer_params,
         )
+        self.save_hyperparameters()
 
 
 class NBeatsGenericNet(NBeatsBaseNet):
@@ -270,3 +271,4 @@ class NBeatsGenericNet(NBeatsBaseNet):
             lr=lr,
             optimizer_params=optimizer_params,
         )
+        self.save_hyperparameters()

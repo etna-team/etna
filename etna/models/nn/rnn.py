@@ -59,6 +59,7 @@ class RNNNet(DeepBaseNet):
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         """
         super().__init__()
+        self.save_hyperparameters()
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
