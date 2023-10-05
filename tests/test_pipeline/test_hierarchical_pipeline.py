@@ -671,12 +671,15 @@ def test_params_to_tune(reconciliator, model, transforms, expected_params_to_tun
         "market_level_constant_hierarchical_ts",
     ),
 )
-def test_make_hierarchical_dataset(ts_name, request):
+def test_make_hierarchical_dataset(ts_name, hierarchical_structure, request):
     ts = request.getfixturevalue(ts_name)
+    ts.hierarchical_structure = None
 
-    new_ts = HierarchicalPipeline._make_hierarchical_dataset(ts, hierarchical_structure=ts.hierarchical_structure)
+    new_ts = HierarchicalPipeline._make_hierarchical_dataset(ts, hierarchical_structure=hierarchical_structure)
 
     assert new_ts is not ts
+    assert ts.hierarchical_structure is None
+    assert new_ts.hierarchical_structure is hierarchical_structure  # checking reference to structure
     assert new_ts.target_components_names == ts.target_components_names
-    assert new_ts.prediction_intervals_names == new_ts.prediction_intervals_names
+    assert new_ts.prediction_intervals_names == ts.prediction_intervals_names
     pd.testing.assert_frame_equal(new_ts.df, ts.df)
