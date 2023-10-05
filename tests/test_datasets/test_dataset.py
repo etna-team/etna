@@ -1247,7 +1247,7 @@ def test_drop_target_components_without_components_in_dataset(ts_without_target_
     assert ts_without_target_components.target_components_names == ()
 
 
-def test_drop_prediction_intervals_without_components_in_dataset(ts_without_target_components):
+def test_drop_prediction_intervals_without_intervals_in_dataset(ts_without_target_components):
     ts_without_target_components.drop_prediction_intervals()
     assert ts_without_target_components.prediction_intervals_names == ()
 

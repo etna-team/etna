@@ -1222,7 +1222,7 @@ class TSDataset:
         ValueError:
             If dataset already contains target components
         ValueError:
-            If target components names differs between segments
+            If target components names differ between segments
         ValueError:
             If components don't sum up to target
         """
@@ -1279,7 +1279,7 @@ class TSDataset:
         ValueError:
             If dataset already contains prediction intervals
         ValueError:
-            If prediction intervals names differs between segments
+            If prediction intervals names differ between segments
         """
         if len(self.prediction_intervals_names) > 0:
             raise ValueError("Dataset already contains prediction intervals!")
