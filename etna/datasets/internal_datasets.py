@@ -289,7 +289,7 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     -----
     There is another "traffic" dataset that is also popular and used in papers for time series tasks. This
     dataset is also from the California Department of Transportation PEMS website, http://pems.dot.ca.gov, however for
-    different time period: from 2015 to 2016.
+    different time period: from 2015 to 2016. We also have it in our library ("traffic_2015").
 
     References
     ----------
@@ -358,6 +358,46 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     df_full.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip")
     df_train.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip")
     df_test.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip")
+
+
+def get_traffic_2015_dataset(dataset_dir: Path) -> None:
+    """
+    Download and save traffic (2015-2016) dataset.
+
+    24 months worth of hourly data (24 daily records) that describes the occupancy rate, between 0 and 1, of different
+    car lanes of the San Francisco bay area freeways across time. Data was collected by 862 sensors from
+    Jan. 1st 2015 to Dec. 31th 2016. Dataset has prediction horizon: 24.
+
+    Notes
+    -----
+    There is another "traffic" dataset that is also popular and used in papers for time series tasks. This
+    dataset is also from the California Department of Transportation PEMS website, http://pems.dot.ca.gov, however for
+    different time period: from 2008 to 2009. We also have it in our library ("traffic_2008").
+
+    References
+    ----------
+    .. [1] https://github.com/laiguokun/multivariate-time-series-data
+    .. [2] http://pems.dot.ca.gov
+    """
+    url = (
+        "https://raw.githubusercontent.com/laiguokun/multivariate-time-series-data/"
+        "7f402f185cc2435b5e66aed13a3b560ed142e023/traffic/traffic.txt.gz"
+    )
+
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    data = pd.read_csv(url, header=None)
+    timestamps = pd.date_range("2015-01-01", freq="H", periods=data.shape[0])
+    data["timestamp"] = timestamps
+    data = data.melt("timestamp", var_name="segment", value_name="target")
+
+    df_full = TSDataset.to_dataset(data)
+    df_test = df_full.tail(24)
+    df_train = df_full[~df_full.index.isin(df_test.index)]
+
+    df_full.to_csv(dataset_dir / f"traffic_2015_hourly_full.csv.gz", index=True, compression="gzip")
+    df_train.to_csv(dataset_dir / f"traffic_2015_hourly_train.csv.gz", index=True, compression="gzip")
+    df_test.to_csv(dataset_dir / f"traffic_2015_hourly_test.csv.gz", index=True, compression="gzip")
 
 
 def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
@@ -507,6 +547,11 @@ datasets_dict: Dict[str, Dict] = {
     },
     "traffic_2008_hourly": {
         "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="hourly"),
+        "freq": "H",
+        "parts": ("train", "test", "full"),
+    },
+    "traffic_2015_hourly": {
+        "get_dataset_function": get_traffic_2015_dataset,
         "freq": "H",
         "parts": ("train", "test", "full"),
     },

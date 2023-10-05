@@ -142,6 +142,14 @@ def test_not_present_part():
             ("train", "test"),
             marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
         ),
+        pytest.param(
+            "traffic_2015_hourly",
+            (17520 + 24, 862),
+            pd.to_datetime("2015-01-01 00:00:00"),
+            pd.to_datetime("2016-12-31 23:00:00"),
+            ("train", "test"),
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
         (
             "m3_monthly",
             (126 + 18, 2856),
