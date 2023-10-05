@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `parts` argument to `load_dataset` function ([#79](https://github.com/etna-team/etna/pull/79))
 - Add `M4` to internal datasets ([#83](https://github.com/etna-team/etna/pull/83))
 - Add `M3` to internal datasets ([#91](https://github.com/etna-team/etna/pull/91))
-- Add `traffic` to internal datasets ([#94](https://github.com/etna-team/etna/pull/94))
+- Add `traffic_2008` to internal datasets ([#94](https://github.com/etna-team/etna/pull/94))
 - Add `traffic_2015` to internal datasets ([#100](https://github.com/etna-team/etna/pull/100))
 
 ### Changed

@@ -289,7 +289,7 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     -----
     There is another "traffic" dataset that is also popular and used in papers for time series tasks. This
     dataset is also from the California Department of Transportation PEMS website, http://pems.dot.ca.gov, however for
-    different time period: from 2015 to 2016.
+    different time period: from 2015 to 2016. We also have it in our library ("traffic_2015").
 
     References
     ----------
@@ -372,7 +372,7 @@ def get_traffic_2015_dataset(dataset_dir: Path) -> None:
     -----
     There is another "traffic" dataset that is also popular and used in papers for time series tasks. This
     dataset is also from the California Department of Transportation PEMS website, http://pems.dot.ca.gov, however for
-    different time period: from 2008 to 2009.
+    different time period: from 2008 to 2009. We also have it in our library ("traffic_2008").
 
     References
     ----------
