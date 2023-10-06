@@ -299,7 +299,6 @@ def test_forecast_sanity(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naiv
     np.allclose(mae(test, forecast), 0)
 
 
-@pytest.mark.long_1
 def test_multiprocessing_ensembles(
     simple_df: TSDataset,
     catboost_pipeline: Pipeline,
@@ -321,7 +320,6 @@ def test_multiprocessing_ensembles(
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with StackingEnsemble."""
@@ -369,7 +367,6 @@ def test_predict_with_return_components_fails(example_tsds, naive_ensemble):
         naive_ensemble.predict(ts=example_tsds, return_components=True)
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("n_jobs", (1, 4))
 def test_ts_with_segment_named_target(
     ts_with_segment_named_target: TSDataset, stacking_ensemble_pipeline: StackingEnsemble, n_jobs: int

@@ -11,7 +11,6 @@ from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "horizon",
     [

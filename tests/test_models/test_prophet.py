@@ -349,7 +349,6 @@ def test_predict_components_names(
     assert set(components.columns) == expected_columns
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("growth,cap", (("linear", []), ("logistic", ["cap"])))
 @pytest.mark.parametrize("regressors", (["f1", "f2"], []))
 @pytest.mark.parametrize("custom_seas", ([{"name": "s1", "period": 14, "fourier_order": 1}], []))
