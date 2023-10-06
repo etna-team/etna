@@ -246,6 +246,17 @@ class SaveMixin(AbstractSaveable):
                 setattr(self, attr, value)
 
     def _save(self, path: pathlib.Path, skip_attributes: Sequence[str] = ()):
+        """Save the object with more options.
+
+        This method is intended to use to implement ``save`` method during inheritance.
+
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        skip_attributes:
+            Attributes to be skipped during saving state. These attributes are intended to be saved manually.
+        """
         with zipfile.ZipFile(path, "w") as archive:
             self._save_metadata(archive)
             self._save_state(archive, skip_attributes=skip_attributes)
