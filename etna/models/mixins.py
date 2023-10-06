@@ -638,12 +638,6 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         return self._base_model.get_model()
 
 
-def _load_object(class_name, class_parameters):
-    cls = get_factory(class_name)
-    obj = cls(**class_parameters)
-    return obj
-
-
 def _save_pl_model(archive: zipfile.ZipFile, filename: str, model: "LightningModule"):
     with archive.open(filename, "w", force_zip64=True) as output_file:
         to_save = {
@@ -658,9 +652,8 @@ def _load_pl_model(archive: zipfile.ZipFile, filename: str) -> "LightningModule"
     with archive.open(filename, "r") as input_file:
         net_loaded = torch.load(input_file, pickle_module=dill)
 
-    # fixes the [issue](https://github.com/Lightning-AI/lightning/issues/18405) with `save_hyperparameters`
-    net = _load_object(class_name=net_loaded["class"], class_parameters=net_loaded["hyperparameters"])
-
+    cls = get_factory(net_loaded["class"])
+    net = cls(**net_loaded["hyperparameters"])
     net.load_state_dict(net_loaded["state_dict"])
 
     return net
