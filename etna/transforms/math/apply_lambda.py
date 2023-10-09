@@ -8,7 +8,6 @@ import pandas as pd
 from etna.datasets import TSDataset
 from etna.datasets import set_columns_wide
 from etna.transforms.base import ReversibleTransform
-from etna.transforms.utils import match_target_quantiles
 
 
 class LambdaTransform(ReversibleTransform):
@@ -128,23 +127,15 @@ class LambdaTransform(ReversibleTransform):
         """
         result_df = df
         if self.inverse_transform_func:
-            features = df.loc[:, pd.IndexSlice[:, self.in_column]].sort_index(axis=1)
-            transformed_features = self.inverse_transform_func(features)
+            feature_columns = list(df.columns.get_level_values("feature"))
+
+            features = df.sort_index(axis=1)
+            transformed_result = self.inverse_transform_func(features)
+
             result_df = set_columns_wide(
-                result_df, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+                result_df, transformed_result, features_left=feature_columns, features_right=feature_columns
             )
-            if self.in_column == "target":
-                segment_columns = result_df.columns.get_level_values("feature").tolist()
-                quantiles = match_target_quantiles(set(segment_columns))
-                for quantile_column_nm in quantiles:
-                    features = df.loc[:, pd.IndexSlice[:, quantile_column_nm]].sort_index(axis=1)
-                    transformed_features = self.inverse_transform_func(features)
-                    result_df = set_columns_wide(
-                        result_df,
-                        transformed_features,
-                        features_left=[quantile_column_nm],
-                        features_right=[quantile_column_nm],
-                    )
+
         return result_df
 
     def get_regressors_info(self) -> List[str]:

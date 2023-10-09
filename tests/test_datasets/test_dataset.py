@@ -1,4 +1,5 @@
 from contextlib import suppress
+from copy import deepcopy
 from typing import List
 from typing import Tuple
 
@@ -209,6 +210,16 @@ def target_components_df():
 
 
 @pytest.fixture
+def prediction_intervals_df():
+    timestamp = pd.date_range("2021-01-01", "2021-01-15")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target_0.1": 1, "target_0.9": 4, "segment": 1})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target_0.1": 1, "target_0.9": 10, "segment": 2})
+    df = pd.concat([df_1, df_2])
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
 def inverse_transformed_components_df():
     timestamp = pd.date_range("2021-01-01", "2021-01-15")
     df_1 = pd.DataFrame(
@@ -255,6 +266,20 @@ def inconsistent_target_components_values_df(target_components_df):
 
 
 @pytest.fixture
+def inconsistent_prediction_intervals_names_df(prediction_intervals_df):
+    intervals_df = prediction_intervals_df.drop(columns=[("2", "target_0.1")])
+    return intervals_df
+
+
+@pytest.fixture
+def inconsistent_prediction_intervals_names_duplication_df(prediction_intervals_df):
+    intervals_df = pd.concat(
+        (prediction_intervals_df, prediction_intervals_df.loc[pd.IndexSlice[:], pd.IndexSlice["1", :]]), axis=1
+    )
+    return intervals_df
+
+
+@pytest.fixture
 def ts_without_target_components():
     timestamp = pd.date_range("2021-01-01", "2021-01-15")
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 3, "segment": 1})
@@ -266,18 +291,22 @@ def ts_without_target_components():
 
 
 @pytest.fixture
-def ts_with_target_components():
+def ts_with_target_components(target_components_df):
     timestamp = pd.date_range("2021-01-01", "2021-01-15")
-    df_1 = pd.DataFrame(
-        {"timestamp": timestamp, "target": 3, "target_component_a": 1, "target_component_b": 2, "segment": 1}
-    )
-    df_2 = pd.DataFrame(
-        {"timestamp": timestamp, "target": 7, "target_component_a": 3, "target_component_b": 4, "segment": 2}
-    )
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 3, "segment": 1})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 7, "segment": 2})
     df = pd.concat([df_1, df_2])
-    df = TSDataset.to_dataset(df)
+    df = TSDataset.to_dataset(df=df)
+
     ts = TSDataset(df=df, freq="D")
-    ts._target_components_names = ["target_component_a", "target_component_b"]
+    ts.add_target_components(target_components_df=target_components_df)
+    return ts
+
+
+@pytest.fixture()
+def ts_with_prediction_intervals(ts_without_target_components, prediction_intervals_df):
+    ts = deepcopy(ts_without_target_components)
+    ts.add_prediction_intervals(prediction_intervals_df=prediction_intervals_df)
     return ts
 
 
@@ -531,6 +560,12 @@ def test_train_test_split_pass_target_components_to_output(ts_with_target_compon
     train, test = ts_with_target_components.train_test_split(test_size=5)
     assert sorted(train.target_components_names) == sorted(ts_with_target_components.target_components_names)
     assert sorted(test.target_components_names) == sorted(ts_with_target_components.target_components_names)
+
+
+def test_train_test_split_pass_prediction_intervals_to_output(ts_with_prediction_intervals):
+    train, test = ts_with_prediction_intervals.train_test_split(test_size=5)
+    assert sorted(train.prediction_intervals_names) == sorted(ts_with_prediction_intervals.prediction_intervals_names)
+    assert sorted(test.prediction_intervals_names) == sorted(ts_with_prediction_intervals.prediction_intervals_names)
 
 
 def test_dataset_datetime_conversion():
@@ -955,6 +990,13 @@ def test_tsdataset_idx_slice_pass_target_components_to_output(ts_with_target_com
     assert sorted(ts_slice.target_components_names) == sorted(ts_with_target_components.target_components_names)
 
 
+def test_tsdataset_idx_slice_pass_prediction_intervals_to_output(ts_with_prediction_intervals):
+    ts_slice = ts_with_prediction_intervals.tsdataset_idx_slice(start_idx=1, end_idx=2)
+    assert sorted(ts_slice.prediction_intervals_names) == sorted(
+        ts_with_prediction_intervals.prediction_intervals_names
+    )
+
+
 def test_to_torch_dataset_without_drop(tsdf_with_exog):
     def make_samples(df):
         return [{"target": df.target.values, "segment": df["segment"].values[0]}]
@@ -1089,9 +1131,22 @@ def test_drop_features_throw_error_on_target_components(ts_with_target_component
         ts_with_target_components.drop_features(features=ts_with_target_components.target_components_names)
 
 
+def test_drop_features_throw_error_on_prediction_intervals(ts_with_prediction_intervals):
+    with pytest.raises(
+        ValueError,
+        match="Prediction intervals can't be dropped from the dataset using this method!",
+    ):
+        ts_with_prediction_intervals.drop_features(features=ts_with_prediction_intervals.prediction_intervals_names)
+
+
 def test_get_target_components_on_dataset_without_components(example_tsds):
     target_components_df = example_tsds.get_target_components()
     assert target_components_df is None
+
+
+def test_get_prediction_intervals_on_dataset_without_components(example_tsds):
+    prediction_intervals_df = example_tsds.get_prediction_intervals()
+    assert prediction_intervals_df is None
 
 
 def test_get_target_components(
@@ -1102,11 +1157,24 @@ def test_get_target_components(
     pd.testing.assert_frame_equal(target_components_df, expected_target_components_df)
 
 
+def test_get_prediction_intervals(ts_with_prediction_intervals, expected_intervals=["target_0.1", "target_0.9"]):
+    expected_prediction_intervals_df = ts_with_prediction_intervals.to_pandas(features=expected_intervals)
+    prediction_intervals_df = ts_with_prediction_intervals.get_prediction_intervals()
+    pd.testing.assert_frame_equal(prediction_intervals_df, expected_prediction_intervals_df)
+
+
 def test_add_target_components_throw_error_adding_components_second_time(
     ts_with_target_components, target_components_df
 ):
     with pytest.raises(ValueError, match="Dataset already contains target components!"):
         ts_with_target_components.add_target_components(target_components_df=target_components_df)
+
+
+def test_add_prediction_intervals_throw_error_adding_components_second_time(
+    ts_with_prediction_intervals, prediction_intervals_df
+):
+    with pytest.raises(ValueError, match="Dataset already contains prediction intervals!"):
+        ts_with_prediction_intervals.add_prediction_intervals(prediction_intervals_df=prediction_intervals_df)
 
 
 @pytest.mark.parametrize(
@@ -1130,9 +1198,30 @@ def test_add_target_components_throw_error_inconsistent_components_values(
         )
 
 
+@pytest.mark.parametrize(
+    "inconsistent_prediction_intervals_names_fixture",
+    [("inconsistent_prediction_intervals_names_df"), ("inconsistent_prediction_intervals_names_duplication_df")],
+)
+def test_add_prediction_intervals_throw_error_inconsistent_components_names(
+    ts_without_target_components, inconsistent_prediction_intervals_names_fixture, request
+):
+    inconsistent_prediction_intervals_names_df = request.getfixturevalue(
+        inconsistent_prediction_intervals_names_fixture
+    )
+    with pytest.raises(ValueError, match="Set of prediction intervals differs between segments '1' and '2'!"):
+        ts_without_target_components.add_prediction_intervals(
+            prediction_intervals_df=inconsistent_prediction_intervals_names_df
+        )
+
+
 def test_add_target_components(ts_without_target_components, ts_with_target_components, target_components_df):
     ts_without_target_components.add_target_components(target_components_df=target_components_df)
     pd.testing.assert_frame_equal(ts_without_target_components.to_pandas(), ts_with_target_components.to_pandas())
+
+
+def test_add_prediction_intervals(ts_without_target_components, ts_with_prediction_intervals, prediction_intervals_df):
+    ts_without_target_components.add_prediction_intervals(prediction_intervals_df=prediction_intervals_df)
+    pd.testing.assert_frame_equal(ts_without_target_components.to_pandas(), ts_with_prediction_intervals.to_pandas())
 
 
 def test_drop_target_components(ts_with_target_components, ts_without_target_components):
@@ -1144,9 +1233,23 @@ def test_drop_target_components(ts_with_target_components, ts_without_target_com
     )
 
 
+def test_drop_prediction_intervals(ts_with_prediction_intervals, ts_without_target_components):
+    ts_with_prediction_intervals.drop_prediction_intervals()
+    assert ts_with_prediction_intervals.prediction_intervals_names == ()
+    pd.testing.assert_frame_equal(
+        ts_with_prediction_intervals.to_pandas(),
+        ts_without_target_components.to_pandas(),
+    )
+
+
 def test_drop_target_components_without_components_in_dataset(ts_without_target_components):
     ts_without_target_components.drop_target_components()
     assert ts_without_target_components.target_components_names == ()
+
+
+def test_drop_prediction_intervals_without_intervals_in_dataset(ts_without_target_components):
+    ts_without_target_components.drop_prediction_intervals()
+    assert ts_without_target_components.prediction_intervals_names == ()
 
 
 def test_inverse_transform_target_components(ts_with_target_components, inverse_transformed_components_df):
@@ -1172,5 +1275,12 @@ def test_inverse_transform_with_target_components_fails_keep_target_components(t
 )
 def test_get_target_quantiles_names(fixture_name, expected_quantiles, request):
     ts = request.getfixturevalue(fixture_name)
-    target_quantiles_names = ts.target_quantiles_names
+    target_quantiles_names = ts.prediction_intervals_names
     assert sorted(target_quantiles_names) == sorted(expected_quantiles)
+
+
+def test_target_quantiles_names_deprecation_warning(ts_with_prediction_intervals):
+    with pytest.warns(
+        DeprecationWarning, match="Usage of this property may mislead while accessing prediction intervals."
+    ):
+        _ = ts_with_prediction_intervals.target_quantiles_names

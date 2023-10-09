@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Handle prediction intervals similar to target components in `TSDataset`([#97](https://github.com/etna-team/etna/pull/97))
 - `SavePredictionIntervalsMixin` for the `BasePredictionIntervals` ([#87](https://github.com/etna-team/etna/pull/87))
 - Base class `BasePredictionIntervals` for prediction intervals into experimental module ([#86](https://github.com/etna-team/etna/pull/86))
 - Add `fit_params` parameter to `etna.models.sarimax.SARIMAXModel` ([#69](https://github.com/etna-team/etna/pull/69))
@@ -37,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix `ResampleWithDistributionTransform` working with categorical columns ([#82](https://github.com/etna-team/etna/pull/82))
--
+- `TSDataset._hierarchical_structure_from_level_columns` to support `pandas>=1.4,<1.5`([#107](https://github.com/etna-team/etna/pull/107))
 - Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
 - Fix CI job `cron-delete-untagged-images` ([#95](https://github.com/etna-team/etna/pull/95))
 - Rendering table of contents in notebooks ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))

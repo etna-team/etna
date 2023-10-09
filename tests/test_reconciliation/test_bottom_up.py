@@ -107,5 +107,11 @@ def test_reconcile_with_quantiles(
     ts = product_level_constant_hierarchical_ts
     reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
     reconciliator.fit(ts=ts)
-    reconciled_df = reconciliator.reconcile(ts=product_level_constant_forecast_with_quantiles).to_pandas()
+    reconciled_ts = reconciliator.reconcile(ts=product_level_constant_forecast_with_quantiles)
+    reconciled_df = reconciled_ts.to_pandas()
+
+    assert (
+        reconciled_ts.prediction_intervals_names
+        == market_level_constant_forecast_with_quantiles.prediction_intervals_names
+    )
     pd.testing.assert_frame_equal(reconciled_df, market_level_constant_forecast_with_quantiles.to_pandas())

@@ -231,14 +231,12 @@ class TFTModel(
                 quantiles_predicts = quantiles_predicts.reshape(quantiles_predicts.shape[0], -1)
                 # shape (encoder_length, segments * len(quantiles))
 
-                df = ts.df
                 segments = ts.segments
                 quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
-                columns = pd.MultiIndex.from_product([segments, quantile_columns])
-                quantiles_df = pd.DataFrame(quantiles_predicts[: len(df)], columns=columns, index=df.index)
-                df = pd.concat((df, quantiles_df), axis=1)
-                df = df.sort_index(axis=1)
-                ts.df = df
+                columns = pd.MultiIndex.from_product([segments, quantile_columns], names=["segment", "feature"])
+                quantiles_df = pd.DataFrame(quantiles_predicts[: len(ts.df)], columns=columns, index=ts.df.index)
+
+                ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
 
         return ts
 
