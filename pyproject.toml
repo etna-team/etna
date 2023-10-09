@@ -196,6 +196,7 @@ minversion = "6.0"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
 filterwarnings = [
     "error",
+    "ignore: pkg_resources is deprecated as an API",
     "ignore: Deprecated call to `pkg_resources.declare_namespace",
     "ignore: Torchmetrics v0.9 introduced a new argument class property called `full_state_update` that",
     "ignore: TSDataset freq can't be inferred",
