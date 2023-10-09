@@ -3,7 +3,6 @@ from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 from typing import cast
 
@@ -175,7 +174,7 @@ class SklearnTransform(ReversibleTransform):
 
         return df
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Apply inverse transformation to DataFrame.
 
@@ -183,8 +182,6 @@ class SklearnTransform(ReversibleTransform):
         ----------
         df:
             DataFrame to apply inverse transform.
-        prediction_intervals:
-            Tuple with prediction intervals names.
 
         Returns
         -------
@@ -205,30 +202,26 @@ class SklearnTransform(ReversibleTransform):
 
         df = df.sort_index(axis=1)
 
-        if "target" not in self.in_column:
-            prediction_intervals = tuple()
-
         if self.inplace:
-            intervals_arrays: Dict[str, pd.DataFrame] = dict()
+            other_arrays: Dict[str, pd.DataFrame] = dict()
             transformed = self._make_inverse_transform(df)
 
-            # intervals borders inverse transformation
-            for interval_border_column_nm in prediction_intervals:
+            # inverse transformation of columns that are left (e.g. prediction intervals)
+            other_columns = set(df.columns.get_level_values("feature")) - set(self.in_column)
+            for column_nm in other_columns:
                 df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
                 df_slice_copy = set_columns_wide(
-                    df_slice_copy, df, features_left=["target"], features_right=[interval_border_column_nm]
+                    df_slice_copy, df, features_left=["target"], features_right=[column_nm]
                 )
                 transformed_border = self._make_inverse_transform(df_slice_copy)
                 df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_border
-                intervals_arrays[interval_border_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
-                    columns={"target": interval_border_column_nm}
+                other_arrays[column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
+                    columns={"target": column_nm}
                 )
 
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
-            for interval_border_column_nm in prediction_intervals:
-                df.loc[:, pd.IndexSlice[:, interval_border_column_nm]] = intervals_arrays[
-                    interval_border_column_nm
-                ].values
+            for column_nm in other_columns:
+                df.loc[:, pd.IndexSlice[:, column_nm]] = other_arrays[column_nm].values
 
         return df
 

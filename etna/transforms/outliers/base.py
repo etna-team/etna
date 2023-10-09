@@ -3,7 +3,6 @@ from abc import abstractmethod
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -110,7 +109,7 @@ class OutliersTransform(ReversibleTransform, ABC):
             df.loc[segment_outliers_timestamps, pd.IndexSlice[segment, self.in_column]] = np.NaN
         return df
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Inverse transformation. Returns back deleted values.
 
@@ -118,8 +117,6 @@ class OutliersTransform(ReversibleTransform, ABC):
         ----------
         df:
             data to transform
-        prediction_intervals:
-            tuple with prediction intervals names
 
         Returns
         -------

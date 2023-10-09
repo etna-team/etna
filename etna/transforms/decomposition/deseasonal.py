@@ -3,7 +3,6 @@ from typing import Dict
 from typing import List
 from typing import Literal
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -131,7 +130,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
             result[self.in_column] /= seasonal
         return result
 
-    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Add seasonal component.
 
@@ -139,8 +138,6 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         ----------
         df:
             Features dataframe with time
-        prediction_intervals:
-            Tuple with prediction intervals names
 
         Returns
         -------
@@ -156,26 +153,19 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         """
         result = df
         seasonal = self._roll_seasonal(result[self.in_column])
-        if self.model == "additive":
-            result[self.in_column] += seasonal
-        else:
-            if np.any(result[self.in_column] <= 0):
-                raise ValueError(
-                    "The input column contains zero or negative values,"
-                    "but multiplicative seasonality can not work with such values."
-                )
-            result[self.in_column] *= seasonal
-        if self.in_column == "target":
-            for interval_border_column_nm in prediction_intervals:
-                if self.model == "additive":
-                    result.loc[:, interval_border_column_nm] += seasonal
-                else:
-                    if np.any(result.loc[interval_border_column_nm] <= 0):
-                        raise ValueError(
-                            f"The {interval_border_column_nm} column contains zero or negative values,"
-                            "but multiplicative seasonality can not work with such values."
-                        )
-                    result.loc[:, interval_border_column_nm] *= seasonal
+
+        for column_name in result.columns:
+            if self.model == "additive":
+                result.loc[:, column_name] += seasonal
+
+            else:
+                if np.any(result.loc[:, column_name] <= 0):
+                    raise ValueError(
+                        f"The `{column_name}` column contains zero or negative values,"
+                        "but multiplicative seasonality can not work with such values."
+                    )
+                result.loc[:, column_name] *= seasonal
+
         return result
 
 

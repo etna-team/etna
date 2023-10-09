@@ -2,7 +2,6 @@ from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import cast
 
 import numpy as np
@@ -214,15 +213,13 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             df.fillna(value=self.default_value, inplace=True)
         return df
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform dataframe.
 
         Parameters
         ----------
         df:
             Dataframe to be inverse transformed.
-        prediction_intervals:
-            Tuple with prediction intervals names.
 
         Returns
         -------

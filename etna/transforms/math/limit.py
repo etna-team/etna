@@ -1,6 +1,5 @@
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -115,15 +114,13 @@ class LimitTransform(ReversibleTransform):
 
         return transformed_features
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply scaled logit reverse transform to the dataset.
 
         Parameters
         ----------
         df:
             dataframe with data to transform.
-        prediction_intervals:
-            tuple with prediction intervals names.
 
         Returns
         -------

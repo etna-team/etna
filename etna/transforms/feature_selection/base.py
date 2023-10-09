@@ -2,7 +2,6 @@ import warnings
 from abc import ABC
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import pandas as pd
@@ -54,15 +53,13 @@ class BaseFeatureSelectionTransform(ReversibleTransform, ABC):
             self._df_removed = df.drop(result.columns, axis=1)
         return result
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transform to the data.
 
         Parameters
         ----------
         df:
             dataframe to apply inverse transformation
-        prediction_intervals:
-            tuple with prediction intervals names
 
         Returns
         -------

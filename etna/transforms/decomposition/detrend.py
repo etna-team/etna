@@ -1,6 +1,5 @@
 from typing import Dict
 from typing import List
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -111,7 +110,7 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         """
         return self.fit(df).transform(df)
 
-    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Inverse transformation for trend subtraction: add trend to prediction.
 
@@ -119,8 +118,6 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         ----------
         df:
             data to transform
-        prediction_intervals:
-            tuple with prediction intervals names
 
         Returns
         -------
@@ -130,13 +127,11 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         result = df
         x = self._get_x(df)
         x -= self._x_median
-        y = df[self.in_column].values
         trend = self._pipeline.predict(x)
-        add_trend_timeseries = y + trend
-        result[self.in_column] = add_trend_timeseries
-        if self.in_column == "target":
-            for interval_border_column_nm in prediction_intervals:
-                result.loc[:, interval_border_column_nm] += trend
+
+        for column_name in df.columns:
+            result.loc[:, column_name] += trend
+
         return result
 
 

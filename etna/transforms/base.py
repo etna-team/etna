@@ -5,7 +5,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
-from typing import Tuple
 from typing import Union
 
 import pandas as pd
@@ -208,7 +207,7 @@ class ReversibleTransform(Transform):
         super().__init__(required_features=required_features)
 
     @abstractmethod
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform dataframe.
 
         Should be reimplemented in the subclasses where necessary.
@@ -217,8 +216,6 @@ class ReversibleTransform(Transform):
         ----------
         df:
             Dataframe to be inverse transformed.
-        prediction_intervals:
-            Tuple with prediction intervals names.
 
         Returns
         -------
@@ -256,11 +253,9 @@ class ReversibleTransform(Transform):
         if target_components_present:
             target_df = ts.to_pandas(flatten=False, features=["target"])
 
-        prediction_intervals = ts.prediction_intervals_names
-
         df = ts.to_pandas(flatten=False, features=required_features)
         columns_before = set(df.columns.get_level_values("feature"))
-        df_transformed = self._inverse_transform(df=df, prediction_intervals=prediction_intervals)
+        df_transformed = self._inverse_transform(df=df)
         ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
 
         if target_components_present:
@@ -323,7 +318,7 @@ class OneSegmentTransform(ABC, BaseMixin):
         return self.fit(df=df).transform(df=df)
 
     @abstractmethod
-    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform Dataframe.
 
         Should be reimplemented in the subclasses where necessary.
@@ -332,8 +327,6 @@ class OneSegmentTransform(ABC, BaseMixin):
         ----------
         df:
             Dataframe in etna long format to be inverse transformed.
-        prediction_intervals:
-            Tuple with prediction intervals names.
 
         Returns
         -------
@@ -397,7 +390,7 @@ class ReversiblePerSegmentWrapper(PerSegmentWrapper, ReversibleTransform):
     def __init__(self, transform: OneSegmentTransform, required_features: Union[Literal["all"], List[str]]):
         super().__init__(transform=transform, required_features=required_features)
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse_transform to each segment."""
         if self.segment_transforms is None:
             raise ValueError("Transform is not fitted!")
@@ -409,7 +402,7 @@ class ReversiblePerSegmentWrapper(PerSegmentWrapper, ReversibleTransform):
                 raise NotImplementedError("Per-segment transforms can't work on new segments!")
 
             segment_transform = self.segment_transforms[segment]
-            seg_df = segment_transform.inverse_transform(df=df[segment], prediction_intervals=prediction_intervals)
+            seg_df = segment_transform.inverse_transform(df=df[segment])
 
             _idx = seg_df.columns.to_frame()
             _idx.insert(0, "segment", segment)

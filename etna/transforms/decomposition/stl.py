@@ -2,7 +2,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
 from typing import Union
 
 import pandas as pd
@@ -134,7 +133,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         result[self.in_column] -= season_trend
         return result
 
-    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Add trend and seasonal component.
 
@@ -142,8 +141,6 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         ----------
         df:
             Features dataframe with time
-        prediction_intervals:
-            Tuple with prediction intervals names
 
         Returns
         -------
@@ -156,10 +153,10 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         season_trend = self.fit_results.get_prediction(
             start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
         ).predicted_mean
-        result[self.in_column] += season_trend
-        if self.in_column == "target":
-            for interval_border_column_nm in prediction_intervals:
-                result.loc[:, interval_border_column_nm] += season_trend
+
+        for colum_name in df.columns:
+            result.loc[:, colum_name] += season_trend
+
         return result
 
 

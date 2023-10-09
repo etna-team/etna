@@ -2,7 +2,6 @@ import warnings
 from typing import Callable
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import pandas as pd
 
@@ -113,15 +112,13 @@ class LambdaTransform(ReversibleTransform):
             result = result.sort_index(axis=1)
         return result
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to the series from df.
 
         Parameters
         ----------
         df:
             series to transform
-        prediction_intervals:
-            tuple with prediction intervals names
 
         Returns
         -------
@@ -130,21 +127,15 @@ class LambdaTransform(ReversibleTransform):
         """
         result_df = df
         if self.inverse_transform_func:
-            features = df.loc[:, pd.IndexSlice[:, self.in_column]].sort_index(axis=1)
-            transformed_features = self.inverse_transform_func(features)
+            feature_columns = list(df.columns.get_level_values("feature"))
+
+            features = df.sort_index(axis=1)
+            transformed_result = self.inverse_transform_func(features)
+
             result_df = set_columns_wide(
-                result_df, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+                result_df, transformed_result, features_left=feature_columns, features_right=feature_columns
             )
-            if self.in_column == "target":
-                for interval_border_column_nm in prediction_intervals:
-                    features = df.loc[:, pd.IndexSlice[:, interval_border_column_nm]].sort_index(axis=1)
-                    transformed_features = self.inverse_transform_func(features)
-                    result_df = set_columns_wide(
-                        result_df,
-                        transformed_features,
-                        features_left=[interval_border_column_nm],
-                        features_right=[interval_border_column_nm],
-                    )
+
         return result_df
 
     def get_regressors_info(self) -> List[str]:

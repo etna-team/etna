@@ -1,7 +1,6 @@
 import warnings
 from typing import List
 from typing import Optional
-from typing import Tuple
 
 import pandas as pd
 
@@ -98,15 +97,13 @@ class AddConstTransform(ReversibleTransform):
             result = result.sort_index(axis=1)
         return result
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Apply inverse transformation to the dataset.
 
         Parameters
         ----------
         df:
             dataframe with data to transform.
-        prediction_intervals:
-            tuple with prediction intervals names.
 
         Returns
         -------
@@ -115,21 +112,12 @@ class AddConstTransform(ReversibleTransform):
         """
         result = df
         if self.inplace:
-            features = df.loc[:, pd.IndexSlice[:, self.in_column]]
-            transformed_features = features - self.value
+            feature_columns = list(df.columns.get_level_values("feature"))
+            transformed_result = df - self.value
+
             result = set_columns_wide(
-                result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+                result, transformed_result, features_left=feature_columns, features_right=feature_columns
             )
-            if self.in_column == "target":
-                for interval_border_column_nm in prediction_intervals:
-                    features = df.loc[:, pd.IndexSlice[:, interval_border_column_nm]]
-                    transformed_features = features - self.value
-                    result = set_columns_wide(
-                        result,
-                        transformed_features,
-                        features_left=[interval_border_column_nm],
-                        features_right=[interval_border_column_nm],
-                    )
 
         return result
 

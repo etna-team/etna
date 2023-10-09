@@ -169,7 +169,7 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
 
         return df.loc[:, ["datetime"]].apply(check, axis=1).rename("anomaly_monthdays")
 
-    def inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Inverse transform Dataframe."""
         return df
 

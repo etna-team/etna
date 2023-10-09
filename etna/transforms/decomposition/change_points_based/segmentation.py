@@ -1,6 +1,5 @@
 from typing import Dict
 from typing import Optional
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -50,9 +49,7 @@ class _OneSegmentChangePointsSegmentationTransform(_OneSegmentChangePointsTransf
         df.loc[:, self.out_column] = transformed_series.astype(int).astype("category")
         return df
 
-    def _apply_inverse_transformation(
-        self, df: pd.DataFrame, transformed_series: pd.Series, prediction_intervals: Tuple[str, ...]
-    ) -> pd.DataFrame:
+    def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
         return df
 
 
