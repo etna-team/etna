@@ -147,7 +147,6 @@ def test_not_fitted(model, method, linear_segments_ts_unique):
         method_to_call(ts=Mock())
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 @pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
 def test_dummy(model, method, use_future, sinusoid_ts):
@@ -169,7 +168,6 @@ def test_dummy(model, method, use_future, sinusoid_ts):
     assert value_metric < 0.33
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 @pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
 def test_prediction_interval(model, method, use_future, example_tsds):
@@ -194,7 +192,6 @@ def test_prediction_interval(model, method, use_future, example_tsds):
         assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
@@ -263,7 +260,6 @@ def test_named_components_output_format(periodic_dfs, estimator):
     assert len(components) == horizon
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize(
     "estimator,params,components_names",
     (
@@ -378,7 +374,6 @@ def test_arma_with_seasonal_components_not_fitted(periodic_dfs, estimator, metho
         method_to_call(df=pred_df)
 
 
-@pytest.mark.long_1
 @pytest.mark.filterwarnings("ignore:.*not fitted.*")
 @pytest.mark.parametrize(
     "estimator",

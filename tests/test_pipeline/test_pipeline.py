@@ -734,7 +734,6 @@ def test_backtest_refit_fail(big_example_tsdf: TSDataset):
         _ = pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("refit", [True, False, 2])
 def test_backtest_with_n_jobs(refit, catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
     """Check that Pipeline.backtest gives the same results in case of single and multiple jobs modes."""
@@ -1076,7 +1075,6 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     assert f"target_{quantiles[1]}" in features
 
 
-@pytest.mark.long_1
 def test_backtest_pass_with_filter_transform(ts_with_feature):
     ts = ts_with_feature
 

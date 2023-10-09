@@ -10,7 +10,6 @@ from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_sampling_is_valid
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "horizon",
     [8, 13, 15],
@@ -33,7 +32,6 @@ def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_wee
     assert mae(ts_test, future) < 0.9
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "horizon",
     [8, 13, 15],
