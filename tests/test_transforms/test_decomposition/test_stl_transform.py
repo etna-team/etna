@@ -125,7 +125,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
     df = request.getfixturevalue(df_name)
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model=model)
     df_transformed = transform.fit_transform(df)
-    df_inverse_transformed = transform.inverse_transform(df=df_transformed, prediction_intervals=tuple())
+    df_inverse_transformed = transform.inverse_transform(df=df_transformed)
     assert df["target"].equals(df_inverse_transformed["target"])
 
 
@@ -173,7 +173,7 @@ def test_inverse_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segme
     """Test that transform for one segment raise error when calling inverse_transform without being fit."""
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model="arima")
     with pytest.raises(ValueError, match="Transform is not fitted!"):
-        _ = transform.inverse_transform(df=df_trend_seasonal_one_segment, prediction_intervals=tuple())
+        _ = transform.inverse_transform(df=df_trend_seasonal_one_segment)
 
 
 @pytest.mark.parametrize("model_stl", ["arima", "holt"])

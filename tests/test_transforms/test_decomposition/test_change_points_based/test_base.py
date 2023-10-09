@@ -96,7 +96,7 @@ def test_inverse_transform(multitrend_df: pd.DataFrame):
     transformed_df_old["segment"] = "segment_1"
     transformed_df = TSDataset.to_dataset(df=transformed_df_old)
 
-    inversed = bs.inverse_transform(df=transformed_df["segment_1"].copy(deep=True), prediction_intervals=tuple())
+    inversed = bs.inverse_transform(df=transformed_df["segment_1"].copy(deep=True))
 
     np.testing.assert_array_almost_equal(inversed["target"], multitrend_df["segment_1"]["target"], decimal=10)
 
@@ -115,7 +115,7 @@ def test_inverse_transform_hard(multitrend_df: pd.DataFrame):
     transformed_df_old["segment"] = "segment_1"
     transformed_df = TSDataset.to_dataset(df=transformed_df_old)
 
-    inversed = bs.inverse_transform(df=transformed_df["segment_1"].copy(deep=True), prediction_intervals=tuple())
+    inversed = bs.inverse_transform(df=transformed_df["segment_1"].copy(deep=True))
 
     np.testing.assert_array_almost_equal(inversed["target"], multitrend_df["segment_1"]["target"], decimal=10)
 
@@ -141,7 +141,7 @@ def test_inverse_transform_pre_history(multitrend_df: pd.DataFrame, pre_multitre
         per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
-    inversed = bs.inverse_transform(df=pre_multitrend_df["segment_1"], prediction_intervals=tuple())
+    inversed = bs.inverse_transform(df=pre_multitrend_df["segment_1"])
     expected = [x * (-0.4) for x in list(range(31, 0, -1))]
     np.testing.assert_array_almost_equal(inversed["target"], expected, decimal=10)
 
@@ -168,7 +168,7 @@ def test_inverse_transform_post_history(multitrend_df: pd.DataFrame, post_multit
         per_interval_model=SklearnRegressionPerIntervalModel(),
     )
     bs.fit(df=multitrend_df["segment_1"])
-    transformed = bs.inverse_transform(df=post_multitrend_df["segment_1"], prediction_intervals=tuple())
+    transformed = bs.inverse_transform(df=post_multitrend_df["segment_1"])
     # trend + last point of seen data + trend for offset interval
     expected = [x * (-0.6) - 52.6 - 0.6 * 30 for x in list(range(1, 32))]
     np.testing.assert_array_almost_equal(transformed["target"], expected, decimal=10)

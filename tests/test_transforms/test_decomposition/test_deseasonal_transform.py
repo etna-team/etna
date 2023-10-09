@@ -120,7 +120,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
     df = request.getfixturevalue(df_name)
     transform = _OneSegmentDeseasonalityTransform(in_column="target", period=7, model=model)
     df_transformed = transform.fit_transform(df)
-    df_inverse_transformed = transform.inverse_transform(df=df_transformed, prediction_intervals=tuple())
+    df_inverse_transformed = transform.inverse_transform(df=df_transformed)
     pd.util.testing.assert_frame_equal(df_inverse_transformed, df)
 
 
@@ -163,7 +163,7 @@ def test_inverse_transform_raise_error_if_not_fitted(df_seasonal_one_segment):
     """Test that transform for one segment raise error when calling inverse_transform without being fit."""
     transform = _OneSegmentDeseasonalityTransform(in_column="target", period=7, model="additive")
     with pytest.raises(ValueError, match="Transform is not fitted!"):
-        _ = transform.inverse_transform(df=df_seasonal_one_segment, prediction_intervals=tuple())
+        _ = transform.inverse_transform(df=df_seasonal_one_segment)
 
 
 def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):

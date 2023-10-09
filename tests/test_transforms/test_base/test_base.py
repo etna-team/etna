@@ -1,5 +1,4 @@
 from typing import List
-from typing import Tuple
 from unittest.mock import Mock
 
 import pandas as pd
@@ -33,7 +32,7 @@ class ReversibleTransformMock(ReversibleTransform):
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         return df
 
-    def _inverse_transform(self, df: pd.DataFrame, prediction_intervals: Tuple[str, ...]) -> pd.DataFrame:
+    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         return df
 
 
