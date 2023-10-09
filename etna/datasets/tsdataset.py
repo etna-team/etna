@@ -808,7 +808,9 @@ class TSDataset:
         for next_level_name in level_columns[1:]:
             cur_level_to_next_level_edges = df_level_columns[[cur_level_name, next_level_name]].drop_duplicates()
             cur_level_to_next_level_adjacency_list = cur_level_to_next_level_edges.groupby(cur_level_name).agg(list)
-            level_structure.update(cur_level_to_next_level_adjacency_list.to_records())
+
+            # support for pandas>=1.4, <1.5
+            level_structure.update(cur_level_to_next_level_adjacency_list.itertuples(name=None))
             cur_level_name = next_level_name
 
         hierarchical_structure = HierarchicalStructure(
