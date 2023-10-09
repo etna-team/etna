@@ -208,20 +208,20 @@ class SklearnTransform(ReversibleTransform):
 
             # inverse transformation of columns that are left (e.g. prediction intervals)
             other_columns = set(df.columns.get_level_values("feature")) - set(self.in_column)
-            for column_nm in other_columns:
+            for column_name in other_columns:
                 df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
                 df_slice_copy = set_columns_wide(
-                    df_slice_copy, df, features_left=["target"], features_right=[column_nm]
+                    df_slice_copy, df, features_left=["target"], features_right=[column_name]
                 )
                 transformed_border = self._make_inverse_transform(df_slice_copy)
                 df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_border
-                other_arrays[column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
-                    columns={"target": column_nm}
+                other_arrays[column_name] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
+                    columns={"target": column_name}
                 )
 
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
-            for column_nm in other_columns:
-                df.loc[:, pd.IndexSlice[:, column_nm]] = other_arrays[column_nm].values
+            for column_name in other_columns:
+                df.loc[:, pd.IndexSlice[:, column_name]] = other_arrays[column_name].values
 
         return df
 
