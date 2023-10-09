@@ -429,7 +429,11 @@ class DeepBaseAbstractModel(ABC):
 
 
 class DeepBaseNet(DeepAbstractNet, LightningModule):
-    """Class for partially implemented LightningModule interface."""
+    """Class for partially implemented LightningModule interface.
+
+    During inheritance don't forget to add ``self.save_hyperparameters()`` to the ``__init__``.
+    Otherwise, methods ``save`` and ``load`` won't work properly for your implementation of :py:class:`~etna.models.base.DeepBaseModel`.
+    """
 
     def __init__(self):
         """Init DeepBaseNet."""
