@@ -279,6 +279,7 @@ filterwarnings = [
     "ignore: Optimization did not converge :tbats.error.ModelWarning.ModelWarning",
     "ignore: Following components are not fitted.*",
     "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated",
+    "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
 ]
 markers = [
     "smoke"
