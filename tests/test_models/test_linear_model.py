@@ -1,3 +1,4 @@
+import warnings
 from typing import List
 from typing import Tuple
 
@@ -166,7 +167,8 @@ def test_no_warning_on_categorical_features(example_tsds, model):
     dateflags = DateFlagsTransform()
     example_tsds.fit_transform([lags, dateflags])
 
-    with pytest.warns(None) as record:
+    with pytest.warns() as record:
+        warnings.warn("First record", UserWarning)  # for record not to be empty
         _ = model.fit(example_tsds)
     assert (
         len(
@@ -182,7 +184,8 @@ def test_no_warning_on_categorical_features(example_tsds, model):
     )
 
     to_forecast = example_tsds.make_future(horizon, transforms=[lags, dateflags])
-    with pytest.warns(None) as record:
+    with pytest.warns() as record:
+        warnings.warn("First record", UserWarning)  # for record not to be empty
         _ = model.forecast(to_forecast)
     assert (
         len(
