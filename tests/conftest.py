@@ -453,10 +453,19 @@ def toy_dataset_equal_targets_and_quantiles():
         "timestamp": time * n_segments,
         "segment": ["a"] * n_periods + ["b"] * n_periods,
         "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
+    }
+
+    quantiles_df = {
+        "timestamp": time * n_segments,
+        "segment": ["a"] * n_periods + ["b"] * n_periods,
         "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
     }
+
     df = TSDataset.to_dataset(pd.DataFrame(df))
+    quantiles_df = TSDataset.to_dataset(pd.DataFrame(quantiles_df))
+
     ts = TSDataset(df, freq="D")
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -475,10 +484,19 @@ def toy_dataset_with_mean_shift_in_target():
         "target": np.concatenate((np.array((-1, 3, 3, -4, -1)) + mean_1, np.array((-2, 3, -4, 5, -2)) + mean_2)).astype(
             np.float64
         ),
+    }
+
+    quantiles_df = {
+        "timestamp": time * n_segments,
+        "segment": ["a"] * n_periods + ["b"] * n_periods,
         "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
     }
+
     df = TSDataset.to_dataset(pd.DataFrame(df))
+    quantiles_df = TSDataset.to_dataset(pd.DataFrame(quantiles_df))
+
     ts = TSDataset(df, freq="1D")
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -683,13 +701,25 @@ def product_level_constant_forecast_with_quantiles(hierarchical_structure):
             "timestamp": ["2000-01-05", "2000-01-06"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
             "target": [1, 1] + [2, 2] + [3, 3] + [4, 4],
+        },
+        dtype=float,
+    )
+
+    quantiles_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 4,
+            "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
             "target_0.25": [1 / 2, 1 / 4] + [1, 1 / 2] + [2, 1] + [3, 2],
             "target_0.75": [2, 3] + [3, 4] + [4, 5] + [5, 6],
         },
         dtype=float,
     )
+
     df = TSDataset.to_dataset(df=df)
+    quantiles_df = TSDataset.to_dataset(df=quantiles_df)
+
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -726,13 +756,25 @@ def market_level_constant_forecast_with_quantiles(hierarchical_structure):
             "timestamp": ["2000-01-05", "2000-01-06"] * 2,
             "segment": ["X"] * 2 + ["Y"] * 2,
             "target": [3, 3] + [7, 7],
+        },
+        dtype=float,
+    )
+
+    quantiles_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
             "target_0.25": [1.5, 0.75] + [5, 3],
             "target_0.75": [5, 7] + [9, 11],
         },
         dtype=float,
     )
+
     df = TSDataset.to_dataset(df=df)
+    quantiles_df = TSDataset.to_dataset(df=quantiles_df)
+
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -769,13 +811,25 @@ def total_level_constant_forecast_with_quantiles(hierarchical_structure):
             "timestamp": ["2000-01-05", "2000-01-06"],
             "segment": ["total"] * 2,
             "target": [10, 10],
+        },
+        dtype=float,
+    )
+
+    quantiles_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"],
+            "segment": ["total"] * 2,
             "target_0.25": [6.5, 3.75],
             "target_0.75": [14, 18],
         },
         dtype=float,
     )
+
     df = TSDataset.to_dataset(df=df)
+    quantiles_df = TSDataset.to_dataset(df=quantiles_df)
+
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 

@@ -96,12 +96,14 @@ class PatchTSNet(DeepBaseNet):
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         """
         super().__init__()
+        self.save_hyperparameters()
+        self.encoder_length = encoder_length
         self.patch_len = patch_len
-        self.num_layers = num_layers
-        self.feedforward_size = feedforward_size
-        self.hidden_size = hidden_size
-        self.nhead = nhead
         self.stride = stride
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+        self.feedforward_size = feedforward_size
+        self.nhead = nhead
         self.loss = loss
 
         encoder_layers = nn.TransformerEncoderLayer(

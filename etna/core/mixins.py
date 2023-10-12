@@ -27,8 +27,8 @@ class BaseMixin:
         """Get default representation of etna object."""
         # TODO: add tests default behaviour for all registered objects
         args_str_representation = ""
-        init_args = inspect.signature(self.__init__).parameters
-        for arg, param in init_args.items():
+        init_parameters = self._get_init_parameters()
+        for arg, param in init_parameters.items():
             if param.kind == param.VAR_POSITIONAL:
                 continue
             elif param.kind == param.VAR_KEYWORD:
@@ -42,6 +42,9 @@ class BaseMixin:
                     warnings.warn(f"You haven't set all parameters inside class __init__ method: {e}")
                 args_str_representation += f"{arg} = {repr(value)}, "
         return f"{self.__class__.__name__}({args_str_representation})"
+
+    def _get_init_parameters(self):
+        return inspect.signature(self.__init__).parameters
 
     @staticmethod
     def _get_target_from_class(value: Any):
@@ -84,9 +87,9 @@ class BaseMixin:
 
     def to_dict(self):
         """Collect all information about etna object in dict."""
-        init_args = inspect.signature(self.__init__).parameters
+        init_parameters = self._get_init_parameters()
         params = {}
-        for arg in init_args.keys():
+        for arg in init_parameters.keys():
             value = self.__dict__[arg]
             if value is None:
                 continue
@@ -226,9 +229,37 @@ class SaveMixin(AbstractSaveable):
         with archive.open("metadata.json", "w") as output_file:
             output_file.write(metadata_bytes)
 
-    def _save_state(self, archive: zipfile.ZipFile):
-        with archive.open("object.pkl", "w", force_zip64=True) as output_file:
-            dill.dump(self, output_file)
+    def _save_state(self, archive: zipfile.ZipFile, skip_attributes: Sequence[str] = ()):
+        saved_attributes = {}
+        try:
+            # remove attributes we can't easily save
+            saved_attributes = {attr: getattr(self, attr) for attr in skip_attributes}
+            for attr in skip_attributes:
+                delattr(self, attr)
+
+            # save the remaining part
+            with archive.open("object.pkl", "w", force_zip64=True) as output_file:
+                dill.dump(self, output_file)
+        finally:
+            # restore the skipped attributes
+            for attr, value in saved_attributes.items():
+                setattr(self, attr, value)
+
+    def _save(self, path: pathlib.Path, skip_attributes: Sequence[str] = ()):
+        """Save the object with more options.
+
+        This method is intended to use to implement ``save`` method during inheritance.
+
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        skip_attributes:
+            Attributes to be skipped during saving state. These attributes are intended to be saved manually.
+        """
+        with zipfile.ZipFile(path, "w") as archive:
+            self._save_metadata(archive)
+            self._save_state(archive, skip_attributes=skip_attributes)
 
     def save(self, path: pathlib.Path):
         """Save the object.
@@ -238,9 +269,7 @@ class SaveMixin(AbstractSaveable):
         path:
             Path to save object to.
         """
-        with zipfile.ZipFile(path, "w") as archive:
-            self._save_metadata(archive)
-            self._save_state(archive)
+        self._save(path=path)
 
     @classmethod
     def _load_metadata(cls, archive: zipfile.ZipFile) -> Dict[str, Any]:

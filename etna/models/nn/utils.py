@@ -228,6 +228,7 @@ class PytorchForecastingMixin:
     train_batch_size: int
     test_batch_size: int
     encoder_length: int
+    trainer: Optional[pl.Trainer]
 
     @log_decorator
     def fit(self, ts: TSDataset):

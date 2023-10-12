@@ -1,18 +1,21 @@
 import json
 import pathlib
+import pickle
+from copy import deepcopy
 from unittest.mock import MagicMock
 from unittest.mock import patch
 from zipfile import ZipFile
 
-import dill
 import numpy as np
 import pytest
 
 from etna import SETTINGS
 from etna.datasets import TSDataset
+from etna.models.nn.mlp import MLPNet
 
 if SETTINGS.torch_required:
     import torch
+    from pytorch_lightning import Trainer
 
 import pandas as pd
 
@@ -23,7 +26,8 @@ from etna.models.mixins import NonPredictionIntervalContextRequiredModelMixin
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PredictionIntervalContextRequiredModelMixin
-from etna.models.mixins import SaveNNMixin
+from etna.models.mixins import SaveDeepBaseModelMixin
+from etna.models.mixins import SavePytorchForecastingMixin
 
 
 class DummyPredictAdapter(BaseAdapter):
@@ -145,55 +149,177 @@ def test_calling_private_prediction(
     )
 
 
-class DummyNN(SaveNNMixin):
-    def __init__(self, a, b):
-        self.a = torch.tensor(a)
-        self.b = torch.tensor(b)
+class DummyDeepBaseModel(SaveDeepBaseModelMixin):
+    def __init__(self, size: int):
+        self.size = size
+        self.net = MLPNet(input_size=size, hidden_size=[size], lr=0.01, loss=torch.nn.MSELoss(), optimizer_params=None)
+        self.trainer = Trainer()
 
 
-def test_save_nn_mixin_save(tmp_path):
-    dummy = DummyNN(a=1, b=2)
+class DummyPytorchForecastingModel(SavePytorchForecastingMixin):
+    def __init__(self, size: int, init_model: bool):
+        self.size = size
+        self.init_model = init_model
+        if init_model:
+            self.model = MLPNet(
+                input_size=size, hidden_size=[size], lr=0.01, loss=torch.nn.MSELoss(), optimizer_params=None
+            )
+        else:
+            self.model = None
+        self.trainer = Trainer()
+
+
+def test_save_native_mixin_save(tmp_path):
+    dummy = DummyDeepBaseModel(size=1)
     dir_path = pathlib.Path(tmp_path)
     path = dir_path.joinpath("dummy.zip")
 
+    initial_dummy = deepcopy(dummy)
     dummy.save(path)
 
     with ZipFile(path, "r") as zip_file:
         files = zip_file.namelist()
-        assert sorted(files) == ["metadata.json", "object.pt"]
+        assert sorted(files) == ["metadata.json", "net.pt", "object.pkl"]
 
         with zip_file.open("metadata.json", "r") as input_file:
             metadata_bytes = input_file.read()
         metadata_str = metadata_bytes.decode("utf-8")
         metadata = json.loads(metadata_str)
         assert sorted(metadata.keys()) == ["class", "etna_version"]
-        assert metadata["class"] == "tests.test_models.test_mixins.DummyNN"
+        assert metadata["class"] == "tests.test_models.test_mixins.DummyDeepBaseModel"
 
-        with zip_file.open("object.pt", "r") as input_file:
-            loaded_dummy = torch.load(input_file, pickle_module=dill)
-        assert loaded_dummy.a == dummy.a
-        assert loaded_dummy.b == dummy.b
+        with zip_file.open("object.pkl", "r") as input_file:
+            loaded_obj = pickle.load(input_file)
+        assert loaded_obj.size == dummy.size
+
+    # basic check that we didn't break dummy object itself
+    assert dummy.size == initial_dummy.size
+    assert isinstance(dummy.net, MLPNet)
+    assert isinstance(dummy.trainer, Trainer)
 
 
-def test_save_mixin_load_ok(recwarn, tmp_path):
-    dummy = DummyNN(a=1, b=2)
+def test_save_pf_mixin_save_without_model(tmp_path):
+    dummy = DummyPytorchForecastingModel(size=1, init_model=False)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path.joinpath("dummy.zip")
+
+    initial_dummy = deepcopy(dummy)
+    dummy.save(path)
+
+    with ZipFile(path, "r") as zip_file:
+        files = zip_file.namelist()
+        assert sorted(files) == ["metadata.json", "object.pkl"]
+
+        with zip_file.open("metadata.json", "r") as input_file:
+            metadata_bytes = input_file.read()
+        metadata_str = metadata_bytes.decode("utf-8")
+        metadata = json.loads(metadata_str)
+        assert sorted(metadata.keys()) == ["class", "etna_version"]
+        assert metadata["class"] == "tests.test_models.test_mixins.DummyPytorchForecastingModel"
+
+        with zip_file.open("object.pkl", "r") as input_file:
+            loaded_obj = pickle.load(input_file)
+        assert loaded_obj.size == dummy.size
+
+    # basic check that we didn't break dummy object itself
+    assert dummy.size == initial_dummy.size
+    assert dummy.model is None
+    assert isinstance(dummy.trainer, Trainer)
+
+
+def test_save_pf_mixin_save_with_model(tmp_path):
+    dummy = DummyPytorchForecastingModel(size=1, init_model=True)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path.joinpath("dummy.zip")
+
+    initial_dummy = deepcopy(dummy)
+    dummy.save(path)
+
+    with ZipFile(path, "r") as zip_file:
+        files = zip_file.namelist()
+        assert sorted(files) == ["metadata.json", "model.pt", "object.pkl"]
+
+        with zip_file.open("metadata.json", "r") as input_file:
+            metadata_bytes = input_file.read()
+        metadata_str = metadata_bytes.decode("utf-8")
+        metadata = json.loads(metadata_str)
+        assert sorted(metadata.keys()) == ["class", "etna_version"]
+        assert metadata["class"] == "tests.test_models.test_mixins.DummyPytorchForecastingModel"
+
+        with zip_file.open("object.pkl", "r") as input_file:
+            loaded_obj = pickle.load(input_file)
+        assert loaded_obj.size == dummy.size
+
+    # basic check that we didn't break dummy object itself
+    assert dummy.size == initial_dummy.size
+    assert isinstance(dummy.model, MLPNet)
+    assert isinstance(dummy.trainer, Trainer)
+
+
+@pytest.mark.parametrize("cls", [DummyDeepBaseModel, DummyPytorchForecastingModel])
+def test_save_mixin_load_fail_file_not_found(cls):
+    non_existent_path = pathlib.Path("archive.zip")
+    with pytest.raises(FileNotFoundError):
+        cls.load(non_existent_path)
+
+
+def test_save_native_mixin_load_ok(recwarn, tmp_path):
+    dummy = DummyDeepBaseModel(size=1)
     dir_path = pathlib.Path(tmp_path)
     path = dir_path.joinpath("dummy.zip")
 
     dummy.save(path)
-    loaded_dummy = DummyNN.load(path)
+    loaded_dummy = DummyDeepBaseModel.load(path)
 
-    assert loaded_dummy.a == dummy.a
-    assert loaded_dummy.b == dummy.b
+    assert loaded_dummy.size == dummy.size
+    assert isinstance(loaded_dummy.net, MLPNet)
+    assert loaded_dummy.trainer is None
+    # one false positive warning
+    assert len(recwarn) == 1
+
+
+def test_save_pf_mixin_without_model_load_ok(recwarn, tmp_path):
+    dummy = DummyPytorchForecastingModel(size=1, init_model=False)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path.joinpath("dummy.zip")
+
+    dummy.save(path)
+    loaded_dummy = DummyPytorchForecastingModel.load(path)
+
+    assert loaded_dummy.size == dummy.size
+    assert loaded_dummy.model is None
+    assert loaded_dummy.trainer is None
     assert len(recwarn) == 0
 
 
+def test_save_pf_mixin_with_model_load_ok(recwarn, tmp_path):
+    dummy = DummyPytorchForecastingModel(size=1, init_model=True)
+    dir_path = pathlib.Path(tmp_path)
+    path = dir_path.joinpath("dummy.zip")
+
+    dummy.save(path)
+    loaded_dummy = DummyPytorchForecastingModel.load(path)
+
+    assert loaded_dummy.size == dummy.size
+    assert isinstance(loaded_dummy.model, MLPNet)
+    assert loaded_dummy.trainer is None
+    # one false positive warning
+    assert len(recwarn) == 1
+
+
+@pytest.mark.parametrize(
+    "dummy",
+    [
+        DummyDeepBaseModel(size=1),
+        DummyPytorchForecastingModel(size=1, init_model=False),
+        DummyPytorchForecastingModel(size=1, init_model=True),
+    ],
+)
 @pytest.mark.parametrize(
     "save_version, load_version", [((1, 5, 0), (2, 5, 0)), ((2, 5, 0), (1, 5, 0)), ((1, 5, 0), (1, 3, 0))]
 )
 @patch("etna.core.mixins.get_etna_version")
-def test_save_mixin_load_warning(get_version_mock, save_version, load_version, tmp_path):
-    dummy = DummyNN(a=1, b=2)
+def test_save_mixin_load_warning(get_version_mock, save_version, load_version, dummy, tmp_path):
     dir_path = pathlib.Path(tmp_path)
     path = dir_path.joinpath("dummy.zip")
 
@@ -207,7 +333,7 @@ def test_save_mixin_load_warning(get_version_mock, save_version, load_version, t
         match=f"The object was saved under etna version {save_version_str} but running version is {load_version_str}",
     ):
         get_version_mock.return_value = load_version
-        _ = DummyNN.load(path)
+        _ = dummy.load(path)
 
 
 @pytest.mark.parametrize(

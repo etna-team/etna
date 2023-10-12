@@ -15,7 +15,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentSTLTransform(OneSegmentTransform):
@@ -154,11 +153,10 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         season_trend = self.fit_results.get_prediction(
             start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
         ).predicted_mean
-        result[self.in_column] += season_trend
-        if self.in_column == "target":
-            quantiles = match_target_quantiles(set(result.columns))
-            for quantile_column_nm in quantiles:
-                result.loc[:, quantile_column_nm] += season_trend
+
+        for colum_name in df.columns:
+            result.loc[:, colum_name] += season_trend
+
         return result
 
 

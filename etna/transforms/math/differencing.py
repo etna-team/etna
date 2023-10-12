@@ -13,7 +13,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
-from etna.transforms.utils import match_target_quantiles
 
 
 class _SingleDifferencingTransform(ReversibleTransform):
@@ -259,11 +258,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
         if not self.inplace:
             return df
 
-        columns_to_inverse = {self.in_column}
-
-        # if we are working with in_column="target" then there can be quantiles to inverse too
-        if self.in_column == "target":
-            columns_to_inverse.update(match_target_quantiles(set(df.columns.get_level_values("feature"))))
+        columns_to_inverse = set(df.columns.get_level_values("feature"))
 
         # determine if we are working with train or test
         if self._train_timestamp.shape[0] == df.index.shape[0] and np.all(self._train_timestamp == df.index):
@@ -473,7 +468,7 @@ class DifferencingTransform(ReversibleTransform):
 
         result_df = df
         for transform in self._differencing_transforms[::-1]:
-            result_df = transform._inverse_transform(result_df)
+            result_df = transform._inverse_transform(df=result_df)
         return result_df
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:

@@ -120,7 +120,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
     df = request.getfixturevalue(df_name)
     transform = _OneSegmentDeseasonalityTransform(in_column="target", period=7, model=model)
     df_transformed = transform.fit_transform(df)
-    df_inverse_transformed = transform.inverse_transform(df_transformed)
+    df_inverse_transformed = transform.inverse_transform(df=df_transformed)
     pd.util.testing.assert_frame_equal(df_inverse_transformed, df)
 
 

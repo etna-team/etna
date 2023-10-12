@@ -405,7 +405,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             border.rename({"target": f"target_{quantile:.4g}"}, inplace=True, axis=1)
             borders.append(border)
 
-        predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
+        quantiles_df = pd.concat(borders, axis=1)
+        predictions.add_prediction_intervals(prediction_intervals_df=quantiles_df)
 
     def forecast(
         self,

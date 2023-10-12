@@ -144,7 +144,7 @@ class ModelPipelineParamsToTuneMixin:
 class SaveModelPipelineMixin(SaveMixin):
     """Implementation of ``AbstractSaveable`` abstract class for pipelines with model inside.
 
-    It saves object to the zip archive with 4 entities:
+    It saves object to the zip archive with entities:
 
     * metadata.json: contains library version and class name.
 
@@ -167,22 +167,7 @@ class SaveModelPipelineMixin(SaveMixin):
         self.transforms: Sequence[Transform]
         self.ts: Optional[TSDataset]
 
-        model = self.model
-        transforms = self.transforms
-        ts = self.ts
-
-        try:
-            # extract attributes we can't easily save
-            delattr(self, "model")
-            delattr(self, "transforms")
-            delattr(self, "ts")
-
-            # save the remaining part
-            super().save(path=path)
-        finally:
-            self.model = model
-            self.transforms = transforms
-            self.ts = ts
+        self._save(path=path, skip_attributes=["model", "transforms", "ts"])
 
         with zipfile.ZipFile(path, "a") as archive:
             with tempfile.TemporaryDirectory() as _temp_dir:
@@ -190,14 +175,14 @@ class SaveModelPipelineMixin(SaveMixin):
 
                 # save model separately
                 model_save_path = temp_dir / "model.zip"
-                model.save(model_save_path)
+                self.model.save(model_save_path)
                 archive.write(model_save_path, "model.zip")
 
                 # save transforms separately
                 transforms_dir = temp_dir / "transforms"
                 transforms_dir.mkdir()
                 num_digits = 8
-                for i, transform in enumerate(transforms):
+                for i, transform in enumerate(self.transforms):
                     save_name = f"{i:0{num_digits}d}.zip"
                     transform_save_path = transforms_dir / save_name
                     transform.save(transform_save_path)

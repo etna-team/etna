@@ -7,6 +7,7 @@ from etna.metrics import MAE
 from etna.models.nn import PatchTSModel
 from etna.models.nn.patchts import PatchTSNet
 from etna.transforms import StandardScalerTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
 
 
@@ -72,6 +73,11 @@ def test_patchts_make_samples(example_df):
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
     np.testing.assert_equal(example_df[["target"]].iloc[:encoder_length], first_sample["encoder_real"])
     np.testing.assert_equal(example_df[["target"]].iloc[1 : encoder_length + 1], second_sample["encoder_real"])
+
+
+def test_save_load(example_tsds):
+    model = PatchTSModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
 def test_params_to_tune(example_tsds):

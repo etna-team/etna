@@ -54,6 +54,7 @@ class DeepStateNet(DeepBaseNet):
             Parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         """
         super().__init__()
+        self.save_hyperparameters()
         self.ssm = ssm
         self.input_size = input_size
         self.num_layers = num_layers

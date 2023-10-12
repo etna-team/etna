@@ -5,6 +5,7 @@ from etna.models.nn import DeepStateModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import StandardScalerTransform
+from tests.test_models.utils import assert_model_equals_loaded_original
 
 
 @pytest.mark.parametrize(
@@ -43,3 +44,14 @@ def test_deepstate_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_functi
 
     mae = MAE("macro")
     assert mae(ts_test, future) < 0.001
+
+
+def test_save_load(example_tsds):
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)

@@ -5,8 +5,8 @@ from typing import Sequence
 
 import pandas as pd
 
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
-from etna.datasets.utils import get_target_with_quantiles
 from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import Metric
@@ -118,17 +118,9 @@ class HierarchicalPipeline(Pipeline):
                 ts=ts, predictions=forecast, quantiles=quantiles, n_folds=n_folds
             )
 
-        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
-        hierarchical_forecast = TSDataset(
-            df=forecast[..., target_columns],
-            freq=forecast.freq,
-            df_exog=forecast.df_exog,
-            known_future=forecast.known_future,
-            hierarchical_structure=ts.hierarchical_structure,  # type: ignore
+        hierarchical_forecast = self._make_hierarchical_dataset(
+            ts=forecast, hierarchical_structure=ts.hierarchical_structure  # type: ignore
         )
-
-        if return_components:
-            hierarchical_forecast.add_target_components(target_components_df=forecast.get_target_components())
 
         return hierarchical_forecast
 
@@ -176,17 +168,9 @@ class HierarchicalPipeline(Pipeline):
             return_components=return_components,
         )
 
-        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
-        hierarchical_forecast = TSDataset(
-            df=forecast[..., target_columns],
-            freq=forecast.freq,
-            df_exog=forecast.df_exog,
-            known_future=forecast.known_future,
-            hierarchical_structure=ts.hierarchical_structure,  # type: ignore
+        hierarchical_forecast = self._make_hierarchical_dataset(
+            ts=forecast, hierarchical_structure=ts.hierarchical_structure  # type: ignore
         )
-
-        if return_components:
-            hierarchical_forecast.add_target_components(target_components_df=forecast.get_target_components())
 
         return hierarchical_forecast
 
@@ -333,3 +317,22 @@ class HierarchicalPipeline(Pipeline):
 
         finally:
             self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
+
+    @staticmethod
+    def _make_hierarchical_dataset(ts: TSDataset, hierarchical_structure: HierarchicalStructure) -> TSDataset:
+        """Create hierarchical dataset from given ``ts`` and structure."""
+        hierarchical_ts = TSDataset(
+            df=ts[..., "target"],
+            freq=ts.freq,
+            df_exog=ts.df_exog,
+            known_future=ts.known_future,
+            hierarchical_structure=hierarchical_structure,
+        )
+
+        if len(ts.prediction_intervals_names) != 0:
+            hierarchical_ts.add_prediction_intervals(prediction_intervals_df=ts.get_prediction_intervals())
+
+        if len(ts.target_components_names) != 0:
+            hierarchical_ts.add_target_components(target_components_df=ts.get_target_components())
+
+        return hierarchical_ts
