@@ -233,6 +233,7 @@ filterwarnings = [
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
     "ignore: Comparison of Timestamp with datetime.date is deprecated in order to",
     "ignore: Implicitly cleaning up ",
+    "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",
     "ignore: Optimization failed to converge. Check mle_retvals",
     "ignore: Mean of empty slice",
     "ignore: No frequency information was provided, so inferred frequency .* will be used",
