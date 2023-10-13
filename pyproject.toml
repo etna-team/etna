@@ -246,6 +246,7 @@ filterwarnings = [
     "ignore: divide by zero encountered in log",
     "ignore: inplace is deprecated and will be removed in a future",
     "ignore: invalid value encountered in double_scalars",
+    "ignore: invalid value encountered in expm1",
     "ignore: Arrays of bytes/strings is being converted to decimal numbers if",
     "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
     "ignore: Series.dt.weekofyear and Series.dt.week have been deprecated",
@@ -280,6 +281,7 @@ filterwarnings = [
     "ignore: Following components are not fitted.*",
     "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated",
     "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
+    "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # old pandas uses deprecated numpy parameter
 ]
 markers = [
     "smoke"
