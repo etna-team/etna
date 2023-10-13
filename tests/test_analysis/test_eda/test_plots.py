@@ -120,6 +120,7 @@ def test_acf_nan_end(ts_diff_endings):
     acf_plot(ts, partial=True)
 
 
+@pytest.mark.filterwarnings("ignore: The default method 'yw' can produce PACF values outside of .* interval")
 def test_acf_nan_middle(ts_with_nans):
     ts = ts_with_nans
     acf_plot(ts, partial=False)
