@@ -41,7 +41,7 @@ def test_compute_resids_matrix_shape(example_tsds, horizon, n_folds):
 
 
 @pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
-def test_pipeline_fit_forecast(example_tsds, pipeline_name, request):
+def test_pipeline_fit_forecast_without_intervals(example_tsds, pipeline_name, request):
     pipeline = request.getfixturevalue(pipeline_name)
 
     intervals_pipeline = NaiveVariancePredictionIntervals(pipeline=pipeline)

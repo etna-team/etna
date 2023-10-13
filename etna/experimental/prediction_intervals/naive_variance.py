@@ -36,7 +36,7 @@ class NaiveVariancePredictionIntervals(BasePredictionIntervals):
             Number of points between folds.
         """
         if stride <= 0:
-            raise ValueError("Parameter ``stride`` must be positive!")
+            raise ValueError("Parameter `stride` must be positive!")
 
         self.stride = stride
 
