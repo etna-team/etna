@@ -321,6 +321,7 @@ def test_prediction_decomposition(outliers_tsds, model):
     assert_prediction_components_are_present(model=model, train=train, test=test)
 
 
+@pytest.mark.filterwarnings("ignore: overflow encountered in matmul")
 @pytest.mark.parametrize(
     "model, expected_length",
     [

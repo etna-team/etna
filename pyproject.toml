@@ -210,7 +210,7 @@ filterwarnings = [
     "ignore: You probably set wrong freq. Discovered freq in you data is None",
     "ignore: Exogenous data contains columns with category type! It will be",
     "ignore: Given top_k=.* is less than n_segments=.*. Algo will filter data without Gale-Shapley run.",
-    "ignore: Features {'unknown'} are not found and will be dropped!",
+    "ignore: Features .* are not found and will be dropped!",
     "ignore: You probably set wrong freq. Discovered freq in you data",
     "ignore: This model doesn't work with exogenous features",
     "ignore: Transformation will be applied inplace, out_column param will be ignored",
@@ -226,14 +226,14 @@ filterwarnings = [
     "ignore: You haven't set all parameters inside class __init__ method.* 'use_arma_errors'",
     "ignore: Call to deprecated function .* target_quantiles_names",
     "ignore: There are NaNs in target on time span from .* to .* It can obstruct prediction interval estimation",
+    "ignore: Following components are not fitted.*",
     # external warnings
     "ignore: Torchmetrics v0.9 introduced a new argument class property called `full_state_update` that",
     "ignore: pandas.util.testing is deprecated. Use the functions in the public API",
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
     "ignore: Comparison of Timestamp with datetime.date is deprecated in order to",
-    "ignore: is less than n_segments. Algo will filter data",
     "ignore: Implicitly cleaning up ",
-    "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",
+    "ignore: Optimization failed to converge. Check mle_retvals",
     "ignore: Mean of empty slice",
     "ignore: No frequency information was provided, so inferred frequency .* will be used",
     "ignore: Non-stationary starting autoregressive parameters found. Using zeros as starting parameters.",
@@ -278,10 +278,10 @@ filterwarnings = [
     "ignore: Using the level keyword in DataFrame and Series aggregations is deprecated",
     "ignore: Non-invertible starting MA parameters found",
     "ignore: Optimization did not converge :tbats.error.ModelWarning.ModelWarning",
-    "ignore: Following components are not fitted.*",
     "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated",
     "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
     "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # old pandas uses deprecated numpy parameter
+    "ignore: Error fitting  ARIMA .* error_action", # pmdarima fails to fit one of the models in auto_arima
 ]
 markers = [
     "smoke"
