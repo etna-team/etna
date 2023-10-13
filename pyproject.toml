@@ -243,6 +243,7 @@ filterwarnings = [
     "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
     "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # pandas: old version uses deprecated numpy parameter
     "ignore: Trying to infer the `batch_size` from an ambiguous collection", # pytorch_forecasting
+    "ignore: Implicitly cleaning up <TemporaryDirectory"
 ]
 markers = [
     "smoke"

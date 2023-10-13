@@ -43,7 +43,7 @@ def test_run(catboostmodel, new_format_df):
 def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
     df = new_format_df
     exog = new_format_exog
-    exog.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
+    exog.columns = exog.columns.set_levels(["regressor_exog"], level="feature")
 
     ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
