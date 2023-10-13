@@ -110,6 +110,7 @@ def test_repr_elastic(model_class, model_class_repr):
     assert model_repr == true_repr
 
 
+@pytest.mark.filterwarnings("ignore: Objective did not converge. You might want to increase the number of iterations")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), ElasticPerSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_per_segment(linear_segments_ts_unique, num_lags, model):

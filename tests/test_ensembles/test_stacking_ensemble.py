@@ -101,6 +101,7 @@ def test_features_to_use_not_found(
         _ = ensemble._filter_features_to_use(forecasts_ts)
 
 
+@pytest.mark.filterwarnings("ignore: Features {'unknown'} are not found and will be dropped!")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -161,6 +162,7 @@ def test_fit_saving_ts(example_tsds, naive_pipeline_1, naive_pipeline_2, save_ts
         assert ensemble.ts is None
 
 
+@pytest.mark.filterwarnings("ignore: Features {'unknown'} are not found and will be dropped!")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -205,6 +207,7 @@ def test_forecast_interface(
     assert features == expected_features
 
 
+@pytest.mark.filterwarnings("ignore: Features {'unknown'} are not found and will be dropped!")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (

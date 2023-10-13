@@ -241,7 +241,7 @@ def outliers_tsds():
     df.columns.names = ["segment", "feature"]
 
     exog = df.copy()
-    exog.columns.set_levels(["exog"], level="feature", inplace=True)
+    exog.columns = exog.columns.set_levels(["exog"], level="feature")
 
     tsds = TSDataset(df, "1d", exog)
 
@@ -304,7 +304,7 @@ def multitrend_df() -> pd.DataFrame:
 def ts_with_different_series_length(example_df: pd.DataFrame) -> TSDataset:
     """Generate TSDataset with different lengths series."""
     df = TSDataset.to_dataset(example_df)
-    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[: df.index[3], pd.IndexSlice["segment_1", "target"]] = None
     ts = TSDataset(df=df, freq="H")
     return ts
 

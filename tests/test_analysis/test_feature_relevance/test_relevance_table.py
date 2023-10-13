@@ -77,12 +77,16 @@ def test_warnings_statistic_table(columns, match, exog_and_target_dfs):
         get_statistics_relevance_table(df=df, df_exog=df_exog)
 
 
+@pytest.mark.filterwarnings("ignore: Exogenous or target data contains None")
+@pytest.mark.filterwarnings("ignore: Exogenous data contains columns with category type")
 def test_errors_statistic_table(exog_and_target_dfs):
     df, df_exog = exog_and_target_dfs
     with pytest.raises(ValueError, match="column cannot be cast to float type!"):
         get_statistics_relevance_table(df=df, df_exog=df_exog)
 
 
+@pytest.mark.filterwarnings("ignore: Exogenous or target data contains None")
+@pytest.mark.filterwarnings("ignore: Exogenous data contains columns with category type")
 def test_work_statistic_table(exog_and_target_dfs):
     df, df_exog = exog_and_target_dfs
     df_exog = df_exog[[i for i in df_exog.columns if i[1] != "no_cast"]]

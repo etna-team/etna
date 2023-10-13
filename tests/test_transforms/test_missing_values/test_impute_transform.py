@@ -206,6 +206,7 @@ def ts_to_fill(sample_ts):
     return ts
 
 
+@pytest.mark.filterwarnings("ignore: Mean of empty slice")
 @pytest.mark.parametrize(
     "window, seasonality, expected",
     [
@@ -250,6 +251,7 @@ def test_missing_values_seasonal(ts_to_fill, window: int, seasonality: int, expe
     np.testing.assert_array_equal(result, expected)
 
 
+@pytest.mark.filterwarnings("ignore: Mean of empty slice")
 @pytest.mark.parametrize(
     "window, seasonality, default_value, expected",
     [
