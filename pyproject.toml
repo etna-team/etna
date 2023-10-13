@@ -257,7 +257,7 @@ filterwarnings = [
     "ignore: Objective did not converge. You might want to increase the number",
     "ignore: distutils Version classes are deprecated.",
     "ignore: invalid escape sequence",
-#    "ignore::pandas.errors.SettingWithCopyWarning",
+    "ignore: A value is trying to be set on a copy of a slice from a DataFrame", # SettingWithCopyWarning
     "ignore: New behaviour in v1.1.5",
     "ignore: The 'check_less_precise' keyword in testing",
     "ignore: Feature names only support names that are all strings",
