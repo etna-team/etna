@@ -229,7 +229,6 @@ filterwarnings = [
     "ignore: New behaviour in v1.1.5.* a small bias is added", # ruptures: normal cost
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
-#    "ignore: All-NaN slice encountered",
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
     "ignore: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed", # seaborn
     "ignore: Jupyter is migrating its paths to use standard platformdirs",
@@ -238,7 +237,6 @@ filterwarnings = [
     "ignore: In a future version, `df.* = newvals` will attempt to set the values inplace instead of always setting a new array",
     "ignore: In a future version, DataFrame.*mean.* will return a scalar mean over the entire DataFrame",
     "ignore: The behavior of indexing on a MultiIndex with a nested sequence of labels is deprecated and will change in a future version",
-#    "ignore: Using the level keyword in DataFrame and Series aggregations is deprecated",
     "ignore: Non-invertible starting MA parameters found",
     "ignore: Optimization did not converge :tbats.error.ModelWarning.ModelWarning",
     "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated", # prophet
