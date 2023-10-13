@@ -428,8 +428,8 @@ def ts_diff_endings(example_reg_tsds):
 @pytest.fixture
 def ts_with_nans_in_tails(example_df):
     df = TSDataset.to_dataset(example_df)
-    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
-    df.loc[-3:, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[: df.index[3], pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[df.index[-3] :, pd.IndexSlice["segment_1", "target"]] = None
     ts = TSDataset(df, freq="H")
     return ts
 

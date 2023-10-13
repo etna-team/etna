@@ -108,11 +108,12 @@ def test_cross_corr_with_full_nans(a, b, normed, expected_result):
 @pytest.fixture
 def df_with_nans_in_head(example_df):
     df = TSDataset.to_dataset(example_df)
-    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
-    df.loc[:5, pd.IndexSlice["segment_2", "target"]] = None
+    df.loc[: df.index[3], pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[: df.index[4], pd.IndexSlice["segment_2", "target"]] = None
     return df
 
 
+@pytest.mark.filterwarnings("ignore: The default method 'yw' can produce PACF values outside of .* interval")
 def test_acf_nan_end(ts_diff_endings):
     ts = ts_diff_endings
     acf_plot(ts, partial=False)
@@ -126,6 +127,7 @@ def test_acf_nan_middle(ts_with_nans):
         acf_plot(ts, partial=True)
 
 
+@pytest.mark.filterwarnings("ignore: The default method 'yw' can produce PACF values outside of .* interval")
 def test_acf_nan_begin(df_with_nans_in_head):
     ts = TSDataset(df_with_nans_in_head, freq="H")
     acf_plot(ts, partial=False)

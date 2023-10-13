@@ -224,31 +224,26 @@ filterwarnings = [
     "ignore: ReduceLROnPlateau conditioned on metric val_loss which is not available but strict",
     "ignore: Checkpoint directory .* exists and is not empty",
     "ignore: distutils Version classes are deprecated.",
-    "ignore: invalid escape sequence",
+    "ignore: invalid escape sequence", # mostly due to LaTeX in docstrings
     "ignore:(.|\n)*A value is trying to be set on a copy of a slice from a DataFrame", # SettingWithCopyWarning
-    "ignore: New behaviour in v1.1.5",
-    "ignore: The 'check_less_precise' keyword in testing",
-    "ignore: Feature names only support names that are all strings",
-    "ignore: Call to deprecated create function", # protobuf warning
+    "ignore: New behaviour in v1.1.5.* a small bias is added", # ruptures: normal cost
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
-    "ignore: The default method 'yw' can produce PACF values outside",
-    "ignore: All-NaN slice encountered",
-    "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
-    "ignore: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed",
-    "ignore: Jupyter is migrating its paths to use standard platformdirs",
+#    "ignore: All-NaN slice encountered",
+#    "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
+    "ignore: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed", # seaborn
+#    "ignore: Jupyter is migrating its paths to use standard platformdirs",
     "ignore::sqlalchemy.exc.MovedIn20Warning",
     "ignore: Argument `closed` is deprecated in favor of `inclusive`",
     "ignore: In a future version, `df.* = newvals` will attempt to set the values inplace instead of always setting a new array",
     "ignore: In a future version, DataFrame.*mean.* will return a scalar mean over the entire DataFrame",
     "ignore: The behavior of indexing on a MultiIndex with a nested sequence of labels is deprecated and will change in a future version",
-    "ignore: Using the level keyword in DataFrame and Series aggregations is deprecated",
+#    "ignore: Using the level keyword in DataFrame and Series aggregations is deprecated",
     "ignore: Non-invertible starting MA parameters found",
     "ignore: Optimization did not converge :tbats.error.ModelWarning.ModelWarning",
-    "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated",
+    "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated", # prophet
     "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
-    "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # old pandas uses deprecated numpy parameter
-    "ignore: Error fitting  ARIMA .* error_action", # pmdarima fails to fit one of the models in auto_arima
+    "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # pandas: old version uses deprecated numpy parameter
 ]
 markers = [
     "smoke"
