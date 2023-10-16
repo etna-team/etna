@@ -1,9 +1,11 @@
 from typing import Dict
+from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
 
 import numpy as np
+import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.metrics.base import Metric
@@ -15,15 +17,33 @@ def dummy(y_true: ArrayLike, y_pred: ArrayLike) -> ArrayLike:
     return np.nan
 
 
-class _QuantileMetricMixin:
-    def _validate_tsdataset_quantiles(self, ts: TSDataset, quantiles: Sequence[float]) -> None:
-        """Check if quantiles presented in y_pred."""
-        features = set(ts.df.columns.get_level_values("feature"))
-        for quantile in quantiles:
-            assert f"target_{quantile:.4g}" in features, f"Quantile {quantile} is not presented in tsdataset."
+class _IntervalsMetricMixin:
+    def _validate_tsdataset_intervals(
+        self, ts: TSDataset, quantiles: Sequence[float], upper_name: Optional[str], lower_name: Optional[str]
+    ) -> None:
+        """Check if intervals borders presented in ``y_pred``."""
+        ts_intervals = set(ts.prediction_intervals_names)
+
+        borders_set = {upper_name, lower_name}
+        borders_presented = len(borders_set & ts_intervals) == len(borders_set)
+
+        quantiles_set = {f"target_{quantile:.4g}" for quantile in quantiles}
+        quantiles_presented = len(quantiles_set & ts_intervals) == len(quantiles_set)
+        quantiles_presented &= len(quantiles_set) > 0
+
+        if upper_name is not None and lower_name is not None:
+            if not borders_presented:
+                raise ValueError("Provided intervals borders names must be in dataset!")
+
+            if quantiles_presented and borders_set != quantiles_set:
+                raise ValueError("Quantiles and border names are both set and point to different intervals!")
+
+        else:
+            if not quantiles_presented:
+                raise ValueError("All quantiles must be presented in the dataset!")
 
 
-class Coverage(Metric, _QuantileMetricMixin):
+class Coverage(Metric, _IntervalsMetricMixin):
     """Coverage metric for prediction intervals - precenteage of samples in the interval ``[lower quantile, upper quantile]``.
 
     .. math::
@@ -35,7 +55,12 @@ class Coverage(Metric, _QuantileMetricMixin):
     """
 
     def __init__(
-        self, quantiles: Tuple[float, float] = (0.025, 0.975), mode: str = MetricAggregationMode.per_segment, **kwargs
+        self,
+        quantiles: Tuple[float, float] = (0.025, 0.975),
+        mode: str = MetricAggregationMode.per_segment,
+        upper_name: Optional[str] = None,
+        lower_name: Optional[str] = None,
+        **kwargs,
     ):
         """Init metric.
 
@@ -45,11 +70,20 @@ class Coverage(Metric, _QuantileMetricMixin):
             lower and upper quantiles
         mode: 'macro' or 'per-segment'
             metrics aggregation mode
+        upper_name:
+            name of column with upper border of the interval
+        lower_name:
+            name of column with lower border of the interval
         kwargs:
             metric's computation arguments
         """
+        if (lower_name is None) ^ (upper_name is None):
+            raise ValueError("Both `lower_name` and `upper_name` must be set if using names to specify borders!")
+
         super().__init__(mode=mode, metric_fn=dummy, **kwargs)
-        self.quantiles = quantiles
+        self.quantiles = sorted(quantiles)
+        self.upper_name = upper_name
+        self.lower_name = lower_name
 
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
         """
@@ -74,11 +108,23 @@ class Coverage(Metric, _QuantileMetricMixin):
         self._validate_target_columns(y_true=y_true, y_pred=y_pred)
         self._validate_index(y_true=y_true, y_pred=y_pred)
         self._validate_nans(y_true=y_true, y_pred=y_pred)
-        self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
+        self._validate_tsdataset_intervals(
+            ts=y_pred, quantiles=self.quantiles, lower_name=self.lower_name, upper_name=self.upper_name
+        )
+
+        if self.upper_name is not None:
+            lower_border = self.lower_name
+            upper_border = self.upper_name
+
+        else:
+            lower_border = f"target_{self.quantiles[0]:.4g}"
+            upper_border = f"target_{self.quantiles[1]:.4g}"
 
         df_true = y_true[:, :, "target"].sort_index(axis=1)
-        df_pred_lower = y_pred[:, :, f"target_{self.quantiles[0]:.4g}"].sort_index(axis=1)
-        df_pred_upper = y_pred[:, :, f"target_{self.quantiles[1]:.4g}"].sort_index(axis=1)
+
+        intervals_df: pd.DataFrame = y_pred.get_prediction_intervals()
+        df_pred_lower = intervals_df.loc[:, pd.IndexSlice[:, lower_border]].sort_index(axis=1)
+        df_pred_upper = intervals_df.loc[:, pd.IndexSlice[:, upper_border]].sort_index(axis=1)
 
         segments = df_true.columns.get_level_values("segment").unique()
 
@@ -96,7 +142,7 @@ class Coverage(Metric, _QuantileMetricMixin):
         return None
 
 
-class Width(Metric, _QuantileMetricMixin):
+class Width(Metric, _IntervalsMetricMixin):
     """Mean width of prediction intervals.
 
     .. math::
@@ -108,7 +154,12 @@ class Width(Metric, _QuantileMetricMixin):
     """
 
     def __init__(
-        self, quantiles: Tuple[float, float] = (0.025, 0.975), mode: str = MetricAggregationMode.per_segment, **kwargs
+        self,
+        quantiles: Tuple[float, float] = (0.025, 0.975),
+        mode: str = MetricAggregationMode.per_segment,
+        upper_name: Optional[str] = None,
+        lower_name: Optional[str] = None,
+        **kwargs,
     ):
         """Init metric.
 
@@ -118,11 +169,20 @@ class Width(Metric, _QuantileMetricMixin):
             lower and upper quantiles
         mode: 'macro' or 'per-segment'
             metrics aggregation mode
+        upper_name:
+            name of column with upper border of the interval
+        lower_name:
+            name of column with lower border of the interval
         kwargs:
             metric's computation arguments
         """
+        if (lower_name is None) ^ (upper_name is None):
+            raise ValueError("Both `lower_name` and `upper_name` must be set if using names to specify borders!")
+
         super().__init__(mode=mode, metric_fn=dummy, **kwargs)
-        self.quantiles = quantiles
+        self.quantiles = sorted(quantiles)
+        self.upper_name = upper_name
+        self.lower_name = lower_name
 
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
         """
@@ -147,11 +207,23 @@ class Width(Metric, _QuantileMetricMixin):
         self._validate_target_columns(y_true=y_true, y_pred=y_pred)
         self._validate_index(y_true=y_true, y_pred=y_pred)
         self._validate_nans(y_true=y_true, y_pred=y_pred)
-        self._validate_tsdataset_quantiles(ts=y_pred, quantiles=self.quantiles)
+        self._validate_tsdataset_intervals(
+            ts=y_pred, quantiles=self.quantiles, lower_name=self.lower_name, upper_name=self.upper_name
+        )
+
+        if self.upper_name is not None:
+            lower_border = self.lower_name
+            upper_border = self.upper_name
+
+        else:
+            lower_border = f"target_{self.quantiles[0]:.4g}"
+            upper_border = f"target_{self.quantiles[1]:.4g}"
 
         df_true = y_true[:, :, "target"].sort_index(axis=1)
-        df_pred_lower = y_pred[:, :, f"target_{self.quantiles[0]:.4g}"].sort_index(axis=1)
-        df_pred_upper = y_pred[:, :, f"target_{self.quantiles[1]:.4g}"].sort_index(axis=1)
+
+        intervals_df: pd.DataFrame = y_pred.get_prediction_intervals()
+        df_pred_lower = intervals_df.loc[:, pd.IndexSlice[:, lower_border]].sort_index(axis=1)
+        df_pred_upper = intervals_df.loc[:, pd.IndexSlice[:, upper_border]].sort_index(axis=1)
 
         segments = df_true.columns.get_level_values("segment").unique()
 
