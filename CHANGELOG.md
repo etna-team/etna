@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add config for Codecov to control CI ([#80](https://github.com/etna-team/etna/pull/80)) 
 - Add `EventTransform` ([#78](https://github.com/etna-team/etna/pull/78))
 - `NaiveVariancePredictionIntervals` method for prediction quantiles estimation ([#109](https://github.com/etna-team/etna/pull/109))
+- Update interval metrics to work with arbitrary interval bounds ([#113](https://github.com/etna-team/etna/pull/113))
 
 ### Changed
 -
