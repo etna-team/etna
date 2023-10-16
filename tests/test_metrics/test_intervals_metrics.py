@@ -48,11 +48,6 @@ def tsdataset_with_zero_width_quantiles(example_df):
 
 
 @pytest.fixture()
-def tsdataset_with_different_width_and_shifted_quantiles(example_df):
-    return get_datasets_with_intervals(df=example_df, lower_name="target_0.025", upper_name="target_0.975")
-
-
-@pytest.fixture()
 def tsdataset_with_lower_upper_borders(example_df):
     return get_datasets_with_intervals(df=example_df, lower_name="target_lower", upper_name="target_upper")
 
