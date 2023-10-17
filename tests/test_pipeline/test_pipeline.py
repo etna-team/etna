@@ -321,6 +321,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds
         _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
 
 
+@pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
     example_tsds.df.loc[example_tsds.index[-20:-1], pd.IndexSlice["segment_1", "target"]] = None

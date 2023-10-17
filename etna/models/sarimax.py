@@ -262,7 +262,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         if len(exog) > 0:
             # restore parameters for exogenous variabales
-            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]))[0]
+            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]), rcond=None)[0]
 
             # estimate exogenous components and append to others
             weighted_exog = exog * exog_params[np.newaxis]

@@ -70,6 +70,7 @@ def test_prediction_with_reg(example_reg_tsds):
     _check_predict(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel())
 
 
+@pytest.mark.filterwarnings("ignore: Error fitting  ARIMA")
 def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
     ts = ts_with_short_regressor
     with pytest.raises(ValueError, match="Regressors .* contain NaN values"):

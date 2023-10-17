@@ -159,9 +159,7 @@ def test_forecast_use_exog_correct(
         ]
     )
     df_output = pd.read_csv(tmp_output_path)
-    pd.testing.assert_series_equal(
-        df_output["target"], pd.Series(data=[3.0, 3.0, 3.0], name="target"), check_less_precise=1
-    )
+    pd.testing.assert_series_equal(df_output["target"], pd.Series(data=[3.0, 3.0, 3.0], name="target"), rtol=1e-2)
 
 
 @pytest.fixture

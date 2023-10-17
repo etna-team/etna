@@ -452,8 +452,8 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         :
             loss
         """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("train_loss", loss, on_epoch=True)
+        loss, true_target, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("train_loss", loss, on_epoch=True, batch_size=len(true_target))
         return loss
 
     def validation_step(self, batch: dict, *args, **kwargs):  # type: ignore
@@ -469,8 +469,8 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         :
             loss
         """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("val_loss", loss, on_epoch=True)
+        loss, true_target, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("val_loss", loss, on_epoch=True, batch_size=len(true_target))
         return loss
 
 

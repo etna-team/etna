@@ -447,6 +447,7 @@ def test_train_test_split_with_test_size(test_size, true_borders, tsdf_with_exog
     assert (test.df_exog == tsdf_with_exog.df_exog).all().all()
 
 
+@pytest.mark.filterwarnings("ignore: test_size, test_start and test_end cannot be")
 @pytest.mark.parametrize(
     "test_size, borders, true_borders",
     (
@@ -689,7 +690,7 @@ def test_make_future_inherits_hierarchy(product_level_constant_forecast_with_qua
 def test_make_future_removes_quantiles(product_level_constant_forecast_with_quantiles):
     ts = product_level_constant_forecast_with_quantiles
     future = ts.make_future(future_steps=2)
-    assert len(future.target_quantiles_names) == 0
+    assert len(future.prediction_intervals_names) == 0
 
 
 def test_make_future_removes_target_components(ts_with_target_components):
