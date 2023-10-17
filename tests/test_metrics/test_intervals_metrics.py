@@ -27,7 +27,7 @@ def get_datasets_with_intervals(df, lower_name, upper_name):
     return ts_train, ts_test
 
 
-@pytest.fixture()
+@pytest.fixture
 def tsdataset_with_zero_width_quantiles(example_df):
 
     df = TSDataset.to_dataset(example_df)
@@ -47,12 +47,12 @@ def tsdataset_with_zero_width_quantiles(example_df):
     return ts_train, ts_test
 
 
-@pytest.fixture()
+@pytest.fixture
 def tsdataset_with_lower_upper_borders(example_df):
     return get_datasets_with_intervals(df=example_df, lower_name="target_lower", upper_name="target_upper")
 
 
-@pytest.fixture()
+@pytest.fixture
 def tsdataset_with_quantiles_and_lower_upper_borders(example_df):
     train_ts, test_ts = get_datasets_with_intervals(df=example_df, lower_name="target_lower", upper_name="target_upper")
 
@@ -81,36 +81,38 @@ def test_single_border_name_set_error(metric_class, upper_name, lower_name):
 
 
 @pytest.mark.parametrize("metric_class", (Coverage, Width))
-@pytest.mark.parametrize("quantiles", ((0.025, 0.975), tuple()))
+@pytest.mark.parametrize("quantiles,upper_name,lower_name", (((0.025, 0.975), "target_upper", "target_lower"),))
+def test_interval_names_and_quantiles_set_error(
+    tsdataset_with_lower_upper_borders, metric_class, quantiles, upper_name, lower_name
+):
+    with pytest.raises(ValueError, match="Both `quantiles` and border names are specified"):
+        _ = metric_class(quantiles=quantiles, lower_name=lower_name, upper_name=upper_name)
+
+
+@pytest.mark.parametrize("metric_class", (Coverage, Width))
 @pytest.mark.parametrize(
     "upper_name,lower_name", (("name1", "name2"), ("target_upper", "name"), ("name", "target_lower"))
 )
-def test_interval_names_not_in_dataset_error(
-    tsdataset_with_lower_upper_borders, metric_class, quantiles, upper_name, lower_name
-):
+def test_interval_names_not_in_dataset_error(tsdataset_with_lower_upper_borders, metric_class, upper_name, lower_name):
     train_ts, test_ts = tsdataset_with_lower_upper_borders
-    metric = metric_class(quantiles=quantiles, lower_name=lower_name, upper_name=upper_name)
+    metric = metric_class(quantiles=None, lower_name=lower_name, upper_name=upper_name)
     with pytest.raises(ValueError, match="Provided intervals borders names must be in dataset!"):
         _ = metric(y_true=train_ts, y_pred=test_ts)
 
 
 @pytest.mark.parametrize("metric_class", (Coverage, Width))
-@pytest.mark.parametrize("quantiles", ((0.025, 0.975), tuple()))
-def test_quantiles_not_presented_names_not_set_error(tsdataset_with_lower_upper_borders, metric_class, quantiles):
-    train_ts, test_ts = tsdataset_with_lower_upper_borders
-    metric = metric_class(quantiles=quantiles, lower_name=None, upper_name=None)
-    with pytest.raises(ValueError, match="All quantiles must be presented in the dataset!"):
-        _ = metric(y_true=train_ts, y_pred=test_ts)
+@pytest.mark.parametrize("quantiles", ((0.025,), tuple(), (0.1, 0.2, 0.3)))
+def test_quantiles_invalid_size_error(tsdataset_with_lower_upper_borders, metric_class, quantiles):
+    with pytest.raises(ValueError, match="Expected tuple with two values"):
+        _ = metric_class(quantiles=quantiles, lower_name=None, upper_name=None)
 
 
 @pytest.mark.parametrize("metric_class", (Coverage, Width))
-@pytest.mark.parametrize("quantiles,upper_name, lower_name", (((0.025, 0.975), "target_upper", "target_lower"),))
-def test_two_intervals_specified_error(
-    tsdataset_with_quantiles_and_lower_upper_borders, metric_class, quantiles, upper_name, lower_name
-):
-    train_ts, test_ts = tsdataset_with_quantiles_and_lower_upper_borders
-    metric = metric_class(quantiles=quantiles, lower_name=lower_name, upper_name=upper_name)
-    with pytest.raises(ValueError, match="Quantiles and border names are both set and point to different intervals!"):
+@pytest.mark.parametrize("quantiles", ((0.025, 0.975), (0.1, 0.5)))
+def test_quantiles_not_presented_error(tsdataset_with_lower_upper_borders, metric_class, quantiles):
+    train_ts, test_ts = tsdataset_with_lower_upper_borders
+    metric = metric_class(quantiles=quantiles, lower_name=None, upper_name=None)
+    with pytest.raises(ValueError, match="All quantiles must be presented in the dataset!"):
         _ = metric(y_true=train_ts, y_pred=test_ts)
 
 
@@ -133,11 +135,10 @@ def test_width_metric_with_zero_width_quantiles(tsdataset_with_zero_width_quanti
 @pytest.mark.parametrize(
     "quantiles,lower_name,upper_name",
     (
-        ((0.025, 0.975), "target_0.025", "target_0.975"),
-        ((), "target_0.025", "target_0.975"),
-        ((), "target_lower", "target_upper"),
-        ((0.1, 0.9), "target_lower", "target_upper"),
+        (None, "target_0.025", "target_0.975"),
+        (None, "target_lower", "target_upper"),
         ((0.025, 0.975), None, None),
+        (None, None, None),
     ),
 )
 def test_width_metric_with_different_width_and_shifted_quantiles(
@@ -157,11 +158,10 @@ def test_width_metric_with_different_width_and_shifted_quantiles(
 @pytest.mark.parametrize(
     "quantiles,lower_name,upper_name",
     (
-        ((0.025, 0.975), "target_0.025", "target_0.975"),
-        ((), "target_0.025", "target_0.975"),
-        ((), "target_lower", "target_upper"),
-        ((0.1, 0.9), "target_lower", "target_upper"),
+        (None, "target_0.025", "target_0.975"),
+        (None, "target_lower", "target_upper"),
         ((0.025, 0.975), None, None),
+        (None, None, None),
     ),
 )
 def test_coverage_metric_with_different_width_and_shifted_quantiles(
