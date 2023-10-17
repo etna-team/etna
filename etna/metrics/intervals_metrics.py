@@ -28,7 +28,7 @@ class _IntervalsMetricMixin:
         borders_presented = borders_set.issubset(ts_intervals)
 
         quantiles_set = {f"target_{quantile:.4g}" for quantile in quantiles}
-        quantiles_presented = len(quantiles_set & ts_intervals) == len(quantiles_set)
+        quantiles_presented = quantiles_set.issubset(ts_intervals)
         quantiles_presented &= len(quantiles_set) > 0
 
         if upper_name is not None and lower_name is not None:
