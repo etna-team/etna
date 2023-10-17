@@ -70,6 +70,7 @@ class DeepARNetNew(DeepBaseNet):
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
         self.loss = loss
+        self.weights = {}
 
     def forward(self, x: DeepARBatchNew, *args, **kwargs):  # type: ignore
         """Forward pass.
@@ -87,33 +88,36 @@ class DeepARNetNew(DeepBaseNet):
         encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
+        segment = x['segment']
         decoder_length = decoder_real.shape[1]
         _, (h_n, c_n) = self.rnn(encoder_real)
         forecast = torch.zeros_like(decoder_target)  # (batch_size, decoder_length, 1)
 
         for i in range(decoder_length - 1):
             output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))
-            distibution_class = self._count_distr_params(output[:, -1])
+            distibution_class = self._count_distr_params(output[:, -1], self.weights[segment])
             forecast_point = distibution_class.sample().flatten()
             forecast[:, i, 0] = forecast_point
             decoder_real[:, i + 1, 0] = forecast_point  # можно через if
 
         # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
         output, (_, _) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
-        distibution_class = self._count_distr_params(output[:, -1])
+        distibution_class = self._count_distr_params(output[:, -1], self.weights[segment])
         forecast_point = distibution_class.sample().flatten()
         forecast[:, decoder_length - 1, 0] = forecast_point
         return forecast
 
-    def _count_distr_params(self, output):
+    def _count_distr_params(self, output, weight):
         if issubclass(self.loss, Normal):
-            mean = self.loc(output)
-            std = nn.Softplus()(self.scale(output))
+            mean = self.loc(output) * weight
+            std = nn.Softplus()(self.scale(output))  # TODO think what to do
             distibution_class = self.loss(loc=mean, scale=std)
         elif issubclass(self.loss, NegativeBinomial):
             mean = nn.Softplus()(self.loc(output))
             alpha = nn.Softplus()(self.scale(output))
-            distibution_class = self.loss(total_count=1 / alpha, probs=1 / (alpha * mean + 1))
+            total_count = 1 / (torch.sqrt(torch.tensor(weight)) * alpha)
+            probs = 1 / (torch.sqrt(torch.tensor(weight)) * alpha * mean + 1)
+            distibution_class = self.loss(total_count=total_count, probs=probs)
         else:
             raise NotImplementedError()
         return distibution_class
@@ -136,26 +140,29 @@ class DeepARNetNew(DeepBaseNet):
 
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
-
+        segment = batch['segment']
         target = torch.cat((encoder_target, decoder_target), dim=1)
 
         output, (_, _) = self.rnn(torch.cat((encoder_real, decoder_real), dim=1))
-        distibution_class = self._count_distr_params(output)
+        distibution_class = self._count_distr_params(output, self.weights[segment])
         target_prediction = distibution_class.sample()
         loss = distibution_class.log_prob(target).sum()
         return -loss, target, target_prediction
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
+
+        segment = df["segment"].values[0]
+        values_target = df["target"].values
+        self.weights[segment] = df['target'].mean()
         values_real = (
             df.select_dtypes(include=[np.number])
+            .assign(target=df['target'] / self.weights[segment])
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
             .values
         )
-        values_target = df["target"].values
-        segment = df["segment"].values[0]
 
         def _make(
             values_real: np.ndarray,

@@ -15,7 +15,7 @@ def test_count_distr_params(loss, true_params):
     net.loc.weight = torch.nn.Parameter(torch.tensor([3., -2.]))
     net.scale = nn.Linear(2, 1, False)
     net.scale.weight = torch.nn.Parameter(torch.tensor([3., -2.]))
-    distr = net._count_distr_params(torch.Tensor([1., 1.]))
+    distr = net._count_distr_params(torch.Tensor([1., 1.]), 1)
     if isinstance(distr, Normal):
         torch.testing.assert_close(distr.loc, true_params[0], rtol=1e-3, atol=1e-3)
         torch.testing.assert_close(distr.scale, true_params[1], rtol=1e-3, atol=1e-3)
