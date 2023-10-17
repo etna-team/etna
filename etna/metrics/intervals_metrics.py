@@ -25,7 +25,7 @@ class _IntervalsMetricMixin:
         ts_intervals = set(ts.prediction_intervals_names)
 
         borders_set = {upper_name, lower_name}
-        borders_presented = len(borders_set & ts_intervals) == len(borders_set)
+        borders_presented = borders_set.issubset(ts_intervals)
 
         quantiles_set = {f"target_{quantile:.4g}" for quantile in quantiles}
         quantiles_presented = len(quantiles_set & ts_intervals) == len(quantiles_set)
@@ -34,9 +34,6 @@ class _IntervalsMetricMixin:
         if upper_name is not None and lower_name is not None:
             if not borders_presented:
                 raise ValueError("Provided intervals borders names must be in dataset!")
-
-            if quantiles_presented and borders_set != quantiles_set:
-                raise ValueError("Quantiles and border names are both set and point to different intervals!")
 
         else:
             if not quantiles_presented:
@@ -52,11 +49,13 @@ class Coverage(Metric, _IntervalsMetricMixin):
     Notes
     -----
     Works just if ``quantiles`` presented in ``y_pred``
+
+    When ``quantiles``, ``upper_name`` and ``lower_name`` all set to ``None`` then 0.025 and 0.975 quantiles will be used.
     """
 
     def __init__(
         self,
-        quantiles: Tuple[float, float] = (0.025, 0.975),
+        quantiles: Optional[Tuple[float, float]] = None,
         mode: str = MetricAggregationMode.per_segment,
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
@@ -80,8 +79,20 @@ class Coverage(Metric, _IntervalsMetricMixin):
         if (lower_name is None) ^ (upper_name is None):
             raise ValueError("Both `lower_name` and `upper_name` must be set if using names to specify borders!")
 
+        if not (quantiles is None or lower_name is None):
+            raise ValueError(
+                "Both `quantiles` and border names are specified. Use only one way to set interval borders!"
+            )
+
+        if quantiles is not None and len(quantiles) != 2:
+            raise ValueError(f"Expected tuple with two values for `quantiles` parameter, got {len(quantiles)}")
+
+        # default behavior
+        if quantiles is None and lower_name is None:
+            quantiles = (0.025, 0.975)
+
         super().__init__(mode=mode, metric_fn=dummy, **kwargs)
-        self.quantiles = sorted(quantiles)
+        self.quantiles = sorted(quantiles if quantiles is not None else tuple())
         self.upper_name = upper_name
         self.lower_name = lower_name
 
@@ -150,12 +161,14 @@ class Width(Metric, _IntervalsMetricMixin):
 
     Notes
     -----
-    Works just if quantiles presented in ``y_pred``
+    Works just if quantiles presented in ``y_pred``.
+
+    When ``quantiles``, ``upper_name`` and ``lower_name`` all set to ``None`` then 0.025 and 0.975 quantiles will be used.
     """
 
     def __init__(
         self,
-        quantiles: Tuple[float, float] = (0.025, 0.975),
+        quantiles: Optional[Tuple[float, float]] = None,
         mode: str = MetricAggregationMode.per_segment,
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
@@ -179,8 +192,20 @@ class Width(Metric, _IntervalsMetricMixin):
         if (lower_name is None) ^ (upper_name is None):
             raise ValueError("Both `lower_name` and `upper_name` must be set if using names to specify borders!")
 
+        if not (quantiles is None or lower_name is None):
+            raise ValueError(
+                "Both `quantiles` and border names are specified. Use only one way to set interval borders!"
+            )
+
+        if quantiles is not None and len(quantiles) != 2:
+            raise ValueError(f"Expected tuple with two values for `quantiles` parameter, got {len(quantiles)}")
+
+        # default behavior
+        if quantiles is None and lower_name is None:
+            quantiles = (0.025, 0.975)
+
         super().__init__(mode=mode, metric_fn=dummy, **kwargs)
-        self.quantiles = sorted(quantiles)
+        self.quantiles = sorted(quantiles if quantiles is not None else tuple())
         self.upper_name = upper_name
         self.lower_name = lower_name
 
