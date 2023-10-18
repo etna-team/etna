@@ -1,8 +1,16 @@
 diff --git a/etna/models/nn/rnn.py b/etna/models/nn/deepar_new.py
-index 49bc37f..11e0fc1 100644
+index 49bc37f..82dd730 100644
 --- a/etna/models/nn/rnn.py
 +++ b/etna/models/nn/deepar_new.py
-@@ -17,20 +17,38 @@ from etna.models.base import DeepBaseNet
+@@ -6,6 +6,7 @@ from typing import Optional
+ import numpy as np
+ import pandas as pd
+ from typing_extensions import TypedDict
++from collections import Counter
+ 
+ from etna import SETTINGS
+ from etna.distributions import BaseDistribution
+@@ -17,20 +18,40 @@ from etna.models.base import DeepBaseNet
  if SETTINGS.torch_required:
      import torch
      import torch.nn as nn
@@ -17,10 +25,12 @@ index 49bc37f..11e0fc1 100644
 +        self.data = data
 +
 +    def __iter__(self):
-+        p = torch.tensor([d['weight'] for d in self.data])
-+        segments = np.unique([d['segment'] for d in self.data])
-+        num_samples = len(self.data) // len(segments)
-+        idx = torch.multinomial(p, num_samples=num_samples)  # TODO is good?
++        """Select samples with probabilities 1 / number of appearance of given segment"""
++        segments = [d['segment'] for d in self.data]
++        count_segments = Counter(segments)
++        p = torch.tensor([1 / count_segments[segment] for segment in segments])
++        num_samples = len(self.data) // len(set(segments))  # TODO is good?
++        idx = torch.multinomial(p, num_samples=num_samples)
 +        return iter(idx)
 +
 +    def __len__(self):
@@ -45,7 +55,7 @@ index 49bc37f..11e0fc1 100644
  
      def __init__(
          self,
-@@ -38,10 +56,10 @@ class RNNNet(DeepBaseNet):
+@@ -38,10 +59,10 @@ class RNNNet(DeepBaseNet):
          num_layers: int,
          hidden_size: int,
          lr: float,
@@ -58,7 +68,7 @@ index 49bc37f..11e0fc1 100644
  
          Parameters
          ----------
-@@ -53,8 +71,6 @@ class RNNNet(DeepBaseNet):
+@@ -53,8 +74,6 @@ class RNNNet(DeepBaseNet):
              size of the hidden state
          lr:
              learning rate
@@ -67,7 +77,7 @@ index 49bc37f..11e0fc1 100644
          optimizer_params:
              parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
          """
-@@ -63,15 +79,16 @@ class RNNNet(DeepBaseNet):
+@@ -63,15 +82,16 @@ class RNNNet(DeepBaseNet):
          self.num_layers = num_layers
          self.input_size = input_size
          self.hidden_size = hidden_size
@@ -87,7 +97,7 @@ index 49bc37f..11e0fc1 100644
          """Forward pass.
  
          Parameters
-@@ -88,22 +105,46 @@ class RNNNet(DeepBaseNet):
+@@ -88,22 +108,46 @@ class RNNNet(DeepBaseNet):
          decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
          decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
          decoder_length = decoder_real.shape[1]
@@ -122,7 +132,7 @@ index 49bc37f..11e0fc1 100644
 +            reshaped = [-1] + [1] * (output.dim() - 1)
 +            weight = weight.reshape(reshaped).expand(loc.shape)
 +            loc = loc * weight
-+            scale = scale * weight
++            scale = scale * weight.abs()
 +            distibution_class = self.loss(loc=loc, scale=scale)
 +        elif issubclass(self.loss, NegativeBinomial):
 +            reshaped = [-1] + [1] * (output.dim() - 1)
@@ -140,7 +150,7 @@ index 49bc37f..11e0fc1 100644
          """Step for loss computation for training or validation.
  
          Parameters
-@@ -121,28 +162,29 @@ class RNNNet(DeepBaseNet):
+@@ -121,28 +165,29 @@ class RNNNet(DeepBaseNet):
  
          encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
          decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
@@ -180,7 +190,7 @@ index 49bc37f..11e0fc1 100644
  
          def _make(
              values_real: np.ndarray,
-@@ -151,6 +193,7 @@ class RNNNet(DeepBaseNet):
+@@ -151,6 +196,7 @@ class RNNNet(DeepBaseNet):
              start_idx: int,
              encoder_length: int,
              decoder_length: int,
@@ -188,7 +198,7 @@ index 49bc37f..11e0fc1 100644
          ) -> Optional[dict]:
  
              sample: Dict[str, Any] = {
-@@ -159,29 +202,44 @@ class RNNNet(DeepBaseNet):
+@@ -159,29 +205,44 @@ class RNNNet(DeepBaseNet):
                  "encoder_target": list(),
                  "decoder_target": list(),
                  "segment": None,
@@ -243,7 +253,7 @@ index 49bc37f..11e0fc1 100644
          while True:
              batch = _make(
                  values_target=values_target,
-@@ -190,6 +248,7 @@ class RNNNet(DeepBaseNet):
+@@ -190,6 +251,7 @@ class RNNNet(DeepBaseNet):
                  start_idx=start_idx,
                  encoder_length=encoder_length,
                  decoder_length=decoder_length,
@@ -251,7 +261,7 @@ index 49bc37f..11e0fc1 100644
              )
              if batch is None:
                  break
-@@ -202,8 +261,8 @@ class RNNNet(DeepBaseNet):
+@@ -202,8 +264,8 @@ class RNNNet(DeepBaseNet):
          return optimizer
  
  
@@ -262,7 +272,7 @@ index 49bc37f..11e0fc1 100644
  
      Note
      ----
-@@ -219,7 +278,7 @@ class RNNModel(DeepBaseModel):
+@@ -219,7 +281,7 @@ class RNNModel(DeepBaseModel):
          num_layers: int = 2,
          hidden_size: int = 16,
          lr: float = 1e-3,
@@ -271,7 +281,7 @@ index 49bc37f..11e0fc1 100644
          train_batch_size: int = 16,
          test_batch_size: int = 16,
          optimizer_params: Optional[dict] = None,
-@@ -245,8 +304,6 @@ class RNNModel(DeepBaseModel):
+@@ -245,8 +307,6 @@ class RNNModel(DeepBaseModel):
              size of the hidden state
          lr:
              learning rate
@@ -280,7 +290,7 @@ index 49bc37f..11e0fc1 100644
          train_batch_size:
              batch size for training
          test_batch_size:
-@@ -273,22 +330,23 @@ class RNNModel(DeepBaseModel):
+@@ -273,22 +333,23 @@ class RNNModel(DeepBaseModel):
          self.num_layers = num_layers
          self.hidden_size = hidden_size
          self.lr = lr
@@ -309,7 +319,7 @@ index 49bc37f..11e0fc1 100644
              test_dataloader_params=test_dataloader_params,
              val_dataloader_params=val_dataloader_params,
              trainer_params=trainer_params,
-@@ -312,3 +370,5 @@ class RNNModel(DeepBaseModel):
+@@ -312,3 +373,5 @@ class RNNModel(DeepBaseModel):
              "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
              "encoder_length": IntDistribution(low=1, high=20),
          }

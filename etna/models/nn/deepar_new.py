@@ -6,6 +6,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
+from collections import Counter
 
 from etna import SETTINGS
 from etna.distributions import BaseDistribution
@@ -26,10 +27,12 @@ class DeepARSampler(Sampler):
         self.data = data
 
     def __iter__(self):
-        p = torch.tensor([d['weight'] for d in self.data])
-        segments = np.unique([d['segment'] for d in self.data])
-        num_samples = len(self.data) // len(segments)
-        idx = torch.multinomial(p, num_samples=num_samples)  # TODO is good?
+        """Select samples with probabilities 1 / number of appearance of given segment"""
+        segments = [d['segment'] for d in self.data]
+        count_segments = Counter(segments)
+        p = torch.tensor([1 / count_segments[segment] for segment in segments])
+        num_samples = len(self.data) // len(set(segments))  # TODO is good?
+        idx = torch.multinomial(p, num_samples=num_samples)
         return iter(idx)
 
     def __len__(self):
@@ -130,7 +133,7 @@ class DeepARNetNew(DeepBaseNet):
             reshaped = [-1] + [1] * (output.dim() - 1)
             weight = weight.reshape(reshaped).expand(loc.shape)
             loc = loc * weight
-            scale = scale * weight
+            scale = scale * weight.abs()
             distibution_class = self.loss(loc=loc, scale=scale)
         elif issubclass(self.loss, NegativeBinomial):
             reshaped = [-1] + [1] * (output.dim() - 1)
