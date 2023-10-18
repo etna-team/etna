@@ -29,6 +29,7 @@ if SETTINGS.torch_required:
     from torch.utils.data import DataLoader
     from torch.utils.data import Dataset
     from torch.utils.data import random_split
+    from torch.utils.data import Sampler
 else:
     from unittest.mock import Mock
 
@@ -593,15 +594,24 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 ],
                 generator=self.split_params.get("generator"),
             )
+            if 'sampler' in self.train_dataloader_params:
+                self.train_dataloader_params['sampler'] = self.train_dataloader_params['sampler'](train_dataset)
+            else:
+                self.train_dataloader_params['shuffle'] = True
             train_dataloader = DataLoader(
-                train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
+                train_dataset, batch_size=self.train_batch_size, **self.train_dataloader_params
             )
             val_dataloader: Optional[DataLoader] = DataLoader(
                 val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_params
             )
         else:
+            if 'sampler' in self.train_dataloader_params:
+                self.train_dataloader_params['sampler'] = self.train_dataloader_params['sampler'](torch_dataset)
+            else:
+                self.train_dataloader_params['shuffle'] = True
+
             train_dataloader = DataLoader(
-                torch_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
+                torch_dataset, batch_size=self.train_batch_size, **self.train_dataloader_params
             )
             val_dataloader = None
 

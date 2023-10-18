@@ -18,6 +18,22 @@ if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
     from torch.distributions import Normal, NegativeBinomial
+    from torch.utils.data.sampler import Sampler
+
+
+class DeepARSampler(Sampler):
+    def __init__(self, data):
+        self.data = data
+
+    def __iter__(self):
+        p = torch.tensor([d['weight'] for d in self.data])
+        segments = np.unique([d['segment'] for d in self.data])
+        num_samples = len(self.data) // len(segments)
+        idx = torch.multinomial(p, num_samples=num_samples)  # TODO is good?
+        return iter(idx)
+
+    def __len__(self):
+        return len(self.data)
 
 
 class DeepARBatchNew(TypedDict):
@@ -28,6 +44,7 @@ class DeepARBatchNew(TypedDict):
     encoder_target: "torch.Tensor"
     decoder_target: "torch.Tensor"
     segment: "torch.Tensor"
+    weight: "torch.Tensor"
 
 
 class DeepARNetNew(DeepBaseNet):
@@ -70,7 +87,6 @@ class DeepARNetNew(DeepBaseNet):
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
         self.loss = loss
-        self.weights = {}
 
     def forward(self, x: DeepARBatchNew, *args, **kwargs):  # type: ignore
         """Forward pass.
@@ -88,31 +104,37 @@ class DeepARNetNew(DeepBaseNet):
         encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
-        segment = x['segment']
         decoder_length = decoder_real.shape[1]
+        weights = x['weight']
         _, (h_n, c_n) = self.rnn(encoder_real)
         forecast = torch.zeros_like(decoder_target)  # (batch_size, decoder_length, 1)
 
         for i in range(decoder_length - 1):
             output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))
-            distibution_class = self._count_distr_params(output[:, -1], self.weights[segment])
+            distibution_class = self._count_distr_params(output[:, -1], weights)
             forecast_point = distibution_class.sample().flatten()
             forecast[:, i, 0] = forecast_point
-            decoder_real[:, i + 1, 0] = forecast_point  # можно через if
+            decoder_real[:, i + 1, 0] = forecast_point  # TODO можно через if
 
         # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
         output, (_, _) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
-        distibution_class = self._count_distr_params(output[:, -1], self.weights[segment])
+        distibution_class = self._count_distr_params(output[:, -1], weights)
         forecast_point = distibution_class.sample().flatten()
         forecast[:, decoder_length - 1, 0] = forecast_point
         return forecast
 
     def _count_distr_params(self, output, weight):
         if issubclass(self.loss, Normal):
-            mean = self.loc(output) * weight
-            std = nn.Softplus()(self.scale(output))  # TODO think what to do
-            distibution_class = self.loss(loc=mean, scale=std)
+            loc = self.loc(output)
+            scale = nn.Softplus()(self.scale(output))
+            reshaped = [-1] + [1] * (output.dim() - 1)
+            weight = weight.reshape(reshaped).expand(loc.shape)
+            loc = loc * weight
+            scale = scale * weight
+            distibution_class = self.loss(loc=loc, scale=scale)
         elif issubclass(self.loss, NegativeBinomial):
+            reshaped = [-1] + [1] * (output.dim() - 1)
+            weight = weight.reshape(reshaped).expand(output.shape)
             mean = nn.Softplus()(self.loc(output))
             alpha = nn.Softplus()(self.scale(output))
             total_count = 1 / (torch.sqrt(torch.tensor(weight)) * alpha)
@@ -140,11 +162,11 @@ class DeepARNetNew(DeepBaseNet):
 
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
-        segment = batch['segment']
+        weights = batch['weight']
         target = torch.cat((encoder_target, decoder_target), dim=1)
 
         output, (_, _) = self.rnn(torch.cat((encoder_real, decoder_real), dim=1))
-        distibution_class = self._count_distr_params(output, self.weights[segment])
+        distibution_class = self._count_distr_params(output, weights)
         target_prediction = distibution_class.sample()
         loss = distibution_class.log_prob(target).sum()
         return -loss, target, target_prediction
@@ -154,10 +176,10 @@ class DeepARNetNew(DeepBaseNet):
 
         segment = df["segment"].values[0]
         values_target = df["target"].values
-        self.weights[segment] = df['target'].mean()
+        weight = df['target'].mean()
         values_real = (
             df.select_dtypes(include=[np.number])
-            .assign(target=df['target'] / self.weights[segment])
+            .assign(target=df['target'] / weight)
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
@@ -171,6 +193,7 @@ class DeepARNetNew(DeepBaseNet):
             start_idx: int,
             encoder_length: int,
             decoder_length: int,
+            weight: float
         ) -> Optional[dict]:
 
             sample: Dict[str, Any] = {
@@ -179,29 +202,44 @@ class DeepARNetNew(DeepBaseNet):
                 "encoder_target": list(),
                 "decoder_target": list(),
                 "segment": None,
+                "weight": None
             }
             total_length = len(values_target)
             total_sample_length = encoder_length + decoder_length
 
             if total_sample_length + start_idx > total_length:
                 return None
+            if start_idx < 0:
+                sample["decoder_real"] = values_real[start_idx + encoder_length: start_idx + total_sample_length]
 
-            # Get shifted target and concatenate it with real values features
-            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
+                # Get shifted target and concatenate it with real values features
+                sample["encoder_real"] = values_real[: start_idx + encoder_length]
+                sample["encoder_real"] = sample["encoder_real"][1:]
 
-            # Get shifted target and concatenate it with real values features
-            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
-            sample["encoder_real"] = sample["encoder_real"][1:]
+                target = values_target[: start_idx + total_sample_length].reshape(-1, 1)
+                sample["encoder_target"] = target[1:start_idx + encoder_length]
+                sample["decoder_target"] = target[start_idx + encoder_length:]
 
-            target = values_target[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
-            sample["encoder_target"] = target[1:encoder_length]
-            sample["decoder_target"] = target[encoder_length:]
+                sample['encoder_real'] = np.pad(sample['encoder_real'], ((-start_idx, 0), (0, 0)), 'constant', constant_values=0)
+                sample['encoder_target'] = np.pad(sample['encoder_target'], ((-start_idx, 0), (0, 0)), 'constant', constant_values=0)
+
+            else:
+                # Get shifted target and concatenate it with real values features
+                sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
+
+                # Get shifted target and concatenate it with real values features
+                sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
+                sample["encoder_real"] = sample["encoder_real"][1:]
+
+                target = values_target[start_idx : start_idx + total_sample_length].reshape(-1, 1)
+                sample["encoder_target"] = target[1:encoder_length]
+                sample["decoder_target"] = target[encoder_length:]
 
             sample["segment"] = segment
-
+            sample['weight'] = weight
             return sample
 
-        start_idx = 0
+        start_idx = -(encoder_length - 1)  # TODO is good?
         while True:
             batch = _make(
                 values_target=values_target,
@@ -210,6 +248,7 @@ class DeepARNetNew(DeepBaseNet):
                 start_idx=start_idx,
                 encoder_length=encoder_length,
                 decoder_length=decoder_length,
+                weight=weight
             )
             if batch is None:
                 break
@@ -269,8 +308,6 @@ class DeepARModelNew(DeepBaseModel):
             batch size for training
         test_batch_size:
             batch size for testing
-        data_type:
-            values which target takes. If target is only positive set `positive`, else `real-valued`
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         trainer_params:
@@ -295,6 +332,7 @@ class DeepARModelNew(DeepBaseModel):
         self.lr = lr
         self.optimizer_params = optimizer_params
         self.loss = loss
+        self.train_dataloader_params = train_dataloader_params if train_dataloader_params is not None else {'sampler': DeepARSampler}
         super().__init__(
             net=DeepARNetNew(
                 input_size=input_size,
@@ -308,7 +346,7 @@ class DeepARModelNew(DeepBaseModel):
             encoder_length=encoder_length,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
-            train_dataloader_params=train_dataloader_params,
+            train_dataloader_params=self.train_dataloader_params,  # TODO fix
             test_dataloader_params=test_dataloader_params,
             val_dataloader_params=val_dataloader_params,
             trainer_params=trainer_params,
@@ -332,3 +370,5 @@ class DeepARModelNew(DeepBaseModel):
             "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
             "encoder_length": IntDistribution(low=1, high=20),
         }
+
+
