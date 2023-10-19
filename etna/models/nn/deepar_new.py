@@ -1,12 +1,13 @@
+from collections import Counter
 from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import Optional
+from typing import Type
 
 import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
-from collections import Counter
 
 from etna import SETTINGS
 from etna.distributions import BaseDistribution
@@ -18,17 +19,19 @@ from etna.models.base import DeepBaseNet
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
-    from torch.distributions import Normal, NegativeBinomial
+    from torch.distributions import NegativeBinomial
+    from torch.distributions import Normal
     from torch.utils.data.sampler import Sampler
 
 
 class DeepARSampler(Sampler):
+    """Select samples with probabilities 1 / number of appearance of given segment."""
+
     def __init__(self, data):
         self.data = data
 
     def __iter__(self):
-        """Select samples with probabilities 1 / number of appearance of given segment"""
-        segments = [d['segment'] for d in self.data]
+        segments = [d["segment"] for d in self.data]
         count_segments = Counter(segments)
         p = torch.tensor([1 / count_segments[segment] for segment in segments])
         num_samples = len(self.data) // len(set(segments))  # TODO is good?
@@ -59,7 +62,7 @@ class DeepARNetNew(DeepBaseNet):
         num_layers: int,
         hidden_size: int,
         lr: float,
-        loss: "torch.distributions",
+        loss: Type[DeepARSampler],
         optimizer_params: Optional[dict],
     ) -> None:
         """Init DeepAR.
@@ -108,7 +111,7 @@ class DeepARNetNew(DeepBaseNet):
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
-        weights = x['weight']
+        weights = x["weight"]
         _, (h_n, c_n) = self.rnn(encoder_real)
         forecast = torch.zeros_like(decoder_target)  # (batch_size, decoder_length, 1)
 
@@ -136,10 +139,10 @@ class DeepARNetNew(DeepBaseNet):
             scale = scale * weight.abs()
             distibution_class = self.loss(loc=loc, scale=scale)
         elif issubclass(self.loss, NegativeBinomial):
-            reshaped = [-1] + [1] * (output.dim() - 1)
-            weight = weight.reshape(reshaped).expand(output.shape)
             mean = nn.Softplus()(self.loc(output))
             alpha = nn.Softplus()(self.scale(output))
+            reshaped = [-1] + [1] * (output.dim() - 1)
+            weight = weight.reshape(reshaped).expand(mean.shape)
             total_count = 1 / (torch.sqrt(torch.tensor(weight)) * alpha)
             probs = 1 / (torch.sqrt(torch.tensor(weight)) * alpha * mean + 1)
             distibution_class = self.loss(total_count=total_count, probs=probs)
@@ -165,7 +168,7 @@ class DeepARNetNew(DeepBaseNet):
 
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
-        weights = batch['weight']
+        weights = batch["weight"]
         target = torch.cat((encoder_target, decoder_target), dim=1)
 
         output, (_, _) = self.rnn(torch.cat((encoder_real, decoder_real), dim=1))
@@ -176,13 +179,12 @@ class DeepARNetNew(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-
         segment = df["segment"].values[0]
         values_target = df["target"].values
-        weight = df['target'].mean()
+        weight = df["target"].mean()
+        df["target"] = df["target"] / weight
         values_real = (
             df.select_dtypes(include=[np.number])
-            .assign(target=df['target'] / weight)
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
@@ -196,7 +198,7 @@ class DeepARNetNew(DeepBaseNet):
             start_idx: int,
             encoder_length: int,
             decoder_length: int,
-            weight: float
+            weight: float,
         ) -> Optional[dict]:
 
             sample: Dict[str, Any] = {
@@ -205,7 +207,7 @@ class DeepARNetNew(DeepBaseNet):
                 "encoder_target": list(),
                 "decoder_target": list(),
                 "segment": None,
-                "weight": None
+                "weight": None,
             }
             total_length = len(values_target)
             total_sample_length = encoder_length + decoder_length
@@ -213,18 +215,22 @@ class DeepARNetNew(DeepBaseNet):
             if total_sample_length + start_idx > total_length:
                 return None
             if start_idx < 0:
-                sample["decoder_real"] = values_real[start_idx + encoder_length: start_idx + total_sample_length]
+                sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
 
                 # Get shifted target and concatenate it with real values features
                 sample["encoder_real"] = values_real[: start_idx + encoder_length]
                 sample["encoder_real"] = sample["encoder_real"][1:]
 
                 target = values_target[: start_idx + total_sample_length].reshape(-1, 1)
-                sample["encoder_target"] = target[1:start_idx + encoder_length]
-                sample["decoder_target"] = target[start_idx + encoder_length:]
+                sample["encoder_target"] = target[1 : start_idx + encoder_length]
+                sample["decoder_target"] = target[start_idx + encoder_length :]
 
-                sample['encoder_real'] = np.pad(sample['encoder_real'], ((-start_idx, 0), (0, 0)), 'constant', constant_values=0)
-                sample['encoder_target'] = np.pad(sample['encoder_target'], ((-start_idx, 0), (0, 0)), 'constant', constant_values=0)
+                sample["encoder_real"] = np.pad(
+                    sample["encoder_real"], ((-start_idx, 0), (0, 0)), "constant", constant_values=0
+                )
+                sample["encoder_target"] = np.pad(
+                    sample["encoder_target"], ((-start_idx, 0), (0, 0)), "constant", constant_values=0
+                )
 
             else:
                 # Get shifted target and concatenate it with real values features
@@ -239,10 +245,10 @@ class DeepARNetNew(DeepBaseNet):
                 sample["decoder_target"] = target[encoder_length:]
 
             sample["segment"] = segment
-            sample['weight'] = weight
+            sample["weight"] = weight
             return sample
 
-        start_idx = -(encoder_length - 1)  # TODO is good?
+        start_idx = -(encoder_length - 2)  # TODO is good?
         while True:
             batch = _make(
                 values_target=values_target,
@@ -251,7 +257,7 @@ class DeepARNetNew(DeepBaseNet):
                 start_idx=start_idx,
                 encoder_length=encoder_length,
                 decoder_length=decoder_length,
-                weight=weight
+                weight=weight,
             )
             if batch is None:
                 break
@@ -281,7 +287,7 @@ class DeepARModelNew(DeepBaseModel):
         num_layers: int = 2,
         hidden_size: int = 16,
         lr: float = 1e-3,
-        loss: Optional["torch.distributions"] = None,
+        loss: Optional[Any] = None,
         train_batch_size: int = 16,
         test_batch_size: int = 16,
         optimizer_params: Optional[dict] = None,
@@ -335,7 +341,9 @@ class DeepARModelNew(DeepBaseModel):
         self.lr = lr
         self.optimizer_params = optimizer_params
         self.loss = loss
-        self.train_dataloader_params = train_dataloader_params if train_dataloader_params is not None else {'sampler': DeepARSampler}
+        self.train_dataloader_params = (
+            train_dataloader_params if train_dataloader_params is not None else {"sampler": DeepARSampler}
+        )
         super().__init__(
             net=DeepARNetNew(
                 input_size=input_size,
@@ -344,7 +352,7 @@ class DeepARModelNew(DeepBaseModel):
                 lr=lr,
                 optimizer_params=optimizer_params,
                 loss=Normal if loss is None else loss,
-        ),
+            ),
             decoder_length=decoder_length,
             encoder_length=encoder_length,
             train_batch_size=train_batch_size,
@@ -373,5 +381,3 @@ class DeepARModelNew(DeepBaseModel):
             "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
             "encoder_length": IntDistribution(low=1, high=20),
         }
-
-
