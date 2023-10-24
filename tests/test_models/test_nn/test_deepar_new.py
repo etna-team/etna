@@ -9,7 +9,7 @@ from torch.distributions import Normal
 
 from etna.metrics import MAE
 from etna.models.nn import DeepARModelNew
-from etna.models.nn.deepar_new import DeepARNetNew
+from etna.models.nn.deepar_new.deepar import DeepARNetNew
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
 
