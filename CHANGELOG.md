@@ -114,7 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix formatting of docstrings, fix links from netlify to docs.etna.ai ([#62](https://github.com/etna-team/etna/pull/62))
 - Fix multiple warnings, revert catching warnings during testing ([#105](https://github.com/etna-team/etna/pull/105))
 - Fix bug with `numpy.warnings` in `numpy>=1.24`, rework building docker images to use `poetry.lock` ([#116](https://github.com/etna-team/etna/pull/116))
-- Fix name of steps in publish CI ([#119](https://github.com/etna-team/etna/pull/119))
+- Fix name of steps in `publish` CI ([#119](https://github.com/etna-team/etna/pull/119))
 
 ## [2.2.0] - 2023-08-08
 ### Added
