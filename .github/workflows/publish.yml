@@ -28,7 +28,7 @@ jobs:
         run: poetry publish -u "${{ secrets.PYPI_LOGIN }}" -p "${{ secrets.PYPI_PASS }}"
 
   build-docs:
-    needs: publish
+    needs: publish-package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -73,7 +73,7 @@ jobs:
           s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/$VERSION/"
 
   docker-build-and-push:
-    needs: publish
+    needs: publish-package
     runs-on: ubuntu-latest
 
     strategy:
