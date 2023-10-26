@@ -1,45 +1,62 @@
-import torch
-from torch import nn
-from torch.functional import F
-from torch.nn import GaussianNLLLoss
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    from torch.distributions import NegativeBinomial
+    from torch.distributions import Normal
+    from torch.nn.modules.loss import _Loss
 
 
-class GaussianLoss(GaussianNLLLoss):
-    def __init__(self):
-        super().__init__(reduction="sum")
-
-    def forward(self, inputs, mean, std):
-        return super().forward(input=inputs, target=mean, var=std**2)
-
-    @staticmethod
-    def sample(mean, std):
-        with torch.no_grad():
-            return torch.normal(mean, std)
-
-
-class NegativeBinomialLoss(nn.Module):
+class GaussianLoss(_Loss):
     def __init__(self):
         super().__init__()
 
     @staticmethod
-    def _get_logits(probs):
-        eps = torch.finfo(probs.dtype).eps
-        ps_clamped = probs.clamp(min=eps, max=1 - eps)
-        return torch.log(ps_clamped) - torch.log1p(-ps_clamped)
+    def scale_params(loc, scale, weights):
+        mean = loc
+        std = scale
+        if not weights.isnan().any():
+            reshaped = [-1] + [1] * (loc.dim() - 1)
+            weight = weights.reshape(reshaped).expand(loc.shape)
+            mean *= weight
+            std *= weight.abs()
+        return mean, std
 
-    def forward(self, inputs, total_count, probs):
-        logits = self._get_logits(probs)
-        log_unnormalized_prob = total_count * F.logsigmoid(logits) + inputs * F.logsigmoid(logits)
+    def forward(self, inputs, loc, scale, weights):
+        mean, std = self.scale_params(loc, scale, weights)
+        distribution = Normal(loc=mean, scale=std)
+        return -(distribution.log_prob(inputs)).sum()
 
-        log_normalization = -torch.lgamma(total_count + inputs) + torch.lgamma(1.0 + inputs) + torch.lgamma(total_count)
+    def sample(self, loc, scale, weights):
+        mean, std = self.scale_params(loc, scale, weights)
+        distribution = Normal(loc=mean, scale=std)
+        return distribution.sample()
 
-        return -(log_unnormalized_prob - log_normalization).sum()
 
-    def _gamma(self, total_count, probs):
-        logits = self._get_logits(probs)
-        return torch.distributions.Gamma(concentration=total_count, rate=torch.exp(-logits), validate_args=False)
+class NegativeBinomialLoss(_Loss):
+    def __init__(self):
+        super().__init__()
 
-    def sample(self, total_count, probs, sample_shape=torch.Size()):
-        with torch.no_grad():
-            rate = self._gamma(total_count, probs).sample(sample_shape=sample_shape)
-            return torch.poisson(rate)
+    @staticmethod
+    def scale_params(loc, scale, weights):
+        alpha = loc
+        mean = scale
+        if not weights.isnan().any():
+            reshaped = [-1] + [1] * (loc.dim() - 1)
+            weights = weights.reshape(reshaped).expand(loc.shape)
+            total_count = torch.sqrt(torch.tensor(weights)) / alpha
+            probs = 1 / (torch.sqrt(torch.tensor(weights)) * mean * alpha + 1)
+        else:
+            total_count = 1 / alpha
+            probs = 1 / (mean * alpha + 1)  # TODO scale them into [0, 1]
+        return total_count, probs
+
+    def forward(self, inputs, loc, scale, weights):
+        total_count, probs = self.scale_params(loc, scale, weights)
+        distribution = NegativeBinomial(total_count=total_count, probs=probs)
+        return -(distribution.log_prob(inputs)).sum()
+
+    def sample(self, loc, scale, weights):
+        total_count, probs = self.scale_params(loc, scale, weights)
+        distribution = NegativeBinomial(total_count=total_count, probs=probs)
+        return distribution.sample()

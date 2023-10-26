@@ -2,6 +2,7 @@ from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -11,17 +12,17 @@ from etna import SETTINGS
 from etna.distributions import BaseDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
-from etna.models.base import DeepBaseModel
-from etna.models.base import DeepBaseNet
-from etna.models.nn.deepar_new import GaussianLoss
-from etna.models.nn.deepar_new import NegativeBinomialLoss
-from etna.models.nn.deepar_new import SamplerWrapper
 
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
     from torch.utils.data.sampler import RandomSampler
-    from torch.utils.data.sampler import WeightedRandomSampler
+
+    from etna.models.base import DeepBaseModel
+    from etna.models.base import DeepBaseNet
+    from etna.models.nn.deepar_new.loss import GaussianLoss
+    from etna.models.nn.deepar_new.loss import NegativeBinomialLoss
+    from etna.models.nn.deepar_new.sampler import SamplerWrapper
 
 
 class DeepARBatchNew(TypedDict):
@@ -46,7 +47,7 @@ class DeepARNetNew(DeepBaseNet):
         lr: float,
         scale: bool,
         n_samples: Optional[int],  # TODO
-        loss: "torch.nn.Module",
+        loss: Union[GaussianLoss, NegativeBinomialLoss],
         optimizer_params: Optional[dict],
     ) -> None:
         """Init DeepAR.
@@ -103,41 +104,22 @@ class DeepARNetNew(DeepBaseNet):
 
         for i in range(decoder_length - 1):
             output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))
-            distribution_params = self._count_distribution_params(output[:, -1], weights)
-            forecast_point = self.loss.sample(**distribution_params).flatten()
+            loc, scale = self.get_distribution_params(output[:, -1])
+            forecast_point = self.loss.sample(loc, scale, weights).flatten()
             forecast[:, i, 0] = forecast_point
             decoder_real[:, i + 1, 0] = forecast_point  # TODO можно через if
 
         # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
         output, (_, _) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
-        distribution_params = self._count_distribution_params(output[:, -1], weights)
-        forecast_point = self.loss.sample(**distribution_params).flatten()
+        loc, scale = self.get_distribution_params(output[:, -1])
+        forecast_point = self.loss.sample(loc, scale, weights).flatten()
         forecast[:, decoder_length - 1, 0] = forecast_point
         return forecast
 
-    def _count_distribution_params(self, output, weight):
-        if isinstance(self.loss, GaussianLoss):
-            mean = self.linear_1(output)
-            std = nn.Softplus()(self.linear_2(output))
-            if self.scale:
-                reshaped = [-1] + [1] * (output.dim() - 1)
-                weight = weight.reshape(reshaped).expand(mean.shape)
-                mean *= weight
-                std *= weight.abs()
-            params = {"mean": mean, "std": std}
-        elif isinstance(self.loss, NegativeBinomialLoss):
-            mean = nn.Softplus()(self.linear_1(output))
-            alpha = nn.Softplus()(self.linear_2(output))
-            if self.scale:
-                reshaped = [-1] + [1] * (output.dim() - 1)
-                weight = weight.reshape(reshaped).expand(alpha.shape)
-                alpha *= torch.sqrt(torch.tensor(weight))
-            total_count = 1 / alpha
-            probs = 1 / (alpha * mean + 1)
-            params = {"total_count": total_count, "probs": probs}
-        else:
-            raise NotImplementedError()
-        return params
+    def get_distribution_params(self, output):
+        loc = self.linear_1(output) if isinstance(self.loss, GaussianLoss) else nn.Softplus()(self.linear_1(output))
+        scale = nn.Softplus()(self.linear_2(output))
+        return loc, scale
 
     def step(self, batch: DeepARBatchNew, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
@@ -161,10 +143,9 @@ class DeepARNetNew(DeepBaseNet):
         target = torch.cat((encoder_target, decoder_target), dim=1)
 
         output, (_, _) = self.rnn(torch.cat((encoder_real, decoder_real), dim=1))
-        distribution_params = self._count_distribution_params(output, weights)
-        target_prediction = self.loss.sample(**distribution_params)
-        distribution_params.update({"inputs": target})
-        loss = self.loss(**distribution_params)
+        loc, scale = self.get_distribution_params(output)
+        target_prediction = self.loss.sample(loc, scale, weights)
+        loss = self.loss(target, loc, scale, weights)
         return loss, target, target_prediction
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
@@ -232,7 +213,15 @@ class DeepARNetNew(DeepBaseNet):
 
             sample["segment"] = segment
 
-            sample["weight"] = 1 + sample["encoder_real"].mean() if self.scale else float("nan")
+            if self.scale:
+                sample["weight"] = 1 + sample["encoder_real"].mean()
+                sample["encoder_real"] = sample["encoder_real"] / sample["weight"]
+                sample["decoder_real"] = sample["decoder_real"] / sample["weight"]
+                sample["encoder_target"] = sample["encoder_target"] / sample["weight"]
+                sample["decoder_target"] = sample["decoder_target"] / sample["weight"]
+            else:
+                sample["weight"] = float("nan")
+
             return sample
 
         # start_idx = -(encoder_length - 2)  # TODO is good?
@@ -333,16 +322,9 @@ class DeepARModelNew(DeepBaseModel):
         self.n_samples = n_samples
         self.optimizer_params = optimizer_params
         self.loss = loss
-        self.sampler = sampler
-        if sampler == "weighted":
-            sampler = SamplerWrapper(WeightedRandomSampler)
-        else:
-            sampler = SamplerWrapper(RandomSampler)
-        self.train_dataloader_params = (
-            train_dataloader_params if train_dataloader_params is not None else {"sampler": sampler}
-        )
-        self.val_dataloader_params = val_dataloader_params if val_dataloader_params is not None else {}
-        self.test_dataloader_params = test_dataloader_params if test_dataloader_params is not None else {}
+        self.train_dataloader_params = train_dataloader_params
+        self.val_dataloader_params = val_dataloader_params
+        self.test_dataloader_params = test_dataloader_params
         super().__init__(
             net=DeepARNetNew(
                 input_size=input_size,
@@ -358,9 +340,11 @@ class DeepARModelNew(DeepBaseModel):
             encoder_length=encoder_length,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
-            train_dataloader_params=self.train_dataloader_params,
-            test_dataloader_params=self.test_dataloader_params,
-            val_dataloader_params=self.val_dataloader_params,
+            train_dataloader_params=train_dataloader_params
+            if train_dataloader_params is not None
+            else {"sampler": SamplerWrapper(RandomSampler)},
+            test_dataloader_params=val_dataloader_params if val_dataloader_params is not None else {},
+            val_dataloader_params=test_dataloader_params if test_dataloader_params is not None else {},
             trainer_params=trainer_params,
             split_params=split_params,
         )

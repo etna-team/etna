@@ -1,3 +1,4 @@
-from etna.models.nn.deepar_new.loss import GaussianLoss
-from etna.models.nn.deepar_new.loss import NegativeBinomialLoss
-from etna.models.nn.deepar_new.sample import SamplerWrapper
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    from etna.models.nn.deepar_new.deepar import DeepARModelNew
