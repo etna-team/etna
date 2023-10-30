@@ -6,12 +6,14 @@ if SETTINGS.torch_required:
 
 
 class WeightedDeepARSampler(Sampler):
+    """Samples batch elements with probabilities `1 + mean`, where mean is a mean of target values in batch."""
+
     def __init__(self, data):
         self.data = data
 
-    def __iter__(self):  # TODO if passed both weighted sampler and scale=False
+    def __iter__(self):
         weights = torch.tensor([sample["weight"] for sample in self.data])
-        idx = torch.multinomial(weights, num_samples=len(self.data), replacement=True)
+        idx = torch.multinomial(weights, num_samples=len(self.data), replacement=True)  # TODO ok?
         return iter(idx)
 
     def __len__(self):
@@ -19,8 +21,22 @@ class WeightedDeepARSampler(Sampler):
 
 
 class SamplerWrapper:
+    """Wrapper for samplers."""
+
     def __init__(self, sampler):
         self.sampler = sampler
 
     def __call__(self, data):
+        """Call given sampler.
+
+        Parameters
+        ----------
+        data:
+            data
+
+        Returns
+        -------
+        :
+            object of given sampler
+        """
         return self.sampler(data)

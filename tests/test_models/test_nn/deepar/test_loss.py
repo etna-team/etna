@@ -1,38 +1,58 @@
-import random
-
-import numpy as np
+import pytest
 import torch
-from torch.distributions import NegativeBinomial
-from torch.distributions import Normal
+from pytorch_lightning import seed_everything
 
-from etna.models.nn.deepar_new import GaussianLoss
-from etna.models.nn.deepar_new import NegativeBinomialLoss
-
-
-def seed_everything(seed=0):
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = True
+from etna.models.nn.deepar_new.loss import GaussianLoss
+from etna.models.nn.deepar_new.loss import NegativeBinomialLoss
 
 
-def test_gaussian_loss():
-    seed_everything()
-    true_values = torch.tensor([[2.0, 3.0], [4.0, 5.0]])
-    mean = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
-    std = torch.tensor([[0.1, 0.2], [0.3, 0.4]])
+@pytest.mark.parametrize(
+    "loss,inputs,n_samples,expected_ans",
+    [
+        (GaussianLoss(), (torch.tensor([0.0]), torch.tensor([1.0]), torch.tensor([1.0])), 2, torch.tensor([1.5410])),
+        (GaussianLoss(), (torch.tensor([0.0]), torch.tensor([1.0]), torch.tensor([1.0])), 1, torch.tensor([0.0])),
+        (
+            NegativeBinomialLoss(),
+            (torch.tensor([2.0]), torch.tensor([2.0]), torch.tensor([1.0])),
+            2,
+            torch.tensor([0.0]),
+        ),
+        (
+            NegativeBinomialLoss(),
+            (torch.tensor([[2.0]]), torch.tensor([[2.0]]), torch.tensor([[1.0]])),
+            1,
+            torch.tensor([0.125]),
+        ),
+    ],
+)
+def test_loss_sample(loss, inputs, n_samples, expected_ans):
+    seed_everything(0)
 
-    loss = GaussianLoss()
-    sample = loss.sample(mean, std)
-    loss_value = loss(inputs=true_values, mean=mean, std=std**2)
+    loss = loss
+    loc, scale, weights = inputs
+    ans = loss.sample(loc, scale, weights, n_samples)
+    assert ans == expected_ans  # TODO first test fails
 
-    torch_loss = Normal(loc=mean, scale=std)
-    torch_sample = torch_loss.sample()
-    torch_loss_value = -torch_loss.log_prob(true_values).sum()
 
-    print(sample, torch_sample)
-    print(loss_value, torch_loss_value)
-    assert sample == torch_sample
-    assert loss_value == torch_loss_value
+@pytest.mark.parametrize(
+    "loss,inputs,expected_ans",
+    [
+        (
+            GaussianLoss(),
+            (torch.tensor([0.0]), torch.tensor([1.0]), torch.tensor([1.0]), torch.tensor([1.0])),
+            torch.tensor(1.4189),
+        ),
+        (
+            NegativeBinomialLoss(),
+            (torch.tensor([2.0]), torch.tensor([2.0]), torch.tensor([1.0]), torch.tensor([1.0])),
+            torch.tensor(2.4142),
+        ),
+    ],
+)
+def test_loss_forward(loss, inputs, expected_ans):
+    seed_everything(0)
+
+    loss = loss
+    loc, scale, weights, target = inputs
+    ans = loss(target, loc, scale, weights)
+    assert ans == expected_ans  # TODO test fail
