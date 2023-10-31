@@ -501,7 +501,7 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     ----------
     .. [1] https://robjhyndman.com/publications/the-tourism-forecasting-competition/
     """
-    get_freq = {"monthly": "M", "quarterly": "Q-DEC", "yearly": "A-DEC"}
+    get_freq = {"monthly": "MS", "quarterly": "Q-DEC", "yearly": "A-DEC"}
     start_index_target_rows = {"monthly": 3, "quarterly": 3, "yearly": 2}
     end_date = "2022-01-01"
     freq = get_freq[dataset_freq]
