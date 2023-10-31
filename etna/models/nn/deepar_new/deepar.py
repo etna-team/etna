@@ -33,6 +33,7 @@ class DeepARBatchNew(TypedDict):
     encoder_target: "torch.Tensor"
     decoder_target: "torch.Tensor"
     segment: "torch.Tensor"
+    segment_idx: "torch.Tensor"
     weight: "torch.Tensor"
 
 
@@ -44,6 +45,9 @@ class DeepARNetNew(DeepBaseNet):
         input_size: int,
         num_layers: int,
         hidden_size: int,
+        segment_to_id: dict,
+        encoder_length: int,
+        decoder_length: int,
         lr: float,
         scale: bool,
         n_samples: int,
@@ -76,9 +80,16 @@ class DeepARNetNew(DeepBaseNet):
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.segment_to_id = segment_to_id
+        self.encoder_length = encoder_length
+        self.decoder_length = (decoder_length,)
         self.rnn = nn.LSTM(
-            num_layers=self.num_layers, hidden_size=self.hidden_size, input_size=self.input_size, batch_first=True
+            num_layers=self.num_layers,
+            hidden_size=self.hidden_size,
+            input_size=self.input_size + self.hidden_size,
+            batch_first=True,
         )
+        self.embedding = nn.Embedding(len(self.segment_to_id), self.hidden_size)
         self.linear_1 = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.linear_2 = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.lr = lr
@@ -104,13 +115,19 @@ class DeepARNetNew(DeepBaseNet):
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
-        weights = x["weight"]
+        weights = x["weight"]  # (batch_size)
+        segment_ids = x["segment_idx"]  # (batch_size)
+        encoder_embeddings = (
+            self.embedding(segment_ids).unsqueeze(1).expand([-1, encoder_real.shape[1], -1])
+        )  # (batch_size, encoder_length-1, hidden_size)
+        decoder_embeddings = self.embedding(segment_ids).unsqueeze(1)  # (batch_size, 1, hidden_size)
         forecasts = torch.zeros((decoder_target.shape[0], decoder_target.shape[1], self.n_samples))
-
         for j in range(self.n_samples):
-            _, (h_n, c_n) = self.rnn(encoder_real)
+            _, (h_n, c_n) = self.rnn(torch.cat((encoder_real, encoder_embeddings), dim=2))
             for i in range(decoder_length - 1):
-                output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))  # (batch_size, 1, hidden_size)
+                output, (h_n, c_n) = self.rnn(
+                    torch.cat((decoder_real[:, i, None], decoder_embeddings), dim=2), (h_n, c_n)
+                )  # (batch_size, 1, hidden_size)
                 loc, scale = self.get_distribution_params(output[:, -1])
                 forecast_point = self.loss.sample(
                     loc, scale, weights, n_samples=self.n_samples
@@ -119,7 +136,9 @@ class DeepARNetNew(DeepBaseNet):
                 decoder_real[:, i + 1, 0] = forecast_point  # TODO можно через if
 
             # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
-            output, (_, _) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
+            output, (_, _) = self.rnn(
+                torch.cat((decoder_real[:, decoder_length - 1, None], decoder_embeddings), dim=2), (h_n, c_n)
+            )
             loc, scale = self.get_distribution_params(output[:, -1])
             forecast_point = self.loss.sample(loc, scale, weights, n_samples=self.n_samples).flatten()
             forecasts[:, decoder_length - 1, j] = forecast_point
@@ -160,10 +179,17 @@ class DeepARNetNew(DeepBaseNet):
 
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
-        weights = batch["weight"]
+        weights = batch["weight"]  # (batch_size)
+        segment_ids = batch["segment_idx"]  # (batch_size)
         target = torch.cat((encoder_target, decoder_target), dim=1)  # (batch_size, encoder_length+decoder_length-1, 1)
+        encoder_decoder_real = torch.cat(
+            (encoder_real, decoder_real), dim=1
+        )  # (batch_size, encoder_length+decoder_length-1, input_size)
+        embeddings = (
+            self.embedding(segment_ids).unsqueeze(1).expand([-1, encoder_decoder_real.shape[1], -1])
+        )  # (batch_size, encoder_length+decoder_length-1, hidden_size)
         output, (_, _) = self.rnn(
-            torch.cat((encoder_real, decoder_real), dim=1)
+            torch.cat((encoder_decoder_real, embeddings), dim=2)
         )  # (batch_size, encoder_length+decoder_length-1, hidden_size)
         loc, scale = self.get_distribution_params(output)  # (batch_size, encoder_length+decoder_length-1, 1)
         target_prediction = self.loss.sample(loc, scale, weights, n_samples=1)
@@ -197,6 +223,7 @@ class DeepARNetNew(DeepBaseNet):
                 "encoder_target": list(),
                 "decoder_target": list(),
                 "segment": None,
+                "segment_idx": None,
                 "weight": None,
             }
             total_length = len(values_target)
@@ -220,6 +247,7 @@ class DeepARNetNew(DeepBaseNet):
             sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
             sample["encoder_real"][:, 0] /= sample["weight"]
             sample["decoder_real"][:, 0] /= sample["weight"]
+            sample["segment_idx"] = self.segment_to_id[segment]
 
             return sample
 
@@ -258,6 +286,7 @@ class DeepARModelNew(DeepBaseModel):
         input_size: int,
         encoder_length: int,
         decoder_length: int,
+        segment_to_id: dict,
         num_layers: int = 2,
         hidden_size: int = 16,
         lr: float = 1e-3,
@@ -283,6 +312,8 @@ class DeepARModelNew(DeepBaseModel):
             encoder length
         decoder_length:
             decoder length
+        segment_to_id:
+            dictionary with mapping segment to index starting with 0  # TODO write example
         num_layers:
             number of layers
         hidden_size:
@@ -326,6 +357,7 @@ class DeepARModelNew(DeepBaseModel):
         self.lr = lr
         self.scale = scale  # TODO if passed both weighted sampler and scale=False
         self.n_samples = n_samples
+        self.segment_to_id = segment_to_id
         self.optimizer_params = optimizer_params
         self.loss = loss
         self.train_dataloader_params = train_dataloader_params
@@ -336,6 +368,9 @@ class DeepARModelNew(DeepBaseModel):
                 input_size=input_size,
                 num_layers=num_layers,
                 hidden_size=hidden_size,
+                segment_to_id=segment_to_id,
+                encoder_length=encoder_length,
+                decoder_length=decoder_length,
                 lr=lr,
                 scale=scale,
                 n_samples=n_samples,
