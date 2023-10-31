@@ -178,6 +178,27 @@ def test_not_present_part():
             pd.to_datetime("2021-12-31 00:00:00"),
             ("train", "test"),
         ),
+        (
+            "tourism_monthly",
+            (309 + 24, 732),
+            pd.to_datetime("1994-05-01 00:00:00"),
+            pd.to_datetime("2022-01-01 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "tourism_quarterly",
+            (122 + 8, 854),
+            pd.to_datetime("1989-09-30 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "tourism_yearly",
+            (43 + 4, 1036),
+            pd.to_datetime("1975-12-31 00:00:00"),
+            pd.to_datetime("2021-12-31 00:00:00"),
+            ("train", "test"),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
@@ -230,6 +251,36 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, exp
                 (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
                 (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
                 (pd.to_datetime("2016-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
+        ),
+        (
+            "tourism_monthly",
+            ((333, 366), (333, 366), (24, 366)),
+            (
+                (pd.to_datetime("1994-05-01 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+                (pd.to_datetime("1994-05-01 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+                (pd.to_datetime("2020-02-01 00:00:00"), pd.to_datetime("2022-01-01 00:00:00")),
+            ),
+            ("full", "train", "test"),
+        ),
+        (
+            "tourism_quarterly",
+            ((130, 427), (130, 427), (8, 427)),
+            (
+                (pd.to_datetime("1989-09-30 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("1989-09-30 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2020-03-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+            ),
+            ("full", "train", "test"),
+        ),
+        (
+            "tourism_yearly",
+            ((47, 518), (47, 518), (4, 518)),
+            (
+                (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("1975-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
+                (pd.to_datetime("2018-12-31 00:00:00"), pd.to_datetime("2021-12-31 00:00:00")),
             ),
             ("full", "train", "test"),
         ),

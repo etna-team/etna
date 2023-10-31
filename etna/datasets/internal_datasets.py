@@ -484,6 +484,106 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     )
 
 
+def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
+    """
+    Download and save tourism dataset in different frequency modes.
+
+    Dataset contains 1311 series in three frequency modes: monthly, quarterly, yearly. They were supplied by both
+    tourism bodies (such as Tourism Australia, the Hong Kong Tourism Board and Tourism New Zealand) and various
+    academics, who had used them in previous tourism forecasting studies. Each frequency mode has its own specific
+    prediction horizon: 4 for yearly, 8 for quarterly, 24 for monthly.
+
+    Tourism dataset has series ending on different dates. As to the specificity of TSDataset we should add custom dates
+    to make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
+    dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
+
+    References
+    ----------
+    .. [1] https://robjhyndman.com/publications/the-tourism-forecasting-competition/
+    """
+    get_freq = {"monthly": "MS", "quarterly": "Q-DEC", "yearly": "A-DEC"}
+    start_index_target_rows = {"monthly": 3, "quarterly": 3, "yearly": 2}
+    end_date = "2022-01-01"
+    freq = get_freq[dataset_freq]
+    target_index = start_index_target_rows[dataset_freq]
+    exog_dir = dataset_dir / EXOG_SUBDIRECTORY
+
+    exog_dir.mkdir(exist_ok=True, parents=True)
+
+    data_train, data_test = _download_dataset_zip(
+        "https://robjhyndman.com/data/27-3-Athanasopoulos1.zip",
+        file_names=(f"{dataset_freq}_in.csv", f"{dataset_freq}_oos.csv"),
+        read_functions=(partial(pd.read_csv, sep=","), partial(pd.read_csv, sep=",")),
+    )
+
+    segments = data_train.columns
+
+    df_full = pd.DataFrame()
+    df_train = pd.DataFrame()
+    df_test = pd.DataFrame()
+
+    df_full_exog = pd.DataFrame()
+    df_test_exog = pd.DataFrame()
+    for seg in segments:
+        data_train_ = data_train[seg].values
+        data_test_ = data_test[seg].values
+
+        train_size = int(data_train_[0])
+        test_size = int(data_test_[0])
+
+        date_params = list(map(int, data_train_[~np.isnan(data_train_)][1:target_index]))
+        initial_date = date(date_params[0], date_params[1], 1) if len(date_params) == 2 else date(date_params[0], 1, 1)
+
+        target_train = data_train_[~np.isnan(data_train_)][target_index : target_index + train_size]
+        target_test = data_test_[target_index : target_index + test_size]
+        target_full = np.concatenate([target_train, target_test])
+
+        new_timestamps = pd.date_range(end=end_date, freq=freq, periods=len(target_full))
+        initial_timestamps = pd.date_range(start=initial_date, periods=len(target_full), freq=freq)
+
+        df_full_ = pd.DataFrame(
+            {"timestamp": new_timestamps, "segment": [seg] * len(target_full), "target": target_full}
+        )
+        df_train_ = df_full_.head(train_size)
+        df_test_ = df_full_.tail(test_size)
+
+        df_full_exog_ = pd.DataFrame(
+            {"timestamp": new_timestamps, "segment": [seg] * len(target_full), "target": initial_timestamps}
+        )
+        df_test_exog_ = df_full_exog_.tail(test_size)
+
+        df_full = pd.concat([df_full, df_full_])
+        df_train = pd.concat([df_train, df_train_])
+        df_test = pd.concat([df_test, df_test_])
+        df_full_exog = pd.concat([df_full_exog, df_full_exog_])
+        df_test_exog = pd.concat([df_test_exog, df_test_exog_])
+
+    TSDataset.to_dataset(df_full).to_csv(
+        dataset_dir / f"tourism_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_train).to_csv(
+        dataset_dir / f"tourism_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_test).to_csv(
+        dataset_dir / f"tourism_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip"
+    )
+    TSDataset.to_dataset(df_full_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"tourism_{dataset_freq.lower()}_full_exog.csv.gz",
+        index=True,
+        compression="gzip",
+    )
+    TSDataset.to_dataset(df_full_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"tourism_{dataset_freq.lower()}_train_exog.csv.gz",
+        index=True,
+        compression="gzip",
+    )
+    TSDataset.to_dataset(df_test_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"tourism_{dataset_freq.lower()}_test_exog.csv.gz",
+        index=True,
+        compression="gzip",
+    )
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
@@ -553,6 +653,21 @@ datasets_dict: Dict[str, Dict] = {
     "traffic_2015_hourly": {
         "get_dataset_function": get_traffic_2015_dataset,
         "freq": "H",
+        "parts": ("train", "test", "full"),
+    },
+    "tourism_monthly": {
+        "get_dataset_function": partial(get_tourism_dataset, dataset_freq="monthly"),
+        "freq": "MS",
+        "parts": ("train", "test", "full"),
+    },
+    "tourism_quarterly": {
+        "get_dataset_function": partial(get_tourism_dataset, dataset_freq="quarterly"),
+        "freq": "Q-DEC",
+        "parts": ("train", "test", "full"),
+    },
+    "tourism_yearly": {
+        "get_dataset_function": partial(get_tourism_dataset, dataset_freq="yearly"),
+        "freq": "A-DEC",
         "parts": ("train", "test", "full"),
     },
 }
