@@ -75,19 +75,35 @@ def test_context_size(encoder_length):
     encoder_length = encoder_length
     decoder_length = encoder_length
     model = DeepARModelNew(
-        input_size=1, encoder_length=encoder_length, decoder_length=decoder_length, trainer_params=dict(max_epochs=100), segment_to_id={},
+        input_size=1,
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        trainer_params=dict(max_epochs=100),
+        segment_to_id={},
     )
 
     assert model.context_size == encoder_length
 
 
 def test_save_load(example_tsds):
-    model = DeepARModelNew(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1), segment_to_id={"segment_1": 0, "segment_2": 1})
+    model = DeepARModelNew(
+        input_size=1,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+        segment_to_id={"segment_1": 0, "segment_2": 1},
+    )
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
 def test_params_to_tune(example_tsds):  # TODO
     ts = example_tsds
-    model = DeepARModelNew(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1), segment_to_id={"segment_1": 0, "segment_2": 1})
+    model = DeepARModelNew(
+        input_size=1,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+        segment_to_id={"segment_1": 0, "segment_2": 1},
+    )
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
