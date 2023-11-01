@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `traffic_2008` to internal datasets ([#94](https://github.com/etna-team/etna/pull/94))
 - Add `traffic_2015` to internal datasets ([#100](https://github.com/etna-team/etna/pull/100))
 - Add `tourism` to internal datasets ([#120](https://github.com/etna-team/etna/pull/120))
-- Add `weather` to internal datasets ([#125](https://github.com/etna-team/etna/pull/125))
+- Add `weather` to internal datasets ([#125](https://github.com/etna-team/etna/pull/125)) 
 
 ### Changed
 -
@@ -23,9 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
--
 - Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
+- Fix `traffic_2008` ([128](https://github.com/etna-team/etna/pull/128))
 - 
 
 ### Removed
