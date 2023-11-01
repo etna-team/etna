@@ -45,10 +45,8 @@ class DeepARNetNew(DeepBaseNet):
         input_size: int,
         num_layers: int,
         hidden_size: int,
-        segment_to_id: dict,
+        n_segments: int,
         embedding_dim: int,
-        encoder_length: int,
-        decoder_length: int,
         lr: float,
         scale: bool,
         n_samples: int,
@@ -81,17 +79,16 @@ class DeepARNetNew(DeepBaseNet):
         self.num_layers = num_layers
         self.input_size = input_size
         self.hidden_size = hidden_size
-        self.segment_to_id = segment_to_id
-        self.encoder_length = encoder_length
-        self.decoder_length = decoder_length
+        self.segment_to_id: Dict[str, int] = {}
+        self.n_segments = n_segments
         self.embedding_dim = embedding_dim
         self.rnn = nn.LSTM(
             num_layers=self.num_layers,
             hidden_size=self.hidden_size,
-            input_size=self.input_size + self.hidden_size,
+            input_size=self.input_size + self.embedding_dim,
             batch_first=True,
         )
-        self.embedding = nn.Embedding(len(self.segment_to_id), self.embedding_dim)
+        self.embedding = nn.Embedding(self.n_segments, self.embedding_dim)
         self.linear_1 = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.linear_2 = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.lr = lr
@@ -121,15 +118,21 @@ class DeepARNetNew(DeepBaseNet):
         segment_ids = x["segment_idx"]  # (batch_size)
         encoder_embeddings = (
             self.embedding(segment_ids).unsqueeze(1).expand([-1, encoder_real.shape[1], -1])
-        )  # (batch_size, encoder_length-1, hidden_size)
-        decoder_embeddings = self.embedding(segment_ids).unsqueeze(1)  # (batch_size, 1, hidden_size)
+        )  # (batch_size, encoder_length-1, embedding_dim)
+        decoder_embeddings = (
+            self.embedding(segment_ids).unsqueeze(1).expand([-1, decoder_real.shape[1], -1])
+        )  # (batch_size, decoder_length, embedding_dim)
+        encoder_real = torch.cat(
+            (encoder_real, encoder_embeddings), dim=2
+        )  # (batch_size, encoder_length-1, input_size+embedding_dim)
+        decoder_real = torch.cat(
+            (decoder_real, decoder_embeddings), dim=2
+        )  # (batch_size, decoder_length, input_size+embedding_dim)
         forecasts = torch.zeros((decoder_target.shape[0], decoder_target.shape[1], self.n_samples))
         for j in range(self.n_samples):
-            _, (h_n, c_n) = self.rnn(torch.cat((encoder_real, encoder_embeddings), dim=2))
+            _, (h_n, c_n) = self.rnn(encoder_real)
             for i in range(decoder_length - 1):
-                output, (h_n, c_n) = self.rnn(
-                    torch.cat((decoder_real[:, i, None], decoder_embeddings), dim=2), (h_n, c_n)
-                )  # (batch_size, 1, hidden_size)
+                output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))  # (batch_size, 1, hidden_size)
                 loc, scale = self.get_distribution_params(output[:, -1])
                 forecast_point = self.loss.sample(
                     loc, scale, weights, n_samples=self.n_samples
@@ -138,9 +141,7 @@ class DeepARNetNew(DeepBaseNet):
                 decoder_real[:, i + 1, 0] = forecast_point  # TODO можно через if
 
             # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
-            output, (_, _) = self.rnn(
-                torch.cat((decoder_real[:, decoder_length - 1, None], decoder_embeddings), dim=2), (h_n, c_n)
-            )
+            output, (_, _) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
             loc, scale = self.get_distribution_params(output[:, -1])
             forecast_point = self.loss.sample(loc, scale, weights, n_samples=self.n_samples).flatten()
             forecasts[:, decoder_length - 1, j] = forecast_point
@@ -201,6 +202,11 @@ class DeepARNetNew(DeepBaseNet):
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
         segment = df["segment"].values[0]
+        if segment in self.segment_to_id:
+            segment_idx = self.segment_to_id[segment]
+        else:
+            segment_idx = self.segment_to_id[list(self.segment_to_id)[-1]] + 1 if self.segment_to_id else 0
+            self.segment_to_id[segment] = segment_idx
         values_target = df["target"].values
         values_real = (
             df.select_dtypes(include=[np.number])
@@ -214,6 +220,7 @@ class DeepARNetNew(DeepBaseNet):
             values_real: np.ndarray,
             values_target: np.ndarray,
             segment: str,
+            segment_idx: int,
             start_idx: int,
             encoder_length: int,
             decoder_length: int,
@@ -249,7 +256,7 @@ class DeepARNetNew(DeepBaseNet):
             sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
             sample["encoder_real"][:, 0] /= sample["weight"]
             sample["decoder_real"][:, 0] /= sample["weight"]
-            sample["segment_idx"] = self.segment_to_id[segment]
+            sample["segment_idx"] = segment_idx
 
             return sample
 
@@ -259,6 +266,7 @@ class DeepARNetNew(DeepBaseNet):
                 values_target=values_target,
                 values_real=values_real,
                 segment=segment,
+                segment_idx=segment_idx,
                 start_idx=start_idx,
                 encoder_length=encoder_length,
                 decoder_length=decoder_length,
@@ -288,7 +296,7 @@ class DeepARModelNew(DeepBaseModel):
         input_size: int,
         encoder_length: int,
         decoder_length: int,
-        segment_to_id: dict,
+        n_segments: int,
         embedding_dim: int = 16,
         num_layers: int = 2,
         hidden_size: int = 16,
@@ -360,7 +368,6 @@ class DeepARModelNew(DeepBaseModel):
         self.lr = lr
         self.scale = scale  # TODO if passed both weighted sampler and scale=False
         self.n_samples = n_samples
-        self.segment_to_id = segment_to_id
         self.optimizer_params = optimizer_params
         self.loss = loss
         self.train_dataloader_params = train_dataloader_params
@@ -371,10 +378,8 @@ class DeepARModelNew(DeepBaseModel):
                 input_size=input_size,
                 num_layers=num_layers,
                 hidden_size=hidden_size,
-                segment_to_id=segment_to_id,
+                n_segments=n_segments,
                 embedding_dim=embedding_dim,
-                encoder_length=encoder_length,
-                decoder_length=decoder_length,
                 lr=lr,
                 scale=scale,
                 n_samples=n_samples,

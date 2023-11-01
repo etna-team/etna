@@ -37,7 +37,7 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
         decoder_length=decoder_length,
         scale=False,
         trainer_params=dict(max_epochs=100),
-        segment_to_id={"segment_1": 0, "segment_2": 1},
+        n_segments=2,
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)
@@ -79,7 +79,7 @@ def test_context_size(encoder_length):
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         trainer_params=dict(max_epochs=100),
-        segment_to_id={},
+        n_segments=2
     )
 
     assert model.context_size == encoder_length
@@ -91,7 +91,7 @@ def test_save_load(example_tsds):
         encoder_length=14,
         decoder_length=14,
         trainer_params=dict(max_epochs=1),
-        segment_to_id={"segment_1": 0, "segment_2": 1},
+        n_segments=2,
     )
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
@@ -103,7 +103,7 @@ def test_params_to_tune(example_tsds):  # TODO
         encoder_length=14,
         decoder_length=14,
         trainer_params=dict(max_epochs=1),
-        segment_to_id={"segment_1": 0, "segment_2": 1},
+        n_segments=2
     )
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
