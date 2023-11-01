@@ -604,7 +604,7 @@ def get_weather_dataset(dataset_dir: Path) -> None:
         data_ = _download_dataset_zip(
             url.format(dataset_name=dataset_name),
             file_names=dataset_name + ".csv",
-            read_functions=partial(pd.read_csv, encoding="cp1252")
+            read_functions=partial(pd.read_csv, encoding="cp1252"),
         ).drop_duplicates(subset=["Date Time"])
         data = pd.concat([data, data_])
 
@@ -708,16 +708,5 @@ datasets_dict: Dict[str, Dict] = {
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
     },
-    "weather_10T": {
-        "get_dataset_function": get_weather_dataset,
-        "freq": "10T",
-        "parts": ("train", "test", "full")
-    },
+    "weather_10T": {"get_dataset_function": get_weather_dataset, "freq": "10T", "parts": ("train", "test", "full")},
 }
-
-if __name__ == "__main__":
-    ts_list = load_dataset("weather_10T", parts=("train", "test", "full"))
-    for ts in ts_list:
-        print(ts.df.shape)
-    print(ts.index.min())
-    print(ts.index.max())
