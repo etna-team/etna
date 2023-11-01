@@ -301,7 +301,7 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         with open(path, "r") as f:
             if part in ("randperm", "stations_list"):
                 data = f.read().lstrip("[").rstrip("]\n").split(" ")
-                out = np.array(map(int, data)) if part == "randperm" else np.array(data)
+                out = np.array(list(map(int, data))) if part == "randperm" else np.array(data)
                 return out
             else:
                 lines = []
