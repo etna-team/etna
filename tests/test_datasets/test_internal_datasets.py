@@ -209,7 +209,7 @@ def test_not_present_part():
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
-    ts_full = load_dataset(dataset_name, parts="full")
+    ts_full = load_dataset(dataset_name, parts="full", rebuild_dataset=True)
     ts_parts = load_dataset(dataset_name, parts=dataset_parts)
     parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
     assert ts_full.df.shape == expected_shape
