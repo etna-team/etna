@@ -584,6 +584,44 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     )
 
 
+def get_weather_dataset(dataset_dir: Path) -> None:
+    """
+    Download and save weather dataset.
+
+    Dataset contains 21 meteorological indicators in Germany, such as humidity and air temperature with a 10 min
+    frequency for 2020. We use the last 24 hours as prediction horizon.
+
+    References
+    ----------
+    .. [1] https://www.bgc-jena.mpg.de/wetter/
+    """
+    url = "https://www.bgc-jena.mpg.de/wetter/{dataset_name}.zip"
+
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    data = pd.DataFrame()
+    for dataset_name in ("mpi_roof_2020a", "mpi_roof_2020b"):
+        data_ = _download_dataset_zip(
+            url.format(dataset_name=dataset_name),
+            file_names=dataset_name + ".csv",
+            read_functions=partial(pd.read_csv, encoding="cp1252"),
+        ).drop_duplicates(subset=["Date Time"])
+        data = pd.concat([data, data_])
+
+    data = data.rename({"Date Time": "timestamp"}, axis=1)
+    data["timestamp"] = pd.to_datetime(data["timestamp"])
+
+    data = data.melt("timestamp", var_name="segment", value_name="target")
+
+    df_full = TSDataset.to_dataset(data)
+    df_test = df_full.tail(6 * 24)
+    df_train = df_full[~df_full.index.isin(df_test.index)]
+
+    df_full.to_csv(dataset_dir / f"weather_10T_full.csv.gz", index=True, compression="gzip")
+    df_train.to_csv(dataset_dir / f"weather_10T_train.csv.gz", index=True, compression="gzip")
+    df_test.to_csv(dataset_dir / f"weather_10T_test.csv.gz", index=True, compression="gzip")
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
@@ -670,4 +708,5 @@ datasets_dict: Dict[str, Dict] = {
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
     },
+    "weather_10T": {"get_dataset_function": get_weather_dataset, "freq": "10T", "parts": ("train", "test", "full")},
 }
