@@ -199,6 +199,13 @@ def test_not_present_part():
             pd.to_datetime("2021-12-31 00:00:00"),
             ("train", "test"),
         ),
+        (
+            "weather_10T",
+            (52560 + 144, 21),
+            pd.to_datetime("2020-01-01 00:10:00"),
+            pd.to_datetime("2021-01-01 00:00:00"),
+            ("train", "test"),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
