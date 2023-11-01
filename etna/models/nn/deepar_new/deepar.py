@@ -46,6 +46,7 @@ class DeepARNetNew(DeepBaseNet):
         num_layers: int,
         hidden_size: int,
         segment_to_id: dict,
+        embedding_dim: int,
         encoder_length: int,
         decoder_length: int,
         lr: float,
@@ -82,14 +83,15 @@ class DeepARNetNew(DeepBaseNet):
         self.hidden_size = hidden_size
         self.segment_to_id = segment_to_id
         self.encoder_length = encoder_length
-        self.decoder_length = (decoder_length,)
+        self.decoder_length = decoder_length
+        self.embedding_dim = embedding_dim
         self.rnn = nn.LSTM(
             num_layers=self.num_layers,
             hidden_size=self.hidden_size,
             input_size=self.input_size + self.hidden_size,
             batch_first=True,
         )
-        self.embedding = nn.Embedding(len(self.segment_to_id), self.hidden_size)
+        self.embedding = nn.Embedding(len(self.segment_to_id), self.embedding_dim)
         self.linear_1 = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.linear_2 = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.lr = lr
@@ -287,6 +289,7 @@ class DeepARModelNew(DeepBaseModel):
         encoder_length: int,
         decoder_length: int,
         segment_to_id: dict,
+        embedding_dim: int = 16,
         num_layers: int = 2,
         hidden_size: int = 16,
         lr: float = 1e-3,
@@ -369,6 +372,7 @@ class DeepARModelNew(DeepBaseModel):
                 num_layers=num_layers,
                 hidden_size=hidden_size,
                 segment_to_id=segment_to_id,
+                embedding_dim=embedding_dim,
                 encoder_length=encoder_length,
                 decoder_length=decoder_length,
                 lr=lr,
