@@ -617,9 +617,9 @@ def get_weather_dataset(dataset_dir: Path) -> None:
     df_test = df_full.tail(6 * 24)
     df_train = df_full[~df_full.index.isin(df_test.index)]
 
-    df_full.to_csv(dataset_dir / f"weather_10t_full.csv.gz", index=True, compression="gzip")
-    df_train.to_csv(dataset_dir / f"weather_10t_train.csv.gz", index=True, compression="gzip")
-    df_test.to_csv(dataset_dir / f"weather_10t_test.csv.gz", index=True, compression="gzip")
+    df_full.to_csv(dataset_dir / f"weather_10T_full.csv.gz", index=True, compression="gzip")
+    df_train.to_csv(dataset_dir / f"weather_10T_train.csv.gz", index=True, compression="gzip")
+    df_test.to_csv(dataset_dir / f"weather_10T_test.csv.gz", index=True, compression="gzip")
 
 
 datasets_dict: Dict[str, Dict] = {
