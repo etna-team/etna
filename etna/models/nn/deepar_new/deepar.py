@@ -209,7 +209,7 @@ class DeepARNetNew(DeepBaseNet):
             self.segment_to_id[segment] = segment_idx
         values_target = df["target"].values
         values_real = (
-            df.select_dtypes(include=[np.number])
+            df.select_dtypes(include=[np.number, 'category'])
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
@@ -280,7 +280,6 @@ class DeepARNetNew(DeepBaseNet):
         """Optimizer configuration."""
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
         return optimizer
-
 
 class DeepARModelNew(DeepBaseModel):
     """DeepAR based model on LSTM cell.
