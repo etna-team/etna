@@ -2,8 +2,10 @@ import itertools
 import math
 from copy import deepcopy
 from enum import Enum
+from functools import cmp_to_key
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -24,7 +26,7 @@ from statsmodels.graphics.gofplots import qqplot
 from typing_extensions import Literal
 
 from etna.analysis.forecast.utils import _prepare_forecast_results
-from etna.analysis.forecast.utils import _select_quantiles
+from etna.analysis.forecast.utils import _select_prediction_intervals_names
 from etna.analysis.forecast.utils import _validate_intersecting_segments
 from etna.analysis.forecast.utils import get_residuals
 from etna.analysis.utils import _prepare_axes
@@ -33,6 +35,26 @@ from etna.datasets.utils import match_target_components
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
     from etna.transforms import Transform
+
+
+def _get_borders_comparator(segment_borders: pd.DataFrame) -> Callable[[str, str], int]:
+    """Create comparator function to sort border names."""
+
+    def cmp(name_a: str, name_b: str) -> int:
+        """Compare two series based on their values."""
+        border_a = segment_borders[name_a].values
+        border_b = segment_borders[name_b].values
+
+        if np.all(border_a < border_b):
+            return -1
+        elif np.all(border_a == border_b):
+            return 0
+        elif np.all(border_a > border_b):
+            return 1
+        else:
+            raise ValueError("Detected intersection between non equal borders!")
+
+    return cmp
 
 
 def plot_forecast(
@@ -95,7 +117,7 @@ def plot_forecast(
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     if prediction_intervals:
-        quantiles = _select_quantiles(forecast_results, quantiles)
+        prediction_intervals_names = _select_prediction_intervals_names(forecast_results, quantiles)
 
     if train_ts is not None:
         train_ts.df.sort_values(by="timestamp", inplace=True)
@@ -126,7 +148,6 @@ def plot_forecast(
             ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test")
 
         # plot forecast plot for each of given forecasts
-        quantile_prefix = "target_"
         for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
@@ -140,55 +161,63 @@ def plot_forecast(
             forecast_color = line[0].get_color()
 
             # draw prediction intervals from outer layers to inner ones
-            if prediction_intervals and quantiles is not None:
-                alpha = np.linspace(0, 1 / 2, len(quantiles) // 2 + 2)[1:-1]
-                for quantile_idx in range(len(quantiles) // 2):
+            intervals = forecast.get_prediction_intervals()
+            if prediction_intervals and intervals is not None:
+                alpha = np.linspace(0, 1 / 2, len(prediction_intervals_names) // 2 + 2)[1:-1]
+
+                segment_borders_df = intervals.loc[:, pd.IndexSlice[segment, :]].droplevel(level="segment", axis=1)
+                comparator = _get_borders_comparator(segment_borders=segment_borders_df)
+                prediction_intervals_names = sorted(prediction_intervals_names, key=cmp_to_key(comparator))
+
+                for interval_idx in range(len(prediction_intervals_names) // 2):
                     # define upper and lower border for this iteration
-                    low_quantile = quantiles[quantile_idx]
-                    high_quantile = quantiles[-quantile_idx - 1]
-                    values_low = segment_forecast_df[f"{quantile_prefix}{low_quantile}"].values
-                    values_high = segment_forecast_df[f"{quantile_prefix}{high_quantile}"].values
-                    # if (low_quantile, high_quantile) is the smallest interval
-                    if quantile_idx == len(quantiles) // 2 - 1:
+                    low_border = prediction_intervals_names[interval_idx]
+                    high_border = prediction_intervals_names[-interval_idx - 1]
+                    values_low = segment_borders_df[low_border].values
+                    values_high = segment_borders_df[high_border].values
+
+                    # if (low_border, high_border) is the smallest interval
+                    if interval_idx == len(prediction_intervals_names) // 2 - 1:
                         ax[i].fill_between(
-                            segment_forecast_df.index.values,
+                            segment_borders_df.index.values,
                             values_low,
                             values_high,
                             facecolor=forecast_color,
-                            alpha=alpha[quantile_idx],
-                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
+                            alpha=alpha[interval_idx],
+                            label=f"{legend_prefix}{low_border}-{high_border}",
                         )
-                    # if there is some interval inside (low_quantile, high_quantile) we should plot around it
+
+                    # if there is some interval inside (low_border, high_border) we should plot around it
                     else:
-                        low_next_quantile = quantiles[quantile_idx + 1]
-                        high_prev_quantile = quantiles[-quantile_idx - 2]
-                        values_next = segment_forecast_df[f"{quantile_prefix}{low_next_quantile}"].values
+                        low_next_border = prediction_intervals_names[interval_idx + 1]
+                        high_prev_border = prediction_intervals_names[-interval_idx - 2]
+                        values_next = segment_borders_df[low_next_border].values
                         ax[i].fill_between(
-                            segment_forecast_df.index.values,
+                            segment_borders_df.index.values,
                             values_low,
                             values_next,
                             facecolor=forecast_color,
-                            alpha=alpha[quantile_idx],
-                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
+                            alpha=alpha[interval_idx],
+                            label=f"{legend_prefix}{low_border}-{high_border}",
                         )
-                        values_prev = segment_forecast_df[f"{quantile_prefix}{high_prev_quantile}"].values
+                        values_prev = segment_borders_df[high_prev_border].values
                         ax[i].fill_between(
-                            segment_forecast_df.index.values,
+                            segment_borders_df.index.values,
                             values_high,
                             values_prev,
                             facecolor=forecast_color,
-                            alpha=alpha[quantile_idx],
+                            alpha=alpha[interval_idx],
                         )
-                # when we can't find pair quantile, we plot it separately
-                if len(quantiles) % 2 != 0:
-                    remaining_quantile = quantiles[len(quantiles) // 2]
-                    values = segment_forecast_df[f"{quantile_prefix}{remaining_quantile}"].values
+                # when we can't find pair for border, we plot it separately
+                if len(prediction_intervals_names) % 2 != 0:
+                    remaining_border = prediction_intervals_names[len(prediction_intervals_names) // 2]
+                    values = segment_borders_df[remaining_border].values
                     ax[i].plot(
-                        segment_forecast_df.index.values,
+                        segment_borders_df.index.values,
                         values,
                         "--",
                         color=forecast_color,
-                        label=f"{legend_prefix}{remaining_quantile}",
+                        label=f"{legend_prefix}{remaining_border}",
                     )
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
