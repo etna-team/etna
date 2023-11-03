@@ -3,6 +3,8 @@ import pandas as pd
 import pytest
 
 from etna.analysis import get_residuals
+from etna.analysis.forecast.utils import _get_existing_intervals
+from etna.analysis.forecast.utils import _select_prediction_intervals_names
 from etna.analysis.forecast.utils import _validate_intersecting_segments
 from etna.datasets import TSDataset
 
@@ -42,6 +44,11 @@ def residuals_with_components(residuals):
     df_components = pd.concat([df_component_1, df_component_2], axis=1)
     ts.add_target_components(df_components)
     return residuals_df, forecast_df, ts
+
+
+@pytest.fixture
+def dataset_dict(toy_dataset_equal_targets_and_quantiles):
+    return {"1": toy_dataset_equal_targets_and_quantiles}
 
 
 def test_get_residuals(residuals):
@@ -151,3 +158,21 @@ def test_validate_intersecting_segments_ok(fold_numbers):
 def test_validate_intersecting_segments_fail(fold_numbers):
     with pytest.raises(ValueError):
         _validate_intersecting_segments(fold_numbers)
+
+
+@pytest.mark.parametrize("ts_name", ("example_tsds", "toy_dataset_equal_targets_and_quantiles"))
+def test_get_existing_intervals(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    assert _get_existing_intervals(ts) == set(ts.prediction_intervals_names)
+
+
+@pytest.mark.parametrize("quantiles", (None, [0.01]))
+def test_select_prediction_intervals_names(dataset_dict, quantiles):
+    selected_borders = _select_prediction_intervals_names(forecast_results=dataset_dict, quantiles=quantiles)
+    assert selected_borders == ["target_0.01"]
+
+
+@pytest.mark.parametrize("quantiles", ([0.001], [0.1, 0.9]))
+def test_select_prediction_intervals_names_non_existing_quantiles_error(dataset_dict, quantiles):
+    with pytest.raises(ValueError, match="Unable to find provided quantiles"):
+        _ = _select_prediction_intervals_names(forecast_results=dataset_dict, quantiles=quantiles)
