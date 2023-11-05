@@ -611,8 +611,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
 
         if "logger" not in self.trainer_params:
             self.trainer_params["logger"] = tslogger.pl_loggers
-        else:
-            self.trainer_params["logger"] += tslogger.pl_loggers
+        # else:
+        #     self.trainer_params["logger"] += tslogger.pl_loggers
 
         self.trainer = Trainer(**self.trainer_params)
         self.trainer.fit(self.net, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
