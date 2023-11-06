@@ -527,9 +527,9 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         self.decoder_length = decoder_length
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
-        self.train_dataloader_params = {"shuffle": True} if train_dataloader_params is None else train_dataloader_params
-        self.test_dataloader_params = {"shuffle": False} if test_dataloader_params is None else test_dataloader_params
-        self.val_dataloader_params = {"shuffle": False} if val_dataloader_params is None else val_dataloader_params
+        self.train_dataloader_params = {} if train_dataloader_params is None else train_dataloader_params
+        self.test_dataloader_params = {} if test_dataloader_params is None else test_dataloader_params
+        self.val_dataloader_params = {} if val_dataloader_params is None else val_dataloader_params
         self.trainer_params = {} if trainer_params is None else trainer_params
         self.split_params = {} if split_params is None else split_params
         self.trainer: Optional[Trainer] = None
@@ -593,19 +593,15 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 ],
                 generator=self.split_params.get("generator"),
             )
-            if "sampler" in self.train_dataloader_params:
-                self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](train_dataset)
             train_dataloader = DataLoader(
-                train_dataset, batch_size=self.train_batch_size, **self.train_dataloader_params
+                train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
             val_dataloader: Optional[DataLoader] = DataLoader(
                 val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_params
             )
         else:
-            if "sampler" in self.train_dataloader_params:
-                self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](torch_dataset)
             train_dataloader = DataLoader(
-                torch_dataset, batch_size=self.train_batch_size, **self.train_dataloader_params
+                torch_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
             val_dataloader = None
 
@@ -631,7 +627,9 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Dictionary with predictions
         """
-        test_dataloader = DataLoader(torch_dataset, batch_size=self.test_batch_size, **self.test_dataloader_params)
+        test_dataloader = DataLoader(
+            torch_dataset, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_params
+        )
 
         predictions_dict = dict()
         self.net.eval()
