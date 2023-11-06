@@ -389,11 +389,13 @@ class DeepARModelNew(DeepBaseModel):
             encoder_length=encoder_length,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
-            train_dataloader_params=train_dataloader_params
-            if train_dataloader_params is not None
-            else {"sampler": SamplerWrapper(RandomSampler), 'num_workers': 4},
-            test_dataloader_params=val_dataloader_params if val_dataloader_params is not None else {},
-            val_dataloader_params=test_dataloader_params if test_dataloader_params is not None else {},
+            train_dataloader_params=train_dataloader_params,
+            val_dataloader_params=val_dataloader_params,
+            test_dataloader_params=test_dataloader_params,
+            # if train_dataloader_params is not None
+            # else {"sampler": SamplerWrapper(RandomSampler), 'num_workers': 4},
+            # test_dataloader_params=val_dataloader_params if val_dataloader_params is not None else {},
+            # val_dataloader_params=test_dataloader_params if test_dataloader_params is not None else {},
             trainer_params=trainer_params,
             split_params=split_params,
         )
