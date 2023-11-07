@@ -21,6 +21,7 @@ from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.models.decorators import log_decorator
 from etna.models.mixins import SaveDeepBaseModelMixin
+from etna.models.nn.deepar_new.sampler import WeightedDeepARSampler
 
 if SETTINGS.torch_required:
     import torch
@@ -585,6 +586,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             train_size = self.split_params["train_size"]
             torch_dataset_train_size = int(torch_dataset_size * train_size)
             torch_dataset_val_size = torch_dataset_size - torch_dataset_train_size
+            print(torch_dataset_size, torch_dataset_train_size, torch_dataset_val_size)
             train_dataset, val_dataset = random_split(
                 torch_dataset,
                 lengths=[
@@ -593,8 +595,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 ],
                 generator=self.split_params.get("generator"),
             )
-            # if "sampler" in self.train_dataloader_params:
-            #     self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](train_dataset)
+            self.train_dataloader_params.update({'sampler': WeightedDeepARSampler(train_dataset)})
             train_dataloader = DataLoader(
                 train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
@@ -602,8 +603,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_params
             )
         else:
-            # if "sampler" in self.train_dataloader_params:
-            #     self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](torch_dataset)
+            self.train_dataloader_params.update({'sampler': WeightedDeepARSampler(torch_dataset)})
+
             train_dataloader = DataLoader(
                 torch_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
@@ -611,8 +612,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
 
         if "logger" not in self.trainer_params:
             self.trainer_params["logger"] = tslogger.pl_loggers
-        # else:
-        #     self.trainer_params["logger"] += tslogger.pl_loggers
+        else:
+            self.trainer_params["logger"] += tslogger.pl_loggers
 
         self.trainer = Trainer(**self.trainer_params)
         self.trainer.fit(self.net, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)

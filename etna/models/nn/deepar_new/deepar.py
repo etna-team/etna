@@ -116,11 +116,12 @@ class DeepARNetNew(DeepBaseNet):
         decoder_length = decoder_real.shape[1]
         weights = x["weight"]  # (batch_size)
         segment_ids = x["segment_idx"]  # (batch_size)
+        embeddings = self.embedding(segment_ids)
         encoder_embeddings = (
-            self.embedding(segment_ids).unsqueeze(1).expand([-1, encoder_real.shape[1], -1])
+            embeddings.unsqueeze(1).expand([-1, encoder_real.shape[1], -1])
         )  # (batch_size, encoder_length-1, embedding_dim)
         decoder_embeddings = (
-            self.embedding(segment_ids).unsqueeze(1).expand([-1, decoder_real.shape[1], -1])
+            embeddings.unsqueeze(1).expand([-1, decoder_real.shape[1], -1])
         )  # (batch_size, decoder_length, embedding_dim)
         encoder_real = torch.cat(
             (encoder_real, encoder_embeddings), dim=2
@@ -365,7 +366,7 @@ class DeepARModelNew(DeepBaseModel):
         self.num_layers = num_layers
         self.hidden_size = hidden_size
         self.lr = lr
-        self.scale = scale  # TODO if passed both weighted sampler and scale=False
+        self.scale = scale
         self.n_samples = n_samples
         self.optimizer_params = optimizer_params
         self.loss = loss
@@ -392,10 +393,6 @@ class DeepARModelNew(DeepBaseModel):
             train_dataloader_params=train_dataloader_params,
             val_dataloader_params=val_dataloader_params,
             test_dataloader_params=test_dataloader_params,
-            # if train_dataloader_params is not None
-            # else {"sampler": SamplerWrapper(RandomSampler), 'num_workers': 4},
-            # test_dataloader_params=val_dataloader_params if val_dataloader_params is not None else {},
-            # val_dataloader_params=test_dataloader_params if test_dataloader_params is not None else {},
             trainer_params=trainer_params,
             split_params=split_params,
         )
