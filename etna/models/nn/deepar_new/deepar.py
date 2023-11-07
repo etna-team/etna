@@ -370,6 +370,10 @@ class DeepARModelNew(DeepBaseModel):
         self.n_samples = n_samples
         self.optimizer_params = optimizer_params
         self.loss = loss
+        if train_dataloader_params is not None:
+            train_dataloader_params.update({'sampler': SamplerWrapper(WeightedDeepARSampler)})
+        else:
+            train_dataloader_params = {'sampler': SamplerWrapper(WeightedDeepARSampler)}
         super().__init__(
             net=DeepARNetNew(
                 input_size=input_size,
@@ -387,7 +391,7 @@ class DeepARModelNew(DeepBaseModel):
             encoder_length=encoder_length,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
-            train_dataloader_params=train_dataloader_params.update({'sampler': SamplerWrapper(WeightedDeepARSampler)}) if train_dataloader_params is not None else {'sampler': SamplerWrapper(WeightedDeepARSampler)},
+            train_dataloader_params=train_dataloader_params,
             val_dataloader_params=val_dataloader_params,
             test_dataloader_params=test_dataloader_params,
             trainer_params=trainer_params,
