@@ -16,7 +16,7 @@ from etna.distributions import IntDistribution
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
-
+    from torch.utils.data import RandomSampler
     from etna.models.base import DeepBaseModel
     from etna.models.base import DeepBaseNet
     from etna.models.nn.deepar_new.loss import GaussianLoss
@@ -371,9 +371,9 @@ class DeepARModelNew(DeepBaseModel):
         self.optimizer_params = optimizer_params
         self.loss = loss
         if train_dataloader_params is not None:
-            train_dataloader_params.update({'sampler': SamplerWrapper(WeightedDeepARSampler)})
+            train_dataloader_params.update({'sampler': SamplerWrapper(RandomSampler)})
         else:
-            train_dataloader_params = {'sampler': SamplerWrapper(WeightedDeepARSampler)}
+            train_dataloader_params = {'sampler': SamplerWrapper(RandomSampler)}
         super().__init__(
             net=DeepARNetNew(
                 input_size=input_size,
