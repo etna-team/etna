@@ -1,5 +1,6 @@
 from etna import SETTINGS
 
+N_SAMPLES = 500000
 if SETTINGS.torch_required:
     import torch
     from torch.utils.data.sampler import Sampler
@@ -13,11 +14,11 @@ class WeightedDeepARSampler(Sampler):
 
     def __iter__(self):
         weights = torch.tensor([sample["weight"] for sample in self.data])
-        idx = torch.multinomial(weights, num_samples=500000, replacement=False)  # TODO ok?
+        idx = torch.multinomial(1 / weights, num_samples=N_SAMPLES, replacement=False)  # TODO ok?
         return iter(idx)
 
     def __len__(self):
-        return len(self.data)
+        return N_SAMPLES
 
 
 class SamplerWrapper:

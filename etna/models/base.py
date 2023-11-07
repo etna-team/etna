@@ -585,7 +585,6 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             train_size = self.split_params["train_size"]
             torch_dataset_train_size = int(torch_dataset_size * train_size)
             torch_dataset_val_size = torch_dataset_size - torch_dataset_train_size
-            print(torch_dataset_size, torch_dataset_train_size, torch_dataset_val_size)
             train_dataset, val_dataset = random_split(
                 torch_dataset,
                 lengths=[
