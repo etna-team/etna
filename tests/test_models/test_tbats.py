@@ -497,6 +497,7 @@ def test_forecast_decompose_timestamp_error(periodic_dfs):
         model.forecast_components(df=train)
 
 
+@pytest.mark.filterwarnings("ignore: Following components are not fitted.*")
 @pytest.mark.parametrize("model", (BATSModel(), TBATSModel()))
 def test_prediction_decomposition(outliers_tsds, model):
     train, test = outliers_tsds.train_test_split(test_size=10)

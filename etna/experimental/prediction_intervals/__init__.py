@@ -1,1 +1,2 @@
 from etna.experimental.prediction_intervals.base import BasePredictionIntervals
+from etna.experimental.prediction_intervals.naive_variance import NaiveVariancePredictionIntervals

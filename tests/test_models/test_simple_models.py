@@ -793,7 +793,7 @@ def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name
 
     target = forecast.to_pandas(features=["target"])
     target_components_df = forecast.get_target_components()
-    np.testing.assert_allclose(target.values, target_components_df.sum(axis=1, level="segment").values)
+    np.testing.assert_allclose(target.values, target_components_df.groupby(axis=1, level="segment").sum().values)
 
 
 @pytest.mark.parametrize(
@@ -853,7 +853,7 @@ def test_deadline_ma_predict_components_sum_up_to_target(long_periodic_ts, metho
     target = forecast.to_pandas(features=["target"])
     components = forecast.get_target_components()
 
-    np.testing.assert_allclose(target.values, components.sum(axis=1, level="segment").values)
+    np.testing.assert_allclose(target.values, components.groupby(axis=1, level="segment").sum().values)
 
 
 @pytest.mark.parametrize(

@@ -9,6 +9,9 @@ import torch.nn as nn
 from torch import Tensor
 from typing_extensions import TypedDict
 
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
 from etna.models.base import DeepBaseModel
 from etna.models.base import DeepBaseNet
 from etna.models.nn.deepstate import LDS
@@ -304,14 +307,20 @@ class DeepStateModel(DeepBaseModel):
                 * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """
+        self.ssm = ssm
+        self.input_size = input_size
+        self.num_layers = num_layers
+        self.n_samples = n_samples
+        self.lr = lr
+        self.optimizer_params = optimizer_params
         super().__init__(
             net=DeepStateNet(
-                ssm=ssm,
-                input_size=input_size,
-                num_layers=num_layers,
-                n_samples=n_samples,
-                lr=lr,
-                optimizer_params=optimizer_params,
+                ssm=self.ssm,
+                input_size=self.input_size,
+                num_layers=self.num_layers,
+                n_samples=self.n_samples,
+                lr=self.lr,
+                optimizer_params=self.optimizer_params,
             ),
             encoder_length=encoder_length,
             decoder_length=decoder_length,
@@ -323,3 +332,20 @@ class DeepStateModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``lr``, ``num_layers``, ``encoder_length``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "num_layers": IntDistribution(low=1, high=3),
+            "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
+            "encoder_length": IntDistribution(low=1, high=20),
+        }

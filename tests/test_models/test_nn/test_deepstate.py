@@ -6,6 +6,7 @@ from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
+from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.mark.parametrize(
@@ -55,3 +56,16 @@ def test_save_load(example_tsds):
         trainer_params=dict(max_epochs=1),
     )
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+
+
+def test_params_to_tune(example_tsds):
+    ts = example_tsds
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert len(model.params_to_tune()) > 0
+    assert_sampling_is_valid(model=model, ts=ts)

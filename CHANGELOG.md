@@ -7,7 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Handle prediction intervals similar to target components in `TSDataset`([#97](https://github.com/etna-team/etna/pull/97))
+- Add params_to_tune for DeepStateModel ([#115](https://github.com/etna-team/etna/issues/115))
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Changed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Fixed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [2.3.0] - 2023-10-24
+### Added
+- Handle prediction intervals similar to target components in `TSDataset` ([#97](https://github.com/etna-team/etna/pull/97))
 - `SavePredictionIntervalsMixin` for the `BasePredictionIntervals` ([#87](https://github.com/etna-team/etna/pull/87))
 - Base class `BasePredictionIntervals` for prediction intervals into experimental module ([#86](https://github.com/etna-team/etna/pull/86))
 - Add `fit_params` parameter to `etna.models.sarimax.SARIMAXModel` ([#69](https://github.com/etna-team/etna/pull/69))
@@ -22,9 +89,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `LimitTransform` ([#63](https://github.com/etna-team/etna/pull/63))
 - Add config for Codecov to control CI ([#80](https://github.com/etna-team/etna/pull/80)) 
 - Add `EventTransform` ([#78](https://github.com/etna-team/etna/pull/78))
+- `NaiveVariancePredictionIntervals` method for prediction quantiles estimation ([#109](https://github.com/etna-team/etna/pull/109))
+- Update interval metrics to work with arbitrary interval bounds ([#113](https://github.com/etna-team/etna/pull/113))
 
 ### Changed
--
 - Refactored transform inversion logic in `Pipeline` `forecast` method ([#72](https://github.com/etna-team/etna/pull/72))
 - Add parameter `save_ts` to pipeline method `fit` ([#73](https://github.com/etna-team/etna/pull/73))
 - Add installation page and notes about extensions into documentation of public classes ([#1339](https://github.com/tinkoff-ai/etna/pull/1339))
@@ -35,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `CONTRIBUTING.md` with scenarios of documentation updates and release instruction ([#77](https://github.com/etna-team/etna/pull/77))
 - Set up sharding for running tests ([#99](https://github.com/etna-team/etna/pull/99))
 - Rework saving DL models by separating saving model's hyperparameters and model's weights ([#98](https://github.com/etna-team/etna/pull/98))
+- Deprecated `FutureMixin` ([#58](https://github.com/etna-team/etna/pull/58))
 
 ### Fixed
 - Fix `ResampleWithDistributionTransform` working with categorical columns ([#82](https://github.com/etna-team/etna/pull/82))
@@ -43,9 +112,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix CI job `cron-delete-untagged-images` ([#95](https://github.com/etna-team/etna/pull/95))
 - Rendering table of contents in notebooks ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
 - Fix formatting of docstrings, fix links from netlify to docs.etna.ai ([#62](https://github.com/etna-team/etna/pull/62))
-
-### Removed
-- FutureMixin ([#58](https://github.com/etna-team/etna/pull/58))
+- Fix multiple warnings, revert catching warnings during testing ([#105](https://github.com/etna-team/etna/pull/105))
+- Fix bug with `numpy.warnings` in `numpy>=1.24`, rework building docker images to use `poetry.lock` ([#116](https://github.com/etna-team/etna/pull/116))
+- Fix name of steps in `publish` CI ([#119](https://github.com/etna-team/etna/pull/119))
 
 ## [2.2.0] - 2023-08-08
 ### Added

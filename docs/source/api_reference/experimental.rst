@@ -34,3 +34,4 @@ Prediction Intervals:
    :template: class.rst
 
    prediction_intervals.BasePredictionIntervals
+   prediction_intervals.NaiveVariancePredictionIntervals

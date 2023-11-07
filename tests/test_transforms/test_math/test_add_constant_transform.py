@@ -83,7 +83,7 @@ def test_save_load(inplace, example_tsds):
 
 
 def test_get_regressors_info_not_fitted():
-    transform = AddConstTransform(in_column="target", value=1, out_column="out_column")
+    transform = AddConstTransform(in_column="target", value=1)
     with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
         _ = transform.get_regressors_info()
 

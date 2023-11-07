@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from ruptures import Binseg
 from sklearn.tree import DecisionTreeRegressor
 

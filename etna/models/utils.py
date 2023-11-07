@@ -115,7 +115,7 @@ def determine_freq(timestamps: Union[pd.Series, pd.DatetimeIndex]) -> str:
         unable do determine frequency of data
     """
     try:
-        freq = pd.infer_freq(timestamps, warn=False)
+        freq = pd.infer_freq(timestamps)
     except ValueError:
         freq = None
 

@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -15,25 +14,16 @@ from etna.models import SeasonalMovingAverageModel
 from etna.pipeline import AutoRegressivePipeline
 from etna.pipeline import HierarchicalPipeline
 from etna.pipeline import Pipeline
+from etna.pipeline.base import _DummyMetric
 from etna.reconciliation import BottomUpReconciliator
 from etna.transforms import DateFlagsTransform
 from etna.transforms import DeseasonalityTransform
 from tests.test_experimental.test_prediction_intervals.common import DummyPredictionIntervals
 from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline
 from tests.test_experimental.test_prediction_intervals.common import get_naive_pipeline_with_transforms
+from tests.test_experimental.test_prediction_intervals.common import run_base_pipeline_compat_check
 from tests.test_experimental.test_prediction_intervals.utils import assert_sampling_is_valid
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
-
-
-def run_base_pipeline_compat_check(ts, pipeline, expected_columns):
-    intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
-    intervals_pipeline.fit(ts=ts)
-
-    intervals_pipeline_pred = intervals_pipeline.forecast(prediction_interval=True)
-    columns = intervals_pipeline_pred.df.columns.get_level_values("feature")
-
-    assert len(expected_columns - set(columns)) == 0
-    assert np.sum(intervals_pipeline_pred.df.isna().values) == 0
 
 
 def test_pipeline_ref_initialized(naive_pipeline):
@@ -85,6 +75,17 @@ def test_forecast_with_fitted_pipeline(example_tsds, pipeline_name, request):
     pd.testing.assert_frame_equal(intervals_pipeline_pred.df, pipeline_pred.df)
 
 
+@pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
+def test_backtest(example_tsds, pipeline_name, request):
+    pipeline = request.getfixturevalue(pipeline_name)
+    _, pipeline_results, _ = pipeline.backtest(ts=example_tsds, metrics=[_DummyMetric()])
+
+    intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
+    _, intervals_pipeline_results, _ = intervals_pipeline.backtest(ts=example_tsds, metrics=[_DummyMetric()])
+
+    pd.testing.assert_frame_equal(pipeline_results, intervals_pipeline_results)
+
+
 @pytest.mark.parametrize(
     "expected_columns",
     ({"target", "target_lower", "target_upper"},),
@@ -103,8 +104,11 @@ def test_forecast_with_fitted_pipeline(example_tsds, pipeline_name, request):
     ),
 )
 def test_pipelines_forecast_intervals(product_level_constant_hierarchical_ts, pipeline, expected_columns):
+    intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
     run_base_pipeline_compat_check(
-        ts=product_level_constant_hierarchical_ts, pipeline=pipeline, expected_columns=expected_columns
+        ts=product_level_constant_hierarchical_ts,
+        intervals_pipeline=intervals_pipeline,
+        expected_columns=expected_columns,
     )
 
 
@@ -121,7 +125,10 @@ def test_pipelines_forecast_intervals(product_level_constant_hierarchical_ts, pi
     ),
 )
 def test_ensembles_forecast_intervals(example_tsds, ensemble, expected_columns):
-    run_base_pipeline_compat_check(ts=example_tsds, pipeline=ensemble, expected_columns=expected_columns)
+    intervals_pipeline = DummyPredictionIntervals(pipeline=ensemble)
+    run_base_pipeline_compat_check(
+        ts=example_tsds, intervals_pipeline=intervals_pipeline, expected_columns=expected_columns
+    )
 
 
 @pytest.mark.parametrize(

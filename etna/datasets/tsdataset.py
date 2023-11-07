@@ -1240,7 +1240,7 @@ class TSDataset:
                     f"Set of target components differs between segments '{self.segments[0]}' and '{segment}'!"
                 )
 
-        components_sum = target_components_df.sum(axis=1, level="segment")
+        components_sum = target_components_df.groupby(axis=1, level="segment").sum()
         if not np.allclose(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 

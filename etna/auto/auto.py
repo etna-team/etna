@@ -171,7 +171,7 @@ class AutoBase(AutoAbstract):
 
     def _top_k(self, summary: pd.DataFrame, k: int) -> List[BasePipeline]:
         metric_name = f"{self.target_metric.name}_{self.metric_aggregation}"
-        df = summary[summary["state"].apply(lambda x: x is optuna.structs.TrialState.COMPLETE)]
+        df = summary[summary["state"].apply(lambda x: x is optuna.trial.TrialState.COMPLETE)]
         df = df.drop_duplicates(subset=["hash"])
         df = df.sort_values(
             by=metric_name,
@@ -768,7 +768,7 @@ class Tune(AutoBase):
             pipeline_hash = config_hash(pipeline.to_dict())
 
             for t in trial.study.trials:
-                if t.state != optuna.structs.TrialState.COMPLETE:
+                if t.state != optuna.trial.TrialState.COMPLETE:
                     continue
 
                 if t.user_attrs.get("hash") == pipeline_hash:
