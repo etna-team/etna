@@ -27,7 +27,7 @@ class SamplerWrapper:
     def __init__(self, sampler):
         self.sampler = sampler
 
-    def __call__(self, data):
+    def __call__(self, data, n_samples):
         """Call given sampler.
 
         Parameters
@@ -40,4 +40,4 @@ class SamplerWrapper:
         :
             object of given sampler
         """
-        return self.sampler(data)
+        return self.sampler(data, n_samples)
