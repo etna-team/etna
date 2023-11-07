@@ -386,13 +386,8 @@ class DeepARModelNew(DeepBaseModel):
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
             train_dataloader_params=train_dataloader_params,
-<<<<<<< HEAD
             val_dataloader_params=val_dataloader_params,
             test_dataloader_params=test_dataloader_params,
-=======
-            test_dataloader_params=test_dataloader_params,
-            val_dataloader_params=val_dataloader_params,
->>>>>>> issue-85
             trainer_params=trainer_params,
             split_params=split_params,
         )

@@ -37,10 +37,7 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
         decoder_length=decoder_length,
         scale=False,
         trainer_params=dict(max_epochs=100),
-<<<<<<< HEAD
-        n_segments=2,
-=======
->>>>>>> issue-85
+        n_segments=2
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)
@@ -48,11 +45,7 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
     future.inverse_transform([std])
 
     mae = MAE("macro")
-<<<<<<< HEAD
     assert mae(ts_test, future) < 0.08
-=======
-    assert mae(ts_test, future) < 0.06
->>>>>>> issue-85
 
 
 @pytest.mark.parametrize("scale, mean_1, mean_2", [(False, 0, 0), (True, 4.439109105024682, 5.516483350680801)])
