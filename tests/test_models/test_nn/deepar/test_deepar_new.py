@@ -37,7 +37,7 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
         decoder_length=decoder_length,
         scale=False,
         trainer_params=dict(max_epochs=100),
-        n_segments=2
+        n_segments=2,
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)
@@ -50,7 +50,7 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
 
 @pytest.mark.parametrize("scale, mean_1, mean_2", [(False, 0, 0), (True, 4.439109105024682, 5.516483350680801)])
 def test_deepar_make_samples(example_df, scale, mean_1, mean_2):
-    deepar_module = MagicMock(scale=scale)
+    deepar_module = MagicMock(scale=scale, n_segments=2)
     encoder_length = 8
     decoder_length = 4
 
@@ -84,7 +84,7 @@ def test_context_size(encoder_length):
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         trainer_params=dict(max_epochs=100),
-        n_segments=2
+        n_segments=2,
     )
 
     assert model.context_size == encoder_length
@@ -104,11 +104,7 @@ def test_save_load(example_tsds):
 def test_params_to_tune(example_tsds):
     ts = example_tsds
     model = DeepARModelNew(
-        input_size=1,
-        encoder_length=14,
-        decoder_length=14,
-        trainer_params=dict(max_epochs=1),
-        n_segments=2
+        input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1), n_segments=2
     )
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)

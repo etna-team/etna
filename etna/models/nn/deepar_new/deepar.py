@@ -21,6 +21,7 @@ if SETTINGS.torch_required:
     from etna.models.base import DeepBaseNet
     from etna.models.nn.deepar_new.loss import GaussianLoss
     from etna.models.nn.deepar_new.loss import NegativeBinomialLoss
+    from etna.models.nn.deepar_new.sampler import WeightedDeepARSampler, SamplerWrapper
 
 
 class DeepARBatchNew(TypedDict):
@@ -115,11 +116,11 @@ class DeepARNetNew(DeepBaseNet):
         weights = x["weight"]  # (batch_size)
         segment_ids = x["segment_idx"]  # (batch_size)
         embeddings = self.embedding(segment_ids)
-        encoder_embeddings = (
-            embeddings.unsqueeze(1).expand([-1, encoder_real.shape[1], -1])
+        encoder_embeddings = embeddings.unsqueeze(1).expand(
+            [-1, encoder_real.shape[1], -1]
         )  # (batch_size, encoder_length-1, embedding_dim)
-        decoder_embeddings = (
-            embeddings.unsqueeze(1).expand([-1, decoder_real.shape[1], -1])
+        decoder_embeddings = embeddings.unsqueeze(1).expand(
+            [-1, decoder_real.shape[1], -1]
         )  # (batch_size, decoder_length, embedding_dim)
         encoder_real = torch.cat(
             (encoder_real, encoder_embeddings), dim=2
@@ -208,7 +209,7 @@ class DeepARNetNew(DeepBaseNet):
             self.segment_to_id[segment] = segment_idx
         values_target = df["target"].values
         values_real = (
-            df.select_dtypes(include=[np.number, 'category'])
+            df.select_dtypes(include=[np.number, "category"])
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
@@ -252,7 +253,7 @@ class DeepARNetNew(DeepBaseNet):
             sample["decoder_target"] = target[encoder_length:].copy()
 
             sample["segment"] = segment
-            sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
+            sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1.
             sample["encoder_real"][:, 0] /= sample["weight"]
             sample["decoder_real"][:, 0] /= sample["weight"]
             sample["segment_idx"] = segment_idx
@@ -279,6 +280,7 @@ class DeepARNetNew(DeepBaseNet):
         """Optimizer configuration."""
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
         return optimizer
+
 
 class DeepARModelNew(DeepBaseModel):
     """DeepAR based model on LSTM cell.
@@ -385,7 +387,7 @@ class DeepARModelNew(DeepBaseModel):
             encoder_length=encoder_length,
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
-            train_dataloader_params=train_dataloader_params,
+            train_dataloader_params=train_dataloader_params.update({'sampler': SamplerWrapper(WeightedDeepARSampler)}) if train_dataloader_params is not None else {'sampler': SamplerWrapper(WeightedDeepARSampler)},
             val_dataloader_params=val_dataloader_params,
             test_dataloader_params=test_dataloader_params,
             trainer_params=trainer_params,
