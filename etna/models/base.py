@@ -453,8 +453,8 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         :
             loss
         """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("train_loss", loss, on_epoch=True)
+        loss, true_target, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("train_loss", loss, on_epoch=True, batch_size=len(true_target))
         return loss
 
     def validation_step(self, batch: dict, *args, **kwargs):  # type: ignore
@@ -470,8 +470,8 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         :
             loss
         """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("val_loss", loss, on_epoch=True)
+        loss, true_target, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("val_loss", loss, on_epoch=True, batch_size=len(true_target))
         return loss
 
 
@@ -595,7 +595,10 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 ],
                 generator=self.split_params.get("generator"),
             )
+<<<<<<< HEAD
             self.train_dataloader_params.update({'sampler': WeightedDeepARSampler(train_dataset)})
+=======
+>>>>>>> issue-85
             train_dataloader = DataLoader(
                 train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
@@ -603,8 +606,11 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_params
             )
         else:
+<<<<<<< HEAD
             self.train_dataloader_params.update({'sampler': WeightedDeepARSampler(torch_dataset)})
 
+=======
+>>>>>>> issue-85
             train_dataloader = DataLoader(
                 torch_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
             )
@@ -632,7 +638,13 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Dictionary with predictions
         """
+<<<<<<< HEAD
         test_dataloader = DataLoader(torch_dataset, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_params)
+=======
+        test_dataloader = DataLoader(
+            torch_dataset, batch_size=self.test_batch_size, shuffle=False, **self.test_dataloader_params
+        )
+>>>>>>> issue-85
 
         predictions_dict = dict()
         self.net.eval()

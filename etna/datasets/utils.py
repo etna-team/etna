@@ -183,7 +183,7 @@ def set_columns_wide(
 
 def match_target_quantiles(features: Set[str]) -> Set[str]:
     """Find quantiles in dataframe columns."""
-    pattern = re.compile("target_\d+\.\d+$")
+    pattern = re.compile(r"target_\d+\.\d+$")
     return {i for i in list(features) if pattern.match(i) is not None}
 
 

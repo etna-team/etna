@@ -205,6 +205,7 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
     assert all((column in new_column) for column, new_column in zip(transform.in_column, transform.out_columns))
 
 
+@pytest.mark.filterwarnings("ignore: divide by zero encountered in log")
 @pytest.mark.parametrize(
     "transform_constructor",
     [
@@ -229,6 +230,7 @@ def test_all_columns(transform_constructor, multicolumn_ts):
     assert len(new_columns) == initial_df.columns.get_level_values("feature").nunique()
 
 
+@pytest.mark.filterwarnings("ignore: divide by zero encountered in log")
 @pytest.mark.parametrize(
     "transform_constructor",
     [

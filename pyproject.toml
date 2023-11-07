@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "2.2.0"
+version = "2.3.0"
 repository = "https://github.com/etna-team/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -92,9 +92,8 @@ myst-parser = {version = "^1.0", optional = true}
 GitPython = {version = "^3.1.20", optional = true}
 sphinx-design = {version = "^0.5.0", optional = true}
 
-pytest = {version = "^6.2", optional = true}
-coverage = {version = "^5.4", optional = true}
-pytest-cov = {version = "^2.11.1", optional = true}
+pytest = {version = "^7.3", optional = true}
+pytest-cov = {version = "^4.0", optional = true}
 pytest-shard = {version = "^0.1.2", optional = true}
 
 black = {extras = ["jupyter"], version = "^22.3.0", optional = true}
@@ -130,7 +129,7 @@ statsforecast = ["statsforecast"]
 # dev deps
 release = ["click", "semver"]
 docs = ["Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design", "jupyter"]
-tests = ["pytest-cov", "coverage", "pytest", "pytest-shard"]
+tests = ["pytest-cov", "pytest", "pytest-shard"]
 jupyter = ["jupyter", "nbconvert", "black"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "nbqa"]
 
@@ -150,7 +149,7 @@ all-dev = [
     "optuna", "sqlalchemy",
     "click", "semver",
     "Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design",
-    "pytest-cov", "coverage", "pytest", "pytest-shard",
+    "pytest-cov", "pytest", "pytest-shard",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "nbqa",
     "click", "semver",
     "jupyter", "nbconvert",
@@ -195,81 +194,57 @@ line_length = 120
 [tool.pytest.ini_options]
 minversion = "6.0"
 doctest_optionflags = "NORMALIZE_WHITESPACE IGNORE_EXCEPTION_DETAIL NUMBER"
-# TODO: Uncomment after some solution in https://github.com/pytest-dev/pytest/issues/10773
-#filterwarnings = [
-#    "error",
-#    "ignore: Torchmetrics v0.9 introduced a new argument class property called `full_state_update` that",
-#    "ignore: TSDataset freq can't be inferred",
-#    "ignore: test_size, test_start and test_end cannot be",
-#    "ignore: You probably set wrong freq. Discovered freq in you data is None",
-#    "ignore: Some regressors don't have enough values in segment",
-#    "ignore: Segments contains NaNs in the last timestamps.",
-#    "ignore: pandas.util.testing is deprecated. Use the functions in the public API",
-#    "ignore: Call to deprecated class CatBoostModelPerSegment.", # OK
-#    "ignore: Call to deprecated class CatBoostModelMultiSegment.", # OK
-#    "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
-#    "ignore: Columns from feature_to_use which are out of dataframe columns will",
-#    "ignore: Comparison of Timestamp with datetime.date is deprecated in order to",
-#    "ignore: CountryHoliday is deprecated, use country_holidays instead.",
-#    "ignore: Exogenous or target data contains None! It will be dropped",
-#    "ignore: is less than n_segments. Algo will filter data",
-#    "ignore: Given top_k=30 is bigger than n_features=20. Transform will not filter",
-#    "ignore: Implicitly cleaning up ",
-#    "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",
-#    "ignore: Mean of empty slice",
-#    "ignore: No frequency information was provided, so inferred frequency D will",
-#    "ignore: Non-stationary starting autoregressive parameters found. Using zeros as starting parameters.",
-#    "ignore: Slicing a positional slice with .loc is not supported",
-#    "ignore: Some of external objects in input parameters could be not",
-#    "ignore: The 'check_less_precise' keyword in testing.assert_*_equal is deprecated and will be",
-#    "ignore: The default dtype for empty Series will be 'object' instead",
-#    "ignore: This model does not work with exogenous features and regressors.",
-#    "ignore: Transformation will be applied inplace, out_column param will be ignored",
-#    "ignore: You defined a `validation_step` but have no `val_dataloader`. Skipping val",
-#    "ignore: You probably set wrong freq. Discovered freq in you data",
-#    "ignore: SeasonalMovingAverageModel does not work with any exogenous series or features.",
-#    "ignore: MovingAverageModel does not work with any exogenous series or features.",
-#    "ignore: NaiveModel does not work with any exogenous series or features.",
-#    "ignore: `np.object` is a deprecated alias for the builtin `object`. To",
-#    "ignore: divide by zero encountered in log",
-#    "ignore: inplace is deprecated and will be removed in a future",
-#    "ignore: invalid value encountered in double_scalars",
-#    "ignore: Arrays of bytes/strings is being converted to decimal numbers if",
-#    "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
-#    "ignore: Exogenous data contains columns with category type! It will be",
-#    "ignore: Features {'unknown'} are not found and will be dropped!",
-#    "ignore: SARIMAX model does not work with exogenous features",
-#    "ignore: Series.dt.weekofyear and Series.dt.week have been deprecated",
-#    "ignore: The dataloader, train_dataloader, does not have many workers which may",
-#    "ignore: Creating a tensor from a list of numpy.ndarrays",
-#    "ignore: Trying to infer the `batch_size` from an ambiguous collection",
-#    "ignore: ReduceLROnPlateau conditioned on metric val_loss which is not available but strict",
-#    "ignore: Checkpoint directory",
-#    "ignore: Objective did not converge. You might want to increase the number",
-#    "ignore: distutils Version classes are deprecated.",
-#    "ignore: invalid escape sequence",
-#    "ignore::pandas.core.common.SettingWithCopyWarning",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'box_cox_bounds'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'use_box_cox'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'use_trend'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'use_damped_trend'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'seasonal_periods'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'show_warnings'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'n_jobs'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'multiprocessing_start_method'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'context'",
-#    "ignore: You haven't set all parameters inside class __init__ method.* 'use_arma_errors'",
-#    "ignore: New behaviour in v1.1.5",
-#    "ignore: The 'check_less_precise' keyword in testing",
-#    "ignore: Feature names only support names that are all strings",
-#    "ignore: Given top_k=.* is less than n_segments. Algo will filter data without Gale-Shapley run.",
-#    "ignore: Call to deprecated create function", # protobuf warning
-#    "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
-#    "ignore: `tsfresh` is not available, to install it, run `pip install tsfresh==0.19.0 && pip install protobuf==3.20.1`",
-#    "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
-#    "ignore: The default method 'yw' can produce PACF values outside",
-#    "ignore: All-NaN slice encountered",
-#]
+filterwarnings = [
+    "error",
+    "ignore: pkg_resources is deprecated as an API",
+    "ignore: Deprecated call to `pkg_resources.declare_namespace",
+    # etna warnings
+    "ignore: TSDataset freq can't be inferred",
+    "ignore: You probably set wrong freq. Discovered freq in you data",
+    "ignore: Option `fast_redundancy=False` was added for backward compatibility and will be removed in etna 3.0.0.",
+    "ignore: Some regressors don't have enough values in segment",
+    "ignore: Segments contains NaNs in the last timestamps",
+    "ignore: Given top_k=.* is bigger than n_features=.*. Transform will not filter",
+    "ignore: Given top_k=.* is less than n_segments=.*. Algo will filter data without Gale-Shapley run.",
+    "ignore: This model doesn't work with exogenous features",
+    "ignore: Some of external objects in input parameters could be not",
+    # external warnings
+    "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
+    "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
+    "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",
+    "ignore: Optimization failed to converge. Check mle_retvals",
+    "ignore: No frequency information was provided, so inferred frequency .* will be used",
+    "ignore: Non-stationary starting autoregressive parameters found. Using zeros as starting parameters.",
+    "ignore: You defined a `validation_step` but have no `val_dataloader`. Skipping val",
+    "ignore: invalid value encountered in double_scalars",
+    "ignore: invalid value encountered in expm1",
+    "ignore: Arrays of bytes/strings is being converted to decimal numbers if",
+    "ignore: The dataloader, train_dataloader, does not have many workers which may",
+    "ignore: Creating a tensor from a list of numpy.ndarrays",
+    "ignore: ReduceLROnPlateau conditioned on metric val_loss which is not available but strict",
+    "ignore: Checkpoint directory .* exists and is not empty",
+    "ignore: distutils Version classes are deprecated.",
+    "ignore: invalid escape sequence", # mostly due to LaTeX in docstrings
+    "ignore:(.|\n)*A value is trying to be set on a copy of a slice from a DataFrame", # SettingWithCopyWarning
+    "ignore: New behaviour in v1.1.5.* a small bias is added", # ruptures: normal cost
+    "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
+    "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
+    "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
+    "ignore: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed", # seaborn
+    "ignore: Jupyter is migrating its paths to use standard platformdirs",
+    "ignore::sqlalchemy.exc.MovedIn20Warning",
+    "ignore: Argument `closed` is deprecated in favor of `inclusive`",
+    "ignore: In a future version, `df.* = newvals` will attempt to set the values inplace instead of always setting a new array",
+    "ignore: In a future version, DataFrame.*mean.* will return a scalar mean over the entire DataFrame",
+    "ignore: The behavior of indexing on a MultiIndex with a nested sequence of labels is deprecated and will change in a future version",
+    "ignore: Non-invertible starting MA parameters found",
+    "ignore: Optimization did not converge :tbats.error.ModelWarning.ModelWarning",
+    "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated", # prophet
+    "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
+    "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # pandas: old version uses deprecated numpy parameter
+    "ignore: Trying to infer the `batch_size` from an ambiguous collection", # pytorch_forecasting
+    "ignore: Implicitly cleaning up <TemporaryDirectory"
+]
 markers = [
     "smoke"
 ]

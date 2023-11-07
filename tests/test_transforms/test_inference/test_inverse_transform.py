@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from ruptures import Binseg
 from sklearn.tree import DecisionTreeRegressor
 
@@ -490,7 +490,9 @@ class TestInverseTransformTrainNewSegments:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(flat_test_df[changed_columns], flat_inverse_transformed_test_df[changed_columns])
+        pd.testing.assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+        )
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -813,7 +815,9 @@ class TestInverseTransformFutureNewSegments:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(flat_test_df[changed_columns], flat_inverse_transformed_test_df[changed_columns])
+        pd.testing.assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+        )
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -1205,8 +1209,8 @@ class TestInverseTransformFutureWithTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[changed_columns],
-            flat_inverse_transformed_test_df[changed_columns],
+            flat_test_df[list(changed_columns)],
+            flat_inverse_transformed_test_df[list(changed_columns)],
         )
 
     @pytest.mark.parametrize(
@@ -1602,8 +1606,8 @@ class TestInverseTransformFutureWithoutTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[changed_columns],
-            flat_inverse_transformed_test_df[changed_columns],
+            flat_test_df[list(changed_columns)],
+            flat_inverse_transformed_test_df[list(changed_columns)],
         )
 
     @pytest.mark.parametrize(

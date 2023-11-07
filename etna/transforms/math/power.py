@@ -11,6 +11,18 @@ from etna.transforms.math.sklearn import SklearnTransform
 from etna.transforms.math.sklearn import TransformMode
 
 
+def _replace_warnings():
+    """Set ``numpy.warnings`` to be set to ``warnings``.
+
+    It mimics `the patch <https://github.com/scikit-learn/scikit-learn/pull/23654>`_.
+    """
+    import warnings
+
+    import numpy as np
+
+    np.warnings = warnings
+
+
 class YeoJohnsonTransform(SklearnTransform):
     """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame.
 
@@ -149,4 +161,5 @@ class BoxCoxTransform(SklearnTransform):
         return grid
 
 
+_replace_warnings()
 __all__ = ["BoxCoxTransform", "YeoJohnsonTransform"]

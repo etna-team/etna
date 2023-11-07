@@ -121,7 +121,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
     transform = _OneSegmentDeseasonalityTransform(in_column="target", period=7, model=model)
     df_transformed = transform.fit_transform(df)
     df_inverse_transformed = transform.inverse_transform(df=df_transformed)
-    pd.util.testing.assert_frame_equal(df_inverse_transformed, df)
+    pd.testing.assert_frame_equal(df_inverse_transformed, df)
 
 
 @pytest.mark.parametrize("model", ["additive", "multiplicative"])
@@ -134,7 +134,7 @@ def test_inverse_transform_multi_segments(ts_name, model, request):
     transform.fit_transform(ts)
     transform.inverse_transform(ts)
     df_inverse_transformed = ts.to_pandas(flatten=True)
-    pd.util.testing.assert_frame_equal(df_inverse_transformed, df)
+    pd.testing.assert_frame_equal(df_inverse_transformed, df)
 
 
 @pytest.mark.parametrize("model_decompose", ["additive", "multiplicative"])

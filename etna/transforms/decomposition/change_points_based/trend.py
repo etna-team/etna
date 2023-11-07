@@ -113,7 +113,7 @@ class TrendTransform(IrreversibleChangePointsTransform):
         super().__init__(
             transform=_OneSegmentTrendTransform(
                 in_column=self.in_column,
-                out_column=self.out_column if self.out_column is not None else f"{self.__repr__()}",
+                out_column=self.out_column if self.out_column is not None else self.__repr__(),
                 change_points_model=self.change_points_model,
                 per_interval_model=self.per_interval_model,
             ),

@@ -37,7 +37,10 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
         decoder_length=decoder_length,
         scale=False,
         trainer_params=dict(max_epochs=100),
+<<<<<<< HEAD
         n_segments=2,
+=======
+>>>>>>> issue-85
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)
@@ -45,11 +48,16 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
     future.inverse_transform([std])
 
     mae = MAE("macro")
+<<<<<<< HEAD
     assert mae(ts_test, future) < 0.08
+=======
+    assert mae(ts_test, future) < 0.06
+>>>>>>> issue-85
 
 
-def test_deepar_make_samples(example_df):  # TODO make test with scale=True
-    deepar_module = MagicMock(scale=False)
+@pytest.mark.parametrize("scale, mean_1, mean_2", [(False, 0, 0), (True, 4.439109105024682, 5.516483350680801)])
+def test_deepar_make_samples(example_df, scale, mean_1, mean_2):
+    deepar_module = MagicMock(scale=scale)
     encoder_length = 8
     decoder_length = 4
 
@@ -66,8 +74,12 @@ def test_deepar_make_samples(example_df):  # TODO make test with scale=True
     assert first_sample["decoder_real"].shape == (decoder_length, 1)
     assert first_sample["encoder_target"].shape == (encoder_length - 1, 1)
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
-    np.testing.assert_equal(example_df[["target"]].iloc[: encoder_length - 1], first_sample["encoder_real"])
-    np.testing.assert_equal(example_df[["target"]].iloc[1:encoder_length], second_sample["encoder_real"])
+    np.testing.assert_almost_equal(
+        example_df[["target"]].iloc[: encoder_length - 1], first_sample["encoder_real"] * (1 + mean_1)
+    )
+    np.testing.assert_almost_equal(
+        example_df[["target"]].iloc[1:encoder_length], second_sample["encoder_real"] * (1 + mean_2)
+    )
 
 
 @pytest.mark.parametrize("encoder_length", [1, 2, 10])
@@ -96,7 +108,7 @@ def test_save_load(example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
-def test_params_to_tune(example_tsds):  # TODO
+def test_params_to_tune(example_tsds):
     ts = example_tsds
     model = DeepARModelNew(
         input_size=1,

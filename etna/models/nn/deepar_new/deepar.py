@@ -16,13 +16,11 @@ from etna.distributions import IntDistribution
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
-    from torch.utils.data.sampler import RandomSampler
 
     from etna.models.base import DeepBaseModel
     from etna.models.base import DeepBaseNet
     from etna.models.nn.deepar_new.loss import GaussianLoss
     from etna.models.nn.deepar_new.loss import NegativeBinomialLoss
-    from etna.models.nn.deepar_new.sampler import SamplerWrapper
 
 
 class DeepARBatchNew(TypedDict):
@@ -139,7 +137,7 @@ class DeepARNetNew(DeepBaseNet):
                     loc, scale, weights, n_samples=self.n_samples
                 ).flatten()  # (batch_size, 1)
                 forecasts[:, i, j] = forecast_point
-                decoder_real[:, i + 1, 0] = forecast_point  # TODO можно через if
+                decoder_real[:, i + 1, 0] = forecast_point
 
             # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
             output, (_, _) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
@@ -349,7 +347,7 @@ class DeepARModelNew(DeepBaseModel):
         trainer_params:
             Pytorch ligthning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
         train_dataloader_params:
-            parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)  # TODO
+            parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:
             parameters for test dataloader
         val_dataloader_params:
@@ -370,9 +368,6 @@ class DeepARModelNew(DeepBaseModel):
         self.n_samples = n_samples
         self.optimizer_params = optimizer_params
         self.loss = loss
-        self.train_dataloader_params = train_dataloader_params
-        self.val_dataloader_params = val_dataloader_params
-        self.test_dataloader_params = test_dataloader_params
         super().__init__(
             net=DeepARNetNew(
                 input_size=input_size,
@@ -391,8 +386,13 @@ class DeepARModelNew(DeepBaseModel):
             train_batch_size=train_batch_size,
             test_batch_size=test_batch_size,
             train_dataloader_params=train_dataloader_params,
+<<<<<<< HEAD
             val_dataloader_params=val_dataloader_params,
             test_dataloader_params=test_dataloader_params,
+=======
+            test_dataloader_params=test_dataloader_params,
+            val_dataloader_params=val_dataloader_params,
+>>>>>>> issue-85
             trainer_params=trainer_params,
             split_params=split_params,
         )

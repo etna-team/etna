@@ -33,7 +33,7 @@ def ts_two_segments(example_df) -> TSDataset:
 @pytest.fixture
 def ts_two_segments_diff_size(example_df) -> TSDataset:
     df = TSDataset.to_dataset(example_df)
-    df.loc[:4, pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
+    df.loc[: df.index[3], pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
     ts = TSDataset(df=df, freq="D")
     return ts
 

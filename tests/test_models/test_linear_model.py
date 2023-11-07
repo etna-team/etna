@@ -1,3 +1,4 @@
+import warnings
 from typing import List
 from typing import Tuple
 
@@ -109,6 +110,7 @@ def test_repr_elastic(model_class, model_class_repr):
     assert model_repr == true_repr
 
 
+@pytest.mark.filterwarnings("ignore: Objective did not converge. You might want to increase the number of iterations")
 @pytest.mark.parametrize("model", [LinearPerSegmentModel(), ElasticPerSegmentModel()])
 @pytest.mark.parametrize("num_lags", [3, 5, 10, 20, 30])
 def test_model_per_segment(linear_segments_ts_unique, num_lags, model):
@@ -166,7 +168,8 @@ def test_no_warning_on_categorical_features(example_tsds, model):
     dateflags = DateFlagsTransform()
     example_tsds.fit_transform([lags, dateflags])
 
-    with pytest.warns(None) as record:
+    with pytest.warns() as record:
+        warnings.warn("First record", UserWarning)  # for record not to be empty
         _ = model.fit(example_tsds)
     assert (
         len(
@@ -182,7 +185,8 @@ def test_no_warning_on_categorical_features(example_tsds, model):
     )
 
     to_forecast = example_tsds.make_future(horizon, transforms=[lags, dateflags])
-    with pytest.warns(None) as record:
+    with pytest.warns() as record:
+        warnings.warn("First record", UserWarning)  # for record not to be empty
         _ = model.forecast(to_forecast)
     assert (
         len(
