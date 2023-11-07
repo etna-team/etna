@@ -48,7 +48,7 @@ def test_deepar_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon
 
 
 @pytest.mark.parametrize("scale, mean_1, mean_2", [(False, 0, 0), (True, 4.439109105024682, 5.516483350680801)])
-def test_deepar_make_samples(example_df, scale, mean_1, mean_2):  # TODO make test with scale=True
+def test_deepar_make_samples(example_df, scale, mean_1, mean_2):
     deepar_module = MagicMock(scale=scale)
     encoder_length = 8
     decoder_length = 4
