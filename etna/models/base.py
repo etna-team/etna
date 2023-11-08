@@ -593,7 +593,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 ],
                 generator=self.split_params.get("generator"),
             )
-            self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](data=train_dataset, n_samples=500000)
+            self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](data=train_dataset, num_samples=500000)
             train_dataloader = DataLoader(
                 train_dataset, batch_size=self.train_batch_size, **self.train_dataloader_params
             )
@@ -601,7 +601,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_params
             )
         else:
-            self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](data=torch_dataset, n_samples=500000)
+            self.train_dataloader_params["sampler"] = self.train_dataloader_params["sampler"](data=torch_dataset, num_samples=500000)
             train_dataloader = DataLoader(
                 torch_dataset, batch_size=self.train_batch_size, **self.train_dataloader_params
             )

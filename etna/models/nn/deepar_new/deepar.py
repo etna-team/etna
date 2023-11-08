@@ -371,9 +371,9 @@ class DeepARModelNew(DeepBaseModel):
         self.optimizer_params = optimizer_params
         self.loss = loss
         if train_dataloader_params is not None:
-            train_dataloader_params.update({'sampler': SamplerWrapper(RandomSampler)})
+            train_dataloader_params.update({'sampler': SamplerWrapper(WeightedDeepARSampler)})
         else:
-            train_dataloader_params = {'sampler': SamplerWrapper(RandomSampler)}
+            train_dataloader_params = {'sampler': SamplerWrapper(WeightedDeepARSampler)}
         super().__init__(
             net=DeepARNetNew(
                 input_size=input_size,
