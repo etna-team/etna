@@ -206,6 +206,34 @@ def test_not_present_part():
             pd.to_datetime("2021-01-01 00:00:00"),
             ("train", "test"),
         ),
+        (
+            "ETTm1",
+            (66800 + 2880, 7),
+            pd.to_datetime("2016-07-01 00:00:00"),
+            pd.to_datetime("2018-06-26 19:45:00"),
+            ("train", "test"),
+        ),
+        (
+            "ETTm2",
+            (66800 + 2880, 7),
+            pd.to_datetime("2016-07-01 00:00:00"),
+            pd.to_datetime("2018-06-26 19:45:00"),
+            ("train", "test"),
+        ),
+        (
+            "ETTh1",
+            (16700 + 720, 7),
+            pd.to_datetime("2016-07-01 00:00:00"),
+            pd.to_datetime("2018-06-26 19:00:00"),
+            ("train", "test"),
+        ),
+        (
+            "ETTh2",
+            (16700 + 720, 7),
+            pd.to_datetime("2016-07-01 00:00:00"),
+            pd.to_datetime("2018-06-26 19:00:00"),
+            ("train", "test"),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):

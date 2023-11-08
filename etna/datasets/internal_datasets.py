@@ -622,6 +622,44 @@ def get_weather_dataset(dataset_dir: Path) -> None:
     df_test.to_csv(dataset_dir / f"weather_10T_test.csv.gz", index=True, compression="gzip")
 
 
+def get_ett_dataset(dataset_dir: Path, dataset_type: str) -> None:
+    """
+    Download and save Electricity Transformer Datasets (small version).
+
+    Dataset consists of four parts: ETTh1 (hourly freq), ETTh2 (hourly freq), ETTm1 (15 min freq), ETTm2 (15 min freq).
+    This dataset is a collection of two years of data from two regions of a province of China. There are one target
+    column ("oil temperature") and six different types of external power load features. We use the last 720 hours as
+    prediction horizon.
+
+    References
+    ----------
+    .. [1] https://www.bgc-jena.mpg.de/wetter/
+    .. [2] https://arxiv.org/abs/2012.07436
+    """
+    url = (
+        "https://raw.githubusercontent.com/zhouhaoyi/ETDataset/"
+        "1d16c8f4f943005d613b5bc962e9eeb06058cf07/ETT-small/{name}.csv"
+    )
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    data = pd.read_csv(url.format(name=dataset_type))
+    data = data.rename({"date": "timestamp"}, axis=1)
+    data["timestamp"] = pd.to_datetime(data["timestamp"])
+    data = data.melt("timestamp", var_name="segment", value_name="target")
+
+    df_full = TSDataset.to_dataset(data)
+    if dataset_type in ("ETTm1", "ETTm2"):
+        df_test = df_full.tail(720 * 4)
+        df_train = df_full.head(len(df_full) - 720 * 4)
+    else:
+        df_test = df_full.tail(720)
+        df_train = df_full.head(len(df_full) - 720)
+
+    df_full.to_csv(dataset_dir / f"{dataset_type}_full.csv.gz", index=True, compression="gzip")
+    df_train.to_csv(dataset_dir / f"{dataset_type}_train.csv.gz", index=True, compression="gzip")
+    df_test.to_csv(dataset_dir / f"{dataset_type}_test.csv.gz", index=True, compression="gzip")
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
@@ -709,4 +747,24 @@ datasets_dict: Dict[str, Dict] = {
         "parts": ("train", "test", "full"),
     },
     "weather_10T": {"get_dataset_function": get_weather_dataset, "freq": "10T", "parts": ("train", "test", "full")},
+    "ETTm1": {
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm1"),
+        "freq": "15T",
+        "parts": ("train", "test", "full"),
+    },
+    "ETTm2": {
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm2"),
+        "freq": "15T",
+        "parts": ("train", "test", "full"),
+    },
+    "ETTh1": {
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh1"),
+        "freq": "H",
+        "parts": ("train", "test", "full"),
+    },
+    "ETTh2": {
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh2"),
+        "freq": "H",
+        "parts": ("train", "test", "full"),
+    },
 }
