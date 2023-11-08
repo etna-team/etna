@@ -86,7 +86,7 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
     ):
         """Init dataset builder.
 
-        Parameters here is used for initialization of :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` object.
+            Parameters here is used for initialization of :py:class:`pytorch_forecasting.data.timeseries.TimeSeriesDataSet` object.
         """
         self.max_encoder_length = max_encoder_length
         self.min_encoder_length = min_encoder_length
