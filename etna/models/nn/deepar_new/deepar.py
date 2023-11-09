@@ -179,7 +179,6 @@ class DeepARNetNew(DeepBaseNet):
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
             .values
         )
-
         def _make(
             values_real: np.ndarray,
             values_target: np.ndarray,
@@ -204,10 +203,10 @@ class DeepARNetNew(DeepBaseNet):
                 return None
 
             # Get shifted target and concatenate it with real values features
-            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length].copy()
+            sample["decoder_real"] = values_real[start_idx + encoder_length: start_idx + total_sample_length].copy()
 
             # Get shifted target and concatenate it with real values features
-            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length].copy()
+            sample["encoder_real"] = values_real[start_idx: start_idx + encoder_length].copy()
             sample["encoder_real"] = sample["encoder_real"][1:]
 
             target = values_target[start_idx : start_idx + total_sample_length].reshape(-1, 1).copy()
@@ -216,8 +215,8 @@ class DeepARNetNew(DeepBaseNet):
 
             sample["segment"] = segment
             sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
-            sample["encoder_real"][:, 0] /= sample["weight"]
-            sample["decoder_real"][:, 0] /= sample["weight"]
+            sample["encoder_real"][:, 0] = values_real[start_idx + 1: start_idx + encoder_length, 0] / sample["weight"]
+            sample["decoder_real"][:, 0] = values_real[start_idx + encoder_length: start_idx + total_sample_length, 0] / sample["weight"]
 
             return sample
 
