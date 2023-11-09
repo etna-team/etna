@@ -14,7 +14,7 @@ class WeightedDeepARSampler(Sampler):
 
     def __iter__(self):
         weights = torch.tensor([sample["weight"] for sample in self.data])
-        idx = torch.multinomial(1 / weights, num_samples=self.num_samples, replacement=False)  # TODO ok?
+        idx = torch.multinomial(weights, num_samples=self.num_samples, replacement=False)  # TODO ok?
         return iter(idx)
 
     def __len__(self):
