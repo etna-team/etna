@@ -176,3 +176,9 @@ def test_select_prediction_intervals_names(dataset_dict, quantiles):
 def test_select_prediction_intervals_names_non_existing_quantiles_error(dataset_dict, quantiles):
     with pytest.raises(ValueError, match="Unable to find provided quantiles"):
         _ = _select_prediction_intervals_names(forecast_results=dataset_dict, quantiles=quantiles)
+
+
+@pytest.mark.parametrize("quantiles", ([0.001, 0.01], [0.01, 0.1, 0.9]))
+def test_select_prediction_intervals_names_extra_quantiles(dataset_dict, quantiles):
+    with pytest.warns(UserWarning, match="Quantiles .* do not exist in each forecast dataset."):
+        _ = _select_prediction_intervals_names(forecast_results=dataset_dict, quantiles=quantiles)
