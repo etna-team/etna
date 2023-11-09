@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Changed
-- 
+- Change warning condition on loading object saved under different library version ([#31](https://github.com/etna-team/etna/issues/31))
 - 
 - 
 - 

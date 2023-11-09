@@ -76,7 +76,14 @@ def test_load_without_ts(naive_pipeline_with_transforms, recwarn, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "save_version, load_version", [((1, 5, 0), (2, 5, 0)), ((2, 5, 0), (1, 5, 0)), ((1, 5, 0), (1, 3, 0))]
+    "save_version, load_version",
+    [
+        ((1, 5, 0), (2, 5, 0)),
+        ((2, 5, 0), (1, 5, 0)),
+        ((1, 5, 0), (1, 3, 0)),
+        ((1, 5, 0), (1, 5, 1)),
+        ((1, 5, 1), (1, 5, 0)),
+    ],
 )
 @patch("etna.core.mixins.get_etna_version")
 def test_save_mixin_load_warning(
