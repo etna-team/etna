@@ -651,9 +651,14 @@ def get_ett_dataset(dataset_dir: Path, dataset_type: str) -> None:
     if dataset_type in ("ETTm1", "ETTm2"):
         df_test = df_full.tail(720 * 4)
         df_train = df_full.head(len(df_full) - 720 * 4)
-    else:
+    elif dataset_type in ("ETTh1", "ETTh2"):
         df_test = df_full.tail(720)
         df_train = df_full.head(len(df_full) - 720)
+    else:
+        raise NotImplementedError(
+            f"ETT dataset does not have '{dataset_type}' dataset_type."
+            f"You can use one from: ('ETTm1', 'ETTm2', 'ETTh1', 'ETTh2')."
+        )
 
     df_full.to_csv(dataset_dir / f"{dataset_type}_full.csv.gz", index=True, compression="gzip")
     df_train.to_csv(dataset_dir / f"{dataset_type}_train.csv.gz", index=True, compression="gzip")
