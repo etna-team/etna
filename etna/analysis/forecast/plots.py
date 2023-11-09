@@ -45,14 +45,14 @@ def _get_borders_comparator(segment_borders: pd.DataFrame) -> Callable[[str, str
         border_a = segment_borders[name_a].values
         border_b = segment_borders[name_b].values
 
-        if np.all(border_a < border_b):
-            return -1
-        elif np.all(border_a == border_b):
+        if np.all(border_a == border_b):
             return 0
-        elif np.all(border_a > border_b):
+        elif np.all(border_a <= border_b):
+            return -1
+        elif np.all(border_a >= border_b):
             return 1
         else:
-            raise ValueError("Detected intersection between non equal borders!")
+            raise ValueError("Detected intersection between non-equal borders!")
 
     return cmp
 
@@ -104,6 +104,10 @@ def plot_forecast(
     ------
     ValueError:
         if the format of ``forecast_ts`` is unknown
+    ValueError:
+        if there is an intersection between non-equal borders
+    ValueError:
+        if provided quantiles are not in the datasets
     """
     forecast_results = _prepare_forecast_results(forecast_ts)
     num_forecasts = len(forecast_results.keys())
