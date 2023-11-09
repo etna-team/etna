@@ -23,12 +23,12 @@ def test_plot_residuals_fails_unkown_feature(example_tsdf):
     "segments_df",
     (
         pd.DataFrame({"a": [0, 1, 2], "b": [2, 1, 0]}),
-        pd.DataFrame({"a": [0, 1, 2], "b": [0, 1, 3]}),
-        pd.DataFrame({"a": [0, 1, 2], "b": [0, 2, 2]}),
-        pd.DataFrame({"a": [0, 1, 2], "b": [1, 1, 2]}),
-        pd.DataFrame({"a": [0, 1, 2], "b": [0, 2, 4]}),
-        pd.DataFrame({"a": [0, 1, 2], "b": [-1, 1, -3]}),
-        pd.DataFrame({"a": [0, 1, 2], "b": [3, 1, 3]}),
+        pd.DataFrame({"a": [0, 1, 2], "b": [-1, 0, 3]}),
+        pd.DataFrame({"a": [0, 1, 2], "b": [-1, 2, 3]}),
+        pd.DataFrame({"a": [0, 1, 2], "b": [-1, 3, 1]}),
+        pd.DataFrame({"a": [0, 1, 2], "b": [-1, 1, 3]}),
+        pd.DataFrame({"a": [0, 1, 2], "b": [1, 1, -3]}),
+        pd.DataFrame({"a": [0, 1, 2], "b": [3, 2, 1]}),
     ),
 )
 def test_compare_error(segments_df):
