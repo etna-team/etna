@@ -61,9 +61,9 @@ class DeepARNetNew(DeepBaseNet):
         lr:
             learning rate
         scale:
-            if True, scale target values in batch before training by :math:`1 + mean`, where :math:`mean` is mean of target values in batch
+            if True, scale target values in batch before training by :math:`1 + mean`, where :math:`mean` is mean of target values in the encoder part of batch
         n_samples:
-            if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return empirical mean of `n_samples`
+            if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return mean of `n_samples` generated from Monte Carlo sampling
         loss:
             loss function
         optimizer_params:
@@ -71,19 +71,23 @@ class DeepARNetNew(DeepBaseNet):
         """
         super().__init__()
         self.save_hyperparameters()
-        self.num_layers = num_layers
         self.input_size = input_size
+        self.num_layers = num_layers
         self.hidden_size = hidden_size
-        self.rnn = nn.LSTM(
-            num_layers=self.num_layers, hidden_size=self.hidden_size, input_size=self.input_size, batch_first=True
-        )
-        self.linear_1 = nn.Linear(in_features=self.hidden_size, out_features=1)
-        self.linear_2 = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.lr = lr
         self.scale = scale
         self.n_samples = n_samples
-        self.optimizer_params = {} if optimizer_params is None else optimizer_params
         self.loss = loss
+        self.optimizer_params = {} if optimizer_params is None else optimizer_params
+        self.rnn = nn.LSTM(
+            num_layers=self.num_layers, hidden_size=self.hidden_size, input_size=self.input_size, batch_first=True
+        )
+        self.projection = nn.ModuleDict(
+            {
+                "loc": nn.Linear(in_features=self.hidden_size, out_features=1),
+                "scale": nn.Linear(in_features=self.hidden_size, out_features=1),
+            }
+        )
 
     def forward(self, x: DeepARBatchNew, *args, **kwargs):  # type: ignore
         """Forward pass.
@@ -107,20 +111,15 @@ class DeepARNetNew(DeepBaseNet):
 
         for j in range(self.n_samples):
             _, (h_n, c_n) = self.rnn(encoder_real)
-            for i in range(decoder_length - 1):
+            for i in range(decoder_length):
                 output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))  # (batch_size, 1, hidden_size)
                 loc, scale = self.get_distribution_params(output[:, -1])
                 forecast_point = self.loss.sample(
-                    loc, scale, weights, n_samples=self.n_samples
+                    loc=loc, scale=scale, weights=weights, theoretical_mean=True if self.n_samples == 1 else False
                 ).flatten()  # (batch_size, 1)
                 forecasts[:, i, j] = forecast_point
-                decoder_real[:, i + 1, 0] = forecast_point
-
-            # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
-            output, (_, _) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
-            loc, scale = self.get_distribution_params(output[:, -1])
-            forecast_point = self.loss.sample(loc, scale, weights, n_samples=self.n_samples).flatten()
-            forecasts[:, decoder_length - 1, j] = forecast_point
+                if i < decoder_length - 1:
+                    decoder_real[:, i + 1, 0] = forecast_point
         return torch.mean(forecasts, dim=2).unsqueeze(2)
 
     def get_distribution_params(self, output):
@@ -136,8 +135,12 @@ class DeepARNetNew(DeepBaseNet):
         :
             distribution parameters
         """
-        loc = self.linear_1(output) if isinstance(self.loss, GaussianLoss) else nn.Softplus()(self.linear_1(output))
-        scale = nn.Softplus()(self.linear_2(output))
+        loc = (
+            self.projection["loc"](output)
+            if isinstance(self.loss, GaussianLoss)
+            else nn.Softplus()(self.projection["loc"](output))
+        )
+        scale = nn.Softplus()(self.projection["scale"](output))
         return loc, scale
 
     def step(self, batch: DeepARBatchNew, *args, **kwargs):  # type: ignore
@@ -164,7 +167,7 @@ class DeepARNetNew(DeepBaseNet):
             torch.cat((encoder_real, decoder_real), dim=1)
         )  # (batch_size, encoder_length+decoder_length-1, hidden_size)
         loc, scale = self.get_distribution_params(output)  # (batch_size, encoder_length+decoder_length-1, 1)
-        target_prediction = self.loss.sample(loc, scale, weights, n_samples=1)
+        target_prediction = self.loss.sample(loc, scale, weights, theoretical_mean=True)
         loss = self.loss(target, loc, scale, weights)
         return loss, target, target_prediction
 
@@ -179,6 +182,7 @@ class DeepARNetNew(DeepBaseNet):
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
             .values
         )
+
         def _make(
             values_real: np.ndarray,
             values_target: np.ndarray,
@@ -203,10 +207,10 @@ class DeepARNetNew(DeepBaseNet):
                 return None
 
             # Get shifted target and concatenate it with real values features
-            sample["decoder_real"] = values_real[start_idx + encoder_length: start_idx + total_sample_length].copy()
+            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length].copy()
 
             # Get shifted target and concatenate it with real values features
-            sample["encoder_real"] = values_real[start_idx: start_idx + encoder_length].copy()
+            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length].copy()
             sample["encoder_real"] = sample["encoder_real"][1:]
 
             target = values_target[start_idx : start_idx + total_sample_length].reshape(-1, 1).copy()
@@ -215,8 +219,10 @@ class DeepARNetNew(DeepBaseNet):
 
             sample["segment"] = segment
             sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
-            sample["encoder_real"][:, 0] = values_real[start_idx + 1: start_idx + encoder_length, 0] / sample["weight"]
-            sample["decoder_real"][:, 0] = values_real[start_idx + encoder_length: start_idx + total_sample_length, 0] / sample["weight"]
+            sample["encoder_real"][:, 0] = values_real[start_idx + 1 : start_idx + encoder_length, 0] / sample["weight"]
+            sample["decoder_real"][:, 0] = (
+                values_real[start_idx + encoder_length : start_idx + total_sample_length, 0] / sample["weight"]
+            )
 
             return sample
 
@@ -287,14 +293,14 @@ class DeepARModelNew(DeepBaseModel):
         lr:
             learning rate
         scale:
-            if True, scale target values in batch before training by :math:`1 + mean`, where :math:`mean` is mean of target values in batch
+            if True, scale target values in batch before training by :math:`1 + mean`, where :math:`mean` is mean of target values in the encoder part of batch
         n_samples:
-            if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return empirical mean of `n_samples`
+            if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return mean of `n_samples` generated from Monte Carlo sampling
         loss:
             loss function
+                * **:py:class:`etna.models.nn.deepar_new.GaussianLoss`**: use Gaussian distribution for counting loss
 
-            - `'GaussianLoss'`: use Gaussian distribution for counting loss;
-            - `'NegativeBinomialLoss'`: use NegativeBinomial distribution for counting loss. Can be used only for positive data;
+                * **:py:class:`etna.models.nn.deepar_new.NegativeBinomialLoss`**: use NegativeBinomial distribution for counting loss. Can be used only for positive data
         train_batch_size:
             batch size for training
         test_batch_size:
@@ -302,7 +308,7 @@ class DeepARModelNew(DeepBaseModel):
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         trainer_params:
-            Pytorch ligthning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch lightning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:
@@ -313,7 +319,7 @@ class DeepARModelNew(DeepBaseModel):
             dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
                 * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
 
-                * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
+                * **generator**: (*Optional[torch.Generator]*) - generator for reproducible train-test splitting
 
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """

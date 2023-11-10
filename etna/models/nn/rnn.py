@@ -254,7 +254,7 @@ class RNNModel(DeepBaseModel):
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         trainer_params:
-            Pytorch ligthning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch lightning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:
@@ -265,7 +265,7 @@ class RNNModel(DeepBaseModel):
             dictionary with parameters for :py:func:`torch.utils.data.random_split` for train-test splitting
                 * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
 
-                * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
+                * **generator**: (*Optional[torch.Generator]*) - generator for reproducible train-test splitting
 
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
         """

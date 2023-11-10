@@ -8,14 +8,10 @@ if SETTINGS.torch_required:
 
 
 class GaussianLoss(_Loss):
-    """GaussianLoss is used to count loss in DeepAR model."""
-
-    def __init__(self):
-        """Init GaussianLoss."""
-        super().__init__()
+    """Negative log likelihood loss for Gaussian distribution."""
 
     @staticmethod
-    def scale_params(loc, scale, weights):
+    def scale_params(loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
         """Make transformation of predicted parameters of distribution.
 
         Parameters
@@ -25,7 +21,7 @@ class GaussianLoss(_Loss):
         scale:
             standard deviation of Gaussian distribution.
         weights:
-            weights used for transformation.
+            weights of the samples used for transformation.
 
         Returns
         -------
@@ -33,15 +29,17 @@ class GaussianLoss(_Loss):
             transformed mean and standard deviation
 
         """
-        mean = loc.clone()
-        std = scale.clone()
+        mean = loc.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
+        std = scale.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
         reshaped = [-1] + [1] * (loc.dim() - 1)
-        weight = weights.reshape(reshaped).expand(loc.shape)
-        mean *= weight
-        std *= weight.abs()
+        weights = weights.reshape(reshaped).expand(
+            loc.shape
+        )  # (batch_size) -> (batch_size, encoder_length + decoder_length - 1, 1)
+        mean *= weights
+        std *= weights.abs()
         return mean, std
 
-    def forward(self, inputs, loc, scale, weights):
+    def forward(self, inputs: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
         """Forward pass.
 
         Parameters
@@ -53,7 +51,7 @@ class GaussianLoss(_Loss):
         scale:
             standard deviation of Gaussian distribution.
         weights:
-            weights used for transformation.
+            weights of the samples used for transformation.
 
         Returns
         -------
@@ -61,11 +59,11 @@ class GaussianLoss(_Loss):
             loss
 
         """
-        mean, std = self.scale_params(loc, scale, weights)
+        mean, std = self.scale_params(loc=loc, scale=scale, weights=weights)
         distribution = Normal(loc=mean, scale=std)
-        return -(distribution.log_prob(inputs)).sum()
+        return -(distribution.log_prob(inputs)).mean()
 
-    def sample(self, loc, scale, weights, n_samples):
+    def sample(self, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor, theoretical_mean: bool):
         """Get samples from distribution.
 
         Parameters
@@ -75,9 +73,9 @@ class GaussianLoss(_Loss):
         scale:
             standard deviation of Gaussian distribution.
         weights:
-            weights used for transformation.
-        n_samples:
-            number of samples to generate from distribution
+            weights of the samples used for transformation.
+        theoretical_mean:
+            if True return theoretical_mean of distribution, else return sample from distribution
 
         Returns
         -------
@@ -85,20 +83,16 @@ class GaussianLoss(_Loss):
             samples from distribution
 
         """
-        mean, std = self.scale_params(loc, scale, weights)
+        mean, std = self.scale_params(loc=loc, scale=scale, weights=weights)
         distribution = Normal(loc=mean, scale=std)
-        return distribution.loc if n_samples == 1 else distribution.sample()
+        return distribution.loc if theoretical_mean else distribution.sample()
 
 
 class NegativeBinomialLoss(_Loss):
-    """NegativeBinomialLoss is used to count loss in DeepAR model."""
-
-    def __init__(self):
-        """Init NegativeBinomialLoss."""
-        super().__init__()
+    """Negative log likelihood loss for NegativeBinomial distribution."""
 
     @staticmethod
-    def scale_params(loc, scale, weights):
+    def scale_params(loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
         """Make transformation of predicted parameters of distribution.
 
         Parameters
@@ -108,7 +102,7 @@ class NegativeBinomialLoss(_Loss):
         scale:
             shape parameter of NegativeBinomial distribution.
         weights:
-            weights used for transformation.
+            weights of the samples used for transformation.
 
         Returns
         -------
@@ -116,15 +110,17 @@ class NegativeBinomialLoss(_Loss):
             number of successes until the experiment is stopped and success probability
 
         """
-        mean = loc.clone()
-        alpha = scale.clone()
+        mean = loc.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
+        alpha = scale.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
         reshaped = [-1] + [1] * (loc.dim() - 1)
-        weights = weights.reshape(reshaped).expand(loc.shape)
+        weights = weights.reshape(reshaped).expand(
+            loc.shape
+        )  # (batch_size) -> (batch_size, encoder_length + decoder_length - 1, 1)
         total_count = torch.sqrt(weights) / alpha
         probs = 1 / (torch.sqrt(weights) * mean * alpha + 1)
         return total_count, probs
 
-    def forward(self, inputs, loc, scale, weights):
+    def forward(self, inputs: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
         """Forward pass.
 
         Parameters
@@ -136,7 +132,7 @@ class NegativeBinomialLoss(_Loss):
         scale:
             shape parameter of NegativeBinomial distribution.
         weights:
-            weights used for transformation.
+            weights of the samples used for transformation.
 
         Returns
         -------
@@ -144,11 +140,11 @@ class NegativeBinomialLoss(_Loss):
             lass
 
         """
-        total_count, probs = self.scale_params(loc, scale, weights)
+        total_count, probs = self.scale_params(loc=loc, scale=scale, weights=weights)
         distribution = NegativeBinomial(total_count=total_count, probs=probs)
-        return -(distribution.log_prob(inputs)).sum()
+        return -(distribution.log_prob(inputs)).mean()
 
-    def sample(self, loc, scale, weights, n_samples):
+    def sample(self, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor, theoretical_mean: bool):
         """Get samples from distribution.
 
         Parameters
@@ -158,9 +154,9 @@ class NegativeBinomialLoss(_Loss):
         scale:
             shape parameter of NegativeBinomial distribution.
         weights:
-            weights used for transformation.
-        n_samples:
-            number of samples to generate from distribution
+            weights of the samples used for transformation.
+        theoretical_mean:
+            if True return theoretical_mean of distribution, else return sample from distribution
 
         Returns
         -------
@@ -168,6 +164,6 @@ class NegativeBinomialLoss(_Loss):
             samples from distribution
 
         """
-        total_count, probs = self.scale_params(loc, scale, weights)
+        total_count, probs = self.scale_params(loc=loc, scale=scale, weights=weights)
         distribution = NegativeBinomial(total_count=total_count, probs=probs)
-        return distribution.mean if n_samples == 1 else distribution.sample()
+        return distribution.mean if theoretical_mean else distribution.sample()
