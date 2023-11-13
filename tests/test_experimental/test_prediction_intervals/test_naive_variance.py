@@ -21,7 +21,7 @@ from tests.test_experimental.test_prediction_intervals.common import run_base_pi
 
 
 def test_invalid_stride_error():
-    with pytest.raises(ValueError, match="Parameter ``stride`` must be positive!"):
+    with pytest.raises(ValueError, match="Parameter `stride` must be positive!"):
         NaiveVariancePredictionIntervals(pipeline=Pipeline(model=NaiveModel()), stride=-1)
 
 
