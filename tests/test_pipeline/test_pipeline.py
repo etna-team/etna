@@ -506,6 +506,23 @@ def test_backtest_forecasts_columns(ts_fixture, catboost_pipeline, request):
 
 
 @pytest.mark.parametrize(
+    "ts_fixture",
+    [
+        "big_daily_example_tsdf",
+        "example_tsdf",
+    ],
+)
+def test_get_historical_forecasts_columns(ts_fixture, catboost_pipeline, request):
+    """Check that Pipeline.get_historical_forecasts returns forecasts in correct format."""
+    ts = request.getfixturevalue(ts_fixture)
+    forecast = catboost_pipeline.get_historical_forecasts(ts=ts)
+    expected_columns = sorted(
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
+    )
+    assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
+
+
+@pytest.mark.parametrize(
     "n_folds, horizon, expected_timestamps",
     [
         (2, 3, [-6, -5, -4, -3, -2, -1]),
@@ -538,6 +555,38 @@ def test_backtest_forecasts_timestamps(n_folds, horizon, expected_timestamps, ex
 
 
 @pytest.mark.parametrize(
+    "n_folds, horizon, expected_timestamps",
+    [
+        (2, 3, [-6, -5, -4, -3, -2, -1]),
+        (2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+        (
+            [
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 14:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 17:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 19:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 22:00")],
+                ),
+            ],
+            5,
+            [-8, -3],
+        ),
+    ],
+)
+def test_get_historical_forecasts_timestamps(n_folds, horizon, expected_timestamps, example_tsdf):
+    """Check that Pipeline.get_historical_forecasts returns forecasts with expected timestamps."""
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+    forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds)
+    timestamp = example_tsdf.index
+
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+
+
+@pytest.mark.parametrize(
     "n_folds, horizon, stride, expected_timestamps",
     [
         (2, 3, 3, [-6, -5, -4, -3, -2, -1]),
@@ -549,6 +598,23 @@ def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, exp
     """Check that Pipeline.backtest with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)
+    timestamp = example_tsdf.index
+
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+
+
+@pytest.mark.parametrize(
+    "n_folds, horizon, stride, expected_timestamps",
+    [
+        (2, 3, 3, [-6, -5, -4, -3, -2, -1]),
+        (2, 3, 1, [-4, -3, -2, -3, -2, -1]),
+        (2, 3, 5, [-8, -7, -6, -3, -2, -1]),
+    ],
+)
+def test_get_historical_forecasts_timestamps_with_stride(n_folds, horizon, stride, expected_timestamps, example_tsdf):
+    """Check that Pipeline.get_historical_forecasts with stride returns forecasts with expected timestamps."""
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+    forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds, stride=stride)
     timestamp = example_tsdf.index
 
     np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
@@ -754,6 +820,15 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
     metrics_df, forecast_df, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=3)
 
     assert np.all(metrics_df.reset_index(drop=True) == expected_metrics_df)
+    assert np.all(forecast_df == expected_forecast_df)
+
+
+def test_get_historical_forecasts_sanity(step_ts: TSDataset):
+    """Check that Pipeline.get_historical_forecasts gives correct forecasts according to the simple case."""
+    ts, expected_metrics_df, expected_forecast_df = step_ts
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    forecast_df = pipeline.get_historical_forecasts(ts, n_folds=3)
+
     assert np.all(forecast_df == expected_forecast_df)
 
 
@@ -1076,6 +1151,19 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     assert f"target_{quantiles[1]}" in features
 
 
+def test_sanity_get_historical_forecasts_naive_with_intervals(weekly_period_ts):
+    train_ts, _ = weekly_period_ts
+    quantiles = (0.01, 0.99)
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    forecast_df = pipeline.get_historical_forecasts(
+        ts=train_ts,
+        forecast_params={"quantiles": quantiles, "prediction_interval": True},
+    )
+    features = forecast_df.columns.get_level_values(1)
+    assert f"target_{quantiles[0]}" in features
+    assert f"target_{quantiles[1]}" in features
+
+
 def test_backtest_pass_with_filter_transform(ts_with_feature):
     ts = ts_with_feature
 
@@ -1125,6 +1213,13 @@ def test_forecast_backtest_correct_ordering(step_ts: TSDataset):
     ts, _, expected_forecast_df = step_ts
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
     _, forecast_df, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)
+    assert np.all(forecast_df.values == expected_forecast_df.values)
+
+
+def test_get_historical_forecasts_correct_ordering(step_ts: TSDataset):
+    ts, _, expected_forecast_df = step_ts
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    forecast_df = pipeline.get_historical_forecasts(ts=ts, n_folds=3)
     assert np.all(forecast_df.values == expected_forecast_df.values)
 
 
