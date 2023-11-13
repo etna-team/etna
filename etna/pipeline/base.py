@@ -359,8 +359,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=ts, metrics=[_DummyMetric()], n_folds=n_folds)
+        forecasts = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
 
         self._add_forecast_borders(ts=ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
