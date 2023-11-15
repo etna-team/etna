@@ -33,8 +33,9 @@ def compute_horizon(horizon: int, forecast_params: Dict[str, Any], tsdataset: TS
         if forecast_start_timestamp <= train_end_timestamp:
             raise ValueError("Parameter `start_timestamp` should greater than end of training dataset!")
 
+        # TODO: fix this typing in https://github.com/etna-team/etna/milestone/5
         delta = determine_num_steps(
-            start_timestamp=train_end_timestamp, end_timestamp=forecast_start_timestamp, freq=tsdataset.freq
+            start_timestamp=train_end_timestamp, end_timestamp=forecast_start_timestamp, freq=tsdataset.freq  # type: ignore
         )
 
         horizon += delta - 1

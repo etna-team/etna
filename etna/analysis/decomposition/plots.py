@@ -414,16 +414,18 @@ def seasonal_plot(
     if segments is None:
         segments = sorted(ts.segments)
 
+    # TODO: fix this typing in https://github.com/etna-team/etna/milestone/5
     df = _prepare_seasonal_plot_df(
         ts=ts,
-        freq=freq,
+        freq=freq,  # type: ignore
         cycle=cycle,
         alignment=alignment,
         aggregation=aggregation,
         in_column=in_column,
         segments=segments,
     )
-    seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq=freq, cycle=cycle)
+    # TODO: fix this typing in https://github.com/etna-team/etna/milestone/5
+    seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq=freq, cycle=cycle)  # type: ignore
 
     colors = plt.get_cmap(cmap)
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)

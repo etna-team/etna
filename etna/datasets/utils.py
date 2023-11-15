@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -17,6 +18,9 @@ else:
     from unittest.mock import Mock
 
     Dataset = Mock  # type: ignore
+
+
+TimestampType = Union[int, pd.Timestamp]
 
 
 class DataFrameFormat(str, Enum):
@@ -130,8 +134,8 @@ class _TorchDataset(Dataset):
 def set_columns_wide(
     df_left: pd.DataFrame,
     df_right: pd.DataFrame,
-    timestamps_left: Optional[Sequence[pd.Timestamp]] = None,
-    timestamps_right: Optional[Sequence[pd.Timestamp]] = None,
+    timestamps_left: Optional[Sequence[TimestampType]] = None,
+    timestamps_right: Optional[Sequence[TimestampType]] = None,
     segments_left: Optional[Sequence[str]] = None,
     features_right: Optional[Sequence[str]] = None,
     features_left: Optional[Sequence[str]] = None,
@@ -294,3 +298,21 @@ def inverse_transform_target_components(
     scale_coef = np.repeat((inverse_transformed_target_df / target_df).values, repeats=components_number, axis=1)
     inverse_transformed_target_components_df = target_components_df * scale_coef
     return inverse_transformed_target_components_df
+
+
+def _check_timestamp_param(
+    param: Optional[Union[TimestampType, str]], param_name: str, freq: Optional[str]
+) -> Optional[TimestampType]:
+    if param is None:
+        return param
+
+    if freq is None:
+        if not isinstance(param, int):
+            raise ValueError(
+                f"Parameter {param_name} has incorrect type! For integer timestamp only integer parameter type is allowed."
+            )
+
+        return param
+    else:
+        new_param = pd.Timestamp(param)
+        return new_param

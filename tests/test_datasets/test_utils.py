@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -76,8 +78,8 @@ def test_torch_dataset():
     assert len(torch_dataset) == 1
 
 
-def _get_df_wide(random_seed: int) -> pd.DataFrame:
-    df = generate_ar_df(periods=5, start_time="2020-01-01", n_segments=3, random_seed=random_seed)
+def _get_df_wide(freq: Optional[str], random_seed: int) -> pd.DataFrame:
+    df = generate_ar_df(periods=5, n_segments=3, freq=freq, random_seed=random_seed)
     df_wide = TSDataset.to_dataset(df)
 
     df_exog = df.copy()
@@ -87,7 +89,7 @@ def _get_df_wide(random_seed: int) -> pd.DataFrame:
     df_exog["exog_2"] = df_exog["exog_1"] + 1
     df_exog_wide = TSDataset.to_dataset(df_exog)
 
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=freq)
     df = ts.df
 
     # make some reorderings for checking corner cases
@@ -97,13 +99,23 @@ def _get_df_wide(random_seed: int) -> pd.DataFrame:
 
 
 @pytest.fixture
-def df_left() -> pd.DataFrame:
-    return _get_df_wide(0)
+def df_left_datetime() -> pd.DataFrame:
+    return _get_df_wide(freq="D", random_seed=0)
 
 
 @pytest.fixture
-def df_right() -> pd.DataFrame:
-    return _get_df_wide(1)
+def df_left_int() -> pd.DataFrame:
+    return _get_df_wide(freq=None, random_seed=0)
+
+
+@pytest.fixture
+def df_right_datetime() -> pd.DataFrame:
+    return _get_df_wide(freq="D", random_seed=1)
+
+
+@pytest.fixture
+def df_right_int() -> pd.DataFrame:
+    return _get_df_wide(freq=None, random_seed=0)
 
 
 @pytest.mark.parametrize(
@@ -127,6 +139,7 @@ def df_right() -> pd.DataFrame:
 @pytest.mark.parametrize(
     "timestamps_idx_left, timestamps_idx_right", [(None, None), ([0], [0]), ([1, 2], [1, 2]), ([1, 2], [3, 4])]
 )
+@pytest.mark.parametrize("dataframes", [("df_left_datetime", "df_right_datetime"), ("df_left_int", "df_right_int")])
 def test_set_columns_wide(
     timestamps_idx_left,
     timestamps_idx_right,
@@ -134,9 +147,13 @@ def test_set_columns_wide(
     segment_right,
     features_left,
     features_right,
-    df_left,
-    df_right,
+    dataframes,
+    request,
 ):
+    df_left_name, df_right_name = dataframes
+    df_left = request.getfixturevalue(df_left_name)
+    df_right = request.getfixturevalue(df_right_name)
+
     timestamps_left = None if timestamps_idx_left is None else df_left.index[timestamps_idx_left]
     timestamps_right = None if timestamps_idx_right is None else df_right.index[timestamps_idx_right]
 
