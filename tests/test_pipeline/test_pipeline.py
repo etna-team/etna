@@ -825,7 +825,7 @@ def test_sanity_backtest_forecasts(step_ts: TSDataset):
 
 def test_sanity_get_historical_forecasts(step_ts: TSDataset):
     """Check that Pipeline.get_historical_forecasts gives correct forecasts according to the simple case."""
-    ts, expected_metrics_df, expected_forecast_df = step_ts
+    ts, _, expected_forecast_df = step_ts
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
     forecast_df = pipeline.get_historical_forecasts(ts, n_folds=3)
 
@@ -1207,20 +1207,6 @@ def test_backtest_nans_at_beginning_with_mask(ts_name, request):
         metrics=[MAE()],
         n_folds=[mask],
     )
-
-
-def test_forecast_backtest_ordered_data(step_ts: TSDataset):
-    ts, _, expected_forecast_df = step_ts
-    pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    _, forecast_df, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)
-    assert np.all(forecast_df.values == expected_forecast_df.values)
-
-
-def test_get_historical_forecasts_ordered_data(step_ts: TSDataset):
-    ts, _, expected_forecast_df = step_ts
-    pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    forecast_df = pipeline.get_historical_forecasts(ts=ts, n_folds=3)
-    assert np.all(forecast_df.values == expected_forecast_df.values)
 
 
 def test_pipeline_with_deepmodel(example_tsds):
