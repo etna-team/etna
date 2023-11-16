@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `tourism` to internal datasets ([#120](https://github.com/etna-team/etna/pull/120))
 - Add `weather` to internal datasets ([#125](https://github.com/etna-team/etna/pull/125)) 
 - Add `ETT` to internal datasets ([#134](https://github.com/etna-team/etna/pull/134))
--
+- Add `list_datasets` function ([#145](https://github.com/etna-team/etna/pull/149))
 
 ### Changed
 -

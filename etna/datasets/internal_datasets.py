@@ -666,6 +666,9 @@ def get_ett_dataset(dataset_dir: Path, dataset_type: str) -> None:
 
 
 def list_datasets() -> List[str]:
+    """
+    Return a list of available internal datasets
+    """
     return sorted(datasets_dict.keys())
 
 
