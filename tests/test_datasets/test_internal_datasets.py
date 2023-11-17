@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.datasets import load_dataset
 from etna.datasets.internal_datasets import _DOWNLOAD_PATH
 from etna.datasets.internal_datasets import datasets_dict
+from etna.datasets.internal_datasets import list_datasets
 
 
 def get_custom_dataset(dataset_dir):
@@ -332,3 +333,8 @@ def test_df_exog_statistics(
         assert part.df_exog.shape == expected_df_exog_shapes[i]
     for i, part in enumerate(ts_parts):
         assert (part.df_exog.index.min(), part.df_exog.index.max()) == expected_df_exog_dates[i]
+
+
+def test_list_datasets():
+    datasets_names = list_datasets()
+    assert len(datasets_names) == len(datasets_dict)

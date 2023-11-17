@@ -665,6 +665,11 @@ def get_ett_dataset(dataset_dir: Path, dataset_type: str) -> None:
     df_test.to_csv(dataset_dir / f"{dataset_type}_test.csv.gz", index=True, compression="gzip")
 
 
+def list_datasets() -> List[str]:
+    """Return a list of available internal datasets."""
+    return sorted(datasets_dict.keys())
+
+
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
