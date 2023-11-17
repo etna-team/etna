@@ -337,4 +337,4 @@ def test_df_exog_statistics(
 
 def test_list_datasets():
     datasets_names = list_datasets()
-    assert len(datasets_names) > 0
+    assert len(datasets_names) == 22
