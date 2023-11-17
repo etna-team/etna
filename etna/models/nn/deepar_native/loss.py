@@ -114,8 +114,7 @@ class GaussianLoss(DeepARLoss):
         """
         mean = loc.clone()
         std = scale.clone()
-        reshaped = [-1] + [1] * (loc.dim() - 1)
-        weights = weights.reshape(reshaped).expand(loc.shape)
+        weights = weights.reshape(-1, 1, 1).expand(loc.shape)
         mean *= weights
         std *= weights.abs()
         return mean, std
@@ -199,8 +198,7 @@ class NegativeBinomialLoss(DeepARLoss):
         """
         mean = loc.clone()
         alpha = scale.clone()
-        reshaped = [-1] + [1] * (loc.dim() - 1)
-        weights = weights.reshape(reshaped).expand(loc.shape)
+        weights = weights.reshape(-1, 1, 1).expand(loc.shape)
         total_count = torch.sqrt(weights) / alpha
         probs = 1 - (1 / (torch.sqrt(weights) * mean * alpha + 1))
         return total_count, probs

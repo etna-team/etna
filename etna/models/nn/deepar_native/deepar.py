@@ -123,9 +123,9 @@ class DeepARNativeNet(DeepBaseNet):
             _, (h_n, c_n) = self.rnn(encoder_real)
             for i in range(decoder_length):
                 output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))  # (batch_size, 1, hidden_size)
-                loc, scale = self.get_distribution_params(output[:, -1])
+                loc, scale = self.get_distribution_params(output)
                 forecast_point = self.loss.sample(
-                    loc=loc, scale=scale, weights=weights, theoretical_mean=True if self.n_samples == 1 else False
+                    loc=loc, scale=scale, weights=weights, theoretical_mean=self.n_samples == 1
                 ).flatten()  # (batch_size)
                 forecasts[:, i, j] = forecast_point
                 if i < decoder_length - 1:
