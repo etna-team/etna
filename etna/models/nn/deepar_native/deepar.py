@@ -2,7 +2,6 @@ from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import Optional
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -19,11 +18,11 @@ if SETTINGS.torch_required:
 
     from etna.models.base import DeepBaseModel
     from etna.models.base import DeepBaseNet
-    from etna.models.nn.deepar_new.loss import GaussianLoss
-    from etna.models.nn.deepar_new.loss import NegativeBinomialLoss
+    from etna.models.nn.deepar_native.loss import DeepARLoss
+    from etna.models.nn.deepar_native.loss import GaussianLoss
 
 
-class DeepARBatchNew(TypedDict):
+class DeepARNativeBatch(TypedDict):
     """Batch specification for DeepAR."""
 
     encoder_real: "torch.Tensor"
@@ -34,18 +33,19 @@ class DeepARBatchNew(TypedDict):
     weight: "torch.Tensor"
 
 
-class DeepARNetNew(DeepBaseNet):
+class DeepARNativeNet(DeepBaseNet):
     """DeepAR based Lightning module with LSTM cell."""
 
     def __init__(
         self,
         input_size: int,
         num_layers: int,
+        dropout: float,
         hidden_size: int,
         lr: float,
         scale: bool,
         n_samples: int,
-        loss: Union[GaussianLoss, NegativeBinomialLoss],
+        loss: "DeepARLoss",
         optimizer_params: Optional[dict],
     ) -> None:
         """Init DeepAR.
@@ -56,6 +56,8 @@ class DeepARNetNew(DeepBaseNet):
             size of the input feature space: target plus extra features
         num_layers:
             number of layers
+        dropout:
+            dropout rate in rnn layer
         hidden_size:
             size of the hidden state
         lr:
@@ -73,6 +75,7 @@ class DeepARNetNew(DeepBaseNet):
         self.save_hyperparameters()
         self.input_size = input_size
         self.num_layers = num_layers
+        self.dropout = dropout
         self.hidden_size = hidden_size
         self.lr = lr
         self.scale = scale
@@ -80,16 +83,23 @@ class DeepARNetNew(DeepBaseNet):
         self.loss = loss
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
         self.rnn = nn.LSTM(
-            num_layers=self.num_layers, hidden_size=self.hidden_size, input_size=self.input_size, batch_first=True
-        )
-        self.projection = nn.ModuleDict(
-            {
-                "loc": nn.Linear(in_features=self.hidden_size, out_features=1),
-                "scale": nn.Linear(in_features=self.hidden_size, out_features=1),
-            }
+            num_layers=self.num_layers,
+            hidden_size=self.hidden_size,
+            input_size=self.input_size,
+            batch_first=True,
+            dropout=dropout,
         )
 
-    def forward(self, x: DeepARBatchNew, *args, **kwargs):  # type: ignore
+        self.projection = self._get_projection_layers()
+
+    def _get_projection_layers(self):
+        layers_loc = [nn.Linear(in_features=self.hidden_size, out_features=1)]
+        layers_scale = [nn.Linear(in_features=self.hidden_size, out_features=1), nn.Softplus()]
+        if not isinstance(self.loss, GaussianLoss):
+            layers_loc.append(nn.Softplus())
+        return nn.ModuleDict({"loc": nn.Sequential(*layers_loc), "scale": nn.Sequential(*layers_scale)})
+
+    def forward(self, x: DeepARNativeBatch, *args, **kwargs):  # type: ignore
         """Forward pass.
 
         Parameters
@@ -116,7 +126,7 @@ class DeepARNetNew(DeepBaseNet):
                 loc, scale = self.get_distribution_params(output[:, -1])
                 forecast_point = self.loss.sample(
                     loc=loc, scale=scale, weights=weights, theoretical_mean=True if self.n_samples == 1 else False
-                ).flatten()  # (batch_size, 1)
+                ).flatten()  # (batch_size)
                 forecasts[:, i, j] = forecast_point
                 if i < decoder_length - 1:
                     decoder_real[:, i + 1, 0] = forecast_point
@@ -135,15 +145,11 @@ class DeepARNetNew(DeepBaseNet):
         :
             distribution parameters
         """
-        loc = (
-            self.projection["loc"](output)
-            if isinstance(self.loss, GaussianLoss)
-            else nn.Softplus()(self.projection["loc"](output))
-        )
-        scale = nn.Softplus()(self.projection["scale"](output))
+        loc = self.projection["loc"](output)
+        scale = self.projection["scale"](output)
         return loc, scale
 
-    def step(self, batch: DeepARBatchNew, *args, **kwargs):  # type: ignore
+    def step(self, batch: DeepARNativeBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
 
         Parameters
@@ -158,7 +164,6 @@ class DeepARNetNew(DeepBaseNet):
         """
         encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
-
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
         weights = batch["weight"]
@@ -213,9 +218,9 @@ class DeepARNetNew(DeepBaseNet):
             sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length].copy()
             sample["encoder_real"] = sample["encoder_real"][1:]
 
-            target = values_target[start_idx : start_idx + total_sample_length].reshape(-1, 1).copy()
-            sample["encoder_target"] = target[1:encoder_length].copy()
-            sample["decoder_target"] = target[encoder_length:].copy()
+            target = values_target[start_idx : start_idx + total_sample_length].reshape(-1, 1)
+            sample["encoder_target"] = target[1:encoder_length]
+            sample["decoder_target"] = target[encoder_length:]
 
             sample["segment"] = segment
             sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
@@ -247,7 +252,7 @@ class DeepARNetNew(DeepBaseNet):
         return optimizer
 
 
-class DeepARModelNew(DeepBaseModel):
+class DeepARNativeModel(DeepBaseModel):
     """DeepAR based model on LSTM cell.
 
     Note
@@ -262,11 +267,12 @@ class DeepARModelNew(DeepBaseModel):
         encoder_length: int,
         decoder_length: int,
         num_layers: int = 2,
+        dropout: float = 0.0,
         hidden_size: int = 16,
         lr: float = 1e-3,
         scale: bool = True,
         n_samples: int = 1,
-        loss: Optional[Union[GaussianLoss, NegativeBinomialLoss]] = None,
+        loss: Optional["DeepARLoss"] = None,
         train_batch_size: int = 16,
         test_batch_size: int = 16,
         optimizer_params: Optional[dict] = None,
@@ -288,6 +294,8 @@ class DeepARModelNew(DeepBaseModel):
             decoder length
         num_layers:
             number of layers
+        dropout:
+            dropout rate in rnn layer
         hidden_size:
             size of the hidden state
         lr:
@@ -298,9 +306,9 @@ class DeepARModelNew(DeepBaseModel):
             if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return mean of `n_samples` generated from Monte Carlo sampling
         loss:
             loss function
-                * **:py:class:`etna.models.nn.deepar_new.GaussianLoss`**: use Gaussian distribution for counting loss
+                * :py:class:`etna.models.nn.deepar_native.loss.GaussianLoss`: use Gaussian distribution for counting loss
 
-                * **:py:class:`etna.models.nn.deepar_new.NegativeBinomialLoss`**: use NegativeBinomial distribution for counting loss. Can be used only for positive data
+                * :py:class:`etna.models.nn.deepar_native.loss.NegativeBinomialLoss`: use NegativeBinomial distribution for counting loss. Can be used only for positive data
         train_batch_size:
             batch size for training
         test_batch_size:
@@ -325,6 +333,7 @@ class DeepARModelNew(DeepBaseModel):
         """
         self.input_size = input_size
         self.num_layers = num_layers
+        self.dropout = dropout
         self.hidden_size = hidden_size
         self.lr = lr
         self.scale = scale
@@ -332,9 +341,10 @@ class DeepARModelNew(DeepBaseModel):
         self.optimizer_params = optimizer_params
         self.loss = loss
         super().__init__(
-            net=DeepARNetNew(
+            net=DeepARNativeNet(
                 input_size=input_size,
                 num_layers=num_layers,
+                dropout=dropout,
                 hidden_size=hidden_size,
                 lr=lr,
                 scale=scale,

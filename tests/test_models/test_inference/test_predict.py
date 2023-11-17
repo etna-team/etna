@@ -32,7 +32,7 @@ from etna.models import StatsForecastAutoETSModel
 from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
-from etna.models.nn import DeepARModelNew
+from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
@@ -146,7 +146,10 @@ class TestPredictInSampleFull:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -250,7 +253,10 @@ class TestPredictInSampleSuffix:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -369,7 +375,10 @@ class TestPredictOutSample:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -501,7 +510,10 @@ class TestPredictOutSamplePrefix:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -634,7 +646,10 @@ class TestPredictOutSampleSuffix:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -791,7 +806,10 @@ class TestPredictMixedInOutSample:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -928,7 +946,10 @@ class TestPredictSubsetSegments:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -1034,7 +1055,10 @@ class TestPredictNewSegments:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (DeepARModelNew(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),

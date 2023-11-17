@@ -5,10 +5,10 @@ import pytest
 from pytorch_lightning import seed_everything
 
 from etna.metrics import MAE
-from etna.models.nn import DeepARModelNew
-from etna.models.nn.deepar_new.deepar import DeepARNetNew
-from etna.models.nn.deepar_new.loss import GaussianLoss
-from etna.models.nn.deepar_new.loss import NegativeBinomialLoss
+from etna.models.nn import DeepARNativeModel
+from etna.models.nn.deepar_native.deepar import DeepARNativeNet
+from etna.models.nn.deepar_native.loss import GaussianLoss
+from etna.models.nn.deepar_native.loss import NegativeBinomialLoss
 from etna.pipeline import Pipeline
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
@@ -16,18 +16,18 @@ from tests.test_models.utils import assert_sampling_is_valid
 
 
 @pytest.mark.parametrize(
-    "horizon,loss,transform,epochs,eps",
+    "horizon,loss,transform,epochs,lr,eps",
     [
-        (8, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 0.05),
-        (13, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 0.05),
-        (15, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 0.05),
-        (8, NegativeBinomialLoss(), [], 500, 0.06),
-        (13, NegativeBinomialLoss(), [], 500, 0.3),
-        (15, NegativeBinomialLoss(), [], 500, 0.2),
+        (8, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 1e-3, 0.05),
+        (13, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 1e-3, 0.05),
+        (15, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 1e-3, 0.05),
+        (8, NegativeBinomialLoss(), [], 300, 1e-2, 0.05),
+        (13, NegativeBinomialLoss(), [], 300, 1e-2, 0.06),
+        (15, NegativeBinomialLoss(), [], 300, 1e-2, 0.05),
     ],
 )
 def test_deepar_model_run_weekly_overfit(
-    ts_dataset_weekly_function_with_horizon, horizon, loss, transform, epochs, eps
+    ts_dataset_weekly_function_with_horizon, horizon, loss, transform, epochs, lr, eps
 ):
     """
     Given: I have dataframe with 2 segments with weekly seasonality with known future
@@ -37,11 +37,12 @@ def test_deepar_model_run_weekly_overfit(
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
     encoder_length = 14
     decoder_length = 14
-    model = DeepARModelNew(
+    model = DeepARNativeModel(
         input_size=1,
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         scale=False,
+        lr=lr,
         trainer_params=dict(max_epochs=epochs),
         loss=loss,
     )
@@ -60,7 +61,7 @@ def test_deepar_make_samples(df_with_ascending_window_mean, scale, mean_1, mean_
     decoder_length = 1
 
     ts_samples = list(
-        DeepARNetNew.make_samples(
+        DeepARNativeNet.make_samples(
             deepar_module,
             df=df_with_ascending_window_mean,
             encoder_length=encoder_length,
@@ -88,7 +89,7 @@ def test_deepar_make_samples(df_with_ascending_window_mean, scale, mean_1, mean_
 def test_context_size(encoder_length):
     encoder_length = encoder_length
     decoder_length = encoder_length
-    model = DeepARModelNew(
+    model = DeepARNativeModel(
         input_size=1, encoder_length=encoder_length, decoder_length=decoder_length, trainer_params=dict(max_epochs=100)
     )
 
@@ -96,12 +97,12 @@ def test_context_size(encoder_length):
 
 
 def test_save_load(example_tsds):
-    model = DeepARModelNew(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = DeepARNativeModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
 def test_params_to_tune(example_tsds):
     ts = example_tsds
-    model = DeepARModelNew(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = DeepARNativeModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)

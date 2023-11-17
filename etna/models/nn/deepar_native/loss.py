@@ -1,3 +1,6 @@
+from abc import abstractmethod
+from typing import Tuple
+
 from etna import SETTINGS
 
 if SETTINGS.torch_required:
@@ -7,11 +10,91 @@ if SETTINGS.torch_required:
     from torch.nn.modules.loss import _Loss
 
 
-class GaussianLoss(_Loss):
+class DeepARLoss(_Loss):
+    """Base class to create any loss for DeepARNativeModel."""
+
+    @staticmethod
+    @abstractmethod
+    def scale_params(
+        loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Make transformation of predicted parameters of distribution.
+
+        Parameters
+        ----------
+        loc:
+            first parameter of distribution.
+        scale:
+            second parameter of distribution.
+        weights:
+            weights of the samples used for transformation.
+
+        Returns
+        -------
+        :
+            transformed parameters
+
+        """
+        pass
+
+    @abstractmethod
+    def forward(
+        self, inputs: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor
+    ) -> torch.Tensor:
+        """Forward pass.
+
+        Parameters
+        ----------
+        inputs:
+            true target values
+        loc:
+            first parameter of distribution.
+        scale:
+            second parameter of distribution.
+        weights:
+            weights of the samples used for transformation.
+
+        Returns
+        -------
+        :
+            loss
+
+        """
+        pass
+
+    @abstractmethod
+    def sample(
+        self, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor, theoretical_mean: bool
+    ) -> torch.Tensor:
+        """Get samples from distribution.
+
+        Parameters
+        ----------
+        loc:
+            first parameter of distribution.
+        scale:
+            second parameter of distribution.
+        weights:
+            weights of the samples used for transformation.
+        theoretical_mean:
+            if True return theoretical_mean of distribution, else return sample from distribution
+
+        Returns
+        -------
+        :
+            samples from distribution
+
+        """
+        pass
+
+
+class GaussianLoss(DeepARLoss):
     """Negative log likelihood loss for Gaussian distribution."""
 
     @staticmethod
-    def scale_params(loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
+    def scale_params(
+        loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Make transformation of predicted parameters of distribution.
 
         Parameters
@@ -29,17 +112,17 @@ class GaussianLoss(_Loss):
             transformed mean and standard deviation
 
         """
-        mean = loc.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
-        std = scale.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
+        mean = loc.clone()
+        std = scale.clone()
         reshaped = [-1] + [1] * (loc.dim() - 1)
-        weights = weights.reshape(reshaped).expand(
-            loc.shape
-        )  # (batch_size) -> (batch_size, encoder_length + decoder_length - 1, 1)
+        weights = weights.reshape(reshaped).expand(loc.shape)
         mean *= weights
         std *= weights.abs()
         return mean, std
 
-    def forward(self, inputs: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
+    def forward(
+        self, inputs: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor
+    ) -> torch.Tensor:
         """Forward pass.
 
         Parameters
@@ -63,7 +146,9 @@ class GaussianLoss(_Loss):
         distribution = Normal(loc=mean, scale=std)
         return -(distribution.log_prob(inputs)).mean()
 
-    def sample(self, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor, theoretical_mean: bool):
+    def sample(
+        self, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor, theoretical_mean: bool
+    ) -> torch.Tensor:
         """Get samples from distribution.
 
         Parameters
@@ -88,11 +173,13 @@ class GaussianLoss(_Loss):
         return distribution.loc if theoretical_mean else distribution.sample()
 
 
-class NegativeBinomialLoss(_Loss):
+class NegativeBinomialLoss(DeepARLoss):
     """Negative log likelihood loss for NegativeBinomial distribution."""
 
     @staticmethod
-    def scale_params(loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
+    def scale_params(
+        loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Make transformation of predicted parameters of distribution.
 
         Parameters
@@ -110,17 +197,17 @@ class NegativeBinomialLoss(_Loss):
             number of successes until the experiment is stopped and success probability
 
         """
-        mean = loc.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
-        alpha = scale.clone()  # (batch_size, encoder_length + decoder_length - 1, 1)
+        mean = loc.clone()
+        alpha = scale.clone()
         reshaped = [-1] + [1] * (loc.dim() - 1)
-        weights = weights.reshape(reshaped).expand(
-            loc.shape
-        )  # (batch_size) -> (batch_size, encoder_length + decoder_length - 1, 1)
+        weights = weights.reshape(reshaped).expand(loc.shape)
         total_count = torch.sqrt(weights) / alpha
-        probs = 1 / (torch.sqrt(weights) * mean * alpha + 1)
+        probs = 1 - (1 / (torch.sqrt(weights) * mean * alpha + 1))
         return total_count, probs
 
-    def forward(self, inputs: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor):
+    def forward(
+        self, inputs: torch.Tensor, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor
+    ) -> torch.Tensor:
         """Forward pass.
 
         Parameters
@@ -144,7 +231,9 @@ class NegativeBinomialLoss(_Loss):
         distribution = NegativeBinomial(total_count=total_count, probs=probs)
         return -(distribution.log_prob(inputs)).mean()
 
-    def sample(self, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor, theoretical_mean: bool):
+    def sample(
+        self, loc: torch.Tensor, scale: torch.Tensor, weights: torch.Tensor, theoretical_mean: bool
+    ) -> torch.Tensor:
         """Get samples from distribution.
 
         Parameters

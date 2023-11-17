@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Add params_to_tune for DeepStateModel ([#115](https://github.com/etna-team/etna/issues/115))
+- Add DeepARNativeModel ([#114](https://github.com/etna-team/etna/pull/114))
 - 
 - 
 - 
