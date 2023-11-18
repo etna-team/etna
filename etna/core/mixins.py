@@ -285,7 +285,7 @@ class SaveMixin(AbstractSaveable):
         saved_etna_version = tuple(metadata["etna_version"])
 
         # if major version is different give a warning
-        if current_etna_version[0] != saved_etna_version[0] or current_etna_version[:2] < saved_etna_version[:2]:
+        if current_etna_version != saved_etna_version:
             current_etna_version_str = ".".join([str(x) for x in current_etna_version])
             saved_etna_version_str = ".".join([str(x) for x in saved_etna_version])
             warnings.warn(

@@ -21,8 +21,6 @@ from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.ensembles.mixins import EnsembleMixin
 from etna.ensembles.mixins import SaveEnsembleMixin
-from etna.loggers import tslogger
-from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
@@ -133,8 +131,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
 
     def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
         """Get forecasts from backtest for given pipeline."""
-        with tslogger.disable():
-            _, forecasts, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=self.n_folds)
+        forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
         forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 
