@@ -235,16 +235,25 @@ def test_not_present_part():
             pd.to_datetime("2018-06-26 19:00:00"),
             ("train", "test"),
         ),
+        (
+            "IHEPC_1T",
+            (2075259, 7),
+            pd.to_datetime("2006-12-16 17:24:00"),
+            pd.to_datetime("2010-11-26 21:02:00"),
+            tuple(),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
     ts_full = load_dataset(dataset_name, parts="full", rebuild_dataset=True)
-    ts_parts = load_dataset(dataset_name, parts=dataset_parts)
-    parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
     assert ts_full.df.shape == expected_shape
     assert ts_full.index.min() == expected_min_date
     assert ts_full.index.max() == expected_max_date
-    assert ts_full.df.shape[0] == parts_rows
+
+    if dataset_parts:
+        ts_parts = load_dataset(dataset_name, parts=dataset_parts)
+        parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
+        assert ts_full.df.shape[0] == parts_rows
 
 
 @pytest.mark.parametrize(
