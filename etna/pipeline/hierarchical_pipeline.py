@@ -7,8 +7,6 @@ import pandas as pd
 
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
-from etna.loggers import tslogger
-from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
@@ -306,8 +304,7 @@ class HierarchicalPipeline(Pipeline):
         try:
             # TODO: rework intervals estimation for `BottomUpReconciliator`
 
-            with tslogger.disable():
-                _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
+            forecasts = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
 
             source_ts = self.reconciliator.aggregate(ts=ts)
             self._add_forecast_borders(

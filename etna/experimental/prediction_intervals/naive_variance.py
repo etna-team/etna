@@ -6,9 +6,7 @@ import scipy.stats as scs
 
 from etna.datasets import TSDataset
 from etna.experimental.prediction_intervals import BasePredictionIntervals
-from etna.loggers import tslogger
 from etna.pipeline import BasePipeline
-from etna.pipeline.base import _DummyMetric
 
 
 class NaiveVariancePredictionIntervals(BasePredictionIntervals):
@@ -93,10 +91,7 @@ class NaiveVariancePredictionIntervals(BasePredictionIntervals):
         :
             Residuals matrices for each segment. Array with shape: ``(n_folds, horizon, n_segments)``.
         """
-        with tslogger.disable():
-            _, backtest_forecasts, _ = self.backtest(
-                ts=ts, metrics=[_DummyMetric()], n_folds=n_folds, stride=self.stride
-            )
+        backtest_forecasts = self.get_historical_forecasts(ts=ts, n_folds=n_folds, stride=self.stride)
 
         residuals = backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]] - ts[backtest_forecasts.index, :, "target"]
 
