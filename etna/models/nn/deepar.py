@@ -28,9 +28,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import Trainer
 
 
-@deprecated(
-    reason="DeepARModel is deprecated. Use DeepARNativeModel instead.", version="3.0"
-)
+@deprecated(reason="DeepARModel is deprecated. Use DeepARNativeModel instead.", version="3.0")
 class DeepARModel(
     _DeepCopyMixin, PytorchForecastingMixin, SavePytorchForecastingMixin, PredictionIntervalContextRequiredAbstractModel
 ):

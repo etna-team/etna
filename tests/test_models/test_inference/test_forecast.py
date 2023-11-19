@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting.data import NaNLabelEncoder
 from typing_extensions import get_args
 
@@ -33,7 +32,6 @@ from etna.models import StatsForecastAutoCESModel
 from etna.models import StatsForecastAutoETSModel
 from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
-from etna.models.nn import DeepARModel
 from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
@@ -168,20 +166,6 @@ class TestForecastInSampleFullNoTarget:
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-            (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
@@ -294,20 +278,6 @@ class TestForecastInSampleFull:
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-            (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
@@ -413,20 +383,6 @@ class TestForecastInSampleSuffixNoTarget:
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-            (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
@@ -513,20 +469,6 @@ class TestForecastInSampleSuffix:
             (StatsForecastAutoCESModel(), []),
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -616,20 +558,6 @@ class TestForecastOutSamplePrefix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
             ),
             (
                 TFTModel(
@@ -821,20 +749,6 @@ class TestForecastOutSampleSuffix:
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-            (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
@@ -942,20 +856,6 @@ class TestForecastMixedInOutSample:
             (StatsForecastAutoCESModel(), []),
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -1088,30 +988,6 @@ class TestForecastSubsetSegments:
         with pytest.raises(AssertionError):
             self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
 
-    @to_be_fixed(raises=AssertionError)
-    # issue with explanation: https://github.com/tinkoff-ai/etna/issues/1089
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-        ],
-    )
-    def test_forecast_subset_segments_failed_assertion_error(self, model, transforms, example_tsds):
-        self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
-
 
 class TestForecastNewSegments:
     """Test forecast on new segments.
@@ -1159,21 +1035,6 @@ class TestForecastNewSegments:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
             ),
             (
                 TFTModel(

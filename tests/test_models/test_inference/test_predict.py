@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting.data import NaNLabelEncoder
 
 from etna.datasets import TSDataset
@@ -31,7 +30,6 @@ from etna.models import StatsForecastAutoCESModel
 from etna.models import StatsForecastAutoETSModel
 from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
-from etna.models.nn import DeepARModel
 from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
@@ -115,20 +113,6 @@ class TestPredictInSampleFull:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -222,20 +206,6 @@ class TestPredictInSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -344,20 +314,6 @@ class TestPredictOutSample:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -480,20 +436,6 @@ class TestPredictOutSamplePrefix:
         "model, transforms",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-            (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
@@ -615,20 +557,6 @@ class TestPredictOutSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -776,20 +704,6 @@ class TestPredictMixedInOutSample:
         "model, transforms",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-            (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
@@ -916,20 +830,6 @@ class TestPredictSubsetSegments:
         "model, transforms",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
-            (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=21,
@@ -1022,21 +922,6 @@ class TestPredictNewSegments:
     @pytest.mark.parametrize(
         "model, transforms",
         [
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-            ),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
