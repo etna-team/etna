@@ -379,5 +379,5 @@ class DeepARNativeModel(DeepBaseModel):
             "hidden_size": IntDistribution(low=4, high=64, step=4),
             "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
             "encoder_length": IntDistribution(low=1, high=20),
-            "dropout": FloatDistribution(low=0.0, high=0.3, log=True),
+            "dropout": FloatDistribution(low=0.0, high=0.3, log=False),
         }
