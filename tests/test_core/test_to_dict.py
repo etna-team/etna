@@ -15,6 +15,7 @@ from etna.metrics import SMAPE
 from etna.models import AutoARIMAModel
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
+from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
 from etna.models.nn import TFTModel
 from etna.pipeline import Pipeline
@@ -110,6 +111,16 @@ def test_to_dict_transforms_with_expected(target_object, expected):
 @pytest.mark.parametrize(
     "target_model",
     [
+        pytest.param(
+            DeepARModel(
+                decoder_length=3,
+                encoder_length=4,
+                lr=0.1,
+                trainer_params=dict(max_epochs=2, gpus=0),
+                train_batch_size=64,
+            ),
+            marks=pytest.mark.xfail(raises=AssertionError),
+        ),
         LinearPerSegmentModel(),
         CatBoostPerSegmentModel(),
         AutoARIMAModel(),

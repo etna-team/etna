@@ -45,7 +45,7 @@ class DeepARNativeNet(DeepBaseNet):
         lr: float,
         scale: bool,
         n_samples: int,
-        loss: "DeepARLoss",
+        loss: DeepARLoss,
         optimizer_params: Optional[dict],
     ) -> None:
         """Init DeepAR.
@@ -87,7 +87,7 @@ class DeepARNativeNet(DeepBaseNet):
             hidden_size=self.hidden_size,
             input_size=self.input_size,
             batch_first=True,
-            dropout=dropout,
+            dropout=self.dropout,
         )
 
         self.projection = self._get_projection_layers()
@@ -172,8 +172,8 @@ class DeepARNativeNet(DeepBaseNet):
             torch.cat((encoder_real, decoder_real), dim=1)
         )  # (batch_size, encoder_length+decoder_length-1, hidden_size)
         loc, scale = self.get_distribution_params(output)  # (batch_size, encoder_length+decoder_length-1, 1)
-        target_prediction = self.loss.sample(loc, scale, weights, theoretical_mean=True)
-        loss = self.loss(target, loc, scale, weights)
+        target_prediction = self.loss.sample(loc=loc, scale=scale, weights=weights, theoretical_mean=True)
+        loss = self.loss(inputs=target, loc=loc, scale=scale, weights=weights)
         return loss, target, target_prediction
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
@@ -379,4 +379,5 @@ class DeepARNativeModel(DeepBaseModel):
             "hidden_size": IntDistribution(low=4, high=64, step=4),
             "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
             "encoder_length": IntDistribution(low=1, high=20),
+            "dropout": FloatDistribution(low=0.0, high=0.3, log=True),
         }
