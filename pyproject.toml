@@ -244,7 +244,8 @@ filterwarnings = [
     "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # pandas: old version uses deprecated numpy parameter
     "ignore: Trying to infer the `batch_size` from an ambiguous collection", # pytorch_forecasting
     "ignore: Implicitly cleaning up <TemporaryDirectory",
-    "ignore: Call to deprecated class DeepARModel."
+    "ignore: Call to deprecated class DeepARModel.",
+    "ignore: dropout option adds dropout after all but last recurrent layer"
 ]
 markers = [
     "smoke"
