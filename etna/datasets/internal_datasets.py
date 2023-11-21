@@ -665,6 +665,36 @@ def get_ett_dataset(dataset_dir: Path, dataset_type: str) -> None:
     df_test.to_csv(dataset_dir / f"{dataset_type}_test.csv.gz", index=True, compression="gzip")
 
 
+def get_ihepc_dataset(dataset_dir: Path) -> None:
+    """
+    Download and save Individual household electric power consumption dataset.
+
+    This dataset consists of almost 4 years of history with 1 minute frequency from a household in Sceaux. Different
+    electrical quantities and some sub-metering values are available.
+
+    References
+    ----------
+    .. [1] https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption
+
+    """
+    url = "https://archive.ics.uci.edu/static/public/235/individual+household+electric+power+consumption.zip"
+
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    df = _download_dataset_zip(
+        url,
+        file_names="household_power_consumption.txt",
+        read_functions=partial(pd.read_csv, sep=";", keep_default_na=True, na_values=["?"]),
+    )
+
+    df["timestamp"] = df["Date"].astype(str) + " " + df["Time"].astype(str)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], dayfirst=True)
+    df = df.drop(["Date", "Time"], axis=1).melt("timestamp", var_name="segment", value_name="target")
+    df_full = TSDataset.to_dataset(df)
+
+    df_full.to_csv(dataset_dir / f"IHEPC_T_full.csv.gz", index=True, compression="gzip")
+
+
 def list_datasets() -> List[str]:
     """Return a list of available internal datasets."""
     return sorted(datasets_dict.keys())
@@ -777,4 +807,5 @@ datasets_dict: Dict[str, Dict] = {
         "freq": "H",
         "parts": ("train", "test", "full"),
     },
+    "IHEPC_T": {"get_dataset_function": get_ihepc_dataset, "freq": "T", "parts": ("full",)},
 }
