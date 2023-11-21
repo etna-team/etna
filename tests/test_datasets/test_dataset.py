@@ -14,6 +14,12 @@ from etna.transforms import AddConstTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import TimeSeriesImputerTransform
 
+"""
+TODO: dd
+Дописать тесты
+- На prepare_df для int индекса
+"""
+
 
 @pytest.fixture
 def tsdf_with_exog(random_seed) -> TSDataset:
@@ -352,7 +358,7 @@ def test_create_ts_with_exog_datetime_timestamp():
     df_exog_wide = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=freq)
 
-    expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1)
+    expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1, level=(0, 1))
     expected_merged.index.freq = freq
     pd.testing.assert_index_equal(ts.index, df_wide.index)
     pd.testing.assert_frame_equal(ts.to_pandas(), expected_merged)
@@ -367,9 +373,37 @@ def test_create_ts_with_exog_int_timestamp():
     df_exog_wide = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=None)
 
-    expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1)
+    expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1, level=(0, 1))
     pd.testing.assert_index_equal(ts.index, df_wide.index)
     pd.testing.assert_frame_equal(ts.to_pandas(), expected_merged)
+
+
+def test_create_ts_missing_datetime_timestamp():
+    freq = "D"
+    df = generate_ar_df(periods=10, start_time=5, freq=freq, n_segments=3, random_seed=0)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_wide_missing = df_wide.drop(index=df_wide.index[3:5])
+    ts = TSDataset(df=df_wide_missing, freq=freq)
+
+    expected_df = df_wide.copy()
+    expected_df.iloc[3:5] = np.NaN
+    expected_df.index.freq = freq
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), expected_df)
+
+
+def test_create_ts_missing_int_timestamp():
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_wide_missing = df_wide.drop(index=df_wide.index[3:5])
+    ts = TSDataset(df=df_wide_missing, freq=None)
+
+    expected_df = df_wide.copy()
+    expected_df.iloc[3:5] = np.NaN
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), expected_df)
 
 
 def test_create_ts_with_int_timestamp_fail_datetime():
@@ -1516,3 +1550,13 @@ def test_target_quantiles_names_deprecation_warning(ts_with_prediction_intervals
         DeprecationWarning, match="Usage of this property may mislead while accessing prediction intervals."
     ):
         _ = ts_with_prediction_intervals.target_quantiles_names
+
+
+def test_plot_fail_incorrect_start_type(tsdf_int_with_exog):
+    with pytest.raises(ValueError, match="Parameter start has incorrect type"):
+        tsdf_int_with_exog.plot(start="2020-01-01")
+
+
+def test_plot_fail_incorrect_end_type(tsdf_int_with_exog):
+    with pytest.raises(ValueError, match="Parameter end has incorrect type"):
+        tsdf_int_with_exog.plot(end="2020-01-01")

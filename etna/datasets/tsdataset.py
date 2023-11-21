@@ -153,7 +153,7 @@ class TSDataset:
                 self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             if self.current_df_level == self.current_df_exog_level:
-                self.df = self._merge_exog(df=self.df, check_regressors=True)
+                self.df = self._merge_exog(df=self.df)
 
         self._target_components_names: Tuple[str, ...] = tuple()
         self._prediction_intervals_names: Tuple[str, ...] = tuple()
@@ -208,9 +208,9 @@ class TSDataset:
             if df.index.dtype != "int":
                 raise ValueError("You set wrong freq. Data contains datetime index, not integer.")
 
-            new_index = np.arange(df.index.min(), df.index.max())
+            new_index = np.arange(df.index.min(), df.index.max() + 1)
             index_name = df.index.name
-            df.reindex(new_index)
+            df = df.reindex(new_index)
             df.index.name = index_name
 
         else:
@@ -316,17 +316,19 @@ class TSDataset:
         df = self._expand_index(df=self.raw_df, freq=self.freq, future_steps=future_steps)
 
         if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
-            # current implementation doesn't fail here if it doesn't fail in __init__, so check_regressors is redundant
-            df = self._merge_exog(df=df, check_regressors=False)
+            df = self._merge_exog(df=df)
 
             # check if we have enough values in regressors
+            # TODO: check performance
             if self.regressors:
-                future_index = df.index.difference(self.raw_df.index)
-                regressors_index = self.df_exog.index
-                if not np.all(future_index.isin(regressors_index)):
-                    warnings.warn(
-                        f"Some regressors don't have enough values, " f"NaN-s will be used for missing values"
-                    )
+                future_index = df.index.difference(self.index)
+                for segment in self.segments:
+                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.regressors]].index
+                    if not np.all(future_index.isin(regressors_index)):
+                        warnings.warn(
+                            f"Some regressors don't have enough values in segment {segment}, "
+                            f"NaN-s will be used for missing values"
+                        )
 
         # remove components and quantiles
         # it should be done if we have quantiles and components in raw_df
@@ -444,13 +446,13 @@ class TSDataset:
                     f"{target_max} >= {exog_series_max}."
                 )
 
-    def _merge_exog(self, df: pd.DataFrame, check_regressors: bool = True) -> pd.DataFrame:
+    def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.df_exog is None:
             raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
 
-        if check_regressors:
-            df_regressors = self.df_exog.loc[:, pd.IndexSlice[:, self.known_future]]
-            self._check_regressors(df=df, df_regressors=df_regressors)
+        # TODO: this check could probably be skipped at make_future
+        df_regressors = self.df_exog.loc[:, pd.IndexSlice[:, self.known_future]]
+        self._check_regressors(df=df, df_regressors=df_regressors)
 
         df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
@@ -772,6 +774,7 @@ class TSDataset:
         ----------
         df:
             DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
+            Columns "timestamp" is expected to be one of two types: integer or timestamp.
 
         Notes
         -----
