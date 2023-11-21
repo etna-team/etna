@@ -692,7 +692,7 @@ def get_ihepc_dataset(dataset_dir: Path) -> None:
     df = df.drop(["Date", "Time"], axis=1).melt("timestamp", var_name="segment", value_name="target")
     df_full = TSDataset.to_dataset(df)
 
-    df_full.to_csv(dataset_dir / f"IHEPC_1T_full.csv.gz", index=True, compression="gzip")
+    df_full.to_csv(dataset_dir / f"IHEPC_T_full.csv.gz", index=True, compression="gzip")
 
 
 def list_datasets() -> List[str]:
@@ -807,5 +807,5 @@ datasets_dict: Dict[str, Dict] = {
         "freq": "H",
         "parts": ("train", "test", "full"),
     },
-    "IHEPC_1T": {"get_dataset_function": get_ihepc_dataset, "freq": "T", "parts": ("full",)},
+    "IHEPC_T": {"get_dataset_function": get_ihepc_dataset, "freq": "T", "parts": ("full",)},
 }

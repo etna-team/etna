@@ -236,7 +236,7 @@ def test_not_present_part():
             ("train", "test"),
         ),
         (
-            "IHEPC_1T",
+            "IHEPC_T",
             (2075259, 7),
             pd.to_datetime("2006-12-16 17:24:00"),
             pd.to_datetime("2010-11-26 21:02:00"),
