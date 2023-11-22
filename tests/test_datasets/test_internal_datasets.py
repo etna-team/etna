@@ -9,6 +9,7 @@ from etna.datasets import load_dataset
 from etna.datasets.internal_datasets import _DOWNLOAD_PATH
 from etna.datasets.internal_datasets import datasets_dict
 from etna.datasets.internal_datasets import list_datasets
+from etna.datasets.internal_datasets import read_dataset
 
 
 def get_custom_dataset(dataset_dir):
@@ -338,3 +339,11 @@ def test_df_exog_statistics(
 def test_list_datasets():
     datasets_names = list_datasets()
     assert len(datasets_names) == len(datasets_dict)
+
+
+def test_dataset_hash():
+    for name in datasets_dict:
+        dataset_dir = _DOWNLOAD_PATH / name
+        for part in datasets_dict[name]["hash"]:
+            data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{part}.csv.gz")
+            assert dataset_hash == datasets_dict[name]["hash"][part]

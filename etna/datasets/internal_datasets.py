@@ -1,8 +1,12 @@
+import gzip
+import hashlib
 import tempfile
 import urllib.request
+import warnings
 import zipfile
 from datetime import date
 from functools import partial
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -76,6 +80,28 @@ def _download_dataset_zip(
     return out
 
 
+def read_dataset(dataset_path: Path) -> Tuple[pd.DataFrame, str]:
+    """
+    Read locally saved dataset in bytes, calculate hash and build `pandas.DataFrame`.
+
+    Parameters
+    ----------
+    dataset_path:
+        The path of dataset.
+
+    Returns
+    -------
+    result:
+        dataset, hash
+    """
+    with gzip.open(dataset_path, "rb") as f:
+        data_ = f.read()
+
+    h = hashlib.md5(data_).hexdigest()
+    data = pd.read_csv(BytesIO(data_), header=[0, 1], index_col=[0], parse_dates=[0])
+    return data, h
+
+
 def load_dataset(
     name: str,
     download_path: Path = _DOWNLOAD_PATH,
@@ -132,13 +158,13 @@ def load_dataset(
     if not _check_dataset_local(dataset_path) or rebuild_dataset:
         get_dataset_function(dataset_dir)
     if len(parts_) == 1:
-        data = pd.read_csv(
-            dataset_dir / f"{name}_{parts_[0]}.csv.gz",
-            compression="gzip",
-            header=[0, 1],
-            index_col=[0],
-            parse_dates=[0],
-        )
+        data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{parts_[0]}.csv.gz")
+        if dataset_hash != datasets_dict[name]["hash"][parts_]:
+            warnings.warn(
+                f"Local hash and expected hash are different for {name} dataset part {parts_}."
+                "This can happen for two reasons: there is a new version of the library"
+                "or the data in the sources has changed."
+            )
         if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
             df_exog = pd.read_csv(
                 dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{parts_[0]}_exog.csv.gz",
@@ -154,9 +180,13 @@ def load_dataset(
     else:
         ts_out = []
         for part in parts_:
-            data = pd.read_csv(
-                dataset_dir / f"{name}_{part}.csv.gz", compression="gzip", header=[0, 1], index_col=[0], parse_dates=[0]
-            )
+            data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{part}.csv.gz")
+            if dataset_hash != datasets_dict[name]["hash"][part]:
+                warnings.warn(
+                    f"Local hash and expected hash are different for {name} dataset part {part}."
+                    "This can happen for two reasons: there is a new version of the library"
+                    "or the data in the sources has changed."
+                )
             if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
                 df_exog = pd.read_csv(
                     dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz",
@@ -675,106 +705,220 @@ datasets_dict: Dict[str, Dict] = {
         "get_dataset_function": get_electricity_dataset_15t,
         "freq": "15T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "a3148ff2119a29f9d4c5f33bb0f7897d",
+            "test": "df98e934e70e9b1dcfb0a3ee6858d76f",
+            "full": "97209d3727630e6533776ce027048f71",
+        },
     },
     "m3_monthly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="monthly"),
         "freq": "M",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "8b85cf2e845e7887b50ca885122bda13",
+            "test": "06757901c9fce72da7912c0a9d02511a",
+            "full": "01ae978843d1c49300db9f97a0e5e710",
+        },
     },
     "m3_quarterly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="quarterly"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "1db9a4a99546bf616807e33ae9dc1b6c",
+            "test": "462caa333b97db19852c5d4cb8004161",
+            "full": "26060e364b5f7f63c6a0310e867eebc3",
+        },
     },
     "m3_yearly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="yearly"),
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "cfd1c588a97e540ddca77fe56a323145",
+            "test": "1828ee63b755a2e962d89546f98ee354",
+            "full": "c56c65b5f442f8e4383fac1f6fbcb448",
+        },
     },
     "m3_other": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="other"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "bf38b1daf33ab4af70f90c77b8eb6a60",
+            "test": "d02531416b5eb93337f5389d150e6ede",
+            "full": "e114f3b925273f313d828ecd2f78838f",
+        },
     },
     "m4_hourly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Hourly"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "4dd1e08d06581e9a56e9b43a972976d9",
+            "test": "fa7cb2205d7625f9c77afb7ea20ccbb3",
+            "full": "d5db9b197ffca076998a3bfece224b0b",
+        },
     },
     "m4_daily": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Daily"),
         "freq": "D",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "0b550621614bee5124f50105037d53fd",
+            "test": "874f129e34cd23c9c76cd1a129175e27",
+            "full": "3aa1fdfcb88c1ca22a1c687de0e2169f",
+        },
     },
     "m4_weekly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Weekly"),
         "freq": "W-MON",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "662dcbd02b5ccf288d29ab854a137901",
+            "test": "fa803ef566ed4dadcde60978e42626b7",
+            "full": "859da4e49c60277b94a12ef2f379ccdf",
+        },
     },
     "m4_monthly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Monthly"),
         "freq": "M",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "18bd1eec5e5754b4cf6fb8d3182d611a",
+            "test": "b29044dbbfd0ee9381861432de2ae1f7",
+            "full": "8d7e5c676db8d7d7a40c5b0fb0f6c1db",
+        },
     },
     "m4_quarterly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Quarterly"),
         "freq": "QS-JAN",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "875791341315eedd3ab1b993577603de",
+            "test": "1522f0fbe2304e2efce4505388b33bad",
+            "full": "13b64473e4dd25943d1e909315be97b6",
+        },
     },
     "m4_yearly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Yearly"),
         "freq": "D",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "f160e6349ae66f055751858bf3a453eb",
+            "test": "3d72ce8308d7e0dd4813ecd4d00eb590",
+            "full": "5dbe8a68d21751d3edecd00d4f580974",
+        },
     },
     "traffic_2008_10T": {
         "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="10T"),
         "freq": "10T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "7331ac70fec7aa4ed42e95accb84dd57",
+            "test": "ff7a7db11578fffe49d8e4817914026e",
+            "full": "44c9024cb0a64fa6be4bad5858a4a083",
+        },
     },
     "traffic_2008_hourly": {
         "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="hourly"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "97d9491868afed1434d2670e8264b9c2",
+            "test": "d15d2ba2b7b5fd9f8e5a9212578e2f13",
+            "full": "5672fa1f3d5fa2c962a090a947d28cc7",
+        },
     },
     "traffic_2015_hourly": {
         "get_dataset_function": get_traffic_2015_dataset,
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "977dc42728ca85f1eb40df4fa5929b90",
+            "test": "d7489e65b5d55f29107077031c11043f",
+            "full": "04e836838943e94b960a5f6c1fbd9d16",
+        },
     },
     "tourism_monthly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="monthly"),
         "freq": "MS",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "2b0bdd38d56cf5ac1fbae6e4b31e2826",
+            "test": "73beb939927fcffcc15cf14cd58b5bf4",
+            "full": "a105702b01a47ab857e000cd5674a244",
+        },
     },
     "tourism_quarterly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="quarterly"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "3517cf9f6f6e34dbb6fb3747134c72d7",
+            "test": "d41a4edfe9abffa0da020c91d5820f17",
+            "full": "1abd6ebd050e494a21519d4d9a5e0ade",
+        },
     },
     "tourism_yearly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="yearly"),
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "2f1f6de0f3a04f9427db5eb8d4eebf5e",
+            "test": "c1a96d31797ee18f20ce5cae0a8b6488",
+            "full": "c6e85ddab901c8c16dea7ab28c3dc97d",
+        },
     },
-    "weather_10T": {"get_dataset_function": get_weather_dataset, "freq": "10T", "parts": ("train", "test", "full")},
+    "weather_10T": {
+        "get_dataset_function": get_weather_dataset,
+        "freq": "10T",
+        "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "f726a503547578db881b30c5602243d0",
+            "test": "814f91a7e1caeb30dbf4b9f8772641ec",
+            "full": "3f43632663fee62d428144b04cd1172b",
+        },
+    },
     "ETTm1": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm1"),
         "freq": "15T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "c1bfb1ae78656c803e0bd347a9d440bc",
+            "test": "91bbdc5c65a19d04fd84389fe3a4cc85",
+            "full": "bc32ec482d2f995993c9aee9bcca9ab7",
+        },
     },
     "ETTm2": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm2"),
         "freq": "15T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "cfffd49b0725f6f7b9423257c7ffc98c",
+            "test": "dd633ccaf30540bbaa665633dead7264",
+            "full": "3f013423939d5ae73f484fbcdbdde378",
+        },
     },
     "ETTh1": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh1"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "dbb30c6f5c411a1c4f1906bc42d130cf",
+            "test": "25f47be89f4fc8ae8ab981465e16ca1d",
+            "full": "4869ac2b6cd21bad1cd001755985ef00",
+        },
     },
     "ETTh2": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh2"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "9f7a5be9b3efbc72a48d606021e603a2",
+            "test": "81e62ee115a3247c27f6dd9361f5e7ff",
+            "full": "8f1240b1757a2c7ecebe2ccf08e9f813",
+        },
     },
 }
