@@ -17,7 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `weather` to internal datasets ([#125](https://github.com/etna-team/etna/pull/125)) 
 - Add `ETT` to internal datasets ([#134](https://github.com/etna-team/etna/pull/134))
 - Add `list_datasets` function ([#145](https://github.com/etna-team/etna/pull/149))
+- Add `IHEPC` to internal datasets ([#150](https://github.com/etna-team/etna/pull/150))
 - Add dataset integrity check using hash for internal datasets ([#151](https://github.com/etna-team/etna/pull/151))
+- 
+
+>>>>>>> internal_datasets
 
 ### Changed
 -
