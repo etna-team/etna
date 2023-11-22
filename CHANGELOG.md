@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add dataset integrity check using hash for internal datasets ([#151](https://github.com/etna-team/etna/pull/151))
 - 
 
->>>>>>> internal_datasets
 
 ### Changed
 -
