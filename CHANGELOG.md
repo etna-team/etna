@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Update `datasets` module to work with integer timestamp ([#146](https://github.com/etna-team/etna/pull/146))
 - 
 - 
 - 

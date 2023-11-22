@@ -22,6 +22,8 @@ from typing_extensions import Literal
 
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
+from etna.datasets.utils import TimestampType
+from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import inverse_transform_target_components
@@ -32,8 +34,6 @@ if TYPE_CHECKING:
 
 if SETTINGS.torch_required:
     from torch.utils.data import Dataset
-
-TTimestamp = Union[str, pd.Timestamp]
 
 
 class TSDataset:
@@ -109,7 +109,7 @@ class TSDataset:
     def __init__(
         self,
         df: pd.DataFrame,
-        freq: str,
+        freq: Optional[str],
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
         hierarchical_structure: Optional[HierarchicalStructure] = None,
@@ -121,7 +121,12 @@ class TSDataset:
         df:
             dataframe with timeseries
         freq:
-            frequency of timestamp in df
+            frequency of timestamp in df, poossible values:
+
+            - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+            - None for integer timestamp
+
         df_exog:
             dataframe with exogenous data;
         known_future:
@@ -130,26 +135,9 @@ class TSDataset:
         hierarchical_structure:
             Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
-        self.raw_df = self._prepare_df(df)
-        self.raw_df.index = pd.to_datetime(self.raw_df.index)
         self.freq = freq
         self.df_exog = None
-
-        self.raw_df.index = pd.to_datetime(self.raw_df.index)
-
-        try:
-            inferred_freq = pd.infer_freq(self.raw_df.index)
-        except ValueError:
-            warnings.warn("TSDataset freq can't be inferred")
-            inferred_freq = None
-
-        if inferred_freq != self.freq:
-            warnings.warn(
-                f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {self.freq}"
-            )
-
-        self.raw_df = self.raw_df.asfreq(self.freq)
-
+        self.raw_df = self._prepare_df(df=df.copy(deep=True), freq=freq)
         self.df = self.raw_df.copy(deep=True)
 
         self.known_future = self._check_known_future(known_future, df_exog)
@@ -160,11 +148,12 @@ class TSDataset:
         self.current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
-            self.df_exog = df_exog.copy(deep=True)
-            self.df_exog.index = pd.to_datetime(self.df_exog.index)
+            self.df_exog = self._cast_segment_to_str(df=df_exog.copy(deep=True))
+            if freq is not None:
+                self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             if self.current_df_level == self.current_df_exog_level:
-                self.df = self._merge_exog(self.df)
+                self.df = self._merge_exog(df=self.df)
 
         self._target_components_names: Tuple[str, ...] = tuple()
         self._prediction_intervals_names: Tuple[str, ...] = tuple()
@@ -203,13 +192,43 @@ class TSDataset:
             transform.fit_transform(self)
 
     @staticmethod
-    def _prepare_df(df: pd.DataFrame) -> pd.DataFrame:
-        # cast segment to str type
-        df_copy = df.copy(deep=True)
+    def _cast_segment_to_str(df: pd.DataFrame) -> pd.DataFrame:
         columns_frame = df.columns.to_frame()
         columns_frame["segment"] = columns_frame["segment"].astype(str)
-        df_copy.columns = pd.MultiIndex.from_frame(columns_frame)
-        return df_copy
+        df.columns = pd.MultiIndex.from_frame(columns_frame)
+        return df
+
+    @classmethod
+    def _prepare_df(cls, df: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
+        # cast segment to str type
+        cls._cast_segment_to_str(df)
+
+        # handle freq
+        if freq is None:
+            if df.index.dtype != "int":
+                raise ValueError("You set wrong freq. Data contains datetime index, not integer.")
+
+            new_index = np.arange(df.index.min(), df.index.max() + 1)
+            index_name = df.index.name
+            df = df.reindex(new_index)
+            df.index.name = index_name
+
+        else:
+            try:
+                df.index = pd.to_datetime(df.index)
+                inferred_freq = pd.infer_freq(df.index)
+            except ValueError:
+                warnings.warn("TSDataset freq can't be inferred")
+                inferred_freq = None
+
+            if inferred_freq is not None and inferred_freq != freq:
+                warnings.warn(
+                    f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {freq}"
+                )
+
+            df = df.asfreq(freq)
+
+        return df
 
     def __repr__(self):
         return self.df.__repr__()
@@ -228,6 +247,22 @@ class TSDataset:
             df = self.df.loc[self.idx[item[0]], self.idx[item[1], item[2]]]
         first_valid_idx = df.first_valid_index()
         df = df.loc[first_valid_idx:]
+        return df
+
+    @staticmethod
+    def _expand_index(df: pd.DataFrame, freq: Optional[str], future_steps: int) -> pd.DataFrame:
+        if freq is None:
+            new_index = np.arange(df.index.min(), df.index.max() + future_steps + 1)
+        else:
+            with warnings.catch_warnings():
+                warnings.filterwarnings(action="ignore", message="Argument `closed` is deprecated")
+                future_dates = pd.date_range(start=df.index.max(), periods=future_steps + 1, freq=freq, closed="right")
+            new_index = df.index.append(future_dates)
+
+        index_name = df.index.name
+        df = df.reindex(new_index)
+        df.index.name = index_name
+
         return df
 
     def make_future(
@@ -278,23 +313,18 @@ class TSDataset:
         2021-07-04          33          38    NaN          73          78    NaN
         """
         self._check_endings(warning=True)
-        max_date_in_dataset = self.df.index.max()
-        future_dates = pd.date_range(
-            start=max_date_in_dataset, periods=future_steps + 1, freq=self.freq, closed="right"
-        )
-
-        new_index = self.raw_df.index.append(future_dates)
-        df = self.raw_df.reindex(new_index)
-        df.index.name = "timestamp"
+        df = self._expand_index(df=self.raw_df, freq=self.freq, future_steps=future_steps)
 
         if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
-            df = self._merge_exog(df)
+            df = self._merge_exog(df=df)
 
             # check if we have enough values in regressors
+            # TODO: check performance
             if self.regressors:
+                future_index = df.index.difference(self.index)
                 for segment in self.segments:
                     regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.regressors]].index
-                    if not np.all(future_dates.isin(regressors_index)):
+                    if not np.all(future_index.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
                             f"NaN-s will be used for missing values"
@@ -341,9 +371,9 @@ class TSDataset:
         Parameters
         ----------
         start_idx:
-            starting index of the slice.
+            starting integer index (counting from 0) of the slice.
         end_idx:
-            last index of the slice.
+            last integer index (counting from 0) of the slice.
 
         Returns
         -------
@@ -419,8 +449,11 @@ class TSDataset:
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.df_exog is None:
             raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
+
+        # TODO: this check could probably be skipped at make_future
         df_regressors = self.df_exog.loc[:, pd.IndexSlice[:, self.known_future]]
         self._check_regressors(df=df, df_regressors=df_regressors)
+
         df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
         return df
 
@@ -430,9 +463,9 @@ class TSDataset:
         if np.any(pd.isna(self.df.loc[max_index, pd.IndexSlice[:, "target"]])):
             if warning:
                 warnings.warn(
-                    "Segments contains NaNs in the last timestamps."
-                    "Some of the transforms might work incorrectly or even fail."
-                    "Make sure that you use the imputer before making the forecast."
+                    "Segments contains NaNs in the last timestamps. "
+                    "Some of the transforms might work incorrectly or even fail. "
+                    "Try to start using integer timestamp and align the segments."
                 )
             else:
                 raise ValueError("All segments should end at the same timestamp")
@@ -543,8 +576,8 @@ class TSDataset:
         n_segments: int = 10,
         column: str = "target",
         segments: Optional[Sequence[str]] = None,
-        start: Optional[str] = None,
-        end: Optional[str] = None,
+        start: Optional[Union[TimestampType, str]] = None,
+        end: Optional[Union[TimestampType, str]] = None,
         seed: int = 1,
         figsize: Tuple[int, int] = (10, 5),
     ):
@@ -566,6 +599,11 @@ class TSDataset:
             end plot at this timestamp
         figsize:
             size of the figure per subplot with one segment in inches
+
+        Raises
+        ------
+        ValueError:
+            Non-integer timestamp parameter is used for integer-indexed timestamp.
         """
         if segments is None:
             segments = self.segments
@@ -574,8 +612,12 @@ class TSDataset:
             k = len(segments)
         columns_num = min(2, k)
         rows_num = math.ceil(k / columns_num)
-        start = self.df.index.min() if start is None else pd.Timestamp(start)
-        end = self.df.index.max() if end is None else pd.Timestamp(end)
+
+        start = _check_timestamp_param(param=start, param_name="start", freq=self.freq)
+        end = _check_timestamp_param(param=end, param_name="end", freq=self.freq)
+
+        start = self.df.index.min() if start is None else start
+        end = self.df.index.max() if end is None else end
 
         figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
         _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, squeeze=False)
@@ -732,6 +774,7 @@ class TSDataset:
         ----------
         df:
             DataFrame with columns ["timestamp", "segment"]. Other columns considered features.
+            Columns "timestamp" is expected to be one of two types: integer or timestamp.
 
         Notes
         -----
@@ -778,11 +821,16 @@ class TSDataset:
         2021-01-05           4           9
         """
         df_copy = df.copy(deep=True)
-        df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
+
+        if df_copy["timestamp"].dtype != "int":
+            df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
+
         df_copy["segment"] = df_copy["segment"].astype(str)
+
         feature_columns = df_copy.columns.tolist()
         feature_columns.remove("timestamp")
         feature_columns.remove("segment")
+
         df_copy = df_copy.pivot(index="timestamp", columns="segment")
         df_copy = df_copy.reorder_levels([1, 0], axis=1)
         df_copy.columns.names = ["segment", "feature"]
@@ -873,13 +921,19 @@ class TSDataset:
 
     def _find_all_borders(
         self,
-        train_start: Optional[TTimestamp],
-        train_end: Optional[TTimestamp],
-        test_start: Optional[TTimestamp],
-        test_end: Optional[TTimestamp],
+        train_start: Optional[Union[TimestampType, str]],
+        train_end: Optional[Union[TimestampType, str]],
+        test_start: Optional[Union[TimestampType, str]],
+        test_end: Optional[Union[TimestampType, str]],
         test_size: Optional[int],
-    ) -> Tuple[TTimestamp, TTimestamp, TTimestamp, TTimestamp]:
+    ) -> Tuple[TimestampType, TimestampType, TimestampType, TimestampType]:
         """Find borders for train_test_split if some values wasn't specified."""
+        # prepare and validate values
+        train_start = _check_timestamp_param(param=train_start, param_name="train_start", freq=self.freq)
+        train_end = _check_timestamp_param(param=train_end, param_name="train_end", freq=self.freq)
+        test_start = _check_timestamp_param(param=test_start, param_name="test_start", freq=self.freq)
+        test_end = _check_timestamp_param(param=test_end, param_name="test_end", freq=self.freq)
+
         if test_end is not None and test_start is not None and test_size is not None:
             warnings.warn(
                 "test_size, test_start and test_end cannot be applied at the same time. test_size will be ignored"
@@ -935,17 +989,17 @@ class TSDataset:
             else:
                 train_end_defined = train_end
 
-        if np.datetime64(test_start_defined) < np.datetime64(train_end_defined):
+        if test_start_defined < train_end_defined:
             raise ValueError("The beginning of the test goes before the end of the train")
 
         return train_start_defined, train_end_defined, test_start_defined, test_end_defined
 
     def train_test_split(
         self,
-        train_start: Optional[TTimestamp] = None,
-        train_end: Optional[TTimestamp] = None,
-        test_start: Optional[TTimestamp] = None,
-        test_end: Optional[TTimestamp] = None,
+        train_start: Optional[Union[TimestampType, str]] = None,
+        train_end: Optional[Union[TimestampType, str]] = None,
+        test_start: Optional[Union[TimestampType, str]] = None,
+        test_end: Optional[Union[TimestampType, str]] = None,
         test_size: Optional[int] = None,
     ) -> Tuple["TSDataset", "TSDataset"]:
         """Split given df with train-test timestamp indices or size of test set.
@@ -969,6 +1023,11 @@ class TSDataset:
         -------
         train, test:
             generated datasets
+
+        Raises
+        ------
+        ValueError:
+            Non-integer timestamp parameter is used for integer-indexed timestamp.
 
         Examples
         --------
@@ -1004,13 +1063,13 @@ class TSDataset:
             train_start, train_end, test_start, test_end, test_size
         )
 
-        if pd.Timestamp(test_end_defined) > self.df.index.max():
+        if test_end_defined > self.df.index.max():
             warnings.warn(f"Max timestamp in df is {self.df.index.max()}.")
-        if pd.Timestamp(train_start_defined) < self.df.index.min():
+        if train_start_defined < self.df.index.min():
             warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
 
-        train_df = self.df[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
-        train_raw_df = self.raw_df[train_start_defined:train_end_defined]  # type: ignore
+        train_df = self.df.loc[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
+        train_raw_df = self.raw_df.loc[train_start_defined:train_end_defined]  # type: ignore
         train = TSDataset(
             df=train_df,
             df_exog=self.df_exog,
@@ -1023,8 +1082,8 @@ class TSDataset:
         train._target_components_names = deepcopy(self.target_components_names)
         train._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
 
-        test_df = self.df[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
-        test_raw_df = self.raw_df[train_start_defined:test_end_defined]  # type: ignore
+        test_df = self.df.loc[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
+        test_raw_df = self.raw_df.loc[train_start_defined:test_end_defined]  # type: ignore
         test = TSDataset(
             df=test_df,
             df_exog=self.df_exog,
@@ -1126,12 +1185,12 @@ class TSDataset:
         self._regressors = list(set(self._regressors) - features_set)
 
     @property
-    def index(self) -> pd.core.indexes.datetimes.DatetimeIndex:
+    def index(self) -> pd.Index:
         """Return TSDataset timestamp index.
 
         Returns
         -------
-        pd.core.indexes.datetimes.DatetimeIndex
+        :
             timestamp index of TSDataset
         """
         return self.df.index
