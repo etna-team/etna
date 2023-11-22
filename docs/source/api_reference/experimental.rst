@@ -35,3 +35,12 @@ Prediction Intervals:
 
    prediction_intervals.BasePredictionIntervals
    prediction_intervals.NaiveVariancePredictionIntervals
+   prediction_intervals.ConformalPredictionIntervals
+
+Prediction Intervals utilities:
+
+.. autosummary::
+   :toctree: api/
+   :template: base.rst
+
+   prediction_intervals.utils.residuals_matrices

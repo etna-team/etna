@@ -32,7 +32,7 @@ class ConformalPredictionIntervals(BasePredictionIntervals):
         pipeline:
             Base pipeline or ensemble for prediction intervals estimation.
         coverage:
-             Interval coverage. In literature this value maybe referred as :math:`1 - \alpha`.
+             Interval coverage. In literature this value maybe referred as ``1 - alpha``.
         bonferroni_correction:
              Whether to use Bonferroni correction when estimating quantiles.
         stride:
