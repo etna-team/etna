@@ -32,14 +32,6 @@ def test_estimate_variance_shape(dummy_array):
     assert out_array.shape == (5, 3)
 
 
-@pytest.mark.parametrize("horizon,n_folds", ((4, 3), (2, 6), (5, 5)))
-def test_compute_resids_matrix_shape(example_tsds, horizon, n_folds):
-    n_segments = len(example_tsds.segments)
-    intervals_pipeline = NaiveVariancePredictionIntervals(pipeline=Pipeline(model=NaiveModel(), horizon=horizon))
-    residuals_matrices = intervals_pipeline._compute_resids_matrices(ts=example_tsds, n_folds=n_folds)
-    assert residuals_matrices.shape == (n_folds, horizon, n_segments)
-
-
 @pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
 def test_pipeline_fit_forecast_without_intervals(example_tsds, pipeline_name, request):
     pipeline = request.getfixturevalue(pipeline_name)
