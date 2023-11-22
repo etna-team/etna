@@ -958,9 +958,3 @@ datasets_dict: Dict[str, Dict] = {
         "hash": {"full": "b264916c0883f177ef79fb18a16ba9a6"},
     },
 }
-
-
-if __name__ == "__main__":
-    # ts = load_dataset("IHEPC_T", rebuild_dataset=True)
-    data, dataset_hash = read_dataset(Path("/Users/y.malyshev/.etna/IHEPC_T/IHEPC_T_full.csv.gz"))
-    print(dataset_hash)
