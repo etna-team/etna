@@ -35,6 +35,7 @@ def update_dataset_dict(dataset_name, get_dataset_function, freq):
         "get_dataset_function": get_dataset_function,
         "freq": freq,
         "parts": ("train", "test", "full"),
+        "hash": {"train": "", "test": "", "full": ""},
     }
 
 
@@ -350,9 +351,48 @@ def test_list_datasets():
     assert len(datasets_names) == len(datasets_dict)
 
 
-def test_dataset_hash():
-    for name in datasets_dict:
-        dataset_dir = _DOWNLOAD_PATH / name
-        for part in datasets_dict[name]["hash"]:
-            data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{part}.csv.gz")
-            assert dataset_hash == datasets_dict[name]["hash"][part]
+@pytest.mark.parametrize(
+    "dataset_name",
+    [
+        pytest.param(
+            "electricity_15T",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        "m4_hourly",
+        "m4_daily",
+        "m4_weekly",
+        "m4_monthly",
+        "m4_quarterly",
+        "m4_yearly",
+        pytest.param(
+            "traffic_2008_10T",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        pytest.param(
+            "traffic_2008_hourly",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        pytest.param(
+            "traffic_2015_hourly",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        "m3_monthly",
+        "m3_quarterly",
+        "m3_other",
+        "m3_yearly",
+        "tourism_monthly",
+        "tourism_quarterly",
+        "tourism_yearly",
+        "weather_10T",
+        "ETTm1",
+        "ETTm2",
+        "ETTh1",
+        "ETTh2",
+        "IHEPC_T",
+    ],
+)
+def test_dataset_hash(dataset_name):
+    dataset_dir = _DOWNLOAD_PATH / dataset_name
+    for part in datasets_dict[dataset_name]["parts"]:
+        data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{dataset_name}_{part}.csv.gz")
+        assert dataset_hash == datasets_dict[dataset_name]["hash"][part]
