@@ -6,6 +6,7 @@ import scipy.stats as scs
 
 from etna.datasets import TSDataset
 from etna.experimental.prediction_intervals import BasePredictionIntervals
+from etna.experimental.prediction_intervals.utils import residuals_matrices
 from etna.pipeline import BasePipeline
 
 
@@ -61,7 +62,7 @@ class NaiveVariancePredictionIntervals(BasePredictionIntervals):
         :
             Dataset with predictions.
         """
-        residuals = self._compute_resids_matrices(ts=ts, n_folds=n_folds)
+        residuals = residuals_matrices(pipeline=self, ts=ts, n_folds=n_folds, stride=self.stride)
 
         variance = self._estimate_variance(residual_matrices=residuals)
 
@@ -75,29 +76,6 @@ class NaiveVariancePredictionIntervals(BasePredictionIntervals):
         quantiles_df = pd.concat(borders, axis=1)
         predictions.add_prediction_intervals(prediction_intervals_df=quantiles_df)
         return predictions
-
-    def _compute_resids_matrices(self, ts: TSDataset, n_folds: int) -> np.ndarray:
-        """Estimate residuals matrices with backtest.
-
-        Parameters
-        ----------
-        ts:
-            Dataset to estimate residuals.
-        n_folds:
-            Number of folds for backtest.
-
-        Returns
-        -------
-        :
-            Residuals matrices for each segment. Array with shape: ``(n_folds, horizon, n_segments)``.
-        """
-        backtest_forecasts = self.get_historical_forecasts(ts=ts, n_folds=n_folds, stride=self.stride)
-
-        residuals = backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]] - ts[backtest_forecasts.index, :, "target"]
-
-        # shape: (n_folds, horizon, n_segments)
-        residual_matrices = residuals.values.reshape((-1, self.horizon, len(ts.segments)))
-        return residual_matrices
 
     def _estimate_variance(self, residual_matrices: np.ndarray) -> np.ndarray:
         """Estimate variance from residuals matrices.
