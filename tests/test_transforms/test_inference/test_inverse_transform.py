@@ -57,9 +57,736 @@ from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
-from tests.test_transforms.test_inference.common import find_columns_diff
+from tests.test_transforms.utils import assert_column_changes
+from tests.test_transforms.utils import convert_ts_to_int_timestamp
+from tests.test_transforms.utils import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
+
+
+class TestInverseTransformTrain:
+    """Test inverse transform on train dataset.
+
+    Expected that inverse transformation creates columns, removes columns and changes values.
+    """
+
+    def _test_inverse_transform_train(self, ts, transform, expected_changes):
+        # prepare data
+        train_ts = deepcopy(ts)
+        test_ts = deepcopy(ts)
+
+        # fit
+        transform.fit(train_ts)
+
+        # transform
+        transformed_test_ts = transform.transform(deepcopy(test_ts))
+
+        # inverse transform
+        inverse_transformed_test_ts = transform.inverse_transform(deepcopy(transformed_test_ts))
+
+        # check
+        assert_column_changes(
+            ts_1=transformed_test_ts, ts_2=inverse_transformed_test_ts, expected_changes=expected_changes
+        )
+        flat_test_df = test_ts.to_pandas(flatten=True)
+        flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
+        flat_inverse_transformed_test_df = inverse_transformed_test_ts.to_pandas(flatten=True)
+        created_columns, removed_columns, changed_columns = find_columns_diff(
+            flat_transformed_test_df, flat_inverse_transformed_test_df
+        )
+        pd.testing.assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+        )
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            # decomposition
+            (
+                ChangePointsSegmentationTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            # encoders
+            (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
+            (MeanSegmentEncoderTransform(), "regular_ts", {}),
+            (SegmentEncoderTransform(), "regular_ts", {}),
+            # feature_selection
+            (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
+            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
+            (
+                GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                GaleShapleyFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                ),
+                "ts_with_exog",
+                {"create": {"month", "year", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                TreeFeatureSelectionTransform(
+                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
+                ),
+                "ts_with_exog",
+                {"create": {"year", "month", "monthday"}},
+            ),
+            # math
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                LambdaTransform(
+                    in_column="target",
+                    transform_func=lambda x: x + 1,
+                    inverse_transform_func=lambda x: x - 1,
+                    inplace=True,
+                ),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
+            (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
+            (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
+            (MADTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (MaxTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (MeanTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (MedianTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (MinTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (StdTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (SumTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (
+                BoxCoxTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
+            (
+                BoxCoxTransform(in_column="target", mode="per-segment", inplace=True),
+                "positive_ts",
+                {"change": {"target"}},
+            ),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
+            (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {"change": {"target"}}),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                # setting clip=False is important
+                MinMaxScalerTransform(in_column="target", mode="per-segment", clip=False, inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MinMaxScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                # setting clip=False is important
+                MinMaxScalerTransform(in_column="target", mode="macro", clip=False, inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
+            # missing_values
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample",
+                {},
+            ),
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (
+                PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+                "ts_with_outliers",
+                {"change": {"target"}},
+            ),
+            # timestamp
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (SpecialDaysTransform(), "regular_ts", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
+        ],
+    )
+    def test_inverse_transform_train_datetime_timestamp(self, transform, dataset_name, expected_changes, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_train(ts, transform, expected_changes=expected_changes)
+
+    # It is the only transform that doesn't change values back during `inverse_transform`
+    @to_be_fixed(raises=AssertionError)
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            # missing_values
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample",
+                {"change": {"regressor_exog"}},
+            ),
+        ],
+    )
+    def test_inverse_transform_train_datetime_timestamp_fail_resample(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_train(ts, transform, expected_changes=expected_changes)
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            # encoders
+            (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
+            (MeanSegmentEncoderTransform(), "regular_ts", {}),
+            (SegmentEncoderTransform(), "regular_ts", {}),
+            # feature_selection
+            (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
+            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
+            (
+                GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                GaleShapleyFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
+                ),
+                "ts_with_exog",
+                {"create": {"month", "year", "weekday"}},
+            ),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                TreeFeatureSelectionTransform(
+                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
+                ),
+                "ts_with_exog",
+                {"create": {"year", "month", "monthday"}},
+            ),
+            # math
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                LambdaTransform(
+                    in_column="target",
+                    transform_func=lambda x: x + 1,
+                    inverse_transform_func=lambda x: x - 1,
+                    inplace=True,
+                ),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
+            (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
+            (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
+            (MADTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (MaxTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (MeanTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (MedianTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (MinTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (StdTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (SumTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
+            (
+                BoxCoxTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
+            (
+                BoxCoxTransform(in_column="target", mode="per-segment", inplace=True),
+                "positive_ts",
+                {"change": {"target"}},
+            ),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
+            (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {"change": {"target"}}),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MinMaxScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                # setting clip=False is important
+                MinMaxScalerTransform(in_column="target", mode="per-segment", clip=False, inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MinMaxScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                # setting clip=False is important
+                MinMaxScalerTransform(in_column="target", mode="macro", clip=False, inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="per-segment", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
+            # missing_values
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            # timestamp
+            # TODO: it still needs to be checked
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
+        ],
+    )
+    def test_inverse_transform_train_int_timestamp(self, transform, dataset_name, expected_changes, request):
+        ts = request.getfixturevalue(dataset_name)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
+
+    @to_be_fixed(raises=Exception)
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            # decomposition
+            (
+                ChangePointsSegmentationTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            # feature_selection
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            # missing_values
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample",
+                {},
+            ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample_int_timestamp",
+                {"change": {"regressor_exog"}},
+            ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (
+                PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+                "ts_with_outliers",
+                {"change": {"target"}},
+            ),
+            # timestamp
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (SpecialDaysTransform(), "regular_ts", {}),
+        ],
+    )
+    def test_inverse_transform_train_int_timestamp_fail(self, transform, dataset_name, expected_changes, request):
+        ts = request.getfixturevalue(dataset_name)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
 
 class TestInverseTransformTrainSubsetSegments:
@@ -477,19 +1204,15 @@ class TestInverseTransformTrainNewSegments:
         inverse_transformed_test_ts = transform.inverse_transform(deepcopy(transformed_test_ts))
 
         # check
-        expected_columns_to_create = expected_changes.get("create", set())
-        expected_columns_to_remove = expected_changes.get("remove", set())
-        expected_columns_to_change = expected_changes.get("change", set())
+        assert_column_changes(
+            ts_1=transformed_test_ts, ts_2=inverse_transformed_test_ts, expected_changes=expected_changes
+        )
         flat_test_df = test_ts.to_pandas(flatten=True)
         flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         flat_inverse_transformed_test_df = inverse_transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-
-        assert created_columns == expected_columns_to_create
-        assert removed_columns == expected_columns_to_remove
-        assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
             flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
         )
@@ -802,19 +1525,15 @@ class TestInverseTransformFutureNewSegments:
         inverse_transformed_test_ts = transform.inverse_transform(deepcopy(transformed_test_ts))
 
         # check
-        expected_columns_to_create = expected_changes.get("create", set())
-        expected_columns_to_remove = expected_changes.get("remove", set())
-        expected_columns_to_change = expected_changes.get("change", set())
+        assert_column_changes(
+            ts_1=transformed_test_ts, ts_2=inverse_transformed_test_ts, expected_changes=expected_changes
+        )
         flat_test_df = test_ts.to_pandas(flatten=True)
         flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         flat_inverse_transformed_test_df = inverse_transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-
-        assert created_columns == expected_columns_to_create
-        assert removed_columns == expected_columns_to_remove
-        assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
             flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
         )
@@ -1195,19 +1914,15 @@ class TestInverseTransformFutureWithTarget:
         inverse_transformed_test_ts = transform.inverse_transform(deepcopy(transformed_test_ts))
 
         # check
-        expected_columns_to_create = expected_changes.get("create", set())
-        expected_columns_to_remove = expected_changes.get("remove", set())
-        expected_columns_to_change = expected_changes.get("change", set())
+        assert_column_changes(
+            ts_1=transformed_test_ts, ts_2=inverse_transformed_test_ts, expected_changes=expected_changes
+        )
         flat_test_df = test_ts.to_pandas(flatten=True)
         flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         flat_inverse_transformed_test_df = inverse_transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-
-        assert created_columns == expected_columns_to_create
-        assert removed_columns == expected_columns_to_remove
-        assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
             flat_test_df[list(changed_columns)],
             flat_inverse_transformed_test_df[list(changed_columns)],
@@ -1592,19 +2307,15 @@ class TestInverseTransformFutureWithoutTarget:
         inverse_transformed_test_ts = transform.inverse_transform(deepcopy(transformed_test_ts))
 
         # check
-        expected_columns_to_create = expected_changes.get("create", set())
-        expected_columns_to_remove = expected_changes.get("remove", set())
-        expected_columns_to_change = expected_changes.get("change", set())
+        assert_column_changes(
+            ts_1=transformed_test_ts, ts_2=inverse_transformed_test_ts, expected_changes=expected_changes
+        )
         flat_test_df = test_ts.to_pandas(flatten=True)
         flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
         flat_inverse_transformed_test_df = inverse_transformed_test_ts.to_pandas(flatten=True)
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-
-        assert created_columns == expected_columns_to_create
-        assert removed_columns == expected_columns_to_remove
-        assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
             flat_test_df[list(changed_columns)],
             flat_inverse_transformed_test_df[list(changed_columns)],
