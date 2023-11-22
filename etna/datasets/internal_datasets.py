@@ -159,7 +159,7 @@ def load_dataset(
         get_dataset_function(dataset_dir)
     if len(parts_) == 1:
         data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{parts_[0]}.csv.gz")
-        if dataset_hash != datasets_dict[name]["hash"][parts_]:
+        if dataset_hash != datasets_dict[name]["hash"][parts_[0]]:
             warnings.warn(
                 f"Local hash and expected hash are different for {name} dataset part {parts_}."
                 "This can happen for two reasons: there is a new version of the library"
@@ -951,5 +951,16 @@ datasets_dict: Dict[str, Dict] = {
             "full": "8f1240b1757a2c7ecebe2ccf08e9f813",
         },
     },
-    "IHEPC_T": {"get_dataset_function": get_ihepc_dataset, "freq": "T", "parts": ("full",)},
+    "IHEPC_T": {
+        "get_dataset_function": get_ihepc_dataset,
+        "freq": "T",
+        "parts": ("full",),
+        "hash": {"full": "b264916c0883f177ef79fb18a16ba9a6"},
+    },
 }
+
+
+if __name__ == "__main__":
+    # ts = load_dataset("IHEPC_T", rebuild_dataset=True)
+    data, dataset_hash = read_dataset(Path("/Users/y.malyshev/.etna/IHEPC_T/IHEPC_T_full.csv.gz"))
+    print(dataset_hash)
