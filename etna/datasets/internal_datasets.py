@@ -769,7 +769,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m3_monthly": {
-        "get_dataset_function": partial(get_m3_dataset, dataset_freq='monthly'),
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="monthly"),
         "freq": "M",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -779,7 +779,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m3_quarterly": {
-        "get_dataset_function": partial(get_m3_dataset, dataset_freq='quarterly'),
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="quarterly"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -789,7 +789,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m3_yearly": {
-        "get_dataset_function": partial(get_m3_dataset, dataset_freq='yearly'),
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="yearly"),
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -799,7 +799,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m3_other": {
-        "get_dataset_function": partial(get_m3_dataset, dataset_freq='other'),
+        "get_dataset_function": partial(get_m3_dataset, dataset_freq="other"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -809,7 +809,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m4_hourly": {
-        "get_dataset_function": partial(get_m4_dataset, dataset_freq='Hourly'),
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Hourly"),
         "freq": "H",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -819,7 +819,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m4_daily": {
-        "get_dataset_function": partial(get_m4_dataset, dataset_freq='Daily'),
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Daily"),
         "freq": "D",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -829,7 +829,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m4_weekly": {
-        "get_dataset_function": partial(get_m4_dataset, dataset_freq='Weekly'),
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Weekly"),
         "freq": "W-MON",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -839,7 +839,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m4_monthly": {
-        "get_dataset_function": partial(get_m4_dataset, dataset_freq='Monthly'),
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Monthly"),
         "freq": "M",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -849,7 +849,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m4_quarterly": {
-        "get_dataset_function": partial(get_m4_dataset, dataset_freq='Quarterly'),
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Quarterly"),
         "freq": "QS-JAN",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -859,7 +859,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "m4_yearly": {
-        "get_dataset_function": partial(get_m4_dataset, dataset_freq='Yearly'),
+        "get_dataset_function": partial(get_m4_dataset, dataset_freq="Yearly"),
         "freq": "D",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -869,7 +869,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "traffic_2008_10T": {
-        "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq='10T'),
+        "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="10T"),
         "freq": "10T",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -879,7 +879,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "traffic_2008_hourly": {
-        "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq='hourly'),
+        "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="hourly"),
         "freq": "H",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -899,7 +899,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "tourism_monthly": {
-        "get_dataset_function": partial(get_tourism_dataset, dataset_freq='monthly'),
+        "get_dataset_function": partial(get_tourism_dataset, dataset_freq="monthly"),
         "freq": "MS",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -909,7 +909,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "tourism_quarterly": {
-        "get_dataset_function": partial(get_tourism_dataset, dataset_freq='quarterly'),
+        "get_dataset_function": partial(get_tourism_dataset, dataset_freq="quarterly"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -919,7 +919,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "tourism_yearly": {
-        "get_dataset_function": partial(get_tourism_dataset, dataset_freq='yearly'),
+        "get_dataset_function": partial(get_tourism_dataset, dataset_freq="yearly"),
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -939,7 +939,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "ETTm1": {
-        "get_dataset_function": partial(get_ett_dataset, dataset_type='ETTm1'),
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm1"),
         "freq": "15T",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -949,7 +949,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "ETTm2": {
-        "get_dataset_function": partial(get_ett_dataset, dataset_type='ETTm2'),
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm2"),
         "freq": "15T",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -959,7 +959,7 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "ETTh1": {
-        "get_dataset_function": partial(get_ett_dataset, dataset_type='ETTh1'),
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh1"),
         "freq": "H",
         "parts": ("train", "test", "full"),
         "hash": {
@@ -969,19 +969,19 @@ datasets_dict: Dict[str, Dict] = {
         },
     },
     "ETTh2": {
-        "get_dataset_function": partial(get_ett_dataset, dataset_type='ETTh2'),
+        "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh2"),
         "freq": "H",
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "9f7a5be9b3efbc72a48d606021e603a2",
-            "test": "81e62ee115a3247c27f6dd9361f5e7ff",
-            "full": "8f1240b1757a2c7ecebe2ccf08e9f813",
+            "train": "cd8c467033c596d39c0988617f91fb07",
+            "test": "35e5223509132b4c9b9d5be5e46befef",
+            "full": "c28447fe9b3a6add84b281d263f738b9",
         },
     },
     "IHEPC_T": {
         "get_dataset_function": get_ihepc_dataset,
         "freq": "T",
         "parts": ("full",),
-        "hash": {"full": "b264916c0883f177ef79fb18a16ba9a6"},
+        "hash": {"full": "b8db9b8e100b2dbf2b9e991122613108"},
     },
 }
