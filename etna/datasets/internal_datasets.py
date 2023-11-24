@@ -773,7 +773,7 @@ datasets_dict: Dict[str, Dict] = {
         "freq": "M",
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "97209d3727630e6533776ce027048f71",
+            "train": "cfa58e9c2caf28849f5397ba159887b2",
             "test": "9d8f9871e418239f0efc23550dbe2e91",
             "full": "d1a8bad4aba489d04063dd48cedb96a5",
         },
