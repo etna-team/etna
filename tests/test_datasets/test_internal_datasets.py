@@ -393,6 +393,6 @@ def test_list_datasets():
 )
 def test_dataset_hash(dataset_name):
     dataset_dir = _DOWNLOAD_PATH / dataset_name
-    for part in datasets_dict[dataset_name]["parts"]:
+    for part in datasets_dict[dataset_name]["hash"]:
         data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{dataset_name}_{part}.csv.gz")
         assert dataset_hash == datasets_dict[dataset_name]["hash"][part]
