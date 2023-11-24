@@ -9,6 +9,7 @@ from etna.datasets import load_dataset
 from etna.datasets.internal_datasets import _DOWNLOAD_PATH
 from etna.datasets.internal_datasets import datasets_dict
 from etna.datasets.internal_datasets import list_datasets
+from etna.datasets.internal_datasets import read_dataset
 
 
 def get_custom_dataset(dataset_dir):
@@ -34,6 +35,7 @@ def update_dataset_dict(dataset_name, get_dataset_function, freq):
         "get_dataset_function": get_dataset_function,
         "freq": freq,
         "parts": ("train", "test", "full"),
+        "hash": {"train": "", "test": "", "full": ""},
     }
 
 
@@ -347,3 +349,50 @@ def test_df_exog_statistics(
 def test_list_datasets():
     datasets_names = list_datasets()
     assert len(datasets_names) == len(datasets_dict)
+
+
+@pytest.mark.parametrize(
+    "dataset_name",
+    [
+        pytest.param(
+            "electricity_15T",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        "m4_hourly",
+        "m4_daily",
+        "m4_weekly",
+        "m4_monthly",
+        "m4_quarterly",
+        "m4_yearly",
+        pytest.param(
+            "traffic_2008_10T",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        pytest.param(
+            "traffic_2008_hourly",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        pytest.param(
+            "traffic_2015_hourly",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
+        "m3_monthly",
+        "m3_quarterly",
+        "m3_other",
+        "m3_yearly",
+        "tourism_monthly",
+        "tourism_quarterly",
+        "tourism_yearly",
+        "weather_10T",
+        "ETTm1",
+        "ETTm2",
+        "ETTh1",
+        "ETTh2",
+        "IHEPC_T",
+    ],
+)
+def test_dataset_hash(dataset_name):
+    dataset_dir = _DOWNLOAD_PATH / dataset_name
+    for part in datasets_dict[dataset_name]["hash"]:
+        data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{dataset_name}_{part}.csv.gz")
+        assert dataset_hash == datasets_dict[dataset_name]["hash"][part]

@@ -1,8 +1,12 @@
+import gzip
+import hashlib
 import tempfile
 import urllib.request
+import warnings
 import zipfile
 from datetime import date
 from functools import partial
+from io import StringIO
 from pathlib import Path
 from typing import Any
 from typing import Callable
@@ -76,6 +80,28 @@ def _download_dataset_zip(
     return out
 
 
+def read_dataset(dataset_path: Path) -> Tuple[pd.DataFrame, str]:
+    """
+    Read locally saved dataset in bytes, calculate hash and build ``pandas.DataFrame``.
+
+    Parameters
+    ----------
+    dataset_path:
+        The path of dataset.
+
+    Returns
+    -------
+    result:
+        dataset, hash
+    """
+    with gzip.open(dataset_path, "rt", encoding="utf-8") as f:
+        data_ = f.read()
+
+    h = hashlib.md5(data_.encode()).hexdigest()
+    data = pd.read_csv(StringIO(data_), header=[0, 1], index_col=[0], parse_dates=[0])
+    return data, h
+
+
 def load_dataset(
     name: str,
     download_path: Path = _DOWNLOAD_PATH,
@@ -131,17 +157,20 @@ def load_dataset(
 
     if not _check_dataset_local(dataset_path) or rebuild_dataset:
         get_dataset_function(dataset_dir)
-    if len(parts_) == 1:
-        data = pd.read_csv(
-            dataset_dir / f"{name}_{parts_[0]}.csv.gz",
-            compression="gzip",
-            header=[0, 1],
-            index_col=[0],
-            parse_dates=[0],
-        )
+    ts_out = []
+    for part in parts_:
+        data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{part}.csv.gz")
+        if dataset_hash != datasets_dict[name]["hash"][part]:
+            warnings.warn(
+                f"Local hash and expected hash are different for {name} record part {part}."
+                "The first possible reason is that the local copy of the dataset is out of date. In this case you can "
+                "try setting rebuild_dataset=True to rebuild the dataset. The second possible reason is that the local "
+                "copy of the dataset reflects a more recent version of the data than your version of the library. "
+                "In this case you can try updating the library version."
+            )
         if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
             df_exog = pd.read_csv(
-                dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{parts_[0]}_exog.csv.gz",
+                dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz",
                 compression="gzip",
                 header=[0, 1],
                 index_col=[0],
@@ -150,25 +179,11 @@ def load_dataset(
             ts = TSDataset(data, df_exog=df_exog, freq=freq)
         else:
             ts = TSDataset(data, freq=freq)
-        return ts
+        ts_out.append(ts)
+
+    if len(ts_out) == 1:
+        return ts_out[0]
     else:
-        ts_out = []
-        for part in parts_:
-            data = pd.read_csv(
-                dataset_dir / f"{name}_{part}.csv.gz", compression="gzip", header=[0, 1], index_col=[0], parse_dates=[0]
-            )
-            if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
-                df_exog = pd.read_csv(
-                    dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz",
-                    compression="gzip",
-                    header=[0, 1],
-                    index_col=[0],
-                    parse_dates=[0],
-                )
-                ts = TSDataset(data, df_exog=df_exog, freq=freq)
-            else:
-                ts = TSDataset(data, freq=freq)
-            ts_out.append(ts)
         return ts_out
 
 
@@ -264,13 +279,13 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     df_full = pd.concat([df_train, df_test], axis=0)
 
     TSDataset.to_dataset(df_full).to_csv(
-        dataset_dir / f"m4_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"m4_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
     TSDataset.to_dataset(df_train).to_csv(
-        dataset_dir / f"m4_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"m4_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
     TSDataset.to_dataset(df_test).to_csv(
-        dataset_dir / f"m4_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"m4_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
 
 
@@ -355,9 +370,24 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     else:
         raise NotImplementedError(f"traffic_2008 with {dataset_freq} frequency is not available.")
 
-    df_full.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip")
-    df_train.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip")
-    df_test.to_csv(dataset_dir / f"traffic_2008_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip")
+    df_full.to_csv(
+        dataset_dir / f"traffic_2008_{dataset_freq.lower()}_full.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
+    )
+    df_train.to_csv(
+        dataset_dir / f"traffic_2008_{dataset_freq.lower()}_train.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
+    )
+    df_test.to_csv(
+        dataset_dir / f"traffic_2008_{dataset_freq.lower()}_test.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
+    )
 
 
 def get_traffic_2015_dataset(dataset_dir: Path) -> None:
@@ -395,9 +425,15 @@ def get_traffic_2015_dataset(dataset_dir: Path) -> None:
     df_test = df_full.tail(24)
     df_train = df_full[~df_full.index.isin(df_test.index)]
 
-    df_full.to_csv(dataset_dir / f"traffic_2015_hourly_full.csv.gz", index=True, compression="gzip")
-    df_train.to_csv(dataset_dir / f"traffic_2015_hourly_train.csv.gz", index=True, compression="gzip")
-    df_test.to_csv(dataset_dir / f"traffic_2015_hourly_test.csv.gz", index=True, compression="gzip")
+    df_full.to_csv(
+        dataset_dir / f"traffic_2015_hourly_full.csv.gz", index=True, compression="gzip", float_format="%.8f"
+    )
+    df_train.to_csv(
+        dataset_dir / f"traffic_2015_hourly_train.csv.gz", index=True, compression="gzip", float_format="%.8f"
+    )
+    df_test.to_csv(
+        dataset_dir / f"traffic_2015_hourly_test.csv.gz", index=True, compression="gzip", float_format="%.8f"
+    )
 
 
 def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
@@ -465,22 +501,31 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_test_exog = pd.concat([df_test_exog, df_test_part_exog])
 
     TSDataset.to_dataset(df_full).to_csv(
-        dataset_dir / f"m3_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"m3_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
     TSDataset.to_dataset(df_train).to_csv(
-        dataset_dir / f"m3_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"m3_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
     TSDataset.to_dataset(df_test).to_csv(
-        dataset_dir / f"m3_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"m3_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
     TSDataset.to_dataset(df_full_exog).to_csv(
-        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_full_exog.csv.gz", index=True, compression="gzip"
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_full_exog.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
     )
     TSDataset.to_dataset(df_full_exog).to_csv(
-        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_train_exog.csv.gz", index=True, compression="gzip"
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_train_exog.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
     )
     TSDataset.to_dataset(df_test_exog).to_csv(
-        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_test_exog.csv.gz", index=True, compression="gzip"
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_test_exog.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
     )
 
 
@@ -559,28 +604,40 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_test_exog = pd.concat([df_test_exog, df_test_exog_])
 
     TSDataset.to_dataset(df_full).to_csv(
-        dataset_dir / f"tourism_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"tourism_{dataset_freq.lower()}_full.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
     )
     TSDataset.to_dataset(df_train).to_csv(
-        dataset_dir / f"tourism_{dataset_freq.lower()}_train.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"tourism_{dataset_freq.lower()}_train.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
     )
     TSDataset.to_dataset(df_test).to_csv(
-        dataset_dir / f"tourism_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip"
+        dataset_dir / f"tourism_{dataset_freq.lower()}_test.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
     )
     TSDataset.to_dataset(df_full_exog).to_csv(
         dataset_dir / EXOG_SUBDIRECTORY / f"tourism_{dataset_freq.lower()}_full_exog.csv.gz",
         index=True,
         compression="gzip",
+        float_format="%.8f",
     )
     TSDataset.to_dataset(df_full_exog).to_csv(
         dataset_dir / EXOG_SUBDIRECTORY / f"tourism_{dataset_freq.lower()}_train_exog.csv.gz",
         index=True,
         compression="gzip",
+        float_format="%.8f",
     )
     TSDataset.to_dataset(df_test_exog).to_csv(
         dataset_dir / EXOG_SUBDIRECTORY / f"tourism_{dataset_freq.lower()}_test_exog.csv.gz",
         index=True,
         compression="gzip",
+        float_format="%.8f",
     )
 
 
@@ -617,9 +674,9 @@ def get_weather_dataset(dataset_dir: Path) -> None:
     df_test = df_full.tail(6 * 24)
     df_train = df_full[~df_full.index.isin(df_test.index)]
 
-    df_full.to_csv(dataset_dir / f"weather_10T_full.csv.gz", index=True, compression="gzip")
-    df_train.to_csv(dataset_dir / f"weather_10T_train.csv.gz", index=True, compression="gzip")
-    df_test.to_csv(dataset_dir / f"weather_10T_test.csv.gz", index=True, compression="gzip")
+    df_full.to_csv(dataset_dir / f"weather_10T_full.csv.gz", index=True, compression="gzip", float_format="%.8f")
+    df_train.to_csv(dataset_dir / f"weather_10T_train.csv.gz", index=True, compression="gzip", float_format="%.8f")
+    df_test.to_csv(dataset_dir / f"weather_10T_test.csv.gz", index=True, compression="gzip", float_format="%.8f")
 
 
 def get_ett_dataset(dataset_dir: Path, dataset_type: str) -> None:
@@ -660,9 +717,9 @@ def get_ett_dataset(dataset_dir: Path, dataset_type: str) -> None:
             f"You can use one from: ('ETTm1', 'ETTm2', 'ETTh1', 'ETTh2')."
         )
 
-    df_full.to_csv(dataset_dir / f"{dataset_type}_full.csv.gz", index=True, compression="gzip")
-    df_train.to_csv(dataset_dir / f"{dataset_type}_train.csv.gz", index=True, compression="gzip")
-    df_test.to_csv(dataset_dir / f"{dataset_type}_test.csv.gz", index=True, compression="gzip")
+    df_full.to_csv(dataset_dir / f"{dataset_type}_full.csv.gz", index=True, compression="gzip", float_format="%.8f")
+    df_train.to_csv(dataset_dir / f"{dataset_type}_train.csv.gz", index=True, compression="gzip", float_format="%.8f")
+    df_test.to_csv(dataset_dir / f"{dataset_type}_test.csv.gz", index=True, compression="gzip", float_format="%.8f")
 
 
 def get_ihepc_dataset(dataset_dir: Path) -> None:
@@ -692,7 +749,7 @@ def get_ihepc_dataset(dataset_dir: Path) -> None:
     df = df.drop(["Date", "Time"], axis=1).melt("timestamp", var_name="segment", value_name="target")
     df_full = TSDataset.to_dataset(df)
 
-    df_full.to_csv(dataset_dir / f"IHEPC_T_full.csv.gz", index=True, compression="gzip")
+    df_full.to_csv(dataset_dir / f"IHEPC_T_full.csv.gz", index=True, compression="gzip", float_format="%.8f")
 
 
 def list_datasets() -> List[str]:
@@ -705,107 +762,226 @@ datasets_dict: Dict[str, Dict] = {
         "get_dataset_function": get_electricity_dataset_15t,
         "freq": "15T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "a3148ff2119a29f9d4c5f33bb0f7897d",
+            "test": "df98e934e70e9b1dcfb0a3ee6858d76f",
+            "full": "97209d3727630e6533776ce027048f71",
+        },
     },
     "m3_monthly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="monthly"),
         "freq": "M",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "cfa58e9c2caf28849f5397ba159887b2",
+            "test": "9d8f9871e418239f0efc23550dbe2e91",
+            "full": "d1a8bad4aba489d04063dd48cedb96a5",
+        },
     },
     "m3_quarterly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="quarterly"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "f944dd06aa47a495f18b40f0a1dab6a5",
+            "test": "d29138ea613c8a4945cbd421754254e0",
+            "full": "fdfdd5400dce06530d576f4136d13421",
+        },
     },
     "m3_yearly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="yearly"),
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "6eb14930144e2012d0132f0b809cf2d8",
+            "test": "15ad9304aa9d0a3acf6496e7e5e03176",
+            "full": "d41fadf624a61645c545847e2154c4a9",
+        },
     },
     "m3_other": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="other"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "9132a834a7edb7f7c10215f753c0d68c",
+            "test": "d489b43229c7498c937f38fa465e8734",
+            "full": "9b55fd0bc336120e3756e022f5beade3",
+        },
     },
     "m4_hourly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Hourly"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "61dcfc17181fdeb67821fc3a9ff4b509",
+            "test": "53768f5aa63d5c99eb6841fbd14fa42f",
+            "full": "1bf6e9a9f5ae7e19261bb01a9a24da6f",
+        },
     },
     "m4_daily": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Daily"),
         "freq": "D",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "dbf8a576d00f1e523f01f8a72af6c0da",
+            "test": "294ad20e7c6f0a1dddb4f749b7473dc0",
+            "full": "11e60a29e9ea7c4f9672e77bd107e4d8",
+        },
     },
     "m4_weekly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Weekly"),
         "freq": "W-MON",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "26821e9fd21cac965bbedc35a137f18a",
+            "test": "6798cae75181c5f0c1a608eb0e59e23f",
+            "full": "5bdbaff1a011ef8723f09a38e0266fcf",
+        },
     },
     "m4_monthly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Monthly"),
         "freq": "M",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "f625bc066e42299132aaad2a79e54537",
+            "test": "9e2dc5262ca01b5d2c0a6d2993039735",
+            "full": "78a96c47ee4335bd59e33a1e7b26c3b3",
+        },
     },
     "m4_quarterly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Quarterly"),
         "freq": "QS-JAN",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "540c397f52a13dd17f5158ab799a93f9",
+            "test": "8a145e44f9ce19ffe004d867ac7899d4",
+            "full": "745c6e679a600dcd96211c7717605d72",
+        },
     },
     "m4_yearly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Yearly"),
         "freq": "D",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "67d73db6245af5c5551f38d315e290f9",
+            "test": "806d1f2257162fe95c98718db2f04ab7",
+            "full": "011bef4ab44721a99288d502ccb2bc98",
+        },
     },
     "traffic_2008_10T": {
         "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="10T"),
         "freq": "10T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "4d8d1367fd5341475b852fe9779d0b05",
+            "test": "261ee7b09e50d1c7e1e74ccf08412f3f",
+            "full": "f0c9229d78cfa5b0abf5be950b6843b2",
+        },
     },
     "traffic_2008_hourly": {
         "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="hourly"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "7e6609cce30ae22004c7d7b1d39a35d5",
+            "test": "adc3fa06ee856c6481faa400e9e9f602",
+            "full": "8d988a81e8c368164aada708be27a1c2",
+        },
     },
     "traffic_2015_hourly": {
         "get_dataset_function": get_traffic_2015_dataset,
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "838f0b7b012cf0bf3427fb5b1a4c053f",
+            "test": "67b2d13ec809f3ce58834932460793e5",
+            "full": "4edf42371f28685137ac402c6a7ad2cd",
+        },
     },
     "tourism_monthly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="monthly"),
         "freq": "MS",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "2a32e030b783a0de3e74f9d412e6e70c",
+            "test": "c5d4f520692d000cd6517e1cd67f2345",
+            "full": "f1d8b9bf506d49f6c902c97624fe23bd",
+        },
     },
     "tourism_quarterly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="quarterly"),
         "freq": "Q-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "9840d4875899d81349321aae6f859c21",
+            "test": "17e193090a32c91fc482db9993f5db28",
+            "full": "645822fcb6a46dfe7375d2eb6f117ef2",
+        },
     },
     "tourism_yearly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="yearly"),
         "freq": "A-DEC",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "d0781023602223cc9b9c2dca1981c0fb",
+            "test": "a5461b2fcbf6bac12591d657b1b930f9",
+            "full": "9032dbd5d0a7e0f696d6a5c005a493e0",
+        },
     },
-    "weather_10T": {"get_dataset_function": get_weather_dataset, "freq": "10T", "parts": ("train", "test", "full")},
+    "weather_10T": {
+        "get_dataset_function": get_weather_dataset,
+        "freq": "10T",
+        "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "71393681d125a2c3c39fbe2a2aedd9a1",
+            "test": "a4808adbba4a50de5e4ece42ed44a333",
+            "full": "18222d1300d550a23cb27c6188559384",
+        },
+    },
     "ETTm1": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm1"),
         "freq": "15T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "ea71e6ca40d872916ae62d6182004a22",
+            "test": "cb662ba54159a0ab505206be054be582",
+            "full": "b40f1678ee1dbc764c609139120d129f",
+        },
     },
     "ETTm2": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm2"),
         "freq": "15T",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "e7012a0ff1847bf35050f67ddf843ce6",
+            "test": "87a2409da835c27d68e5770c07b51bc3",
+            "full": "d48bb6c5c4aa0deef90db9306451e1ff",
+        },
     },
     "ETTh1": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh1"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "c86c169fd7031c49aab23baf0e0ded5e",
+            "test": "f11417d67371bc82c00ccbb044f5d1de",
+            "full": "5bbf6b7045cc260893f93ef89f3346e3",
+        },
     },
     "ETTh2": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh2"),
         "freq": "H",
         "parts": ("train", "test", "full"),
+        "hash": {
+            "train": "58606e10507b32963a1cca89716f68a2",
+            "test": "de23fa6a93c84d82f657a38958007d1c",
+            "full": "11786b012971b0d97171fbc1f4e7e045",
+        },
     },
-    "IHEPC_T": {"get_dataset_function": get_ihepc_dataset, "freq": "T", "parts": ("full",)},
+    "IHEPC_T": {
+        "get_dataset_function": get_ihepc_dataset,
+        "freq": "T",
+        "parts": ("full",),
+        "hash": {"full": "8909138462ea130b9809907e947ffae6"},
+    },
 }
