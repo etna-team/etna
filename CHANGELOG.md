@@ -45,7 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Update `ResampleWithDistributionTransform` to work with integer timestamp ([#165](https://github.com/etna-team/etna/pull/165))
 - 
 - 
 - 
