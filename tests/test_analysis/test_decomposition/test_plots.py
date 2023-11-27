@@ -1,7 +1,10 @@
 import pytest
+from ruptures.detection import Binseg
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import TheilSenRegressor
 
+from etna.analysis import plot_change_points_interactive
+from etna.analysis import plot_time_series_with_change_points
 from etna.analysis import plot_trend
 from etna.analysis import seasonal_plot
 from etna.transforms import ChangePointsTrendTransform
@@ -47,3 +50,42 @@ def test_plot_stl(example_tsdf, period):
 )
 def test_dummy_seasonal_plot(freq, cycle, additional_params, ts_with_different_series_length):
     seasonal_plot(ts=ts_with_different_series_length, freq=freq, cycle=cycle, **additional_params)
+
+
+@pytest.mark.parametrize(
+    "params, match",
+    [
+        ({"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ({"end": "2020-01-01"}, "Parameter end has incorrect type"),
+    ],
+)
+def test_plot_time_series_with_change_points_fail_incorrect_start_end_type(params, match, example_tsdf_int_timestamp):
+    change_points = {"segment_1": [10, 100], "segment_2": [20, 200]}
+    with pytest.raises(ValueError, match=match):
+        plot_time_series_with_change_points(ts=example_tsdf_int_timestamp, change_points=change_points, **params)
+
+
+@pytest.mark.parametrize(
+    "params, match",
+    [
+        ({"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ({"end": "2020-01-01"}, "Parameter end has incorrect type"),
+    ],
+)
+def test_plot_change_points_interactive_fail_incorrect_start_end_type(params, match, example_tsdf_int_timestamp):
+    params_bounds = {"n_bkps": [0, 5, 1], "min_size": [1, 10, 3]}
+    with pytest.raises(ValueError, match=match):
+        plot_change_points_interactive(
+            ts=example_tsdf_int_timestamp,
+            change_point_model=Binseg,
+            model="l2",
+            params_bounds=params_bounds,
+            model_params=["min_size"],
+            predict_params=["n_bkps"],
+            **params,
+        )
+
+
+def test_seasonal_plot_fail_int_timestamp(example_tsdf_int_timestamp):
+    with pytest.raises(ValueError, match="This function doesn't support data with integer timestamp"):
+        seasonal_plot(ts=example_tsdf_int_timestamp, cycle="day")

@@ -303,7 +303,7 @@ def test_forecast_sanity(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naiv
 
 
 def test_multiprocessing_ensembles(
-    simple_df: TSDataset,
+    simple_tsdf,
     catboost_pipeline: Pipeline,
     prophet_pipeline: Pipeline,
     naive_pipeline_1: Pipeline,
@@ -314,8 +314,8 @@ def test_multiprocessing_ensembles(
     single_jobs_ensemble = StackingEnsemble(pipelines=deepcopy(pipelines), n_jobs=1)
     multi_jobs_ensemble = StackingEnsemble(pipelines=deepcopy(pipelines), n_jobs=3)
 
-    single_jobs_ensemble.fit(ts=deepcopy(simple_df))
-    multi_jobs_ensemble.fit(ts=deepcopy(simple_df))
+    single_jobs_ensemble.fit(ts=deepcopy(simple_tsdf))
+    multi_jobs_ensemble.fit(ts=deepcopy(simple_tsdf))
 
     single_jobs_forecast = single_jobs_ensemble.forecast()
     multi_jobs_forecast = multi_jobs_ensemble.forecast()

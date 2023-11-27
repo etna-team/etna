@@ -123,7 +123,8 @@ class TSDataset:
         freq:
             frequency of timestamp in df, poossible values:
 
-            - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+            - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
+              for datetime timestamp
 
             - None for integer timestamp
 
@@ -603,7 +604,7 @@ class TSDataset:
         Raises
         ------
         ValueError:
-            Non-integer timestamp parameter is used for integer-indexed timestamp.
+            Datetime ``start`` or ``end`` is used for data with integer timestamp.
         """
         if segments is None:
             segments = self.segments

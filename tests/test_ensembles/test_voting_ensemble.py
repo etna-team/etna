@@ -130,24 +130,24 @@ def test_predict_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline,
     assert len(prediction.df) == end_idx - start_idx + 1
 
 
-def test_vote_default_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+def test_vote_default_weights(simple_tsdf, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
     """Check that VotingEnsemble gets average during vote."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
-    ensemble.fit(ts=simple_df)
+    ensemble.fit(ts=simple_tsdf)
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_tsdf) for pipeline in ensemble.pipelines
     )
     forecast = ensemble._vote(forecasts=forecasts)
     np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.5, 48, 47.5, 48, 47.5, 48, 47.5])
     np.testing.assert_array_equal(forecast[:, "B", "target"].values, [11, 12, 11, 12, 11, 12, 11])
 
 
-def test_vote_custom_weights(simple_df: TSDataset, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
+def test_vote_custom_weights(simple_tsdf, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
     """Check that VotingEnsemble gets average during vote."""
     ensemble = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2], weights=[1, 3])
-    ensemble.fit(ts=simple_df)
+    ensemble.fit(ts=simple_tsdf)
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
-        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_df) for pipeline in ensemble.pipelines
+        delayed(ensemble._forecast_pipeline)(pipeline=pipeline, ts=simple_tsdf) for pipeline in ensemble.pipelines
     )
     forecast = ensemble._vote(forecasts=forecasts)
     np.testing.assert_array_equal(forecast[:, "A", "target"].values, [47.25, 48, 47.25, 48, 47.25, 48, 47.25])
@@ -184,7 +184,7 @@ def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline,
 
 
 def test_multiprocessing_ensembles(
-    simple_df: TSDataset,
+    simple_tsdf,
     catboost_pipeline: Pipeline,
     prophet_pipeline: Pipeline,
     naive_pipeline_1: Pipeline,
@@ -195,8 +195,8 @@ def test_multiprocessing_ensembles(
     single_jobs_ensemble = VotingEnsemble(pipelines=deepcopy(pipelines), n_jobs=1)
     multi_jobs_ensemble = VotingEnsemble(pipelines=deepcopy(pipelines), n_jobs=3)
 
-    single_jobs_ensemble.fit(ts=deepcopy(simple_df))
-    multi_jobs_ensemble.fit(ts=deepcopy(simple_df))
+    single_jobs_ensemble.fit(ts=deepcopy(simple_tsdf))
+    multi_jobs_ensemble.fit(ts=deepcopy(simple_tsdf))
 
     single_jobs_forecast = single_jobs_ensemble.forecast()
     multi_jobs_forecast = multi_jobs_ensemble.forecast()

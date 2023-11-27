@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from typing import Optional
 from typing import Sequence
 from typing import Tuple
+from typing import Union
 
 import matplotlib.axes
 import matplotlib.figure
@@ -11,6 +12,7 @@ import numpy as np
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.datasets.utils import TimestampType
 
 
 def _prepare_axes(
@@ -31,8 +33,15 @@ def _prepare_axes(
     return fig, ax
 
 
-def _get_borders_ts(ts: "TSDataset", start: Optional[str], end: Optional[str]) -> Tuple[str, str]:
+def _get_borders_ts(
+    ts: "TSDataset", start: Optional[Union["TimestampType", str]], end: Optional[Union["TimestampType", str]]
+) -> Tuple[str, str]:
     """Get start and end parameters according to given TSDataset."""
+    from etna.datasets.utils import _check_timestamp_param
+
+    start = _check_timestamp_param(param=start, param_name="start", freq=ts.freq)
+    end = _check_timestamp_param(param=end, param_name="end", freq=ts.freq)
+
     if start is not None:
         start_idx = ts.df.index.get_loc(start)
     else:

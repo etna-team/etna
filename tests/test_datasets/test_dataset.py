@@ -14,12 +14,6 @@ from etna.transforms import AddConstTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import TimeSeriesImputerTransform
 
-"""
-TODO: dd
-Дописать тесты
-- На prepare_df для int индекса
-"""
-
 
 @pytest.fixture
 def tsdf_with_exog(random_seed) -> TSDataset:
@@ -1552,11 +1546,13 @@ def test_target_quantiles_names_deprecation_warning(ts_with_prediction_intervals
         _ = ts_with_prediction_intervals.target_quantiles_names
 
 
-def test_plot_fail_incorrect_start_type(tsdf_int_with_exog):
-    with pytest.raises(ValueError, match="Parameter start has incorrect type"):
-        tsdf_int_with_exog.plot(start="2020-01-01")
-
-
-def test_plot_fail_incorrect_end_type(tsdf_int_with_exog):
-    with pytest.raises(ValueError, match="Parameter end has incorrect type"):
-        tsdf_int_with_exog.plot(end="2020-01-01")
+@pytest.mark.parametrize(
+    "params, match",
+    [
+        ({"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ({"end": "2020-01-01"}, "Parameter end has incorrect type"),
+    ],
+)
+def test_plot_fail_incorrect_start_end_type(params, match, tsdf_int_with_exog):
+    with pytest.raises(ValueError, match=match):
+        tsdf_int_with_exog.plot(**params)

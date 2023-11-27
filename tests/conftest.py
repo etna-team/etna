@@ -8,6 +8,7 @@ import pytest
 from etna.datasets import generate_const_df
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
+from tests.utils import convert_ts_to_int_timestamp
 
 
 @pytest.fixture(autouse=True)
@@ -111,7 +112,7 @@ def train_test_dfs(random_seed):
 
 
 @pytest.fixture
-def simple_df() -> TSDataset:
+def simple_tsdf() -> TSDataset:
     """Generate dataset with simple values without any noise"""
     history = 49
 
@@ -344,6 +345,12 @@ def example_tsdf(random_seed) -> TSDataset:
     df.columns.names = ["segment", "feature"]
     df = TSDataset(df, freq="H")
     return df
+
+
+@pytest.fixture
+def example_tsdf_int_timestamp(example_tsdf) -> TSDataset:
+    ts = convert_ts_to_int_timestamp(example_tsdf)
+    return ts
 
 
 @pytest.fixture

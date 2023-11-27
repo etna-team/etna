@@ -14,17 +14,18 @@ from etna.analysis.utils import _prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
+    from etna.datasets.utils import TimestampType
 
 
 def plot_anomalies(
     ts: "TSDataset",
-    anomaly_dict: Dict[str, List[pd.Timestamp]],
+    anomaly_dict: Dict[str, List["TimestampType"]],
     in_column: str = "target",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union["TimestampType", str]] = None,
+    end: Optional[Union["TimestampType", str]] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -47,6 +48,11 @@ def plot_anomalies(
         start timestamp for plot
     end:
         end timestamp for plot
+
+    Raises
+    ------
+    ValueError:
+        Datetime ``start`` or ``end`` is used for integer-indexed timestamp.
     """
     start, end = _get_borders_ts(ts, start, end)
 
@@ -71,12 +77,12 @@ def plot_anomalies(
 def plot_anomalies_interactive(
     ts: "TSDataset",
     segment: str,
-    method: Callable[..., Dict[str, List[pd.Timestamp]]],
+    method: Callable[..., Dict[str, List["TimestampType"]]],
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
     in_column: str = "target",
     figsize: Tuple[int, int] = (20, 10),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union["TimestampType", str]] = None,
+    end: Optional[Union["TimestampType", str]] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -106,6 +112,11 @@ def plot_anomalies_interactive(
     -----
     Jupyter notebook might display the results incorrectly,
     in this case try to use ``!jupyter nbextension enable --py widgetsnbextension``.
+
+    Raises
+    ------
+    ValueError:
+        Datetime ``start`` or ``end`` is used for data with integer timestamp.
 
     Examples
     --------

@@ -150,9 +150,9 @@ def test_estimate_shift(ts_with_exogs, lag, horizon, expected):
 
 
 @pytest.mark.parametrize("lag", (1, "auto"))
-def test_shift_no_exog(simple_df, lag, expected={"target"}):
+def test_shift_no_exog(simple_tsdf, lag, expected={"target"}):
     t = ExogShiftTransform(lag=lag, horizon=1)
-    transformed = t.fit_transform(simple_df)
+    transformed = t.fit_transform(simple_tsdf)
     assert set(transformed.df.columns.get_level_values("feature")) == expected
 
 
