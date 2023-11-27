@@ -426,7 +426,6 @@ class TestInverseTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # missing_values
             (
                 ResampleWithDistributionTransform(
                     in_column="regressor_exog", distribution_column="target", inplace=True
@@ -434,9 +433,32 @@ class TestInverseTransformTrain:
                 "ts_to_resample",
                 {"change": {"regressor_exog"}},
             ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample_int_timestamp",
+                {"change": {"regressor_exog"}},
+            ),
         ],
     )
-    def test_inverse_transform_train_datetime_timestamp_fail_resample(
+    def test_inverse_transform_train_fail_resample(self, transform, dataset_name, expected_changes, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_train(ts, transform, expected_changes=expected_changes)
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample_int_timestamp",
+                {},
+            ),
+        ],
+    )
+    def test_inverse_transform_train_int_timestamp_non_inplace_resample(
         self, transform, dataset_name, expected_changes, request
     ):
         ts = request.getfixturevalue(dataset_name)

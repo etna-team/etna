@@ -44,13 +44,19 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
         Here the ``in_column`` frequency gap is divided into the folds with the size of dataset frequency gap.
         """
         in_column_index = df[self.in_column].dropna().index
-        if len(in_column_index) <= 1 or (len(in_column_index) >= 3 and not pd.infer_freq(in_column_index)):
+
+        fail_datetime_timestamp = (
+            in_column_index.dtype != "int" and len(in_column_index) >= 3 and not pd.infer_freq(in_column_index)
+        )
+        if len(in_column_index) <= 1 or fail_datetime_timestamp:
             raise ValueError(
-                "Can not infer in_column frequency!"
+                "Can not infer in_column frequency! "
                 "Check that in_column frequency is compatible with dataset frequency."
             )
+
         in_column_freq = in_column_index[1] - in_column_index[0]
         dataset_freq = df.index[1] - df.index[0]
+
         n_folds_per_gap = in_column_freq // dataset_freq
         n_periods = len(df) // n_folds_per_gap + 2
 
@@ -110,6 +116,15 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
 
 class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
     """ResampleWithDistributionTransform resamples the given column using the distribution of the other column.
+
+    This transform expects ``in_column`` to have non-NaN values separated by the same number of timestamps to form a cycle.
+    The cycle starts with a non-NaN value and each position has a number from 0 to cycle size - 1.
+
+    During ``fit'', the fraction of each cycle position in a total sum of values is calculated according to ``distribution_column''.
+    During ``transform`` the NaNs within ``in_column`` are filled using the learned distribution.
+
+    The most common application of this transform is to fill NaNs in ``in_column`` that come from data with a different frequency.
+    For example, a dataset has an hourly frequency, but an exogenous variable has only a daily frequency.
 
     Warning
     -------
