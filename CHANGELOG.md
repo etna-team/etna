@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Fix detrend transforms (`LinearTrendTransform`, `TheilSenTrendTransform`) to handle integer timestamp ([#162](https://github.com/etna-team/etna/pull/162))
 - 
 - 
 - 
