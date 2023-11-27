@@ -142,6 +142,57 @@ def ts_to_resample() -> TSDataset:
 
 
 @pytest.fixture
+def ts_to_resample_int_timestamp() -> TSDataset:
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": np.arange(120),
+            "segment": "segment_1",
+            "target": 1,
+        }
+    )
+    df_2 = pd.DataFrame(
+        {
+            "timestamp": np.arange(120),
+            "segment": "segment_2",
+            "target": ([1] + 23 * [0]) * 5,
+        }
+    )
+    df_3 = pd.DataFrame(
+        {
+            "timestamp": np.arange(120),
+            "segment": "segment_3",
+            "target": ([4] + 23 * [0]) * 5,
+        }
+    )
+    df = pd.concat([df_1, df_2, df_3], ignore_index=True)
+
+    df_exog_1 = pd.DataFrame(
+        {
+            "timestamp": np.arange(0, 192, 24),
+            "segment": "segment_1",
+            "regressor_exog": 2,
+        }
+    )
+    df_exog_2 = pd.DataFrame(
+        {
+            "timestamp": np.arange(0, 192, 24),
+            "segment": "segment_2",
+            "regressor_exog": 40,
+        }
+    )
+    df_exog_3 = pd.DataFrame(
+        {
+            "timestamp": np.arange(0, 192, 24),
+            "segment": "segment_3",
+            "regressor_exog": 40,
+        }
+    )
+    df_exog = pd.concat([df_exog_1, df_exog_2, df_exog_3], ignore_index=True)
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=None, df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    return ts
+
+
+@pytest.fixture
 def ts_with_outliers(regular_ts) -> TSDataset:
     df = regular_ts.to_pandas()
     df.iloc[5, 0] *= 100
