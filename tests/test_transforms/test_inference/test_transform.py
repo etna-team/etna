@@ -403,6 +403,20 @@ class TestTransformTrain:
                 {"remove": {"month", "year", "weekday"}},
             ),
             (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"remove": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {"remove": {"weekday", "monthday", "positive"}},
+            ),
+            (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
                 {"remove": {"month", "monthday", "year"}},
@@ -683,21 +697,6 @@ class TestTransformTrain:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
-            ),
-            # feature_selection
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
-                ),
-                "ts_with_exog",
-                {"remove": {"weekday", "monthday", "positive"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"remove": {"weekday", "monthday", "positive"}},
             ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
