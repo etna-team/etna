@@ -39,11 +39,11 @@ def convert_ts_to_int_timestamp(ts: TSDataset, shift=0):
     df = ts.to_pandas(features=["target"])
     df_exog = ts.df_exog
 
-    df.index = pd.Index(np.arange(len(df)) + shift, name=df.index.name)
-
     if df_exog is not None:
         exog_shift = determine_num_steps(start_timestamp=df_exog.index[0], end_timestamp=df.index[0], freq=ts.freq)
         df_exog.index = pd.Index(np.arange(len(df_exog)) + shift - exog_shift, name=df.index.name)
+
+    df.index = pd.Index(np.arange(len(df)) + shift, name=df.index.name)
 
     ts = TSDataset(df=df, df_exog=df_exog, known_future=ts.known_future, freq=None)
     return ts
