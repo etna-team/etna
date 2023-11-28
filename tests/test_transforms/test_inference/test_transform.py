@@ -58,7 +58,7 @@ from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from tests.test_transforms.utils import assert_column_changes
-from tests.test_transforms.utils import convert_ts_to_int_timestamp
+from tests.utils import convert_ts_to_int_timestamp
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 

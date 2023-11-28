@@ -69,20 +69,6 @@ def find_columns_diff(df_before: pd.DataFrame, df_after: pd.DataFrame) -> Tuple[
     return created_columns, removed_columns, changed_columns
 
 
-def convert_ts_to_int_timestamp(ts: pd.DataFrame, bias=0):
-    df = ts.to_pandas(features=["target"])
-    df_exog = ts.df_exog
-
-    ref_point = df.index[0]
-    df.index = df.index.map(lambda x: (x - ref_point).days + bias)
-
-    if df_exog is not None:
-        df_exog.index = df_exog.index.map(lambda x: (x - ref_point).days + bias)
-
-    ts = TSDataset(df=df, df_exog=df_exog, known_future=ts.known_future, freq=None)
-    return ts
-
-
 def assert_column_changes(ts_1: TSDataset, ts_2: TSDataset, expected_changes: Dict[str, Set[str]]):
     expected_columns_to_create = expected_changes.get("create", set())
     expected_columns_to_remove = expected_changes.get("remove", set())
