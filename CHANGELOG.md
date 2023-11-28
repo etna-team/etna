@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Update `MRMRFeatureSelectionTransform` to handle integer timestamp ([#164](https://github.com/etna-team/etna/pull/164))
 - 
 - 
 - 
