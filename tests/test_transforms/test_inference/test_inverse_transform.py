@@ -445,6 +445,9 @@ class TestInverseTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # decomposition
+            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -730,8 +733,6 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
-            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
