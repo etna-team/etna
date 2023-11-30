@@ -467,6 +467,9 @@ class TestInverseTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # decomposition
+            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -490,6 +493,37 @@ class TestInverseTransformTrain:
                 ),
                 "ts_with_exog",
                 {"create": {"month", "year", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
@@ -721,8 +755,6 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
-            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
@@ -733,38 +765,6 @@ class TestInverseTransformTrain:
                 ),
                 "regular_ts",
                 {},
-            ),
-            # feature_selection
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
-                ),
-                "ts_with_exog",
-                {},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(),
-                    top_k=2,
-                    return_features=True,
-                    fast_redundancy=True,
-                ),
-                "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
             ),
             # missing_values
             (
@@ -888,7 +888,7 @@ class TestInverseTransformTrainSubsetSegments:
                 MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(),
                     top_k=2,
-                    fast_redundancy=GaleShapleyFeatureSelectionTransform,
+                    fast_redundancy=False,
                 ),
                 "ts_with_exog",
             ),
