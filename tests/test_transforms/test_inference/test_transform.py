@@ -664,6 +664,29 @@ class TestTransformTrain:
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample_int_timestamp",
+                {"create": {"res"}},
+            ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample_int_timestamp",
+                {"change": {"regressor_exog"}},
+            ),
+        ],
+    )
+    def test_transform_train_int_timestamp_resample(self, transform, dataset_name, expected_changes, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_transform_train(ts, transform, expected_changes=expected_changes)
+
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -727,30 +750,6 @@ class TestTransformTrain:
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
-                ),
-                "ts_to_resample_int_timestamp",
-                {"create": {"res"}},
-            ),
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=True
-                ),
-                "ts_to_resample_int_timestamp",
-                {"change": {"regressor_exog"}},
-            ),
-        ],
-    )
-    def test_transform_train_int_timestamp_fail_resample(self, transform, dataset_name, expected_changes, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_train(ts, transform, expected_changes=expected_changes)
 
 
 class TestTransformTrainSubsetSegments:
