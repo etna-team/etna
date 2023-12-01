@@ -59,7 +59,7 @@ def _create_holidays_df(holidays, index: pd.Index, as_is: bool) -> pd.DataFrame:
 
 
 @_create_holidays_df.register
-def _create_holidays_df_str(holidays: str, index, as_is):
+def _create_holidays_df_str(holidays: str, index: pd.Index, as_is: bool):
     if as_is:
         raise ValueError("Parameter `as_is` should be used with `holidays`: pd.DataFrame, not string.")
     if index.dtype == "int":
@@ -82,7 +82,7 @@ def _create_holidays_df_str(holidays: str, index, as_is):
 
 
 @_create_holidays_df.register
-def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
+def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is: bool):
     if holidays.empty:
         raise ValueError("Got empty `holiday` pd.DataFrame.")
 
