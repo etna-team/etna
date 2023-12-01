@@ -355,18 +355,48 @@ class TestTransformTrain:
                 {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
             ),
             (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
+            ),
+            (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"anomaly_weekdays", "anomaly_monthdays"}},
+            ),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
-            (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
                 "ts_with_binary_exog",
@@ -624,11 +654,40 @@ class TestTransformTrain:
                 {"change": {"target"}},
             ),
             # timestamp
-            # TODO: it still needs to be checked
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"anomaly_weekdays", "anomaly_monthdays"}},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
@@ -646,6 +705,28 @@ class TestTransformTrain:
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+            ),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts"),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts"),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+            ),
+            (SpecialDaysTransform(), "regular_ts"),
+        ],
+    )
+    def test_transform_train_int_timestamp_not_supported(self, transform, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        with pytest.raises(ValueError, match="Transform can't work with integer index"):
+            self._test_transform_train(ts_int_timestamp, transform, expected_changes={})
 
     @to_be_fixed(raises=Exception)
     @pytest.mark.parametrize(
@@ -707,20 +788,6 @@ class TestTransformTrain:
                 "ts_with_outliers",
                 {"change": {"target"}},
             ),
-            # timestamp
-            (
-                DateFlagsTransform(out_column="res"),
-                "regular_ts",
-                {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
-            ),
-            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
-            (
-                TimeFlagsTransform(out_column="res"),
-                "regular_ts",
-                {"create": {"res_minute_in_hour_number", "res_hour_number"}},
-            ),
-            (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
         ],
     )
     def test_transform_train_int_timestamp_fails(self, transform, dataset_name, expected_changes, request):
@@ -903,14 +970,35 @@ class TestTransformTrainSubsetSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (FourierTransform(period=7, order=2), "regular_ts"),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+            ),
             (HolidayTransform(mode="binary"), "regular_ts"),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (HolidayTransform(mode="category"), "regular_ts"),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (SpecialDaysTransform(), "regular_ts"),
+            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp"),
             (TimeFlagsTransform(), "regular_ts"),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
             (
-                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
                 "ts_with_binary_exog",
             ),
         ],
@@ -1109,14 +1197,38 @@ class TestTransformFutureSubsetSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (FourierTransform(period=7, order=2), "regular_ts"),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+            ),
             (HolidayTransform(mode="binary"), "regular_ts"),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (HolidayTransform(mode="category"), "regular_ts"),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (SpecialDaysTransform(), "regular_ts"),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (TimeFlagsTransform(), "regular_ts"),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
             (
-                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
                 "ts_with_binary_exog",
             ),
         ],
@@ -1296,15 +1408,40 @@ class TestTransformTrainNewSegments:
                 {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
             ),
             (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
+            ),
+            (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
+                {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (
@@ -1313,7 +1450,7 @@ class TestTransformTrainNewSegments:
                 {"create": {"holiday_pre", "holiday_post"}},
             ),
             (
-                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
                 "ts_with_binary_exog",
                 {"create": {"holiday_pre", "holiday_post"}},
             ),
@@ -1395,6 +1532,7 @@ class TestTransformTrainNewSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
+            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp"),
         ],
     )
     def test_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -1625,15 +1763,40 @@ class TestTransformFutureNewSegments:
                 {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
             ),
             (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
+            ),
+            (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
+                {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (
@@ -1642,7 +1805,7 @@ class TestTransformFutureNewSegments:
                 {"create": {"holiday_pre", "holiday_post"}},
             ),
             (
-                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
                 "ts_with_binary_exog",
                 {"create": {"holiday_pre", "holiday_post"}},
             ),
@@ -1731,6 +1894,10 @@ class TestTransformFutureNewSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -2030,25 +2197,55 @@ class TestTransformFutureWithTarget:
                 {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
             ),
             (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
+            ),
+            (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"anomaly_weekdays", "anomaly_monthdays"}},
+            ),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
-            (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
                 "ts_with_binary_exog",
                 {"create": {"holiday_pre", "holiday_post"}},
             ),
             (
-                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
                 "ts_with_binary_exog",
                 {"create": {"holiday_pre", "holiday_post"}},
             ),
@@ -2418,18 +2615,48 @@ class TestTransformFutureWithoutTarget:
                 {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
             ),
             (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_day_number_in_week", "res_day_number_in_month", "res_is_weekend"}},
+            ),
+            (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_int_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"anomaly_weekdays", "anomaly_monthdays"}},
+            ),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
-            (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
                 "ts_with_binary_exog",

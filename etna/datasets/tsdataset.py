@@ -121,7 +121,7 @@ class TSDataset:
         df:
             dataframe with timeseries
         freq:
-            frequency of timestamp in df, poossible values:
+            frequency of timestamp in df, possible values:
 
             - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
 
@@ -1131,7 +1131,7 @@ class TSDataset:
         regressors:
             List of regressors in the passed dataframe.
         """
-        self.df = pd.concat((self.df, df_update[: self.df.index.max()]), axis=1).sort_index(axis=1)
+        self.df = pd.concat((self.df, df_update.loc[: self.df.index.max()]), axis=1).sort_index(axis=1)
         if update_exog:
             if self.df_exog is None:
                 self.df_exog = df_update
