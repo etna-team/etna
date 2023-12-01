@@ -175,5 +175,6 @@ def test_distribution_plot_datetime_timestamp(example_tsdf):
     distribution_plot(example_tsdf, freq="D")
 
 
-def test_distribution_plot_int_timestamp(example_tsdf_int_timestamp):
-    distribution_plot(example_tsdf_int_timestamp, freq=24)
+@pytest.mark.parametrize("freq", [1, 24, 1000])
+def test_distribution_plot_int_timestamp(freq, example_tsdf_int_timestamp):
+    distribution_plot(example_tsdf_int_timestamp, freq=freq)
