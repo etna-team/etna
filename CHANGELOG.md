@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add tests for `transform` on data with integer timestamp ([#153](https://github.com/etna-team/etna/pull/153))
 - 
 - 
-- 
+- Update `DateFlagsTransform`, `TimeFlagsTransform`, `HolidayTransform`, `SpecialDaysTransform`, `FourierTransform` to work with external timestamp ([#169](https://github.com/etna-team/etna/pull/169))
 - 
 - 
 - Update `MRMRFeatureSelectionTransform` to handle integer timestamp ([#164](https://github.com/etna-team/etna/pull/164))
