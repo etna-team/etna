@@ -98,7 +98,7 @@ def test_create_holidays_df_as_is_int_timestamp(simple_tsdf_int_timestamp):
     assert df.sum().sum() == 4
 
 
-def test_create_holidays_df_h_freq():
+def test_create_holidays_df_hour_freq():
     classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="H")
     ts = TSDataset.to_dataset(classic_df)
     holidays = pd.DataFrame(
@@ -123,7 +123,7 @@ def test_create_holidays_df_15t_freq():
     assert df.loc["2020-01-01 01:00:00":"2020-01-01 01:45:00"].sum().sum() == 4
 
 
-def test_create_holidays_df_int_freq():
+def test_create_holidays_df_int_timestamp():
     classic_df = generate_ar_df(periods=30, start_time=0, n_segments=1, freq=None)
     ts = TSDataset.to_dataset(classic_df)
     holidays = pd.DataFrame(
