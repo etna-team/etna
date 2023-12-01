@@ -43,10 +43,13 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
     def _get_x(df) -> np.ndarray:
         series_len = len(df)
         x = df.index.to_series()
-        if isinstance(type(x.dtype), pd.Timestamp):
-            raise ValueError("Your timestamp column has wrong format. Need np.datetime64 or datetime.datetime")
-        x = x.apply(lambda ts: ts.timestamp())
-        x = x.to_numpy().reshape(series_len, 1)
+
+        if x.dtype == "int":
+            x = x.astype("float").to_numpy()
+        else:
+            x = x.apply(lambda ts: ts.timestamp()).to_numpy()
+
+        x = x.reshape(series_len, 1)
         return x
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":

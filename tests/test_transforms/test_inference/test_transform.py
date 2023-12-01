@@ -416,6 +416,9 @@ class TestTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # decomposition
+            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -431,6 +434,20 @@ class TestTransformTrain:
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
                 {"remove": {"month", "year", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {"remove": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {"remove": {"weekday", "monthday", "positive"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
@@ -707,6 +724,29 @@ class TestTransformTrain:
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
     @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample_int_timestamp",
+                {"create": {"res"}},
+            ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample_int_timestamp",
+                {"change": {"regressor_exog"}},
+            ),
+        ],
+    )
+    def test_transform_train_int_timestamp_resample(self, transform, dataset_name, expected_changes, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_transform_train(ts, transform, expected_changes=expected_changes)
+
+    @pytest.mark.parametrize(
         "transform, dataset_name",
         [
             (
@@ -752,8 +792,6 @@ class TestTransformTrain:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
-            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
@@ -764,21 +802,6 @@ class TestTransformTrain:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
-            ),
-            # feature_selection
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
-                ),
-                "ts_with_exog",
-                {"remove": {"weekday", "monthday", "positive"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"remove": {"weekday", "monthday", "positive"}},
             ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
@@ -794,30 +817,6 @@ class TestTransformTrain:
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
-                ),
-                "ts_to_resample_int_timestamp",
-                {"create": {"res"}},
-            ),
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=True
-                ),
-                "ts_to_resample_int_timestamp",
-                {"change": {"regressor_exog"}},
-            ),
-        ],
-    )
-    def test_transform_train_int_timestamp_fail_resample(self, transform, dataset_name, expected_changes, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_transform_train(ts, transform, expected_changes=expected_changes)
 
 
 class TestTransformTrainSubsetSegments:

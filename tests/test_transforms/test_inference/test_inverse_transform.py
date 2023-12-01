@@ -457,7 +457,6 @@ class TestInverseTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # missing_values
             (
                 ResampleWithDistributionTransform(
                     in_column="regressor_exog", distribution_column="target", inplace=True
@@ -465,9 +464,32 @@ class TestInverseTransformTrain:
                 "ts_to_resample",
                 {"change": {"regressor_exog"}},
             ),
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=True
+                ),
+                "ts_to_resample_int_timestamp",
+                {"change": {"regressor_exog"}},
+            ),
         ],
     )
-    def test_inverse_transform_train_datetime_timestamp_fail_resample(
+    def test_inverse_transform_train_fail_resample(self, transform, dataset_name, expected_changes, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_train(ts, transform, expected_changes=expected_changes)
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            (
+                ResampleWithDistributionTransform(
+                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
+                ),
+                "ts_to_resample_int_timestamp",
+                {},
+            ),
+        ],
+    )
+    def test_inverse_transform_train_int_timestamp_non_inplace_resample(
         self, transform, dataset_name, expected_changes, request
     ):
         ts = request.getfixturevalue(dataset_name)
@@ -476,6 +498,9 @@ class TestInverseTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # decomposition
+            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -499,6 +524,37 @@ class TestInverseTransformTrain:
                 ),
                 "ts_with_exog",
                 {"create": {"month", "year", "weekday"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
+            ),
+            (
+                MRMRFeatureSelectionTransform(
+                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
+                ),
+                "ts_with_exog",
+                {"create": {"weekday", "monthday", "positive"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
@@ -781,8 +837,6 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
-            (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
@@ -793,38 +847,6 @@ class TestInverseTransformTrain:
                 ),
                 "regular_ts",
                 {},
-            ),
-            # feature_selection
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=True
-                ),
-                "ts_with_exog",
-                {},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(),
-                    top_k=2,
-                    return_features=True,
-                    fast_redundancy=True,
-                ),
-                "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
             ),
             # missing_values
             (
