@@ -31,10 +31,100 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
 - Fix `traffic_2008` ([128](https://github.com/etna-team/etna/pull/128))
+- Add params_to_tune for DeepStateModel ([#115](https://github.com/etna-team/etna/issues/115))
+- Handle new functionality for prediction intervals in the `plot_forecast` ([#130](https://github.com/etna-team/etna/pull/130))  
+- Add `get_historical_forecasts` to pipelines for forecast estimation at each fold on the historical dataset ([#143](https://github.com/etna-team/etna/pull/143))
+- `ConformalPredictionIntervals` method for prediction intervals estimation ([#152](https://github.com/etna-team/etna/pull/152))
+- Add DeepARNativeModel ([#114](https://github.com/etna-team/etna/pull/114))
 - 
 
-### Removed
-- FutureMixin ([#58](https://github.com/etna-team/etna/pull/58))
+### Changed
+- Change warning condition on loading object saved under different library version ([#31](https://github.com/etna-team/etna/issues/31))
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Fixed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [2.3.0] - 2023-10-24
+### Added
+- Handle prediction intervals similar to target components in `TSDataset` ([#97](https://github.com/etna-team/etna/pull/97))
+- `SavePredictionIntervalsMixin` for the `BasePredictionIntervals` ([#87](https://github.com/etna-team/etna/pull/87))
+- Base class `BasePredictionIntervals` for prediction intervals into experimental module ([#86](https://github.com/etna-team/etna/pull/86))
+- Add `fit_params` parameter to `etna.models.sarimax.SARIMAXModel` ([#69](https://github.com/etna-team/etna/pull/69))
+- Add `quickstart` notebook, add `mechanics_of_forecasting` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
+- Add gallery of tutorials divided by level ([#46](https://github.com/etna-team/etna/pull/46))
+- Create documentation page with links to external resources ([#44](https://github.com/etna-team/etna/pull/44))
+- Add documentation page with glossary of terms ([#45](https://github.com/etna-team/etna/pull/45/))
+- Add publishing into s3 for the latest documentation version ([#50](https://github.com/etna-team/etna/pull/50))
+- Add publishing into s3 during release ([#53](https://github.com/etna-team/etna/pull/53))
+- Add multiversion switcher into documentation ([#55](https://github.com/etna-team/etna/pull/55))
+- Add error page into documentation ([#57](https://github.com/etna-team/etna/pull/57))
+- Add `LimitTransform` ([#63](https://github.com/etna-team/etna/pull/63))
+- Add config for Codecov to control CI ([#80](https://github.com/etna-team/etna/pull/80)) 
+- Add `EventTransform` ([#78](https://github.com/etna-team/etna/pull/78))
+- `NaiveVariancePredictionIntervals` method for prediction quantiles estimation ([#109](https://github.com/etna-team/etna/pull/109))
+- Update interval metrics to work with arbitrary interval bounds ([#113](https://github.com/etna-team/etna/pull/113))
+
+### Changed
+- Refactored transform inversion logic in `Pipeline` `forecast` method ([#72](https://github.com/etna-team/etna/pull/72))
+- Add parameter `save_ts` to pipeline method `fit` ([#73](https://github.com/etna-team/etna/pull/73))
+- Add installation page and notes about extensions into documentation of public classes ([#1339](https://github.com/tinkoff-ai/etna/pull/1339))
+- Merge User Guide and API sections in documentation, limit classes to show in API section ([#1324](https://github.com/tinkoff-ai/etna/pull/1324))
+- Unify example notebooks, rerun example notebooks ([#1330](https://github.com/tinkoff-ai/etna/pull/1330))
+- Rework `get_started` notebook ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
+- Add missing classes from decomposition into API Reference, add modules into page titles in API Reference ([#61](https://github.com/etna-team/etna/pull/61))
+- Update `CONTRIBUTING.md` with scenarios of documentation updates and release instruction ([#77](https://github.com/etna-team/etna/pull/77))
+- Set up sharding for running tests ([#99](https://github.com/etna-team/etna/pull/99))
+- Rework saving DL models by separating saving model's hyperparameters and model's weights ([#98](https://github.com/etna-team/etna/pull/98))
+- Deprecated `FutureMixin` ([#58](https://github.com/etna-team/etna/pull/58))
+
+### Fixed
+- Fix `ResampleWithDistributionTransform` working with categorical columns ([#82](https://github.com/etna-team/etna/pull/82))
+- `TSDataset._hierarchical_structure_from_level_columns` to support `pandas>=1.4,<1.5`([#107](https://github.com/etna-team/etna/pull/107))
+- Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
+- Fix CI job `cron-delete-untagged-images` ([#95](https://github.com/etna-team/etna/pull/95))
+- Rendering table of contents in notebooks ([#1343](https://github.com/tinkoff-ai/etna/pull/1343))
+- Fix formatting of docstrings, fix links from netlify to docs.etna.ai ([#62](https://github.com/etna-team/etna/pull/62))
+- Fix multiple warnings, revert catching warnings during testing ([#105](https://github.com/etna-team/etna/pull/105))
+- Fix bug with `numpy.warnings` in `numpy>=1.24`, rework building docker images to use `poetry.lock` ([#116](https://github.com/etna-team/etna/pull/116))
+- Fix name of steps in `publish` CI ([#119](https://github.com/etna-team/etna/pull/119))
 
 ## [2.2.0] - 2023-08-08
 ### Added

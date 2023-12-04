@@ -1,5 +1,3 @@
-import pathlib
-from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -7,10 +5,8 @@ from typing import Sequence
 
 import pandas as pd
 
+from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
-from etna.datasets.utils import get_target_with_quantiles
-from etna.loggers import tslogger
-from etna.metrics import MAE
 from etna.metrics import Metric
 from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
@@ -50,9 +46,9 @@ class HierarchicalPipeline(Pipeline):
         """
         super().__init__(model=model, transforms=transforms, horizon=horizon)
         self.reconciliator = reconciliator
-        self._fit_ts: Optional[TSDataset] = None
+        self._fitted: bool = False
 
-    def fit(self, ts: TSDataset) -> "HierarchicalPipeline":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "HierarchicalPipeline":
         """Fit the HierarchicalPipeline.
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
@@ -61,18 +57,23 @@ class HierarchicalPipeline(Pipeline):
         Parameters
         ----------
         ts:
-            Dataset with hierarchical timeseries data
+            Dataset with hierarchical timeseries data.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         :
             Fitted HierarchicalPipeline instance
         """
-        self._fit_ts = deepcopy(ts)
+        if save_ts:
+            self.ts = ts
 
         self.reconciliator.fit(ts=ts)
-        ts = self.reconciliator.aggregate(ts=ts)
-        super().fit(ts=ts)
+        aggregated_ts = self.reconciliator.aggregate(ts=ts)
+        super().fit(ts=aggregated_ts, save_ts=False)
+
+        self._fitted = True
         return self
 
     def raw_forecast(
@@ -115,17 +116,9 @@ class HierarchicalPipeline(Pipeline):
                 ts=ts, predictions=forecast, quantiles=quantiles, n_folds=n_folds
             )
 
-        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
-        hierarchical_forecast = TSDataset(
-            df=forecast[..., target_columns],
-            freq=forecast.freq,
-            df_exog=forecast.df_exog,
-            known_future=forecast.known_future,
-            hierarchical_structure=ts.hierarchical_structure,  # type: ignore
+        hierarchical_forecast = self._make_hierarchical_dataset(
+            ts=forecast, hierarchical_structure=ts.hierarchical_structure  # type: ignore
         )
-
-        if return_components:
-            hierarchical_forecast.add_target_components(target_components_df=forecast.get_target_components())
 
         return hierarchical_forecast
 
@@ -173,17 +166,9 @@ class HierarchicalPipeline(Pipeline):
             return_components=return_components,
         )
 
-        target_columns = tuple(get_target_with_quantiles(columns=forecast.columns))
-        hierarchical_forecast = TSDataset(
-            df=forecast[..., target_columns],
-            freq=forecast.freq,
-            df_exog=forecast.df_exog,
-            known_future=forecast.known_future,
-            hierarchical_structure=ts.hierarchical_structure,  # type: ignore
+        hierarchical_forecast = self._make_hierarchical_dataset(
+            ts=forecast, hierarchical_structure=ts.hierarchical_structure  # type: ignore
         )
-
-        if return_components:
-            hierarchical_forecast.add_target_components(target_components_df=forecast.get_target_components())
 
         return hierarchical_forecast
 
@@ -220,11 +205,11 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the target level of hierarchy.
         """
         if ts is None:
-            if self._fit_ts is None:
+            if self.ts is None:
                 raise ValueError(
-                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline contains ts."
                 )
-            ts = self._fit_ts
+            ts = self.ts
 
         forecast = self.raw_forecast(
             ts=ts,
@@ -276,11 +261,11 @@ class HierarchicalPipeline(Pipeline):
             Dataset with predictions at the target level in ``[start_timestamp, end_timestamp]`` range.
         """
         if ts is None:
-            if self._fit_ts is None:
+            if self.ts is None:
                 raise ValueError(
                     "There is no ts to predict! Pass ts into predict method or make sure that pipeline is loaded with ts."
                 )
-            ts = self._fit_ts
+            ts = self.ts
 
         forecast = self.raw_predict(
             ts=ts,
@@ -312,15 +297,14 @@ class HierarchicalPipeline(Pipeline):
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        if self.ts is None:
+        if not self._fitted:
             raise ValueError("Pipeline is not fitted! Fit the Pipeline before calling forecast method.")
 
         self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
         try:
             # TODO: rework intervals estimation for `BottomUpReconciliator`
 
-            with tslogger.disable():
-                _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
+            forecasts = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
 
             source_ts = self.reconciliator.aggregate(ts=ts)
             self._add_forecast_borders(
@@ -331,45 +315,21 @@ class HierarchicalPipeline(Pipeline):
         finally:
             self.forecast, self.raw_forecast = self.raw_forecast, self.forecast  # type: ignore
 
-    def save(self, path: pathlib.Path):
-        """Save the object.
+    @staticmethod
+    def _make_hierarchical_dataset(ts: TSDataset, hierarchical_structure: HierarchicalStructure) -> TSDataset:
+        """Create hierarchical dataset from given ``ts`` and structure."""
+        hierarchical_ts = TSDataset(
+            df=ts[..., "target"],
+            freq=ts.freq,
+            df_exog=ts.df_exog,
+            known_future=ts.known_future,
+            hierarchical_structure=hierarchical_structure,
+        )
 
-        Parameters
-        ----------
-        path:
-            Path to save object to.
-        """
-        fit_ts = self._fit_ts
+        if len(ts.prediction_intervals_names) != 0:
+            hierarchical_ts.add_prediction_intervals(prediction_intervals_df=ts.get_prediction_intervals())
 
-        try:
-            # extract attributes we can't easily save
-            delattr(self, "_fit_ts")
+        if len(ts.target_components_names) != 0:
+            hierarchical_ts.add_target_components(target_components_df=ts.get_target_components())
 
-            # save the remaining part
-            super().save(path=path)
-        finally:
-            self._fit_ts = fit_ts
-
-    @classmethod
-    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> "HierarchicalPipeline":
-        """Load an object.
-
-        Parameters
-        ----------
-        path:
-            Path to load object from.
-        ts:
-            TSDataset to set into loaded pipeline.
-
-        Returns
-        -------
-        :
-            Loaded object.
-        """
-        obj = super().load(path=path)
-        obj._fit_ts = deepcopy(ts)
-        if ts is not None:
-            obj.ts = obj.reconciliator.aggregate(ts=ts)
-        else:
-            obj.ts = None
-        return obj
+        return hierarchical_ts

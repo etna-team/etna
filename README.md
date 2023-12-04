@@ -1,5 +1,5 @@
 <div align="center">
-<img src="etna_logo.png" width="100%"/>
+<img alt="Logo" src="https://github.com/etna-team/etna/raw/master/etna_logo.png" width="100%"/>
 </div>
 
 <h3 align="center">Predict your time series the easiest way</h3>
@@ -23,15 +23,15 @@
   <a href="https://github.com/etna-team/etna/graphs/contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/etna-team/etna.svg" /></a>
   <a href="https://github.com/etna-team/etna/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/etna-team/etna?style=social" /></a>
 </p>
-
+  
 <p align="center">
   <a href="https://etna.tinkoff.ru">Homepage</a> | 
-  <a href="https://etna-docs.netlify.app/">Documentation</a> |
+  <a href="https://docs.etna.ai/stable/">Documentation</a> |
   <a href="https://github.com/etna-team/etna/tree/master/examples">Tutorials</a> |
   <a href="https://github.com/etna-team/etna/blob/master/CONTRIBUTING.md">Contribution Guide</a> |
   <a href="https://github.com/etna-team/etna/releases">Release Notes</a>
 </p>
-  
+
 ETNA is an easy-to-use time series forecasting framework. 
 It includes built in toolkits for time series preprocessing, feature generation, 
 a variety of predictive models with unified interface - from classic machine learning
@@ -45,7 +45,7 @@ The library started as an internal product in our company -
 we use it in over 10+ projects now, so we often release updates. 
 Contributions are welcome - check our [Contribution Guide](https://github.com/etna-team/etna/blob/master/CONTRIBUTING.md).
 
-## Get started
+## Quickstart
 
 Let's load and prepare the data.
 ```python
@@ -116,16 +116,22 @@ from etna.analysis import plot_forecast
 plot_forecast(forecast_ts=forecast_ts, test_ts=test_ts, train_ts=train_ts, n_train_samples=50)
 ```
 
-![](examples/assets/readme/get_started.png)
+![](examples/assets/readme/quickstart.png)
 
 Print the metric value across the segments:
 ```python
 from etna.metrics import SMAPE
 
-metric = SMAPE(mode="macro")
+metric = SMAPE()
 metric_value = metric(y_true=test_ts, y_pred=forecast_ts)
->>> {'segment_b': 3.3017151519000967, 'segment_c': 5.270557433427279, 'segment_a': 5.272811627335398, 'segment_d': 4.689085450895735}
+metric_value
 ```
+
+```bash
+{'segment_a': 4.799114474387907, 'segment_b': 3.271014290441896, 'segment_c': 6.758606238307858, 'segment_d': 4.512871862697337}
+```
+
+Notebook with this example is available [here](examples/quickstart.ipynb).
 
 ## Installation 
 
@@ -143,6 +149,7 @@ Available user extensions are the following:
 * `torch`: adds models based on neural nets,
 * `wandb`: adds wandb logger,
 * `auto`: adds AutoML functionality,
+* `statsforecast`: adds models from [statsforecast](https://nixtla.github.io/statsforecast/)
 * `classiciation`: adds time series classification functionality.
 
 Install extension:
@@ -150,7 +157,7 @@ Install extension:
 pip install etna[extension-name]
 ```
 
-Install all extensions:
+Install all the extensions:
 ```bash
 pip install etna[all]
 ```
@@ -170,28 +177,29 @@ To set up a configuration for your project you should create a `.etna` file at t
 
 We have also prepared a set of tutorials for an easy introduction:
 
-| Notebook     | Interactive launch  |
-|:----------|------:|
-| [Get started](https://github.com/etna-team/etna/tree/master/examples/get_started.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/get_started.ipynb) |
-| [Backtest](https://github.com/etna-team/etna/tree/master/examples/backtest.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/backtest.ipynb) |
-| [EDA](https://github.com/etna-team/etna/tree/master/examples/EDA.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/EDA.ipynb) |
-| [Regressors and exogenous data](https://github.com/etna-team/etna/tree/master/examples/exogenous_data.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/exogenous_data.ipynb) |
-| [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/custom_transform_and_model.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/custom_transform_and_model.ipynb) |
-| [Deep learning models](https://github.com/etna-team/etna/tree/master/examples/NN_examples.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/NN_examples.ipynb) |
-| [Ensembles](https://github.com/etna-team/etna/tree/master/examples/ensembles.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/ensembles.ipynb) |
-| [Outliers](https://github.com/etna-team/etna/tree/master/examples/outliers.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/outliers.ipynb) |
-| [Forecasting strategies](https://github.com/etna-team/etna/tree/master/examples/forecasting_strategies.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/forecasting_strategies.ipynb) |
-| [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/forecast_interpretation.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/forecast_interpretation.ipynb) |
-| [Clustering](https://github.com/etna-team/etna/tree/master/examples/clustering.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/clustering.ipynb) |
-| [AutoML](https://github.com/etna-team/etna/tree/master/examples/automl.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/automl.ipynb) |
-| [Inference: using saved pipeline on a new data](https://github.com/etna-team/etna/tree/master/examples/inference.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/inference.ipynb) |
-| [Hierarchical time series](https://github.com/etna-team/etna/blob/master/examples/hierarchical_pipeline.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/hierarchical_pipeline.ipynb) |
-| [Classification](https://github.com/etna-team/etna/blob/master/examples/classification.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/classification.ipynb) |
-| [Feature selection](https://github.com/etna-team/etna/blob/master/examples/feature_selection.ipynb) | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/feature_selection.ipynb) |
+| Notebook                                                                                                                     |                                                                                                                                         Interactive launch |
+|:-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| [Get started](https://github.com/etna-team/etna/tree/master/examples/101-get_started.ipynb)                                 |                [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/101-get_started.ipynb) |
+| [Backtest](https://github.com/etna-team/etna/tree/master/examples/102-backtest.ipynb)                                       |                   [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/102-backtest.ipynb) |
+| [EDA](https://github.com/etna-team/etna/tree/master/examples/103-EDA.ipynb)                                                 |                        [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/103-EDA.ipynb) |
+| [Regressors and exogenous data](https://github.com/etna-team/etna/tree/master/examples/201-exogenous_data.ipynb)            |             [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/201-exogenous_data.ipynb) |
+| [Deep learning models](https://github.com/etna-team/etna/tree/master/examples/202-NN_examples.ipynb)                        |                [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/202-NN_examples.ipynb) |
+| [Ensembles](https://github.com/etna-team/etna/tree/master/examples/303-ensembles.ipynb)                                     |                  [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/203-ensembles.ipynb) |
+| [Outliers](https://github.com/etna-team/etna/tree/master/examples/204-outliers.ipynb)                                       |                   [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/204-outliers.ipynb) |
+| [AutoML](https://github.com/etna-team/etna/tree/master/examples/205-automl.ipynb)                                           |                     [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/205-automl.ipynb) |
+| [Clustering](https://github.com/etna-team/etna/tree/master/examples/206-clustering.ipynb)                                   |                 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/206-clustering.ipynb) |
+| [Feature selection](https://github.com/etna-team/etna/blob/master/examples/207-feature_selection.ipynb)                     |          [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/207-feature_selection.ipynb) |
+| [Forecasting strategies](https://github.com/etna-team/etna/tree/master/examples/208-forecasting_strategies.ipynb)           |     [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/208-forecasting_strategies.ipynb) |
+| [Mechanics of forecasting](https://github.com/etna-team/etna/blob/master/examples/209-mechanics_of_forecasting.ipynb)       |   [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/209-mechanics_of_forecasting.ipynb) |
+| [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/301-custom_transform_and_model.ipynb)   | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/301-custom_transform_and_model.ipynb) |
+| [Inference: using saved pipeline on a new data](https://github.com/etna-team/etna/tree/master/examples/302-inference.ipynb) |                  [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/302-inference.ipynb) |
+| [Hierarchical time series](https://github.com/etna-team/etna/blob/master/examples/303-hierarchical_pipeline.ipynb)          |      [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/303-hierarchical_pipeline.ipynb) |
+| [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecast_interpretation.ipynb)         |    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/304-forecast_interpretation.ipynb) |
+| [Classification](https://github.com/etna-team/etna/blob/master/examples/305-classification.ipynb)                           |             [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/305-classification.ipynb) |
 
 ## Documentation
 
-ETNA documentation is available [here](https://etna-docs.netlify.app/).
+ETNA documentation is available [here](https://docs.etna.ai/stable/).
 
 ## Community
 
@@ -199,32 +207,34 @@ To ask the questions or discuss the library you can join our [telegram chat](htt
 
 ## Resources
 
-- [Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
+- [Forecasting using ETNA library | 60 lines Catboost](https://www.kaggle.com/code/goolmonika/forecasting-using-etna-library-60-lines-catboost) on Kaggle
 
-- [ETNA Regressors](https://medium.com/its-tinkoff/etna-regressors-d2722923e88e) on Medium
-
-- [Time series forecasting with ETNA: first steps](https://medium.com/its-tinkoff/time-series-forecasting-with-etna-first-steps-dfaf90c5b919) on Medium
-
-- [ETNA: Time Series Analysis. What, why and how?](https://medium.com/its-tinkoff/etna-time-series-analysis-what-why-and-how-e45557af4f6c) on Medium
+- [Прикладные задачи анализа данных, лекция 8 — Временные ряды 2](https://youtu.be/1gXVbidDZck) on YouTube
 
 - [Time Series Forecasting Strategies in ETNA](https://medium.com/its-tinkoff/time-series-forecasting-strategies-in-etna-93d7d2f8a911) on Medium
 
-- [Tabular Playground Series - Mar 2022 (7th place!)](https://www.kaggle.com/code/chikovalexander/tps-mar-2022-etna/notebook?scriptVersionId=91575908) on Kaggle
-
-- [Store sales prediction with etna library](https://www.kaggle.com/dmitrybunin/store-sales-prediction-with-etna-library?scriptVersionId=81104235) on Kaggle
-
-- [Tabular Playground Series - Jan 2022](https://www.kaggle.com/code/chikovalexander/tps-jan-2022-etna/notebook) on Kaggle
-
-- [EDA notebook for Ubiquant Market Prediction](https://www.kaggle.com/code/martins0n/ubiquant-eda-toy-predictions-etna) on Kaggle
-
-- [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
+- [ETNA: Time Series Analysis. What, why and how?](https://medium.com/its-tinkoff/etna-time-series-analysis-what-why-and-how-e45557af4f6c) on Medium
 
 - [ETNA Meetup Jun 2022](https://www.youtube.com/watch?v=N1Xy3EqY058&list=PLLrf_044z4JrSsjMd-3dF6VbBLPI_yOxG) on YouTube
 
 - [DUMP May 2022 talk](https://youtu.be/12uuxepdtks) on YouTube
 
-- [Прикладные задачи анализа данных, лекция 8 — Временные ряды 2](https://youtu.be/1gXVbidDZck) on YouTube
- 
+- [ETNA Regressors](https://medium.com/its-tinkoff/etna-regressors-d2722923e88e) on Medium
+
+- [Time series forecasting with ETNA: first steps](https://medium.com/its-tinkoff/time-series-forecasting-with-etna-first-steps-dfaf90c5b919) on Medium
+
+- [EDA notebook for Ubiquant Market Prediction](https://www.kaggle.com/code/martins0n/ubiquant-eda-toy-predictions-etna) on Kaggle
+
+- [Tabular Playground Series - Mar 2022 (7th place!)](https://www.kaggle.com/code/chikovalexander/tps-mar-2022-etna/notebook?scriptVersionId=91575908) on Kaggle
+
+- [Tabular Playground Series - Jan 2022](https://www.kaggle.com/code/chikovalexander/tps-jan-2022-etna/notebook) on Kaggle
+
+- [Forecasting with ETNA: Fast and Furious](https://medium.com/its-tinkoff/forecasting-with-etna-fast-and-furious-1b58e1453809) on Medium
+
+- [Store sales prediction with etna library](https://www.kaggle.com/dmitrybunin/store-sales-prediction-with-etna-library?scriptVersionId=81104235) on Kaggle
+
+- [PyCon Russia September 2021 talk](https://youtu.be/VxWHLEFgXnE) on YouTube
+
 ## Acknowledgments
 
 ### ETNA.Team

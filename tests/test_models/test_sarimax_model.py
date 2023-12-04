@@ -1,7 +1,10 @@
 from copy import deepcopy
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
@@ -94,6 +97,9 @@ def test_prediction_interval_insample(example_tsds, method_name):
     model.fit(example_tsds)
     method = getattr(model, method_name)
     forecast = method(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
@@ -102,18 +108,29 @@ def test_prediction_interval_insample(example_tsds, method_name):
         # assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
+
 
 def test_forecast_prediction_interval_infuture(example_tsds):
     model = SARIMAXModel()
     model.fit(example_tsds)
     future = example_tsds.make_future(10)
     forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
 @pytest.mark.parametrize("method_name", ["forecast", "predict"])
@@ -219,7 +236,6 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
     assert sorted(components.columns) == sorted(expected_components)
 
 
-@pytest.mark.long_2
 @pytest.mark.parametrize(
     "components_method_name,predict_method_name,in_sample",
     (("predict_components", "predict", True), ("forecast_components", "forecast", False)),
@@ -343,3 +359,11 @@ def test_params_to_tune(model, example_tsds):
     ts = example_tsds
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
+
+
+def test_fit_params_passed_to_fit_method(example_tsds):
+
+    model = SARIMAXModel(fit_params={"disp": False})
+    with patch("statsmodels.tsa.statespace.sarimax.SARIMAX.fit", Mock()):
+        model.fit(example_tsds)
+        SARIMAX.fit.assert_called_with(disp=False)

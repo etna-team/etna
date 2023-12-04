@@ -15,7 +15,6 @@ from etna.transforms.decomposition.change_points_based.change_points_models impo
 from etna.transforms.decomposition.change_points_based.change_points_models import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import PerIntervalModel
 from etna.transforms.decomposition.change_points_based.per_interval_models import SklearnRegressionPerIntervalModel
-from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentChangePointsTrendTransform(_OneSegmentChangePointsTransform):
@@ -33,11 +32,8 @@ class _OneSegmentChangePointsTrendTransform(_OneSegmentChangePointsTransform):
         return df
 
     def _apply_inverse_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
-        df.loc[:, self.in_column] += transformed_series
-        if self.in_column == "target":
-            quantiles = match_target_quantiles(set(df.columns))
-            for quantile_column_nm in quantiles:
-                df.loc[:, quantile_column_nm] += transformed_series
+        for column_name in df.columns:
+            df.loc[:, column_name] += transformed_series
         return df
 
 
@@ -79,10 +75,10 @@ class ChangePointsTrendTransform(ReversibleChangePointsTransform):
             name of column to apply transform to
         change_points_model:
             model to get trend change points,
-            by default :py:class:`ruptures.detection.Binseg` in a wrapper with ``n_bkps=5`` is used
+            by default :py:class:`ruptures.detection.binseg.Binseg` in a wrapper with ``n_bkps=5`` is used
         per_interval_model:
             model to process intervals of segment,
-            by default :py:class:`sklearn.linear_models.LinearRegression` in a wrapper is used
+            by default :py:class:`sklearn.linear_model.LinearRegression` in a wrapper is used
         """
         self.in_column = in_column
 

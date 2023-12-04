@@ -38,10 +38,13 @@ from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms import LogTransform
+from etna.transforms import ReversibleTransform
 from etna.transforms import TimeSeriesImputerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -80,16 +83,30 @@ def test_init_fail(horizon):
         )
 
 
-def test_fit(example_tsds):
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit(example_tsds, save_ts):
     """Test that Pipeline correctly transforms dataset on fit stage."""
     original_ts = deepcopy(example_tsds)
     model = LinearPerSegmentModel()
     transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
-    pipeline.fit(example_tsds)
+    pipeline.fit(example_tsds, save_ts=save_ts)
     original_ts.fit_transform(transforms)
     original_ts.inverse_transform(transforms)
-    assert np.all(original_ts.df.values == pipeline.ts.df.values)
+    assert np.all(original_ts.df.values == example_tsds.df.values)
+
+
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, save_ts):
+    model = LinearPerSegmentModel()
+    transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
+    pipeline.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert pipeline.ts is example_tsds
+    else:
+        assert pipeline.ts is None
 
 
 @patch("etna.pipeline.pipeline.Pipeline._forecast")
@@ -205,6 +222,31 @@ def test_forecast_with_intervals_other_model(base_forecast, model_class):
     )
 
 
+@pytest.mark.parametrize(
+    "model_class",
+    [
+        PredictionIntervalContextIgnorantAbstractModel,
+        PredictionIntervalContextRequiredAbstractModel,
+        NonPredictionIntervalContextIgnorantAbstractModel,
+    ],
+)
+def test_forecast_inverse_transformed(model_class):
+    ts = MagicMock(spec=TSDataset)
+    model = MagicMock(spec=model_class)
+    transform = MagicMock(spec=ReversibleTransform)
+    interval_method = MagicMock(side_effect=lambda *args, **kwargs: kwargs["predictions"])
+
+    pipeline = Pipeline(model=model, transforms=[transform], horizon=5)
+
+    # mocking default interval estimation method
+    pipeline._forecast_prediction_interval = interval_method
+
+    pipeline.fit(ts)
+    predictions = pipeline.forecast(prediction_interval=True, quantiles=(0.025, 0.975))
+
+    predictions.inverse_transform.assert_called()
+
+
 def test_forecast_values(example_tsds):
     """Test that the forecast from the Pipeline generates correct values."""
     original_ts = deepcopy(example_tsds)
@@ -279,6 +321,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds
         _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
 
 
+@pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
     example_tsds.df.loc[example_tsds.index[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
@@ -463,6 +506,23 @@ def test_backtest_forecasts_columns(ts_fixture, catboost_pipeline, request):
 
 
 @pytest.mark.parametrize(
+    "ts_fixture",
+    [
+        "big_daily_example_tsdf",
+        "example_tsdf",
+    ],
+)
+def test_get_historical_forecasts_columns(ts_fixture, catboost_pipeline, request):
+    """Check that Pipeline.get_historical_forecasts returns forecasts in correct format."""
+    ts = request.getfixturevalue(ts_fixture)
+    forecast = catboost_pipeline.get_historical_forecasts(ts=ts)
+    expected_columns = sorted(
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
+    )
+    assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
+
+
+@pytest.mark.parametrize(
     "n_folds, horizon, expected_timestamps",
     [
         (2, 3, [-6, -5, -4, -3, -2, -1]),
@@ -495,6 +555,38 @@ def test_backtest_forecasts_timestamps(n_folds, horizon, expected_timestamps, ex
 
 
 @pytest.mark.parametrize(
+    "n_folds, horizon, expected_timestamps",
+    [
+        (2, 3, [-6, -5, -4, -3, -2, -1]),
+        (2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+        (
+            [
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 14:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 17:00")],
+                ),
+                FoldMask(
+                    first_train_timestamp=pd.Timestamp("2020-01-01"),
+                    last_train_timestamp=pd.Timestamp("2020-01-31 19:00"),
+                    target_timestamps=[pd.Timestamp("2020-01-31 22:00")],
+                ),
+            ],
+            5,
+            [-8, -3],
+        ),
+    ],
+)
+def test_get_historical_forecasts_timestamps(n_folds, horizon, expected_timestamps, example_tsdf):
+    """Check that Pipeline.get_historical_forecasts returns forecasts with expected timestamps."""
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+    forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds)
+    timestamp = example_tsdf.index
+
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+
+
+@pytest.mark.parametrize(
     "n_folds, horizon, stride, expected_timestamps",
     [
         (2, 3, 3, [-6, -5, -4, -3, -2, -1]),
@@ -506,6 +598,23 @@ def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, exp
     """Check that Pipeline.backtest with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)
+    timestamp = example_tsdf.index
+
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+
+
+@pytest.mark.parametrize(
+    "n_folds, horizon, stride, expected_timestamps",
+    [
+        (2, 3, 3, [-6, -5, -4, -3, -2, -1]),
+        (2, 3, 1, [-4, -3, -2, -3, -2, -1]),
+        (2, 3, 5, [-8, -7, -6, -3, -2, -1]),
+    ],
+)
+def test_get_historical_forecasts_timestamps_with_stride(n_folds, horizon, stride, expected_timestamps, example_tsdf):
+    """Check that Pipeline.get_historical_forecasts with stride returns forecasts with expected timestamps."""
+    pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
+    forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds, stride=stride)
     timestamp = example_tsdf.index
 
     np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
@@ -692,7 +801,6 @@ def test_backtest_refit_fail(big_example_tsdf: TSDataset):
         _ = pipeline.backtest(ts=big_example_tsdf, n_jobs=1, metrics=DEFAULT_METRICS, n_folds=3, refit=False)
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("refit", [True, False, 2])
 def test_backtest_with_n_jobs(refit, catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
     """Check that Pipeline.backtest gives the same results in case of single and multiple jobs modes."""
@@ -705,7 +813,7 @@ def test_backtest_with_n_jobs(refit, catboost_pipeline: Pipeline, big_example_ts
     assert (forecast_1 == forecast_2).all().all()
 
 
-def test_backtest_forecasts_sanity(step_ts: TSDataset):
+def test_sanity_backtest_forecasts(step_ts: TSDataset):
     """Check that Pipeline.backtest gives correct forecasts according to the simple case."""
     ts, expected_metrics_df, expected_forecast_df = step_ts
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
@@ -715,11 +823,13 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
     assert np.all(forecast_df == expected_forecast_df)
 
 
-def test_forecast_raise_error_if_no_ts():
-    """Test that Pipeline raises error when calling forecast without ts."""
+def test_sanity_get_historical_forecasts(step_ts: TSDataset):
+    """Check that Pipeline.get_historical_forecasts gives correct forecasts according to the simple case."""
+    ts, _, expected_forecast_df = step_ts
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    with pytest.raises(ValueError, match="There is no ts to forecast!"):
-        _ = pipeline.forecast()
+    forecast_df = pipeline.get_historical_forecasts(ts, n_folds=3)
+
+    assert np.all(forecast_df == expected_forecast_df)
 
 
 def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
@@ -1041,7 +1151,19 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     assert f"target_{quantiles[1]}" in features
 
 
-@pytest.mark.long_1
+def test_sanity_get_historical_forecasts_naive_with_intervals(weekly_period_ts):
+    train_ts, _ = weekly_period_ts
+    quantiles = (0.01, 0.99)
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    forecast_df = pipeline.get_historical_forecasts(
+        ts=train_ts,
+        forecast_params={"quantiles": quantiles, "prediction_interval": True},
+    )
+    features = forecast_df.columns.get_level_values(1)
+    assert f"target_{quantiles[0]}" in features
+    assert f"target_{quantiles[1]}" in features
+
+
 def test_backtest_pass_with_filter_transform(ts_with_feature):
     ts = ts_with_feature
 
@@ -1085,13 +1207,6 @@ def test_backtest_nans_at_beginning_with_mask(ts_name, request):
         metrics=[MAE()],
         n_folds=[mask],
     )
-
-
-def test_forecast_backtest_correct_ordering(step_ts: TSDataset):
-    ts, _, expected_forecast_df = step_ts
-    pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    _, forecast_df, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)
-    assert np.all(forecast_df.values == expected_forecast_df.values)
 
 
 def test_pipeline_with_deepmodel(example_tsds):
@@ -1181,6 +1296,33 @@ def test_save_load(load_ts, model, transforms, example_tsds):
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=example_tsds, load_ts=load_ts)
+
+
+def test_forecast_raise_error_if_no_ts(example_tsds):
+    pipeline = Pipeline(model=NaiveModel(), horizon=5)
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=pipeline, ts=example_tsds)
+
+
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        (SARIMAXModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecasts_without_self_ts(model, transforms, example_tsds):
+    horizon = 3
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
 
 
 @pytest.mark.parametrize(

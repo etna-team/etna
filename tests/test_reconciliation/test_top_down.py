@@ -302,4 +302,8 @@ def test_reconcile_with_quantiles(total_level_constant_forecast_with_quantiles, 
     forecast = total_level_constant_forecast_with_quantiles
     reconciliator = TopDownReconciliator(target_level="market", source_level="total", method="AHP", period=1)
     reconciliator.fit(ts=ts)
-    np.testing.assert_array_almost_equal(reconciliator.reconcile(ts=forecast).df.values, answer)
+
+    reconciled_ts = reconciliator.reconcile(ts=forecast)
+
+    assert reconciled_ts.prediction_intervals_names == forecast.prediction_intervals_names
+    np.testing.assert_array_almost_equal(reconciled_ts.df.values, answer)

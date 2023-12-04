@@ -33,7 +33,7 @@ def ts_two_segments(example_df) -> TSDataset:
 @pytest.fixture
 def ts_two_segments_diff_size(example_df) -> TSDataset:
     df = TSDataset.to_dataset(example_df)
-    df.loc[:4, pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
+    df.loc[: df.index[3], pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
     ts = TSDataset(df=df, freq="D")
     return ts
 
@@ -280,7 +280,7 @@ def _test_inverse_transform_one_segment(
     Test that trend_transform can correctly make inverse_transform in one segment.
     """
     df_transformed = trend_transform.fit_transform(df)
-    df_inverse_transformed = trend_transform.inverse_transform(df_transformed)
+    df_inverse_transformed = trend_transform.inverse_transform(df=df_transformed)
     npt.assert_allclose(df["target"], df_inverse_transformed["target"], **comparison_kwargs)
 
 
@@ -304,7 +304,7 @@ def test_inverse_transform_linear_trend_one_segment(df_one_segment: pd.DataFrame
     trend_transform = _OneSegmentLinearTrendBaseTransform(
         in_column="target", regressor=LinearRegression(), poly_degree=poly_degree
     )
-    _test_inverse_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
+    _test_inverse_transform_one_segment(trend_transform=trend_transform, df=df_one_segment.drop(columns=["segment"]))
 
 
 @pytest.mark.parametrize("poly_degree", [1, 2])
@@ -315,7 +315,7 @@ def test_inverse_transform_theil_sen_trend_one_segment(df_one_segment: pd.DataFr
     trend_transform = _OneSegmentLinearTrendBaseTransform(
         in_column="target", regressor=TheilSenRegressor(n_subsamples=len(df_one_segment)), poly_degree=poly_degree
     )
-    _test_inverse_transform_one_segment(trend_transform=trend_transform, df=df_one_segment)
+    _test_inverse_transform_one_segment(trend_transform=trend_transform, df=df_one_segment.drop(columns=["segment"]))
 
 
 @pytest.mark.parametrize("poly_degree", [1, 2])

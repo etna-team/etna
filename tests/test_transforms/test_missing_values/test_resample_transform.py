@@ -1,6 +1,7 @@
 import pytest
 
-from etna.transforms.missing_values import ResampleWithDistributionTransform
+from etna.transforms import HolidayTransform
+from etna.transforms import ResampleWithDistributionTransform
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -132,3 +133,10 @@ def test_get_regressors_info_not_fitted():
 def test_params_to_tune():
     transform = ResampleWithDistributionTransform(in_column="regressor_exog", distribution_column="target")
     assert len(transform.params_to_tune()) == 0
+
+
+def test_working_with_categorical_columns(example_tsds):
+    holiday = HolidayTransform(out_column="holiday_regressor")
+    resample = ResampleWithDistributionTransform(distribution_column="target", in_column="holiday_regressor")
+    holiday.fit_transform(example_tsds)
+    resample.fit_transform(example_tsds)

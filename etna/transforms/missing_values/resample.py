@@ -24,7 +24,7 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
             name of column to obtain the distribution from
         inplace:
 
-            * if True, apply resampling inplace to in_column,
+            * if True, apply resampling inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 
@@ -96,6 +96,7 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
         :
             result dataframe
         """
+        df = df.apply(pd.to_numeric)
         df["fold"] = self._get_folds(df)
         df = df.reset_index().merge(self.distribution, on="fold").set_index("timestamp").sort_index()
         df[self.out_column] = df[self.in_column].ffill() * df["distribution"]
@@ -130,7 +131,7 @@ class ResampleWithDistributionTransform(IrreversiblePerSegmentWrapper):
             name of column to obtain the distribution from
         inplace:
 
-            * if True, apply resampling inplace to in_column,
+            * if True, apply resampling inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 

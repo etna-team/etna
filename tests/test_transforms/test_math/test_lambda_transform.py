@@ -102,6 +102,7 @@ def test_interface_not_inplace(ts_non_negative):
     )
 
 
+@pytest.mark.filterwarnings("ignore: Transformation will be applied inplace, out_column param will be ignored")
 @pytest.mark.parametrize(
     "inplace, segment, check_column, function, inverse_function, expected_result",
     [

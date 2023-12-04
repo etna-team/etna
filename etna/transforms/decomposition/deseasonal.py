@@ -14,7 +14,6 @@ from etna.models.utils import determine_freq
 from etna.models.utils import determine_num_steps
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.utils import match_target_quantiles
 
 
 class DeseasonalModel(str, Enum):
@@ -150,31 +149,23 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         ValueError:
             if input column contains zero or negative values
         ValueError:
-            if quantile columns contains zero or negative values
+            if prediction intervals columns contains zero or negative values
         """
         result = df
         seasonal = self._roll_seasonal(result[self.in_column])
-        if self.model == "additive":
-            result[self.in_column] += seasonal
-        else:
-            if np.any(result[self.in_column] <= 0):
-                raise ValueError(
-                    "The input column contains zero or negative values,"
-                    "but multiplicative seasonality can not work with such values."
-                )
-            result[self.in_column] *= seasonal
-        if self.in_column == "target":
-            quantiles = match_target_quantiles(set(result.columns))
-            for quantile_column_nm in quantiles:
-                if self.model == "additive":
-                    result.loc[:, quantile_column_nm] += seasonal
-                else:
-                    if np.any(result.loc[quantile_column_nm] <= 0):
-                        raise ValueError(
-                            f"The {quantile_column_nm} column contains zero or negative values,"
-                            "but multiplicative seasonality can not work with such values."
-                        )
-                    result.loc[:, quantile_column_nm] *= seasonal
+
+        for column_name in result.columns:
+            if self.model == "additive":
+                result.loc[:, column_name] += seasonal
+
+            else:
+                if np.any(result.loc[:, column_name] <= 0):
+                    raise ValueError(
+                        f"The `{column_name}` column contains zero or negative values,"
+                        "but multiplicative seasonality can not work with such values."
+                    )
+                result.loc[:, column_name] *= seasonal
+
         return result
 
 

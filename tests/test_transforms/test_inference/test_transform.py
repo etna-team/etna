@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from ruptures import Binseg
 from sklearn.tree import DecisionTreeRegressor
 
@@ -17,6 +17,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EventTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
@@ -24,6 +25,7 @@ from etna.transforms import HolidayTransform
 from etna.transforms import LabelEncoderTransform
 from etna.transforms import LagTransform
 from etna.transforms import LambdaTransform
+from etna.transforms import LimitTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import LogTransform
 from etna.transforms import MADTransform
@@ -151,6 +153,7 @@ class TestTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (LimitTransform(in_column="target"), "regular_ts"),
             (LogTransform(in_column="target", inplace=False), "positive_ts"),
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
             (DifferencingTransform(in_column="target", inplace=False), "regular_ts"),
@@ -215,6 +218,11 @@ class TestTransformTrainSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_transform_train_subset_segments(self, transform, dataset_name, request):
@@ -336,6 +344,8 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "ts_with_exog",
             ),
+            (LimitTransform(in_column="target"), "regular_ts"),
+            (LimitTransform(in_column="positive"), "ts_with_exog"),
             (LogTransform(in_column="target", inplace=False), "positive_ts"),
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
             (LogTransform(in_column="positive", inplace=True), "ts_with_exog"),
@@ -414,6 +424,11 @@ class TestTransformFutureSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_transform_future_subset_segments(self, transform, dataset_name, request):
@@ -455,11 +470,6 @@ class TestTransformTrainNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            (
-                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
-                "regular_ts",
-                {"create": {"res"}},
-            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -520,6 +530,8 @@ class TestTransformTrainNewSegments:
                 "regular_ts",
                 {"change": {"target"}},
             ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {"create": {"res"}}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
             (
@@ -613,6 +625,16 @@ class TestTransformTrainNewSegments:
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
+            ),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
         ],
     )
@@ -810,6 +832,13 @@ class TestTransformFutureNewSegments:
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="positive"), "ts_with_exog", {}),
+            (
+                LimitTransform(in_column="positive", lower_bound=-50, upper_bound=50),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {"create": {"res"}}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {}),
             (LogTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
@@ -934,6 +963,16 @@ class TestTransformFutureNewSegments:
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
+            ),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
+            ),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
             ),
         ],
     )
@@ -1157,6 +1196,8 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"change": {"target"}},
             ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {"create": {"res"}}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
             (
@@ -1338,6 +1379,16 @@ class TestTransformFutureWithTarget:
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
+            ),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", mode="distance", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
+            ),
         ],
     )
     def test_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
@@ -1496,6 +1547,13 @@ class TestTransformFutureWithoutTarget:
                     inverse_transform_func=lambda x: x - 1,
                     inplace=True,
                 ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="positive"), "ts_with_exog", {}),
+            (
+                LimitTransform(in_column="positive", lower_bound=-50, upper_bound=50),
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
@@ -1718,6 +1776,16 @@ class TestTransformFutureWithoutTarget:
                 {"create": {"res_minute_in_hour_number", "res_hour_number"}},
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
+            ),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {"create": {"holiday_pre", "holiday_post"}},
+            ),
         ],
     )
     def test_transform_future_without_target(self, transform, dataset_name, expected_changes, request):

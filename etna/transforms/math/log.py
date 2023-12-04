@@ -8,7 +8,6 @@ import pandas as pd
 from etna.datasets import TSDataset
 from etna.datasets import set_columns_wide
 from etna.transforms.base import ReversibleTransform
-from etna.transforms.utils import match_target_quantiles
 
 
 class LogTransform(ReversibleTransform):
@@ -25,9 +24,9 @@ class LogTransform(ReversibleTransform):
             base of logarithm to apply to series
         inplace:
 
-            * if True, apply logarithm transformation inplace to in_column,
+            * if True, apply logarithm transformation inplace to ``in_column``,
 
-            * if False, add column add transformed column to dataset
+            * if False, add column and transformed column to dataset
 
         out_column:
             name of added column. If not given, use ``self.__repr__()``
@@ -116,23 +115,12 @@ class LogTransform(ReversibleTransform):
         """
         result = df
         if self.inplace:
-            features = df.loc[:, pd.IndexSlice[:, self.in_column]]
-            transformed_features = np.expm1(features * np.log(self.base))
+            feature_columns = list(df.columns.get_level_values("feature"))
+            transformed_result = np.expm1(df * np.log(self.base))
+
             result = set_columns_wide(
-                result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
+                result, transformed_result, features_left=feature_columns, features_right=feature_columns
             )
-            if self.in_column == "target":
-                segment_columns = result.columns.get_level_values("feature").tolist()
-                quantiles = match_target_quantiles(set(segment_columns))
-                for quantile_column_nm in quantiles:
-                    features = df.loc[:, pd.IndexSlice[:, quantile_column_nm]]
-                    transformed_features = np.expm1(features * np.log(self.base))
-                    result = set_columns_wide(
-                        result,
-                        transformed_features,
-                        features_left=[quantile_column_nm],
-                        features_right=[quantile_column_nm],
-                    )
 
         return result
 

@@ -207,6 +207,7 @@ def check_inverse_transform_inplace_test_quantiles(transform: GeneralDifferencin
     predict_ts.inverse_transform([transform])
 
     # check that predicted value is within the interval
+    assert predict_ts.prediction_intervals_names == ("target_0.025", "target_0.975")
     for segment in predict_ts.segments:
         assert np.all(predict_ts[:, segment, "target_0.025"] <= predict_ts[:, segment, "target"])
         assert np.all(predict_ts[:, segment, "target"] <= predict_ts[:, segment, "target_0.975"])

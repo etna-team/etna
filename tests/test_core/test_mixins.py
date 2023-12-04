@@ -65,7 +65,14 @@ def test_save_mixin_load_ok(recwarn, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "save_version, load_version", [((1, 5, 0), (2, 5, 0)), ((2, 5, 0), (1, 5, 0)), ((1, 5, 0), (1, 3, 0))]
+    "save_version, load_version",
+    [
+        ((1, 5, 0), (2, 5, 0)),
+        ((2, 5, 0), (1, 5, 0)),
+        ((1, 5, 0), (1, 3, 0)),
+        ((1, 5, 0), (1, 5, 1)),
+        ((1, 5, 1), (1, 5, 0)),
+    ],
 )
 @patch("etna.core.mixins.get_etna_version")
 def test_save_mixin_load_warning(get_version_mock, save_version, load_version, tmp_path):

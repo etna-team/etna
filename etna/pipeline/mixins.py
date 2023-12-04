@@ -27,11 +27,11 @@ from etna.transforms import Transform
 class ModelPipelinePredictMixin:
     """Mixin for pipelines with model inside with implementation of ``_predict`` method."""
 
-    model: ModelType
-    transforms: Sequence[Transform]
-
     def _create_ts(self, ts: TSDataset, start_timestamp: pd.Timestamp, end_timestamp: pd.Timestamp) -> TSDataset:
         """Create ``TSDataset`` to make predictions on."""
+        self.model: ModelType
+        self.transforms: Sequence[Transform]
+
         df = deepcopy(ts.raw_df)
         df_exog = deepcopy(ts.df_exog)
         freq = deepcopy(ts.freq)
@@ -113,9 +113,6 @@ class ModelPipelinePredictMixin:
 class ModelPipelineParamsToTuneMixin:
     """Mixin for pipelines with model inside with implementation of ``params_to_tune`` method."""
 
-    model: ModelType
-    transforms: Sequence[Transform]
-
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
@@ -128,6 +125,9 @@ class ModelPipelineParamsToTuneMixin:
         :
             Grid with parameters from model and transforms.
         """
+        self.model: ModelType
+        self.transforms: Sequence[Transform]
+
         all_params = {}
         for key, value in self.model.params_to_tune().items():
             new_key = f"model.{key}"
@@ -144,7 +144,7 @@ class ModelPipelineParamsToTuneMixin:
 class SaveModelPipelineMixin(SaveMixin):
     """Implementation of ``AbstractSaveable`` abstract class for pipelines with model inside.
 
-    It saves object to the zip archive with 4 entities:
+    It saves object to the zip archive with entities:
 
     * metadata.json: contains library version and class name.
 
@@ -155,10 +155,6 @@ class SaveModelPipelineMixin(SaveMixin):
     * transforms: folder with saved transforms.
     """
 
-    model: ModelType
-    transforms: Sequence[Transform]
-    ts: Optional[TSDataset]
-
     def save(self, path: pathlib.Path):
         """Save the object.
 
@@ -167,22 +163,11 @@ class SaveModelPipelineMixin(SaveMixin):
         path:
             Path to save object to.
         """
-        model = self.model
-        transforms = self.transforms
-        ts = self.ts
+        self.model: ModelType
+        self.transforms: Sequence[Transform]
+        self.ts: Optional[TSDataset]
 
-        try:
-            # extract attributes we can't easily save
-            delattr(self, "model")
-            delattr(self, "transforms")
-            delattr(self, "ts")
-
-            # save the remaining part
-            super().save(path=path)
-        finally:
-            self.model = model
-            self.transforms = transforms
-            self.ts = ts
+        self._save(path=path, skip_attributes=["model", "transforms", "ts"])
 
         with zipfile.ZipFile(path, "a") as archive:
             with tempfile.TemporaryDirectory() as _temp_dir:
@@ -190,14 +175,14 @@ class SaveModelPipelineMixin(SaveMixin):
 
                 # save model separately
                 model_save_path = temp_dir / "model.zip"
-                model.save(model_save_path)
+                self.model.save(model_save_path)
                 archive.write(model_save_path, "model.zip")
 
                 # save transforms separately
                 transforms_dir = temp_dir / "transforms"
                 transforms_dir.mkdir()
                 num_digits = 8
-                for i, transform in enumerate(transforms):
+                for i, transform in enumerate(self.transforms):
                     save_name = f"{i:0{num_digits}d}.zip"
                     transform_save_path = transforms_dir / save_name
                     transform.save(transform_save_path)

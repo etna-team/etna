@@ -20,7 +20,7 @@ from etna.datasets.tsdataset import TSDataset
 from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.models.decorators import log_decorator
-from etna.models.mixins import SaveNNMixin
+from etna.models.mixins import SaveDeepBaseModelMixin
 
 if SETTINGS.torch_required:
     import torch
@@ -429,7 +429,11 @@ class DeepBaseAbstractModel(ABC):
 
 
 class DeepBaseNet(DeepAbstractNet, LightningModule):
-    """Class for partially implemented LightningModule interface."""
+    """Class for partially implemented LightningModule interface.
+
+    During inheritance don't forget to add ``self.save_hyperparameters()`` to the ``__init__``.
+    Otherwise, methods ``save`` and ``load`` won't work properly for your implementation of :py:class:`~etna.models.base.DeepBaseModel`.
+    """
 
     def __init__(self):
         """Init DeepBaseNet."""
@@ -448,8 +452,8 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         :
             loss
         """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("train_loss", loss, on_epoch=True)
+        loss, true_target, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("train_loss", loss, on_epoch=True, batch_size=len(true_target))
         return loss
 
     def validation_step(self, batch: dict, *args, **kwargs):  # type: ignore
@@ -465,12 +469,12 @@ class DeepBaseNet(DeepAbstractNet, LightningModule):
         :
             loss
         """
-        loss, _, _ = self.step(batch, *args, **kwargs)  # type: ignore
-        self.log("val_loss", loss, on_epoch=True)
+        loss, true_target, _ = self.step(batch, *args, **kwargs)  # type: ignore
+        self.log("val_loss", loss, on_epoch=True, batch_size=len(true_target))
         return loss
 
 
-class DeepBaseModel(DeepBaseAbstractModel, SaveNNMixin, NonPredictionIntervalContextRequiredAbstractModel):
+class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPredictionIntervalContextRequiredAbstractModel):
     """Class for partially implemented interfaces for holding deep models."""
 
     def __init__(

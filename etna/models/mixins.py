@@ -1,3 +1,4 @@
+import pathlib
 import zipfile
 from abc import ABC
 from abc import abstractmethod
@@ -11,11 +12,20 @@ from typing import Sequence
 import dill
 import numpy as np
 import pandas as pd
+from hydra_slayer import get_factory
 from typing_extensions import Self
 
+from etna import SETTINGS
+from etna.core.mixins import BaseMixin
 from etna.core.mixins import SaveMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import match_target_quantiles
 from etna.models.decorators import log_decorator
+
+if SETTINGS.torch_required:
+    import torch
+    from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
 
 
 class ModelForecastingMixin(ABC):
@@ -442,7 +452,17 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         df = df.combine_first(result_df).reset_index()
 
         df = TSDataset.to_dataset(df)
+
+        quantile_columns = match_target_quantiles(df.columns.get_level_values("feature"))
+        if len(quantile_columns) > 0:
+            columns_list = list(quantile_columns)
+            quantile_df = df.loc[:, pd.IndexSlice[:, columns_list]]
+            df = df.drop(columns=columns_list, level="feature")
+
         ts.df = df
+
+        if len(quantile_columns) > 0:
+            ts.add_prediction_intervals(prediction_intervals_df=quantile_df)
 
         prediction_size = kwargs.get("prediction_size")
         if prediction_size is not None:
@@ -629,25 +649,145 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         return self._base_model.get_model()
 
 
-class SaveNNMixin(SaveMixin):
-    """Implementation of ``AbstractSaveable`` torch related classes.
+def _save_pl_model(archive: zipfile.ZipFile, filename: str, model: "LightningModule"):
+    with archive.open(filename, "w", force_zip64=True) as output_file:
+        to_save = {
+            "class": BaseMixin._get_target_from_class(model),
+            "hyperparameters": dict(model.hparams),
+            "state_dict": model.state_dict(),
+        }
+        torch.save(to_save, output_file, pickle_module=dill)
 
-    It saves object to the zip archive with 2 files:
+
+def _load_pl_model(archive: zipfile.ZipFile, filename: str) -> "LightningModule":
+    with archive.open(filename, "r") as input_file:
+        net_loaded = torch.load(input_file, pickle_module=dill)
+
+    cls = get_factory(net_loaded["class"])
+    net = cls(**net_loaded["hyperparameters"])
+    net.load_state_dict(net_loaded["state_dict"])
+
+    return net
+
+
+class SaveDeepBaseModelMixin(SaveMixin):
+    """Implementation of ``AbstractSaveable`` for :py:class:`~etna.models.base.DeepBaseModel` models.
+
+    It saves object to the zip archive with files:
 
     * metadata.json: contains library version and class name.
 
-    * object.pt: object saved by ``torch.save``.
+    * object.pkl: pickled without ``self.net`` and ``self.trainer``.
+
+    * net.pt: parameters of ``self.net`` saved by ``torch.save``.
     """
 
-    def _save_state(self, archive: zipfile.ZipFile):
-        import torch
+    def save(self, path: pathlib.Path):
+        """Save the object.
 
-        with archive.open("object.pt", "w", force_zip64=True) as output_file:
-            torch.save(self, output_file, pickle_module=dill)
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        """
+        from etna.models.base import DeepBaseNet
+
+        self.trainer: Optional[Trainer]
+        self.net: DeepBaseNet
+
+        self._save(path=path, skip_attributes=["trainer", "net"])
+
+        with zipfile.ZipFile(path, "a") as archive:
+            _save_pl_model(archive=archive, filename="net.pt", model=self.net)
 
     @classmethod
-    def _load_state(cls, archive: zipfile.ZipFile) -> Self:
-        import torch
+    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Self:
+        """Load an object.
 
-        with archive.open("object.pt", "r") as input_file:
-            return torch.load(input_file, pickle_module=dill)
+        Warning
+        -------
+        This method uses :py:mod:`dill` module which is not secure.
+        It is possible to construct malicious data which will execute arbitrary code during loading.
+        Never load data that could have come from an untrusted source, or that could have been tampered with.
+
+        Parameters
+        ----------
+        path:
+            Path to load object from.
+        ts:
+            TSDataset to set into loaded pipeline.
+
+        Returns
+        -------
+        :
+            Loaded object.
+        """
+        obj = super().load(path=path)
+
+        with zipfile.ZipFile(path, "r") as archive:
+            obj.net = _load_pl_model(archive=archive, filename="net.pt")
+            obj.trainer = None
+
+        return obj
+
+
+class SavePytorchForecastingMixin(SaveMixin):
+    """Implementation of ``AbstractSaveable`` for :py:mod:`pytorch_forecasting` models.
+
+    It saves object to the zip archive with files:
+
+    * metadata.json: contains library version and class name.
+
+    * object.pkl: pickled without ``self.model`` and ``self.trainer``.
+
+    * model.pt: parameters of ``self.model`` saved by ``torch.save`` if model was fitted.
+    """
+
+    def save(self, path: pathlib.Path):
+        """Save the object.
+
+        Parameters
+        ----------
+        path:
+            Path to save object to.
+        """
+        self.trainer: Optional[Trainer]
+        self.model: Optional[LightningModule]
+
+        if self.model is None:
+            self._save(path=path, skip_attributes=["trainer"])
+        else:
+            self._save(path=path, skip_attributes=["trainer", "model"])
+            with zipfile.ZipFile(path, "a") as archive:
+                _save_pl_model(archive=archive, filename="model.pt", model=self.model)
+
+    @classmethod
+    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Self:
+        """Load an object.
+
+        Warning
+        -------
+        This method uses :py:mod:`dill` module which is not secure.
+        It is possible to construct malicious data which will execute arbitrary code during loading.
+        Never load data that could have come from an untrusted source, or that could have been tampered with.
+
+        Parameters
+        ----------
+        path:
+            Path to load object from.
+        ts:
+            TSDataset to set into loaded pipeline.
+
+        Returns
+        -------
+        :
+            Loaded object.
+        """
+        obj = super().load(path=path)
+        obj.trainer = None
+
+        if not hasattr(obj, "model"):
+            with zipfile.ZipFile(path, "r") as archive:
+                obj.model = _load_pl_model(archive=archive, filename="model.pt")
+
+        return obj

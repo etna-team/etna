@@ -397,7 +397,18 @@ class BATSModel(
         context: abstract.ContextInterface, optional (default=None)
             For advanced users only. Provide this to override default behaviors
         """
-        self.model = BATS(
+        self.use_box_cox = use_box_cox
+        self.box_cox_bounds = box_cox_bounds
+        self.use_trend = use_trend
+        self.use_damped_trend = use_damped_trend
+        self.seasonal_periods = seasonal_periods
+        self.use_arma_errors = use_arma_errors
+        self.show_warnings = show_warnings
+        self.n_jobs = n_jobs
+        self.multiprocessing_start_method = multiprocessing_start_method
+        self.context = context
+
+        self._model = BATS(
             use_box_cox=use_box_cox,
             box_cox_bounds=box_cox_bounds,
             use_trend=use_trend,
@@ -409,7 +420,7 @@ class BATSModel(
             multiprocessing_start_method=multiprocessing_start_method,
             context=context,
         )
-        super().__init__(base_model=_TBATSAdapter(self.model))
+        super().__init__(base_model=_TBATSAdapter(self._model))
 
 
 class TBATSModel(
@@ -474,7 +485,18 @@ class TBATSModel(
         context: abstract.ContextInterface, optional (default=None)
             For advanced users only. Provide this to override default behaviors
         """
-        self.model = TBATS(
+        self.use_box_cox = use_box_cox
+        self.box_cox_bounds = box_cox_bounds
+        self.use_trend = use_trend
+        self.use_damped_trend = use_damped_trend
+        self.seasonal_periods = seasonal_periods
+        self.use_arma_errors = use_arma_errors
+        self.show_warnings = show_warnings
+        self.n_jobs = n_jobs
+        self.multiprocessing_start_method = multiprocessing_start_method
+        self.context = context
+
+        self._model = TBATS(
             use_box_cox=use_box_cox,
             box_cox_bounds=box_cox_bounds,
             use_trend=use_trend,
@@ -486,4 +508,4 @@ class TBATSModel(
             multiprocessing_start_method=multiprocessing_start_method,
             context=context,
         )
-        super().__init__(base_model=_TBATSAdapter(self.model))
+        super().__init__(base_model=_TBATSAdapter(self._model))
