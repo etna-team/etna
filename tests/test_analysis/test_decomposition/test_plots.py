@@ -86,6 +86,26 @@ def test_plot_change_points_interactive_fail_incorrect_start_end_type(params, ma
         )
 
 
-def test_seasonal_plot_fail_int_timestamp(example_tsdf_int_timestamp):
-    with pytest.raises(ValueError, match="This function doesn't support data with integer timestamp"):
-        seasonal_plot(ts=example_tsdf_int_timestamp, cycle="day")
+@pytest.mark.parametrize("alignment", ["first", "last"])
+def test_seasonal_plot_datetime_timestamp(alignment, example_tsdf):
+    seasonal_plot(ts=example_tsdf, cycle=10, alignment=alignment)
+
+
+@pytest.mark.parametrize("alignment", ["first", "last"])
+def test_seasonal_plot_int_timestamp(alignment, example_tsdf_int_timestamp):
+    seasonal_plot(ts=example_tsdf_int_timestamp, cycle=10, alignment=alignment)
+
+
+def test_seasonal_plot_int_timestamp_fail_resample(example_tsdf_int_timestamp):
+    with pytest.raises(ValueError, match="Resampling isn't supported for data with integer timestamp"):
+        seasonal_plot(ts=example_tsdf_int_timestamp, freq="D", cycle=10)
+
+
+def test_seasonal_plot_int_timestamp_fail_non_int_cycle(example_tsdf_int_timestamp):
+    with pytest.raises(ValueError, match="Setting non-integer cycle isn't supported"):
+        seasonal_plot(ts=example_tsdf_int_timestamp, freq=None, cycle="year")
+
+
+def test_seasonal_plot_datetime_timestamp_fail_none_freq(example_tsdf):
+    with pytest.raises(ValueError, match="Value None for freq parameter isn't supported"):
+        seasonal_plot(ts=example_tsdf, freq=None, cycle=10)

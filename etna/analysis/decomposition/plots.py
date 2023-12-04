@@ -19,6 +19,7 @@ from ruptures.exceptions import BadSegmentationParameters
 from statsmodels.tsa.seasonal import STL
 from typing_extensions import Literal
 
+from etna.analysis.decomposition.utils import SeasonalPlotNotGivenFreq
 from etna.analysis.decomposition.utils import _get_labels_names
 from etna.analysis.decomposition.utils import _prepare_seasonal_plot_df
 from etna.analysis.decomposition.utils import _seasonal_split
@@ -375,7 +376,7 @@ def stl_plot(
 
 def seasonal_plot(
     ts: "TSDataset",
-    freq: Optional[str] = None,
+    freq: Union[Optional[str], Literal[SeasonalPlotNotGivenFreq.not_given]] = SeasonalPlotNotGivenFreq.not_given,
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ] = "year",
@@ -401,6 +402,7 @@ def seasonal_plot(
 
         * if set, resampling will be made using ``aggregation`` parameter.
           If given frequency is too low, then the frequency of ``ts`` will be used.
+          This option isn't supported for data with integer timestamp.
 
     cycle:
         period of seasonality to capture (see :class:`~etna.analysis.decomposition.utils.SeasonalPlotCycle`)
@@ -425,16 +427,17 @@ def seasonal_plot(
     Raises
     ------
     ValueError:
-        Given data with integer timestamp which isn't supported
+        Resampling isn't supported for data with integer timestamp
+    ValueError:
+        Setting non-integer cycle isn't supported for data with integer timestamp
+    ValueError:
+        Value None for freq parameter isn't supported for data with datetime timestamp
     """
-    if freq is None:
-        raise ValueError("This function doesn't support data with integer timestamp!")
-
     if plot_params is None:
         plot_params = {}
-    if freq is None:
+    if freq is SeasonalPlotNotGivenFreq.not_given:
         freq = ts.freq
-        freq = cast(str, freq)
+        freq = cast(Optional[str], freq)
     if segments is None:
         segments = sorted(ts.segments)
 
