@@ -14,3 +14,4 @@ Contents
    tutorials
    glossary
    resources
+   internal_datasets
