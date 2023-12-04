@@ -2,12 +2,13 @@ from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Union
 
 import numpy as np
+import pandas as pd
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.datasets.utils import TimestampType
 
 
 def absolute_difference_distance(x: float, y: float) -> float:
@@ -91,7 +92,7 @@ def get_anomalies_density(
     distance_coef: float = 3,
     n_neighbors: int = 3,
     distance_func: Callable[[float, float], float] = absolute_difference_distance,
-) -> Dict[str, List["TimestampType"]]:
+) -> Dict[str, List[Union[pd.Timestamp, int]]]:
     """Compute outliers according to density rule.
 
     For each element in the series build all the windows of size ``window_size`` containing this point.

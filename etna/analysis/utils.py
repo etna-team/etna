@@ -9,10 +9,10 @@ import matplotlib.axes
 import matplotlib.figure
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.datasets.utils import TimestampType
 
 
 def _prepare_axes(
@@ -34,7 +34,7 @@ def _prepare_axes(
 
 
 def _get_borders_ts(
-    ts: "TSDataset", start: Optional[Union["TimestampType", str]], end: Optional[Union["TimestampType", str]]
+    ts: "TSDataset", start: Optional[Union[pd.Timestamp, int, str]], end: Optional[Union[pd.Timestamp, int, str]]
 ) -> Tuple[str, str]:
     """Get start and end parameters according to given TSDataset."""
     from etna.datasets.utils import _check_timestamp_param

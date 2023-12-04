@@ -28,7 +28,6 @@ from etna.analysis.utils import _prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.datasets.utils import TimestampType
     from etna.transforms.decomposition import ChangePointsTrendTransform
     from etna.transforms.decomposition import LinearTrendTransform
     from etna.transforms.decomposition import STLTransform
@@ -88,12 +87,12 @@ def plot_trend(
 
 def plot_time_series_with_change_points(
     ts: "TSDataset",
-    change_points: Dict[str, List["TimestampType"]],
+    change_points: Dict[str, List[Union[pd.Timestamp, int]]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[Union["TimestampType", str]] = None,
-    end: Optional[Union["TimestampType", str]] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot segments with their trend change points.
 
@@ -165,8 +164,8 @@ def plot_change_points_interactive(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[Union["TimestampType", str]] = None,
-    end: Optional[Union["TimestampType", str]] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot a time series with indicated change points.
 

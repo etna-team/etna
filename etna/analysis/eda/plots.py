@@ -30,7 +30,6 @@ from etna.analysis.utils import _prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.datasets.utils import TimestampType
     from etna.transforms import TimeSeriesImputerTransform
 
 plot_acf = sm.graphics.tsa.plot_acf
@@ -272,8 +271,8 @@ def plot_holidays(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[Union["TimestampType", str]] = None,
-    end: Optional[Union["TimestampType", str]] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
     as_is: bool = False,
 ):
     """Plot holidays for segments.
@@ -689,8 +688,8 @@ def plot_imputation(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[Union["TimestampType", str]] = None,
-    end: Optional[Union["TimestampType", str]] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot the result of imputation by a given imputer.
 

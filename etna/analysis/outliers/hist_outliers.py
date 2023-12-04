@@ -5,10 +5,10 @@ from typing import List
 
 import numba
 import numpy as np
+import pandas as pd
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.datasets.utils import TimestampType
 
 
 @numba.jit(nopython=True)
@@ -300,7 +300,7 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
 
 def get_anomalies_hist(
     ts: "TSDataset", in_column: str = "target", bins_number: int = 10
-) -> typing.Dict[str, List["TimestampType"]]:
+) -> typing.Dict[str, List[typing.Union[pd.Timestamp, int]]]:
     """
     Get point outliers in time series using histogram model.
 

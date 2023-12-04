@@ -8,13 +8,12 @@ import pandas as pd
 from numpy.random import RandomState
 from statsmodels.tsa.arima_process import arma_generate_sample
 
-from etna.datasets.utils import TimestampType
 from etna.datasets.utils import _check_timestamp_param
 
 
 def _create_timestamp(
-    start_time: Optional[Union[str, TimestampType]], freq: Optional[str], periods: int
-) -> Sequence[TimestampType]:
+    start_time: Optional[Union[pd.Timestamp, int, str]], freq: Optional[str], periods: int
+) -> Sequence[Union[pd.Timestamp, int]]:
     start_time = _check_timestamp_param(param=start_time, param_name="start_time", freq=freq)
     if freq is None:
         if start_time is None:
@@ -28,7 +27,7 @@ def _create_timestamp(
 
 def generate_ar_df(
     periods: int,
-    start_time: Optional[Union[str, TimestampType]] = None,
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     ar_coef: Optional[list] = None,
     sigma: float = 1,
     n_segments: int = 1,
@@ -75,7 +74,7 @@ def generate_ar_df(
 
 def generate_periodic_df(
     periods: int,
-    start_time: Optional[Union[str, TimestampType]] = None,
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     scale: float = 10,
     period: int = 1,
     n_segments: int = 1,
@@ -129,7 +128,7 @@ def generate_periodic_df(
 
 def generate_const_df(
     periods: int,
-    start_time: Optional[Union[str, TimestampType]] = None,
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     scale: float = 10,
     n_segments: int = 1,
     freq: Optional[str] = "D",
@@ -179,7 +178,7 @@ def generate_const_df(
 
 def generate_from_patterns_df(
     periods: int,
-    start_time: Optional[Union[str, TimestampType]],
+    start_time: Optional[Union[pd.Timestamp, int, str]],
     patterns: List[List[float]],
     freq: Optional[str] = "D",
     add_noise=False,
@@ -229,7 +228,7 @@ def generate_hierarchical_df(
     periods: int,
     n_segments: List[int],
     freq: Optional[str] = "D",
-    start_time: Optional[Union[str, TimestampType]] = None,
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     ar_coef: Optional[list] = None,
     sigma: float = 1,
     random_seed: int = 1,

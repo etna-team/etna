@@ -10,7 +10,6 @@ import pandas as pd
 from etna.datasets import TSDataset
 
 if TYPE_CHECKING:
-    from etna.datasets.utils import TimestampType
     from etna.models import ProphetModel
     from etna.models import SARIMAXModel
 
@@ -68,7 +67,7 @@ def get_anomalies_prediction_interval(
     interval_width: float = 0.95,
     in_column: str = "target",
     **model_params,
-) -> Dict[str, List["TimestampType"]]:
+) -> Dict[str, List[Union[pd.Timestamp, int]]]:
     """
     Get point outliers in time series using prediction intervals (estimation model-based method).
 

@@ -20,9 +20,6 @@ else:
     Dataset = Mock  # type: ignore
 
 
-TimestampType = Union[int, pd.Timestamp]
-
-
 class DataFrameFormat(str, Enum):
     """Enum for different types of result."""
 
@@ -134,8 +131,8 @@ class _TorchDataset(Dataset):
 def set_columns_wide(
     df_left: pd.DataFrame,
     df_right: pd.DataFrame,
-    timestamps_left: Optional[Sequence[TimestampType]] = None,
-    timestamps_right: Optional[Sequence[TimestampType]] = None,
+    timestamps_left: Optional[Sequence[Union[pd.Timestamp, int]]] = None,
+    timestamps_right: Optional[Sequence[Union[pd.Timestamp, int]]] = None,
     segments_left: Optional[Sequence[str]] = None,
     features_right: Optional[Sequence[str]] = None,
     features_left: Optional[Sequence[str]] = None,
@@ -301,8 +298,8 @@ def inverse_transform_target_components(
 
 
 def _check_timestamp_param(
-    param: Optional[Union[TimestampType, str]], param_name: str, freq: Optional[str]
-) -> Optional[TimestampType]:
+    param: Optional[Union[pd.Timestamp, int, str]], param_name: str, freq: Optional[str]
+) -> Optional[Union[pd.Timestamp, int]]:
     if param is None:
         return param
 

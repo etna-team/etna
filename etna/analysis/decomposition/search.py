@@ -1,16 +1,16 @@
 from typing import Dict
 from typing import List
+from typing import Union
 
 import pandas as pd
 from ruptures.base import BaseEstimator
 
 from etna.datasets import TSDataset
-from etna.datasets.utils import TimestampType
 
 
 def find_change_points(
     ts: TSDataset, in_column: str, change_point_model: BaseEstimator, **model_predict_params
-) -> Dict[str, List[TimestampType]]:
+) -> Dict[str, List[Union[int, pd.Timestamp]]]:
     """Find trend change points using ruptures models.
 
     Parameters

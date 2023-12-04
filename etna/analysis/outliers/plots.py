@@ -14,18 +14,17 @@ from etna.analysis.utils import _prepare_axes
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.datasets.utils import TimestampType
 
 
 def plot_anomalies(
     ts: "TSDataset",
-    anomaly_dict: Dict[str, List["TimestampType"]],
+    anomaly_dict: Dict[str, List[Union[pd.Timestamp, int]]],
     in_column: str = "target",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[Union["TimestampType", str]] = None,
-    end: Optional[Union["TimestampType", str]] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -77,12 +76,12 @@ def plot_anomalies(
 def plot_anomalies_interactive(
     ts: "TSDataset",
     segment: str,
-    method: Callable[..., Dict[str, List["TimestampType"]]],
+    method: Callable[..., Dict[str, List[Union[pd.Timestamp, int]]]],
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
     in_column: str = "target",
     figsize: Tuple[int, int] = (20, 10),
-    start: Optional[Union["TimestampType", str]] = None,
-    end: Optional[Union["TimestampType", str]] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot a time series with indicated anomalies.
 

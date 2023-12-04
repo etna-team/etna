@@ -2,15 +2,15 @@ import math
 import typing
 
 import numpy as np
+import pandas as pd
 
 if typing.TYPE_CHECKING:
     from etna.datasets import TSDataset
-    from etna.datasets.utils import TimestampType
 
 
 def get_anomalies_median(
     ts: "TSDataset", in_column: str = "target", window_size: int = 10, alpha: float = 3
-) -> typing.Dict[str, typing.List["TimestampType"]]:
+) -> typing.Dict[str, typing.List[typing.Union[pd.Timestamp, int]]]:
     """
     Get point outliers in time series using median model (estimation model-based method).
 
