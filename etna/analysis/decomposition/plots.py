@@ -19,7 +19,6 @@ from ruptures.exceptions import BadSegmentationParameters
 from statsmodels.tsa.seasonal import STL
 from typing_extensions import Literal
 
-from etna.analysis.decomposition.utils import SeasonalPlotNotGivenFreq
 from etna.analysis.decomposition.utils import _get_labels_names
 from etna.analysis.decomposition.utils import _prepare_seasonal_plot_df
 from etna.analysis.decomposition.utils import _seasonal_split
@@ -375,7 +374,7 @@ def stl_plot(
 
 def seasonal_plot(
     ts: "TSDataset",
-    freq: Union[Optional[str], Literal[SeasonalPlotNotGivenFreq.not_given]] = SeasonalPlotNotGivenFreq.not_given,
+    freq: Union[Optional[str], Literal["not_given"]] = "not_given",
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ] = "year",
@@ -434,7 +433,7 @@ def seasonal_plot(
     """
     if plot_params is None:
         plot_params = {}
-    if freq is SeasonalPlotNotGivenFreq.not_given:
+    if freq == "not_given":
         freq = ts.freq
         freq = cast(Optional[str], freq)
     if segments is None:

@@ -125,6 +125,14 @@ def test_seasonal_split(timestamp, freq, cycle, expected_cycle_names, expected_i
             pd.date_range(start="2020-01-01", periods=4, freq="Y"),
             [np.NaN, 12.0, 6.0, 3.0],
         ),
+        (
+            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            [np.NaN, 12.0, 6.0, 3.0],
+            "Q",
+            "mean",
+            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            [np.NaN, 12.0, 6.0, 3.0],
+        ),
     ],
 )
 def test_resample(timestamp, values, resample_freq, aggregation, expected_timestamp, expected_values):

@@ -38,12 +38,6 @@ def _get_labels_names(trend_transform, segments):
     return labels, linear_coeffs
 
 
-class SeasonalPlotNotGivenFreq(str, Enum):
-    """Sentinel value for not present frequency in a seasonal plot."""
-
-    not_given = "not_given"
-
-
 class SeasonalPlotAlignment(str, Enum):
     """Enum for types of alignment in a seasonal plot."""
 
