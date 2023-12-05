@@ -102,7 +102,7 @@ def test_forecast_prediction_intervals_is_used(example_tsds, pipeline):
     ),
 )
 def test_pipelines_forecast_intervals_valid(example_tsds, pipeline):
-    intervals_pipeline = EmpiricalPredictionIntervals(pipeline=pipeline, cutoff_borders=True)
+    intervals_pipeline = EmpiricalPredictionIntervals(pipeline=pipeline, include_forecast=True)
     intervals_pipeline.fit(ts=example_tsds)
 
     prediction = intervals_pipeline.forecast(prediction_interval=True)
@@ -138,7 +138,7 @@ def test_ensembles_forecast_intervals_exist(example_tsds, ensemble, expected_col
     ),
 )
 def test_ensembles_forecast_intervals_valid(example_tsds, ensemble):
-    intervals_pipeline = EmpiricalPredictionIntervals(pipeline=ensemble, cutoff_borders=True)
+    intervals_pipeline = EmpiricalPredictionIntervals(pipeline=ensemble, include_forecast=True)
     intervals_pipeline.fit(ts=example_tsds)
 
     prediction = intervals_pipeline.forecast(prediction_interval=True)

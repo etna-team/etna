@@ -21,7 +21,7 @@ class EmpiricalPredictionIntervals(BasePredictionIntervals):
     `Reference implementation <https://www.sktime.net/en/stable/api_reference/auto_generated/sktime.forecasting.conformal.ConformalIntervals.html>`_.
     """
 
-    def __init__(self, pipeline: BasePipeline, coverage: float = 0.95, cutoff_borders: bool = True, stride: int = 1):
+    def __init__(self, pipeline: BasePipeline, coverage: float = 0.95, include_forecast: bool = True, stride: int = 1):
         """Initialize instance of ``EmpiricalPredictionIntervals`` with given parameters.
 
         Parameters
@@ -30,8 +30,8 @@ class EmpiricalPredictionIntervals(BasePredictionIntervals):
             Base pipeline or ensemble for prediction intervals estimation.
         coverage:
              Interval coverage. In literature this value maybe referred as ``1 - alpha``.
-        cutoff_borders:
-             Ensure that the forecast lies inside the prediction interval.
+        include_forecast:
+             Ensure that the forecast lies within the prediction interval.
         stride:
             Number of points between folds.
         """
@@ -42,7 +42,7 @@ class EmpiricalPredictionIntervals(BasePredictionIntervals):
             raise ValueError("Parameter `stride` must be positive!")
 
         self.coverage = coverage
-        self.cutoff_borders = cutoff_borders
+        self.include_forecast = include_forecast
         self.stride = stride
 
         super().__init__(pipeline=pipeline)
@@ -76,7 +76,7 @@ class EmpiricalPredictionIntervals(BasePredictionIntervals):
         lower_quantile, upper_quantile = np.quantile(residuals, levels, axis=0)
 
         # cutoffs to keep prediction inside interval
-        if self.cutoff_borders:
+        if self.include_forecast:
             upper_quantile = np.maximum(upper_quantile, 0)
             lower_quantile = np.minimum(lower_quantile, 0)
 
