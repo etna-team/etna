@@ -19,83 +19,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `list_datasets` function ([#145](https://github.com/etna-team/etna/pull/149))
 - Add `IHEPC` to internal datasets ([#150](https://github.com/etna-team/etna/pull/150))
 - Add dataset integrity check using hash for internal datasets ([#151](https://github.com/etna-team/etna/pull/151))
-- 
-
-
-### Changed
--
--
--
--
-
-### Fixed
-- Fix links from tinkoff-ai/etna to etna-team/etna ([#47](https://github.com/etna-team/etna/pull/47))
-- Fix `traffic_2008` ([128](https://github.com/etna-team/etna/pull/128))
 - Add params_to_tune for DeepStateModel ([#115](https://github.com/etna-team/etna/issues/115))
 - Handle new functionality for prediction intervals in the `plot_forecast` ([#130](https://github.com/etna-team/etna/pull/130))  
 - Add `get_historical_forecasts` to pipelines for forecast estimation at each fold on the historical dataset ([#143](https://github.com/etna-team/etna/pull/143))
 - `ConformalPredictionIntervals` method for prediction intervals estimation ([#152](https://github.com/etna-team/etna/pull/152))
 - Add DeepARNativeModel ([#114](https://github.com/etna-team/etna/pull/114))
--
 - 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
--
-- 
+
 
 ### Changed
 - Change warning condition on loading object saved under different library version ([#31](https://github.com/etna-team/etna/issues/31))
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
+-
 
 ### Fixed
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
+- Fix `traffic_2008` ([128](https://github.com/etna-team/etna/pull/128))
+-
+
 
 ## [2.3.0] - 2023-10-24
 ### Added
