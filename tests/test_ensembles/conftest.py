@@ -15,7 +15,10 @@ from etna.ensembles import VotingEnsemble
 from etna.models import CatBoostPerSegmentModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
+from etna.pipeline import HierarchicalPipeline
 from etna.pipeline import Pipeline
+from etna.reconciliation import BottomUpReconciliator
+from etna.reconciliation import TopDownReconciliator
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 
@@ -46,6 +49,49 @@ def naive_pipeline() -> Pipeline:
 
 
 @pytest.fixture
+def naive_pipeline_product() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = Pipeline(model=NaiveModel(), transforms=[], horizon=1)
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline_top_down_market() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = HierarchicalPipeline(
+        model=NaiveModel(),
+        transforms=[],
+        horizon=1,
+        reconciliator=TopDownReconciliator(source_level="total", target_level="market", period=1, method="AHP"),
+    )
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline_top_down_product() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = HierarchicalPipeline(
+        model=NaiveModel(),
+        transforms=[],
+        horizon=1,
+        reconciliator=TopDownReconciliator(source_level="total", target_level="product", period=1, method="AHP"),
+    )
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline_bottom_up_market() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = HierarchicalPipeline(
+        model=NaiveModel(),
+        transforms=[],
+        horizon=1,
+        reconciliator=BottomUpReconciliator(source_level="product", target_level="market"),
+    )
+    return pipeline
+
+
+@pytest.fixture
 def naive_pipeline_1() -> Pipeline:
     """Generate pipeline with NaiveModel(1)."""
     pipeline = Pipeline(model=NaiveModel(1), transforms=[], horizon=7)
@@ -64,6 +110,22 @@ def voting_ensemble_pipeline(
     catboost_pipeline: Pipeline, prophet_pipeline: Pipeline, naive_pipeline_1: Pipeline
 ) -> VotingEnsemble:
     pipeline = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def voting_ensemble_hierarchical_pipeline(
+    naive_pipeline_top_down_market: HierarchicalPipeline, naive_pipeline_bottom_up_market: HierarchicalPipeline
+) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline_top_down_market, naive_pipeline_bottom_up_market])
+    return pipeline
+
+
+@pytest.fixture
+def voting_ensemble_mix_pipeline(
+    naive_pipeline_product: Pipeline, naive_pipeline_top_down_product: HierarchicalPipeline
+) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline_product, naive_pipeline_top_down_product])
     return pipeline
 
 

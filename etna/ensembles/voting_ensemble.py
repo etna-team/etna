@@ -192,7 +192,9 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         forecast_df = sum(
             [forecast[:, :, "target"] * weight for forecast, weight in zip(forecasts, self.processed_weights)]
         )
-        forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
+        forecast_dataset = TSDataset(
+            df=forecast_df, freq=forecasts[0].freq, hierarchical_structure=forecasts[0].hierarchical_structure
+        )
         return forecast_dataset
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
