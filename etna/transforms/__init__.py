@@ -1,3 +1,5 @@
+"""Module with dataset transformations."""
+
 from etna.transforms.base import IrreversiblePerSegmentWrapper
 from etna.transforms.base import IrreversibleTransform
 from etna.transforms.base import OneSegmentTransform
@@ -30,6 +32,7 @@ from etna.transforms.math import DifferencingTransform
 from etna.transforms.math import ExogShiftTransform
 from etna.transforms.math import LagTransform
 from etna.transforms.math import LambdaTransform
+from etna.transforms.math import LimitTransform
 from etna.transforms.math import LogTransform
 from etna.transforms.math import MADTransform
 from etna.transforms.math import MaxAbsScalerTransform
@@ -51,6 +54,7 @@ from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.outliers import PredictionIntervalOutliersTransform
 from etna.transforms.timestamp import DateFlagsTransform
+from etna.transforms.timestamp import EventTransform
 from etna.transforms.timestamp import FourierTransform
 from etna.transforms.timestamp import HolidayTransform
 from etna.transforms.timestamp import SpecialDaysTransform

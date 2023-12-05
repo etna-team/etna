@@ -224,20 +224,21 @@ class GaleShapleyMatcher(BaseMixin):
 
 
 class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
-    """Transform that provides feature filtering by Gale-Shapley matching algorithm according to the relevance table.
+    """
+    Transform that provides feature filtering by Gale-Shapley matching algorithm according to the relevance table.
 
-    Notes
-    -----
     Transform works with any type of features, however most of the models works only with regressors.
     Therefore, it is recommended to pass the regressors into the feature selection transforms.
 
-    As input, we have a table of relevances with size :math:`N\_{f} \times N\_{s}` where :math:`N\_{f}` -- number of features,
-    :math:`N\_{s}` -- number of segments.
-    Procedure of filtering features consist of :math:`\lceil \frac{k}{N\_{s}} \rceil` iterations.
+    Notes
+    -----
+    As input, we have a table of relevances with size :math:`N_{f} \\times N_{s}` where :math:`N_{f}` represents the number of features and :math:`N_{s}` represents the number of segments.
+    The procedure of filtering features consists of :math:`\\lceil \\frac{k}{N_{s}} \\rceil` iterations.
+
     Algorithm of each iteration:
 
     - build a matching between segments and features by `Gale–Shapley algorithm <https://en.wikipedia.org/wiki/Gale%E2%80%93Shapley_algorithm>`_
-    according to the relevance table, during the matching segments send proposals to features;
+      according to the relevance table, during the matching segments send proposals to features;
     - select features to add by taking matched feature for each segment;
     - add selected features to accumulated list of selected features taking into account that this list shouldn't exceed the size of ``top_k``;
     - remove added features from future consideration.

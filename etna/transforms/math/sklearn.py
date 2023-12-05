@@ -17,7 +17,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
-from etna.transforms.utils import match_target_quantiles
 
 
 class TransformMode(StringEnumWithRepr):
@@ -203,30 +202,26 @@ class SklearnTransform(ReversibleTransform):
 
         df = df.sort_index(axis=1)
 
-        if "target" in self.in_column:
-            quantiles = match_target_quantiles(set(df.columns.get_level_values("feature")))
-        else:
-            quantiles = set()
-
         if self.inplace:
-            quantiles_arrays: Dict[str, pd.DataFrame] = dict()
+            other_arrays: Dict[str, pd.DataFrame] = dict()
             transformed = self._make_inverse_transform(df)
 
-            # quantiles inverse transformation
-            for quantile_column_nm in quantiles:
+            # inverse transformation of columns that are left (e.g. prediction intervals)
+            other_columns = set(df.columns.get_level_values("feature")) - set(self.in_column)
+            for column_name in other_columns:
                 df_slice_copy = df.loc[:, pd.IndexSlice[:, self.in_column]].copy()
                 df_slice_copy = set_columns_wide(
-                    df_slice_copy, df, features_left=["target"], features_right=[quantile_column_nm]
+                    df_slice_copy, df, features_left=["target"], features_right=[column_name]
                 )
-                transformed_quantile = self._make_inverse_transform(df_slice_copy)
-                df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_quantile
-                quantiles_arrays[quantile_column_nm] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
-                    columns={"target": quantile_column_nm}
+                transformed_border = self._make_inverse_transform(df_slice_copy)
+                df_slice_copy.loc[:, pd.IndexSlice[:, self.in_column]] = transformed_border
+                other_arrays[column_name] = df_slice_copy.loc[:, pd.IndexSlice[:, "target"]].rename(
+                    columns={"target": column_name}
                 )
 
             df.loc[:, pd.IndexSlice[:, self.in_column]] = transformed
-            for quantile_column_nm in quantiles:
-                df.loc[:, pd.IndexSlice[:, quantile_column_nm]] = quantiles_arrays[quantile_column_nm].values
+            for column_name in other_columns:
+                df.loc[:, pd.IndexSlice[:, column_name]] = other_arrays[column_name].values
 
         return df
 

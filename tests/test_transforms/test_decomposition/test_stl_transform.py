@@ -125,7 +125,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
     df = request.getfixturevalue(df_name)
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model=model)
     df_transformed = transform.fit_transform(df)
-    df_inverse_transformed = transform.inverse_transform(df_transformed)
+    df_inverse_transformed = transform.inverse_transform(df=df_transformed)
     assert df["target"].equals(df_inverse_transformed["target"])
 
 

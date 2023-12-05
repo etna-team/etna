@@ -22,7 +22,13 @@ if SETTINGS.wandb_required:
 
 
 class WandbLogger(BaseLogger):
-    """Weights&Biases logger."""
+    """Weights&Biases logger.
+
+    Note
+    ----
+    This logger requires ``wandb`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,
@@ -65,6 +71,15 @@ class WandbLogger(BaseLogger):
         config:
             This sets `wandb.config`, a dictionary-like object for saving inputs to your job,
             like hyperparameters for a model or settings for a data preprocessing job.
+        log_model:
+            Log checkpoints created by :py:class:`pytorch_lightning.callbacks.ModelCheckpoint`
+            as W&B artifacts. `latest` and `best` aliases are automatically set.
+
+            * if ``log_model == 'all'``, checkpoints are logged during training.
+            * if ``log_model == True``, checkpoints are logged at the end of training, except when
+              ``pytorch_lightning.callbacks.ModelCheckpoint.save_top_k==-1``
+              which also logs every checkpoint during training.
+            * if ``log_model == False`` (default), no checkpoint is logged.
         """
         super().__init__()
         self.name = (

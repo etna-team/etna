@@ -85,12 +85,12 @@ class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
             name of column to fit change point model
         change_points_model:
             model to get change points,
-            by default :py:class:`ruptures.detection.Binseg` in a wrapper with ``n_bkps=5`` is used
+            by default :py:class:`ruptures.detection.binseg.Binseg` in a wrapper with ``n_bkps=5`` is used
         out_column:
             result column name. If not given use ``self.__repr__()``
         """
         self.in_column = in_column
-        self.out_column = out_column if out_column is not None else self.__repr__()
+        self.out_column = out_column
 
         self.change_points_model = (
             change_points_model if change_points_model is not None else self._default_change_points_model
@@ -100,7 +100,7 @@ class ChangePointsSegmentationTransform(IrreversibleChangePointsTransform):
             transform=_OneSegmentChangePointsSegmentationTransform(
                 in_column=self.in_column,
                 change_points_model=self.change_points_model,
-                out_column=self.out_column,
+                out_column=out_column if out_column is not None else self.__repr__(),
             ),
             required_features=[in_column],
         )

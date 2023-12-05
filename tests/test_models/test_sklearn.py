@@ -12,7 +12,7 @@ from tests.test_models.utils import assert_model_equals_loaded_original
 @pytest.fixture
 def ts_with_regressors(example_df):
     transforms = [
-        AddConstTransform(in_column="target", value=10, out_column="add_const_target"),
+        AddConstTransform(in_column="target", inplace=False, value=10, out_column="add_const_target"),
         LagTransform(in_column="target", lags=[2], out_column="lag"),
     ]
     ts = TSDataset(df=TSDataset.to_dataset(example_df), freq="H", known_future=())

@@ -2,7 +2,7 @@ from copy import deepcopy
 
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from ruptures import Binseg
 from sklearn.tree import DecisionTreeRegressor
 
@@ -17,6 +17,7 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EventTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
@@ -24,6 +25,7 @@ from etna.transforms import HolidayTransform
 from etna.transforms import LabelEncoderTransform
 from etna.transforms import LagTransform
 from etna.transforms import LambdaTransform
+from etna.transforms import LimitTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import LogTransform
 from etna.transforms import MADTransform
@@ -159,6 +161,7 @@ class TestInverseTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (LimitTransform(in_column="target"), "regular_ts"),
             (LogTransform(in_column="target", inplace=False), "positive_ts"),
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
             (DifferencingTransform(in_column="target", inplace=False), "regular_ts"),
@@ -223,6 +226,11 @@ class TestInverseTransformTrainSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_inverse_transform_train_subset_segments(self, transform, dataset_name, request):
@@ -354,6 +362,8 @@ class TestInverseTransformFutureSubsetSegments:
                 ),
                 "ts_with_exog",
             ),
+            (LimitTransform(in_column="target"), "regular_ts"),
+            (LimitTransform(in_column="positive"), "ts_with_exog"),
             (LogTransform(in_column="target", inplace=False), "positive_ts"),
             (LogTransform(in_column="target", inplace=True), "positive_ts"),
             (LogTransform(in_column="positive", inplace=True), "ts_with_exog"),
@@ -432,6 +442,11 @@ class TestInverseTransformFutureSubsetSegments:
             (HolidayTransform(mode="category"), "regular_ts"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+            ),
         ],
     )
     def test_inverse_transform_future_subset_segments(self, transform, dataset_name, request):
@@ -475,7 +490,9 @@ class TestInverseTransformTrainNewSegments:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(flat_test_df[changed_columns], flat_inverse_transformed_test_df[changed_columns])
+        pd.testing.assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+        )
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -569,6 +586,8 @@ class TestInverseTransformTrainNewSegments:
                 "regular_ts",
                 {"change": {"target"}},
             ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
             (
@@ -661,6 +680,12 @@ class TestInverseTransformTrainNewSegments:
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
                 {},
             ),
         ],
@@ -790,7 +815,9 @@ class TestInverseTransformFutureNewSegments:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(flat_test_df[changed_columns], flat_inverse_transformed_test_df[changed_columns])
+        pd.testing.assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+        )
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -863,6 +890,14 @@ class TestInverseTransformFutureNewSegments:
                     inverse_transform_func=lambda x: x - 1,
                     inplace=True,
                 ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {}),
+            (LimitTransform(in_column="positive"), "ts_with_exog", {}),
+            (
+                LimitTransform(in_column="positive", lower_bound=-50, upper_bound=50),
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
@@ -989,6 +1024,12 @@ class TestInverseTransformFutureNewSegments:
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
                 {},
             ),
         ],
@@ -1168,8 +1209,8 @@ class TestInverseTransformFutureWithTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[changed_columns],
-            flat_inverse_transformed_test_df[changed_columns],
+            flat_test_df[list(changed_columns)],
+            flat_inverse_transformed_test_df[list(changed_columns)],
         )
 
     @pytest.mark.parametrize(
@@ -1302,6 +1343,8 @@ class TestInverseTransformFutureWithTarget:
                 "regular_ts",
                 {"change": {"target"}},
             ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
             (
@@ -1477,6 +1520,12 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
@@ -1557,8 +1606,8 @@ class TestInverseTransformFutureWithoutTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[changed_columns],
-            flat_inverse_transformed_test_df[changed_columns],
+            flat_test_df[list(changed_columns)],
+            flat_inverse_transformed_test_df[list(changed_columns)],
         )
 
     @pytest.mark.parametrize(
@@ -1681,6 +1730,14 @@ class TestInverseTransformFutureWithoutTarget:
                     inverse_transform_func=lambda x: x - 1,
                     inplace=True,
                 ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (LimitTransform(in_column="target"), "regular_ts", {}),
+            (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {}),
+            (LimitTransform(in_column="positive"), "ts_with_exog", {}),
+            (
+                LimitTransform(in_column="positive", lower_bound=-50, upper_bound=50),
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
@@ -1896,6 +1953,12 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
+            (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
+            (
+                EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
+                "ts_with_binary_exog",
+                {},
+            ),
         ],
     )
     def test_inverse_transform_future_without_target(self, transform, dataset_name, expected_changes, request):

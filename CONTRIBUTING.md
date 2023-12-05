@@ -12,13 +12,13 @@ Every good PR usually consists of:
 
 ## Step-by-step guide
 
-### Before the PR
+### 1. Before the PR
 Please ensure that you have read the following docs:
-- [changelog](https://github.com/etna-team/etna/blob/master/CHANGELOG.md)
-- [documentation](https://etna-docs.netlify.app/)
+- [documentation](https://docs.etna.ai/stable/)
 - [tutorials](https://github.com/etna-team/etna/tree/master/examples)
+- [changelog](https://github.com/etna-team/etna/blob/master/CHANGELOG.md)
 
-### Setting up your development environment
+### 2. Setting up your development environment
 
 Before writing any code it is useful to set up a development environment.
 1. Clone etna library to some folder and go inside:
@@ -35,19 +35,24 @@ poetry install -E all-dev
 poetry shell
 ```
 
-To connect virtual environment interpreter to IDE use `which python` command.
+To connect virtual environment interpreter to IDE the `which python` command can be useful.
 
-### New feature
+### 3. Suggesting a feature (optional)
+
+This is an optional step, you could skip it if you want to take some of the existing tasks.
 
 1. Make an issue with your feature description;
 2. We shall discuss the design and its implementation details;
 3. Once we agree that the plan looks good, go ahead and implement it.
 
-### Bugfix
+### 4. Choosing a task
 
 1. Goto [GitHub issues](https://github.com/etna-team/etna/issues);
-2. Pick an issue and comment on the task that you want to work on this feature;
-3. If you need more context on a specific issue, please ask, and we will discuss the details.
+2. Pick an issue with status "Todo" on a [board](https://github.com/orgs/etna-team/projects/1)
+3. Leave a comment in the issue that you want to work on this task;
+4. If you need more context on a specific issue, please ask, and we will discuss the details.
+
+### 5. Doing a task
 
 You can also join our [ETNA Community telegram chat](https://t.me/etna_support) to make it easier to discuss.
 Once you finish implementing a feature or bugfix, please send a Pull Request.
@@ -56,12 +61,10 @@ If you are not familiar with creating a Pull Request, here are some guides:
 - [Creating a pull request](https://help.github.com/articles/creating-a-pull-request/);
 - [Creating a pull request from a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
 
-### Tests
+### 6. Writing tests
 
-Do not forget to check that your code passes the unit tests. 
+Do not forget to check that your code passes the unit tests.
 ```bash
-poetry install -E tests
-
 pytest tests -v
 pytest etna -v --doctest-modules
 ```
@@ -69,48 +72,17 @@ pytest etna -v --doctest-modules
 ETNA uses the [`black`](https://github.com/psf/black) and [`flake8`](https://github.com/pycqa/flake8) with several plugins 
 for coding style checks as well as [`mypy`](https://github.com/python/mypy) for type checks, and you must ensure that your code follows it. 
 ```bash
-poetry install -E style
-
 make format
 ```
 
 If any of checks fails, the CI will fail and your Pull Request won't be merged.
 
-### Documentation
+### 7. Writing a documentation
 
+If you update the code, the documentation should be updated accordingly. 
 ETNA uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings. 
 The documentation is written in ReST.
 Length of a line inside docstrings block must be limited to 100 characters to fit into Jupyter documentation popups.
-
-You could check the docs with:
-```bash
-cp examples/*.ipynb docs/source/tutorials
-cd docs
-make clean
-make html
-```
-
-Now you could open them into your browser, for example with
-```bash
-open ./build/html/index.html
-```
-
-If you have some issues with building docs - please make sure that you installed the required packages.
-
-```bash
-poetry install -E docs
-```
-You also may need to install pandoc package ([pandoc installation guide](https://pandoc.org/installing.html)):
-```bash
-# Ubuntu
-apt-get update && apt-get install -y pandoc
-
-# Mac OS
-brew install pandoc
-
-#Windows
-choco install pandoc
-```
 
 During creation of Pull Request make sure that your documentation looks good, check:
 1. `Parameters` and `Returns` sections have correct names and types;
@@ -121,7 +93,7 @@ During creation of Pull Request make sure that your documentation looks good, ch
 4. Listings of code, e.g. variable names, are typed with monospaced font;
 5. Mathematical formulas are rendered correctly;
 6. Links to external sources are active;
-7. References to python objects should be active if library is listed in [`intersphinx_mapping`](https://github.com/etna-team/etna/blob/master/docs/source/conf.py#L68)
+7. References to python objects should be active if library is listed in [`intersphinx_mapping`](https://github.com/etna-team/etna/blob/master/docs/source/conf.py#L119)
 
 Useful links:
 1. [ReST Quickref](https://docutils.sourceforge.io/docs/user/rst/quickref.html)
@@ -129,3 +101,75 @@ Useful links:
 3. [ReST Cross-referencing Python objects](https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html#cross-referencing-python-objects)
 4. [Matplotlib Cheetsheet](https://matplotlib.org/sampledoc/cheatsheet.html)
 5. [Sklearn example](https://github.com/scikit-learn/scikit-learn/blob/37ac6788c/sklearn/linear_model/_ridge.py#L321)
+
+The simplest way to check how documentation is rendered is to make a pull request. 
+CI will build it, publish and attach a link to the pull request.
+
+#### 7.1 Standard scenarios
+
+**Adding a new method to the class**
+- Update the docstrings of the class / method.
+
+**Adding a new public class / function**
+- Go to the [`api_reference`](https://github.com/etna-team/etna/tree/master/docs/source/api_reference) directory.
+- Find a source page for a relevant module, e.g. `models.rst` is responsible for the `etna.models` module.
+- Find a relevant `autosummary` block within the source page and place your new entity there.
+  - Make sure you are using the correct `template`. The `class.rst` template should be used for classes, `base.rst` for everything else.
+  - Make sure you are using the correct path for the new entity taking into account the `currentmodule` directive.
+
+**Adding a new module**
+- Go to the [`api_reference`](https://github.com/etna-team/etna/tree/master/docs/source/api_reference) directory.
+- Create a new source page in that directory.
+
+**Adding a new jupyter notebook tutorial**
+- Add the notebook to the [`examples`](https://github.com/etna-team/etna/tree/master/examples) directory with its prepended number.
+- Add a "launch binder" button to the notebook.
+- Add a "Table of contents" for level 2 and 3 headings.
+- Install extensions that are necessary for this notebook to run.
+- Add imports that aren't related to the topic of the tutorial at the very top.
+- Add the new notebook and its table of contents to the `examples/README.md`.
+- Add the new notebook to the `README.md`.
+- Add a card for the created notebook according to its level of difficulty to [`tutorials.rst`](https://github.com/etna-team/etna/blob/master/docs/source/tutorials.rst).
+
+**Adding a new custom documentation page**
+- Create a new page in a [`source`](https://github.com/etna-team/etna/tree/master/docs/source) directory.
+- Add a link to the new page to [`user_guide.rst`](https://github.com/etna-team/etna/blob/master/docs/source/user_guide.rst) or any other page responsible for the documentation sections.
+
+#### 7.2 Building locally (optional)
+
+You can also build the documentation locally.
+Before building the documentation you may need to install a pandoc package ([pandoc installation guide](https://pandoc.org/installing.html)):
+```bash
+# Ubuntu
+apt-get update && apt-get install -y pandoc
+
+# Mac OS
+brew install pandoc
+
+# Windows
+choco install pandoc
+```
+
+After that, you can try to build the docs with:
+```bash
+cd docs
+make build-docs
+```
+
+You could check the result in your browser by opening `build/html/index.html` file.
+
+If you have some issues with building docs - please make sure that you installed the required packages.
+
+## How to make a release
+
+This is only available for the repository members. Steps:
+1. Update `docs/source/_static/switcher.json`
+  - If you are going to release a new stable version an entry for the current stable version should be created
+2. Update `CHANGELOG.md` file:
+  - Collect all changes and delete empty bullets
+  - Specify version and date of the release
+3. Update the version in `pyproject.toml`
+4. Create pull request with the changes above
+5. Merge the pull request
+6. [Create a release](https://github.com/etna-team/etna/releases) with a tag corresponding to a new version 
+7. That's all! Our CI/CD will take care of everything else.
