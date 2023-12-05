@@ -591,7 +591,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return stride
 
     @staticmethod
-    def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int, stride: int):
+    def _validate_backtest_dataset(
+        ts: TSDataset, n_folds: int, horizon: int, stride: int
+    ):  # TODO: переписать нахрен, занимает 20%
         """Check all segments have enough timestamps to validate forecaster with given number of splits."""
         min_required_length = horizon + (n_folds - 1) * stride
         segments = set(ts.df.columns.get_level_values("segment"))
@@ -673,6 +675,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
     ) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
+        if y_true.has_hierarchy():
+            if y_true.current_df_level != y_pred.current_df_level:
+                y_true = y_true.get_level_dataset(y_pred.current_df_level)  # type: ignore
+
         metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
