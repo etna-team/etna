@@ -130,7 +130,7 @@ statsforecast = ["statsforecast"]
 release = ["click", "semver"]
 docs = ["Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design", "jupyter"]
 tests = ["pytest-cov", "pytest", "pytest-shard"]
-jupyter = ["jupyter", "nbconvert", "black"]
+jupyter = ["jupyter", "nbconvert", "black", "ipywidgets"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "nbqa"]
 
 all = [
@@ -152,7 +152,7 @@ all-dev = [
     "pytest-cov", "pytest", "pytest-shard",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "nbqa",
     "click", "semver",
-    "jupyter", "nbconvert",
+    "jupyter", "nbconvert", "ipywidgets",
     "pyts", "tsfresh",
     "statsforecast"
 ]

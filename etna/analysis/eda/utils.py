@@ -54,14 +54,16 @@ def get_correlation_matrix(
 
 
 @singledispatch
-def _create_holidays_df(holidays, index: pd.core.indexes.datetimes.DatetimeIndex, as_is: bool) -> pd.DataFrame:
+def _create_holidays_df(holidays, index: pd.Index, as_is: bool) -> pd.DataFrame:
     raise ValueError("Parameter holidays is expected as str or pd.DataFrame")
 
 
 @_create_holidays_df.register
-def _create_holidays_df_str(holidays: str, index, as_is):
+def _create_holidays_df_str(holidays: str, index: pd.Index, as_is: bool):
     if as_is:
-        raise ValueError("Parameter `as_is` should be used with `holiday`: pd.DataFrame, not string.")
+        raise ValueError("Parameter `as_is` should be used with `holidays`: pd.DataFrame, not string.")
+    if index.dtype == "int":
+        raise ValueError("Parameter `holidays` should be pd.DataFrame for data with integer timestamp!")
     timestamp = index.tolist()
     country_holidays = holidays_lib.country_holidays(country=holidays)
     holiday_names = {country_holidays.get(timestamp_value) for timestamp_value in timestamp}
@@ -80,7 +82,7 @@ def _create_holidays_df_str(holidays: str, index, as_is):
 
 
 @_create_holidays_df.register
-def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
+def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is: bool):
     if holidays.empty:
         raise ValueError("Got empty `holiday` pd.DataFrame.")
 
@@ -92,14 +94,19 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
 
     holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)
     for name in holidays["holiday"].unique():
-        freq = pd.infer_freq(index)
         ds = holidays[holidays["holiday"] == name]["ds"]
         dt = [ds]
         if "upper_window" in holidays.columns:
             periods = holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0]
             if periods < 0:
                 raise ValueError("Upper windows should be non-negative.")
-            ds_upper_bound = pd.timedelta_range(start=0, periods=periods + 1, freq=freq)
+
+            if index.dtype == "int":
+                ds_upper_bound = np.arange(periods + 1)
+            else:
+                freq = pd.infer_freq(index)
+                ds_upper_bound = pd.timedelta_range(start=0, periods=periods + 1, freq=freq)
+
             for bound in ds_upper_bound:
                 ds_add = ds + bound
                 dt.append(ds_add)
@@ -107,7 +114,13 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index, as_is):
             periods = holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0]
             if periods > 0:
                 raise ValueError("Lower windows should be non-positive.")
-            ds_lower_bound = pd.timedelta_range(start=0, periods=abs(periods) + 1, freq=freq)
+
+            if index.dtype == "int":
+                ds_lower_bound = np.arange(abs(periods) + 1)
+            else:
+                freq = pd.infer_freq(index)
+                ds_lower_bound = pd.timedelta_range(start=0, periods=abs(periods) + 1, freq=freq)
+
             for bound in ds_lower_bound:
                 ds_add = ds - bound
                 dt.append(ds_add)

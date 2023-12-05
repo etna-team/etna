@@ -67,7 +67,7 @@ def get_anomalies_prediction_interval(
     interval_width: float = 0.95,
     in_column: str = "target",
     **model_params,
-) -> Dict[str, List[pd.Timestamp]]:
+) -> Dict[str, List[Union[pd.Timestamp, int]]]:
     """
     Get point outliers in time series using prediction intervals (estimation model-based method).
 

@@ -58,7 +58,7 @@ from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from tests.test_transforms.utils import assert_column_changes
-from tests.test_transforms.utils import convert_ts_to_int_timestamp
+from tests.utils import convert_ts_to_int_timestamp
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 
@@ -661,7 +661,7 @@ class TestTransformTrain:
     )
     def test_transform_train_int_timestamp(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
     @pytest.mark.parametrize(
@@ -748,7 +748,7 @@ class TestTransformTrain:
     )
     def test_transform_train_int_timestamp_fails(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
 
