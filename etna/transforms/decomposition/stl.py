@@ -101,7 +101,6 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         if df[self.in_column].isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
 
-        # TODO: проверить не ломает ли это исходный df
         if pd.api.types.is_integer_dtype(df.index):
             self._first_int_index = df.index[0]
             # create fake index, it works more reliable than dealing with numpy data
@@ -143,7 +142,6 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         if pd.api.types.is_integer_dtype(df.index):
             start = first_valid_index - self._first_int_index
             end = last_valid_index - self._first_int_index
-            # TODO: добавить тест на эту ошибку
             if start < 0:
                 raise ValueError("Transform can't work on integer timestamp before training data!")
 
@@ -179,7 +177,6 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         if pd.api.types.is_integer_dtype(df.index):
             start = first_valid_index - self._first_int_index
             end = last_valid_index - self._first_int_index
-            # TODO: добавить тест на эту ошибку
             if start < 0:
                 raise ValueError("Transform can't work on integer timestamp before training data!")
 
