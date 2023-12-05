@@ -15,6 +15,8 @@ from etna.models.utils import determine_num_steps
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
 
+_DEFAULT_FREQ = object()
+
 
 class DeseasonalModel(str, Enum):
     """Enum for different types of deseasonality model."""
@@ -47,6 +49,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         self.period = period
         self.model = DeseasonalModel(model)
         self._seasonal: Optional[pd.Series] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
 
     def _roll_seasonal(self, x: pd.Series) -> np.ndarray:
         """
@@ -64,11 +67,16 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         """
         if self._seasonal is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling.")
-        freq = determine_freq(x.index)
         if self._seasonal.index[0] <= x.index[0]:
-            shift = -determine_num_steps(self._seasonal.index[0], x.index[0], freq) % self.period
+            shift = (
+                -determine_num_steps(start_timestamp=self._seasonal.index[0], end_timestamp=x.index[0], freq=self._freq)
+                % self.period
+            )
         else:
-            shift = determine_num_steps(x.index[0], self._seasonal.index[0], freq) % self.period
+            shift = (
+                determine_num_steps(start_timestamp=x.index[0], end_timestamp=self._seasonal.index[0], freq=self._freq)
+                % self.period
+            )
         return np.resize(np.roll(self._seasonal, shift=shift), x.shape[0])
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentDeseasonalityTransform":
@@ -90,11 +98,13 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         ValueError:
             if input column contains NaNs in the middle of the series
         """
+        self._freq = determine_freq(df.index)
+
         df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
         self._seasonal = seasonal_decompose(
-            x=df[self.in_column], model=self.model, filt=None, two_sided=False, extrapolate_trend=0
+            x=df[self.in_column], model=self.model, period=self.period, filt=None, two_sided=False, extrapolate_trend=0
         ).seasonal[: self.period]
         return self
 

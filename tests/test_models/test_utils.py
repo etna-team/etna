@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -16,6 +17,9 @@ from etna.models.utils import select_observations
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-15"), pd.offsets.Week(), 2),
         (pd.Timestamp("2020-01-31"), pd.Timestamp("2021-02-28"), "M", 13),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-01"), "MS", 17),
+        (0, 0, None, 0),
+        (0, 5, None, 5),
+        (3, 10, None, 7),
     ],
 )
 def test_determine_num_steps_ok(start_timestamp, end_timestamp, freq, answer):
@@ -27,6 +31,7 @@ def test_determine_num_steps_ok(start_timestamp, end_timestamp, freq, answer):
     "start_timestamp, end_timestamp, freq",
     [
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-01-01"), "D"),
+        (5, 2, None),
     ],
 )
 def test_determine_num_steps_fail_wrong_order(start_timestamp, end_timestamp, freq):
@@ -39,10 +44,22 @@ def test_determine_num_steps_fail_wrong_order(start_timestamp, end_timestamp, fr
     [
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), "M"),
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), "MS"),
+        (2.2, 5, None),
     ],
 )
 def test_determine_num_steps_fail_wrong_start(start_timestamp, end_timestamp, freq):
     with pytest.raises(ValueError, match="Start timestamp isn't correct according to given frequency"):
+        _ = determine_num_steps(start_timestamp=start_timestamp, end_timestamp=end_timestamp, freq=freq)
+
+
+@pytest.mark.parametrize(
+    "start_timestamp, end_timestamp, freq",
+    [
+        (2, 5.5, None),
+    ],
+)
+def test_determine_num_steps_fail_wrong_start(start_timestamp, end_timestamp, freq):
+    with pytest.raises(ValueError, match="End timestamp isn't correct according to given frequency"):
         _ = determine_num_steps(start_timestamp=start_timestamp, end_timestamp=end_timestamp, freq=freq)
 
 
@@ -84,6 +101,9 @@ def test_select_observations_without_timestamp(df_without_timestamp, timestamps)
         (pd.date_range(start="2020-01-01", periods=3, freq="M"), "M"),
         (pd.date_range(start="2020-01-01", periods=3, freq="W"), "W-SUN"),
         (pd.date_range(start="2020-01-01", periods=3, freq="D"), "D"),
+        (pd.Series(np.arange(10)), None),
+        (pd.Series(np.arange(5, 15)), None),
+        (pd.Series(np.arange(1)), None),
     ),
 )
 def test_determine_freq(timestamps, answer):
@@ -97,6 +117,19 @@ def test_determine_freq(timestamps, answer):
         pd.to_datetime(pd.Series(["2020-02-15", "2020-01-22", "2020-01-23"])),
     ),
 )
-def test_determine_freq(timestamps):
+def test_determine_freq_fail_cant_determine(timestamps):
     with pytest.raises(ValueError, match="Can't determine frequency of a given dataframe"):
+        _ = determine_freq(timestamps=timestamps)
+
+
+@pytest.mark.parametrize(
+    "timestamps",
+    (
+        pd.Series([5, 4, 3]),
+        pd.Series([4, 5, 3]),
+        pd.Series([3, 4, 6]),
+    ),
+)
+def test_determine_freq_fail_int_gaps(timestamps):
+    with pytest.raises(ValueError, match="Integer timestamp isn't ordered and doesn't contain all the values"):
         _ = determine_freq(timestamps=timestamps)

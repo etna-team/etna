@@ -389,6 +389,8 @@ class TestTransformTrain:
             # decomposition
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -664,6 +666,22 @@ class TestTransformTrain:
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
+    # TODO: remove
+    # @pytest.mark.filterwarnings("ignore: An unsupported index was provided and will be ignored when")
+    # @pytest.mark.filterwarnings("ignore: No supported index is available")
+    # @pytest.mark.parametrize(
+    #     "transform, dataset_name, expected_changes",
+    #     [
+    #         (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+    #         (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+    #     ],
+    # )
+    # def test_transform_train_int_timestamp_check(self, transform, dataset_name, expected_changes, request):
+    #     ts = request.getfixturevalue(dataset_name)
+    #     ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
+    #     # ts_int_timestamp = ts
+    #     self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
+
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
@@ -711,8 +729,6 @@ class TestTransformTrain:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
-            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
                 TrendTransform(
                     in_column="target",

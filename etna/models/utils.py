@@ -1,10 +1,13 @@
 from typing import Optional
 from typing import Union
 
+import numpy as np
 import pandas as pd
 
 
-def determine_num_steps(start_timestamp: pd.Timestamp, end_timestamp: pd.Timestamp, freq: str) -> int:
+def determine_num_steps(
+    start_timestamp: Union[pd.Timestamp, int], end_timestamp: Union[pd.Timestamp, int], freq: Optional[str]
+) -> int:
     """Determine how many steps of ``freq`` should we make from ``start_timestamp`` to reach ``end_timestamp``.
 
     Parameters
@@ -14,7 +17,11 @@ def determine_num_steps(start_timestamp: pd.Timestamp, end_timestamp: pd.Timesta
     end_timestamp:
         timestamp to end counting, should be not earlier than ``start_timestamp``
     freq:
-        pandas frequency string: `Offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
+        frequency of timestamps, possible values:
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
 
     Returns
     -------
@@ -28,31 +35,41 @@ def determine_num_steps(start_timestamp: pd.Timestamp, end_timestamp: pd.Timesta
     ValueError:
         Start timestamp isn't correct according to a given frequency
     ValueError:
+        End timestamp isn't correct according to a given frequency
+    ValueError:
         End timestamp isn't reachable with a given frequency
     """
     if start_timestamp > end_timestamp:
         raise ValueError("Start train timestamp should be less or equal than end timestamp!")
 
-    # check if start_timestamp is normalized
-    normalized_start_timestamp = pd.date_range(start=start_timestamp, periods=1, freq=freq)
-    if normalized_start_timestamp != start_timestamp:
-        raise ValueError(f"Start timestamp isn't correct according to given frequency: {freq}")
+    if freq is None:
+        if int(start_timestamp) != start_timestamp:
+            raise ValueError(f"Start timestamp isn't correct according to given frequency: {freq}")
+        if int(end_timestamp) != end_timestamp:
+            raise ValueError(f"End timestamp isn't correct according to given frequency: {freq}")
 
-    # check a simple case
-    if start_timestamp == end_timestamp:
-        return 0
+        return end_timestamp - start_timestamp
+    else:
+        # check if start_timestamp is normalized
+        normalized_start_timestamp = pd.date_range(start=start_timestamp, periods=1, freq=freq)
+        if normalized_start_timestamp != start_timestamp:
+            raise ValueError(f"Start timestamp isn't correct according to given frequency: {freq}")
 
-    # make linear probing, because for complex offsets there is a cycle in `pd.date_range`
-    cur_value = 1
-    cur_timestamp = start_timestamp
-    while True:
-        timestamps = pd.date_range(start=cur_timestamp, periods=2, freq=freq)
-        if timestamps[-1] == end_timestamp:
-            return cur_value
-        elif timestamps[-1] > end_timestamp:
-            raise ValueError(f"End timestamp isn't reachable with freq: {freq}")
-        cur_value += 1
-        cur_timestamp = timestamps[-1]
+        # check a simple case
+        if start_timestamp == end_timestamp:
+            return 0
+
+        # make linear probing, because for complex offsets there is a cycle in `pd.date_range`
+        cur_value = 1
+        cur_timestamp = start_timestamp
+        while True:
+            timestamps = pd.date_range(start=cur_timestamp, periods=2, freq=freq)
+            if timestamps[-1] == end_timestamp:
+                return cur_value
+            elif timestamps[-1] > end_timestamp:
+                raise ValueError(f"End timestamp isn't reachable with freq: {freq}")
+            cur_value += 1
+            cur_timestamp = timestamps[-1]
 
 
 def select_observations(
@@ -96,7 +113,7 @@ def select_observations(
     return observations
 
 
-def determine_freq(timestamps: Union[pd.Series, pd.DatetimeIndex]) -> str:
+def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
     """Determine data frequency using provided timestamps.
 
     Parameters
@@ -113,13 +130,25 @@ def determine_freq(timestamps: Union[pd.Series, pd.DatetimeIndex]) -> str:
     ------
     ValueError:
         unable do determine frequency of data
+    ValueError:
+        integer timestamp isn't ordered and doesn't contain all the values from min to max
     """
-    try:
-        freq = pd.infer_freq(timestamps)
-    except ValueError:
-        freq = None
+    # check integer timestamp
+    if pd.api.types.is_integer_dtype(timestamps):
+        diffs = np.diff(timestamps)[1:]
+        if not np.all(diffs == 1):
+            raise ValueError("Integer timestamp isn't ordered and doesn't contain all the values from min to max")
 
-    if freq is None:
-        raise ValueError("Can't determine frequency of a given dataframe")
+        return None
 
-    return freq
+    # check datetime timestamp
+    else:
+        try:
+            freq = pd.infer_freq(timestamps)
+        except ValueError:
+            freq = None
+
+        if freq is None:
+            raise ValueError("Can't determine frequency of a given dataframe")
+
+        return freq
