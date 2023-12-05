@@ -29,9 +29,9 @@ class EmpiricalPredictionIntervals(BasePredictionIntervals):
         pipeline:
             Base pipeline or ensemble for prediction intervals estimation.
         coverage:
-             Interval coverage. In literature this value maybe referred as ``1 - alpha``.
+            Interval coverage. In literature this value maybe referred as ``1 - alpha``.
         include_forecast:
-             Ensure that the forecast lies within the prediction interval.
+            Ensure that the forecast lies within the prediction interval.
         stride:
             Number of points between folds.
         """
