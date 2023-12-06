@@ -387,8 +387,36 @@ class TestTransformTrain:
         "transform, dataset_name, expected_changes",
         [
             # decomposition
+            (
+                ChangePointsSegmentationTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -692,36 +720,8 @@ class TestTransformTrain:
         "transform, dataset_name, expected_changes",
         [
             # decomposition
-            (
-                ChangePointsSegmentationTransform(
-                    in_column="target",
-                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
-                    out_column="res",
-                ),
-                "regular_ts",
-                {"create": {"res"}},
-            ),
-            (
-                ChangePointsTrendTransform(in_column="target"),
-                "regular_ts",
-                {"change": {"target"}},
-            ),
-            (
-                ChangePointsLevelTransform(in_column="target"),
-                "regular_ts",
-                {"change": {"target"}},
-            ),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
-            (
-                TrendTransform(
-                    in_column="target",
-                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
-                    out_column="res",
-                ),
-                "regular_ts",
-                {"create": {"res"}},
-            ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
