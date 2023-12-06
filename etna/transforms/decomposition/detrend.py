@@ -13,7 +13,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
@@ -128,14 +127,11 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         result = df
         x = self._get_x(df)
         x -= self._x_median
-        y = df[self.in_column].values
         trend = self._pipeline.predict(x)
-        add_trend_timeseries = y + trend
-        result[self.in_column] = add_trend_timeseries
-        if self.in_column == "target":
-            quantiles = match_target_quantiles(set(result.columns))
-            for quantile_column_nm in quantiles:
-                result.loc[:, quantile_column_nm] += trend
+
+        for column_name in df.columns:
+            result.loc[:, column_name] += trend
+
         return result
 
 

@@ -646,7 +646,7 @@ class SumTransform(WindowStatisticsTransform):
         in_column:
             name of processed column
         window:
-            size of window to aggregate, if window == -1 compute rolling sum all over the given series
+            size of window to aggregate, if ``window == -1`` compute rolling sum all over the given series
         seasonality:
             seasonality of lags to compute window's aggregation with
         min_periods:

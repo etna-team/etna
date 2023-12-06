@@ -99,10 +99,17 @@ def test_prediction_interval_run_insample(example_tsds):
     model = ProphetModel()
     model.fit(example_tsds)
     forecast = model.forecast(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
 def test_prediction_interval_run_infuture(example_tsds):
@@ -110,10 +117,17 @@ def test_prediction_interval_run_infuture(example_tsds):
     model.fit(example_tsds)
     future = example_tsds.make_future(10)
     forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
 def test_save_regressors_on_fit(example_reg_tsds):
@@ -349,7 +363,6 @@ def test_predict_components_names(
     assert set(components.columns) == expected_columns
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("growth,cap", (("linear", []), ("logistic", ["cap"])))
 @pytest.mark.parametrize("regressors", (["f1", "f2"], []))
 @pytest.mark.parametrize("custom_seas", ([{"name": "s1", "period": 14, "fourier_order": 1}], []))

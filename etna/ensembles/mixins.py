@@ -36,7 +36,7 @@ class EnsembleMixin:
     def _fit_pipeline(pipeline: BasePipeline, ts: TSDataset) -> BasePipeline:
         """Fit given pipeline with ``ts``."""
         tslogger.log(msg=f"Start fitting {pipeline}.")
-        pipeline.fit(ts=ts)
+        pipeline.fit(ts=ts, save_ts=False)
         tslogger.log(msg=f"Pipeline {pipeline} is fitted.")
         return pipeline
 
@@ -74,9 +74,6 @@ class SaveEnsembleMixin(SaveMixin):
     * pipelines: folder with saved pipelines.
     """
 
-    pipelines: List[BasePipeline]
-    ts: Optional[TSDataset]
-
     def save(self, path: pathlib.Path):
         """Save the object.
 
@@ -85,18 +82,10 @@ class SaveEnsembleMixin(SaveMixin):
         path:
             Path to save object to.
         """
-        pipelines = self.pipelines
-        ts = self.ts
-        try:
-            # extract attributes we can't easily save
-            delattr(self, "pipelines")
-            delattr(self, "ts")
+        self.pipelines: List[BasePipeline]
+        self.ts: Optional[TSDataset]
 
-            # save the remaining part
-            super().save(path=path)
-        finally:
-            self.pipelines = pipelines
-            self.ts = ts
+        self._save(path=path, skip_attributes=["pipelines", "ts"])
 
         with zipfile.ZipFile(path, "a") as archive:
             with tempfile.TemporaryDirectory() as _temp_dir:
@@ -106,7 +95,7 @@ class SaveEnsembleMixin(SaveMixin):
                 pipelines_dir = temp_dir / "pipelines"
                 pipelines_dir.mkdir()
                 num_digits = 8
-                for i, pipeline in enumerate(pipelines):
+                for i, pipeline in enumerate(self.pipelines):
                     save_name = f"{i:0{num_digits}d}.zip"
                     pipeline_save_path = pipelines_dir / save_name
                     pipeline.save(pipeline_save_path)

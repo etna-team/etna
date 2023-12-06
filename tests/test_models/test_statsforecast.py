@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+import numpy as np
 import pytest
 from statsforecast.models import AutoARIMA
 from statsforecast.models import AutoCES
@@ -305,12 +306,19 @@ def test_forecast_train_fail(model, example_tsds):
 def test_predict_with_interval(model, example_tsds):
     model.fit(example_tsds)
     forecast = model.predict(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
 @pytest.mark.parametrize(
@@ -326,12 +334,19 @@ def test_forecast_with_interval(model, example_tsds):
     model.fit(example_tsds)
     future_ts = example_tsds.make_future(7)
     forecast = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
 @pytest.mark.parametrize(

@@ -46,7 +46,7 @@ def get_statistics_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame) -> p
 
     Returns
     -------
-    pd.DataFrame
+    :
         dataframe with p-values.
 
     Notes
@@ -92,7 +92,7 @@ def get_model_relevance_table(df: pd.DataFrame, df_exog: pd.DataFrame, model: Tr
 
     Returns
     -------
-    pd.DataFrame
+    :
         dataframe with feature importance values.
     """
     regressors = sorted(df_exog.columns.get_level_values("feature").unique())

@@ -7,6 +7,7 @@ from etna.datasets import TSDataset
 from etna.transforms.feature_selection import MRMRFeatureSelectionTransform
 
 
+@pytest.mark.filterwarnings("ignore: Columns from feature_to_use which are out of dataframe columns will be dropped")
 @pytest.mark.parametrize(
     "features_to_use, expected_features",
     (

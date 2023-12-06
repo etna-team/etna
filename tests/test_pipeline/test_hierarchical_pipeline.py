@@ -1,13 +1,10 @@
-import pathlib
 from unittest.mock import Mock
-from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
-from etna.datasets.utils import match_target_quantiles
 from etna.distributions import CategoricalDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
@@ -26,8 +23,10 @@ from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 
 
 @pytest.mark.parametrize(
@@ -50,13 +49,16 @@ def test_init_pass(reconciliator):
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
-def test_fit_mapping_matrix(market_level_simple_hierarchical_ts, reconciliator):
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(market_level_simple_hierarchical_ts, save_ts, reconciliator):
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
+    pipeline.fit(market_level_simple_hierarchical_ts, save_ts=save_ts)
 
-    pipeline.reconciliator.fit = Mock()
-    pipeline.fit(market_level_simple_hierarchical_ts)
-    pipeline.reconciliator.fit.assert_called()
+    if save_ts:
+        assert pipeline.ts is market_level_simple_hierarchical_ts
+    else:
+        assert pipeline.ts is None
 
 
 @pytest.mark.parametrize(
@@ -66,11 +68,13 @@ def test_fit_mapping_matrix(market_level_simple_hierarchical_ts, reconciliator):
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
-def test_fit_dataset_level(market_level_simple_hierarchical_ts, reconciliator):
+def test_fit_mapping_matrix(market_level_simple_hierarchical_ts, reconciliator):
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
+
+    pipeline.reconciliator.fit = Mock()
     pipeline.fit(market_level_simple_hierarchical_ts)
-    assert pipeline.ts.current_df_level == reconciliator.source_level
+    pipeline.reconciliator.fit.assert_called()
 
 
 def test_fit_no_hierarchy(simple_no_hierarchy_ts):
@@ -141,6 +145,18 @@ def test_raw_predict_level(market_level_simple_hierarchical_ts, reconciliator):
     pipeline.fit(ts=ts)
     forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.index[1])
     assert forecast.current_df_level == pipeline.reconciliator.source_level
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+def test_forecast_raise_error_if_no_ts(market_level_constant_hierarchical_ts, reconciliator):
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=pipeline, ts=market_level_constant_hierarchical_ts)
 
 
 @pytest.mark.parametrize(
@@ -260,6 +276,24 @@ def test_backtest(market_level_constant_hierarchical_ts, reconciliator):
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
+def test_get_historical_forecasts(market_level_constant_hierarchical_ts, reconciliator):
+    ts = market_level_constant_hierarchical_ts
+    n_folds = 2
+    model = NaiveModel()
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
+    forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
+    assert isinstance(forecasts, pd.DataFrame)
+    assert len(forecasts) == n_folds * pipeline.horizon
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
 def test_backtest_w_transforms(market_level_constant_hierarchical_ts, reconciliator):
     ts = market_level_constant_hierarchical_ts
     model = LinearPerSegmentModel()
@@ -330,8 +364,7 @@ def test_forecast_interval_presented(product_level_constant_hierarchical_ts, rec
 
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast(prediction_interval=True, n_folds=1, quantiles=[0.025, 0.5, 0.975])
-    quantiles = match_target_quantiles(set(forecast.columns.get_level_values(1)))
-    assert quantiles == {"target_0.025", "target_0.5", "target_0.975"}
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.5", "target_0.975")
 
 
 @pytest.mark.parametrize(
@@ -349,8 +382,7 @@ def test_predict_interval_presented(product_level_constant_hierarchical_ts, reco
     forecast = pipeline.predict(
         ts=ts, start_timestamp=ts.index[1], prediction_interval=True, quantiles=[0.025, 0.5, 0.975]
     )
-    quantiles = match_target_quantiles(set(forecast.columns.get_level_values(1)))
-    assert quantiles == {"target_0.025", "target_0.5", "target_0.975"}
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.5", "target_0.975")
 
 
 @pytest.mark.parametrize(
@@ -369,6 +401,8 @@ def test_forecast_prediction_intervals(product_level_constant_hierarchical_ts, r
 
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast(prediction_interval=True, n_folds=1)
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     for segment in forecast.segments:
         target = forecast[:, segment, "target"]
         np.testing.assert_allclose(target, forecast[:, segment, "target_0.025"])
@@ -391,6 +425,8 @@ def test_predict_confidence_intervals(product_level_constant_hierarchical_ts, re
 
     pipeline.fit(ts=ts)
     forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1], prediction_interval=True)
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     for segment in forecast.segments:
         target = forecast[:, segment, "target"]
         np.testing.assert_allclose(target, forecast[:, segment, "target_0.025"])
@@ -422,65 +458,6 @@ def test_interval_metrics(product_level_constant_hierarchical_ts, metric_type, r
     np.testing.assert_allclose(results[metric.name], answer)
 
 
-@patch("etna.pipeline.pipeline.Pipeline.save")
-def test_save(save_mock, product_level_constant_hierarchical_ts, tmp_path):
-    ts = product_level_constant_hierarchical_ts
-    model = NaiveModel()
-    reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
-    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    dir_path = pathlib.Path(tmp_path)
-    path = dir_path / "dummy.zip"
-    pipeline.fit(ts)
-
-    def check_no_fit_ts(path):
-        assert not hasattr(pipeline, "_fit_ts")
-
-    save_mock.side_effect = check_no_fit_ts
-
-    pipeline.save(path)
-
-    save_mock.assert_called_once_with(path=path)
-    assert hasattr(pipeline, "_fit_ts")
-
-
-@patch("etna.pipeline.pipeline.Pipeline.load")
-def test_load_no_ts(load_mock, product_level_constant_hierarchical_ts, tmp_path):
-    ts = product_level_constant_hierarchical_ts
-    model = NaiveModel()
-    reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
-    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    dir_path = pathlib.Path(tmp_path)
-    path = dir_path / "dummy.zip"
-    pipeline.fit(ts)
-
-    pipeline.save(path)
-    loaded_pipeline = HierarchicalPipeline.load(path)
-
-    load_mock.assert_called_once_with(path=path)
-    assert loaded_pipeline._fit_ts is None
-    assert loaded_pipeline.ts is None
-    assert loaded_pipeline == load_mock.return_value
-
-
-@patch("etna.pipeline.pipeline.Pipeline.load")
-def test_load_with_ts(load_mock, product_level_constant_hierarchical_ts, tmp_path):
-    ts = product_level_constant_hierarchical_ts
-    model = NaiveModel()
-    reconciliator = BottomUpReconciliator(target_level="market", source_level="product")
-    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    dir_path = pathlib.Path(tmp_path)
-    path = dir_path / "dummy.zip"
-    pipeline.fit(ts)
-
-    pipeline.save(path)
-    loaded_pipeline = HierarchicalPipeline.load(path, ts=ts)
-
-    load_mock.assert_called_once_with(path=path)
-    load_mock.return_value.reconciliator.aggregate.assert_called_once_with(ts=ts)
-    pd.testing.assert_frame_equal(loaded_pipeline._fit_ts.to_pandas(), ts.to_pandas())
-    assert loaded_pipeline.ts == load_mock.return_value.reconciliator.aggregate.return_value
-
-
 @pytest.mark.parametrize(
     "reconciliator",
     (
@@ -509,6 +486,38 @@ def test_save_load(model, transforms, reconciliator, product_level_constant_hier
     horizon = 1
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
     assert_pipeline_equals_loaded_original(pipeline=pipeline, ts=product_level_constant_hierarchical_ts)
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+@pytest.mark.parametrize(
+    "model, transforms",
+    [
+        (
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (NaiveModel(), []),
+        (ProphetModel(), []),
+    ],
+)
+def test_forecasts_without_self_ts(model, transforms, reconciliator, product_level_constant_hierarchical_ts):
+    horizon = 1
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_forecasts_without_self_ts(
+        pipeline=pipeline, ts=product_level_constant_hierarchical_ts, horizon=horizon
+    )
 
 
 @pytest.mark.parametrize(
@@ -669,3 +678,26 @@ def test_params_to_tune(reconciliator, model, transforms, expected_params_to_tun
     obtained_params_to_tune = pipeline.params_to_tune()
 
     assert obtained_params_to_tune == expected_params_to_tune
+
+
+@pytest.mark.parametrize(
+    "ts_name",
+    (
+        "market_level_constant_forecast_with_target_components",
+        "market_level_constant_forecast_with_quantiles",
+        "market_level_constant_hierarchical_ts_w_exog",
+        "market_level_constant_hierarchical_ts",
+    ),
+)
+def test_make_hierarchical_dataset(ts_name, hierarchical_structure, request):
+    ts = request.getfixturevalue(ts_name)
+    ts.hierarchical_structure = None
+
+    new_ts = HierarchicalPipeline._make_hierarchical_dataset(ts, hierarchical_structure=hierarchical_structure)
+
+    assert new_ts is not ts
+    assert ts.hierarchical_structure is None
+    assert new_ts.hierarchical_structure is hierarchical_structure  # checking reference to structure
+    assert new_ts.target_components_names == ts.target_components_names
+    assert new_ts.prediction_intervals_names == ts.prediction_intervals_names
+    pd.testing.assert_frame_equal(new_ts.df, ts.df)

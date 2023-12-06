@@ -55,6 +55,7 @@ class MLPNet(DeepBaseNet):
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         """
         super().__init__()
+        self.save_hyperparameters()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.lr = lr
@@ -164,7 +165,13 @@ class MLPNet(DeepBaseNet):
 
 
 class MLPModel(DeepBaseModel):
-    """MLPModel."""
+    """MLPModel.
+
+    Note
+    ----
+    This model requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,

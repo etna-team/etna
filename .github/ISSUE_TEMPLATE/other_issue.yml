@@ -12,7 +12,7 @@ body:
       Search the [Documentation][docs] second.
 
       [issues]: https://github.com/etna-team/etna/issues
-      [docs]: https://etna-docs.netlify.app
+      [docs]: https://docs.etna.ai/stable
     options:
       - label: I have searched the issues.
         required: true

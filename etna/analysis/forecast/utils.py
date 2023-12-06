@@ -27,7 +27,7 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
 
     Returns
     -------
-    new_ts:
+    :
         TSDataset with residuals in forecasts
 
     Raises
@@ -56,32 +56,38 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     return new_ts
 
 
-def _get_existing_quantiles(ts: "TSDataset") -> Set[float]:
-    """Get quantiles that are present inside the TSDataset."""
-    cols = [col for col in ts.columns.get_level_values("feature").unique().tolist() if col.startswith("target_0.")]
-    existing_quantiles = {float(col[len("target_") :]) for col in cols}
-    return existing_quantiles
+def _get_existing_intervals(ts: "TSDataset") -> Set[str]:
+    """Get prediction intervals names that are present inside the TSDataset."""
+    return set(ts.prediction_intervals_names)
 
 
-def _select_quantiles(forecast_results: Dict[str, "TSDataset"], quantiles: Optional[List[float]]) -> List[float]:
-    """Select quantiles from the forecast results.
+def _select_prediction_intervals_names(
+    forecast_results: Dict[str, "TSDataset"], quantiles: Optional[List[float]]
+) -> List[str]:
+    """Select prediction intervals names from the forecast results.
 
-    Selected quantiles exist in each forecast.
+    Selected prediction intervals exist in each forecast.
     """
-    intersection_quantiles_set = set.intersection(
-        *[_get_existing_quantiles(forecast) for forecast in forecast_results.values()]
+    intersection_intervals_set = set.intersection(
+        *[_get_existing_intervals(forecast) for forecast in forecast_results.values()]
     )
-    intersection_quantiles = sorted(intersection_quantiles_set)
+    intersection_intervals = list(intersection_intervals_set)
 
     if quantiles is None:
-        selected_quantiles = intersection_quantiles
+        selected_intervals = intersection_intervals
+
     else:
-        selected_quantiles = sorted(set(quantiles) & intersection_quantiles_set)
-        non_existent = set(quantiles) - intersection_quantiles_set
+        quantile_names = {f"target_{q:.4g}" for q in quantiles}
+        selected_intervals = list(intersection_intervals_set.intersection(quantile_names))
+
+        if len(selected_intervals) == 0:
+            raise ValueError("Unable to find provided quantiles in the datasets!")
+
+        non_existent = quantile_names - intersection_intervals_set
         if non_existent:
             warnings.warn(f"Quantiles {non_existent} do not exist in each forecast dataset. They will be dropped.")
 
-    return selected_quantiles
+    return selected_intervals
 
 
 def _prepare_forecast_results(

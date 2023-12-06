@@ -44,6 +44,7 @@ def test_not_present_dataset():
         _ = load_dataset(name="not_implemented_dataset")
 
 
+@pytest.mark.filterwarnings("ignore: Local hash and expected hash are different for")
 def test_load_custom_dataset():
     update_dataset_dict(dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq="D")
     dataset_path = _DOWNLOAD_PATH / "custom_internal_dataset"
@@ -53,10 +54,11 @@ def test_load_custom_dataset():
     ts_local = load_dataset("custom_internal_dataset", rebuild_dataset=False, parts="full")
     ts_rebuild = load_dataset("custom_internal_dataset", rebuild_dataset=True, parts="full")
     shutil.rmtree(dataset_path)
-    pd.util.testing.assert_frame_equal(ts_init.to_pandas(), ts_local.to_pandas())
-    pd.util.testing.assert_frame_equal(ts_init.to_pandas(), ts_rebuild.to_pandas())
+    pd.testing.assert_frame_equal(ts_init.to_pandas(), ts_local.to_pandas())
+    pd.testing.assert_frame_equal(ts_init.to_pandas(), ts_rebuild.to_pandas())
 
 
+@pytest.mark.filterwarnings("ignore: Local hash and expected hash are different for")
 def test_load_all_parts():
     update_dataset_dict(dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq="D")
     dataset_path = _DOWNLOAD_PATH / "custom_internal_dataset"
@@ -393,6 +395,8 @@ def test_list_datasets():
 )
 def test_dataset_hash(dataset_name):
     dataset_dir = _DOWNLOAD_PATH / dataset_name
+    get_dataset_function = datasets_dict[dataset_name]["get_dataset_function"]
+    get_dataset_function(dataset_dir)
     for part in datasets_dict[dataset_name]["hash"]:
         data, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{dataset_name}_{part}.csv.gz")
         assert dataset_hash == datasets_dict[dataset_name]["hash"][part]

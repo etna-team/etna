@@ -52,7 +52,13 @@ class _DeepCopyMixin:
 
 
 class PytorchForecastingDatasetBuilder(BaseMixin):
-    """Builder for PytorchForecasting dataset."""
+    """Builder for PytorchForecasting dataset.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,
@@ -222,6 +228,7 @@ class PytorchForecastingMixin:
     train_batch_size: int
     test_batch_size: int
     encoder_length: int
+    trainer: Optional[pl.Trainer]
 
     @log_decorator
     def fit(self, ts: TSDataset):

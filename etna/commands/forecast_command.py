@@ -27,16 +27,14 @@ ADDITIONAL_PIPELINE_PARAMETERS = {"context_size"}
 def compute_horizon(horizon: int, forecast_params: Dict[str, Any], tsdataset: TSDataset) -> int:
     """Compute new pipeline horizon if `start_timestamp` presented in `forecast_params`."""
     if "start_timestamp" in forecast_params:
-        freq = tsdataset.freq
-
-        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"], freq=freq)
+        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"])
         train_end_timestamp = tsdataset.index.max()
 
         if forecast_start_timestamp <= train_end_timestamp:
             raise ValueError("Parameter `start_timestamp` should greater than end of training dataset!")
 
         delta = determine_num_steps(
-            start_timestamp=train_end_timestamp, end_timestamp=forecast_start_timestamp, freq=freq
+            start_timestamp=train_end_timestamp, end_timestamp=forecast_start_timestamp, freq=tsdataset.freq
         )
 
         horizon += delta - 1
@@ -53,9 +51,9 @@ def update_horizon(pipeline_configs: Dict[str, Any], forecast_params: Dict[str, 
 
 
 def filter_forecast(forecast_ts: TSDataset, forecast_params: Dict[str, Any]) -> TSDataset:
-    """Filter out forecasts before `start_timestamp` if `start_timestamp` presented in `forecast_params`.."""
+    """Filter out forecasts before `start_timestamp` if `start_timestamp` presented in `forecast_params`."""
     if "start_timestamp" in forecast_params:
-        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"], freq=forecast_ts.freq)
+        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"])
         forecast_ts.df = forecast_ts.df.loc[forecast_start_timestamp:, :]
 
     return forecast_ts

@@ -2,7 +2,7 @@ from os import unlink
 
 import pytest
 from optuna.storages import RDBStorage
-from optuna.structs import TrialState
+from optuna.trial import TrialState
 from typing_extensions import NamedTuple
 
 from etna.auto.utils import config_hash

@@ -21,9 +21,9 @@ class CategoricalDistribution(BaseDistribution):
 
     The input parameters aren't validated.
 
-    Look at :py:meth:`~optuna.trial.Trial.suggest_categorical` to find more about the meaning of parameters.
+    Look at :py:meth:`optuna.trial.Trial.suggest_categorical` to find more about the meaning of parameters.
 
-    Attributes
+    Parameters
     ----------
     choices:
         Possible values to take.
@@ -38,9 +38,9 @@ class IntDistribution(BaseDistribution):
 
     The input parameters aren't validated.
 
-    Look at :py:meth:`~optuna.trial.Trial.suggest_int` to find more about the meaning of parameters.
+    Look at :py:meth:`optuna.trial.Trial.suggest_int` to find more about the meaning of parameters.
 
-    Attributes
+    Parameters
     ----------
     low:
         The lower bound.
@@ -62,9 +62,9 @@ class IntDistribution(BaseDistribution):
 class FloatDistribution(BaseDistribution):
     """Float-based distribution.
 
-    Look at :py:meth:`~optuna.trial.Trial.suggest_float` to find more about the meaning of parameters.
+    Look at :py:meth:`optuna.trial.Trial.suggest_float` to find more about the meaning of parameters.
 
-    Attributes
+    Parameters
     ----------
     low:
         The lower bound.

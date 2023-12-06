@@ -1,6 +1,7 @@
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -261,7 +262,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         if len(exog) > 0:
             # restore parameters for exogenous variabales
-            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]))[0]
+            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]), rcond=None)[0]
 
             # estimate exogenous components and append to others
             weighted_exog = exog * exog_params[np.newaxis]
@@ -451,6 +452,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        fit_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """
@@ -539,6 +541,9 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
+        fit_params:
+            Additional parameters for :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX.fit`
+            For example, parameter `dips=False` disables logging.
         **kwargs:
             Additional parameters for :py:class:`statsmodels.tsa.sarimax.SARIMAX`.
         """
@@ -559,6 +564,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.fit_params = fit_params if fit_params else {}
         self.kwargs = kwargs
         super().__init__()
 
@@ -587,7 +593,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        result = model.fit()
+        result = model.fit(**self.fit_params)
         return result
 
 
@@ -602,7 +608,7 @@ class SARIMAXModel(
 
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
+    We use :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
@@ -631,6 +637,7 @@ class SARIMAXModel(
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        fit_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """
@@ -719,8 +726,11 @@ class SARIMAXModel(
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
+        fit_params:
+            Additional parameters for :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX.fit`
+            For example, parameter `dips=False` disables logging.
         **kwargs:
-            Additional parameters for :py:class:`statsmodels.tsa.sarimax.SARIMAX`.
+            Additional parameters for :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -739,6 +749,7 @@ class SARIMAXModel(
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.fit_params = fit_params if fit_params else {}
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
             base_model=_SARIMAXAdapter(
@@ -759,6 +770,7 @@ class SARIMAXModel(
                 freq=self.freq,
                 missing=self.missing,
                 validate_specification=self.validate_specification,
+                fit_params=self.fit_params,
                 **self.kwargs,
             )
         )
