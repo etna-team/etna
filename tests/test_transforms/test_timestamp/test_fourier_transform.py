@@ -11,16 +11,6 @@ from etna.transforms.timestamp import FourierTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
-# TODO: remove
-"""
-Добавить тесты
-- (+) Поведение regressors_info
-- (+) Работа на int index
-- (+) Работа на in_column int
-- (+) Работа на in_column datetime, пока есть непонимание как превращать произвольные timestamp в числа
-- Работа с пропусками
-"""
-
 
 def add_seasonality(series: pd.Series, period: int, magnitude: float) -> pd.Series:
     """Add seasonality to given series."""
