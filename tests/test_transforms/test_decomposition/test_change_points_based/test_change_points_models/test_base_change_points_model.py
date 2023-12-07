@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -6,47 +5,37 @@ from etna.transforms.decomposition.change_points_based.change_points_models impo
 
 
 @pytest.mark.parametrize(
-    "change_points, dtype, expected_intervals",
+    "change_points, expected_intervals",
     [
         (
             [],
-            np.dtype("datetime64[ns]"),
             [
-                (pd.Timestamp.min, pd.Timestamp.max),
-            ],
-        ),
-        (
-            [],
-            np.dtype("int64"),
-            [
-                (np.iinfo("int64").min, np.iinfo("int64").max),
+                (None, None),
             ],
         ),
         (
             [pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")],
-            np.dtype("datetime64[ns]"),
             [
-                (pd.Timestamp.min, pd.Timestamp("2020-01-01")),
+                (None, pd.Timestamp("2020-01-01")),
                 (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-18")),
                 (pd.Timestamp("2020-01-18"), pd.Timestamp("2020-02-24")),
-                (pd.Timestamp("2020-02-24"), pd.Timestamp.max),
+                (pd.Timestamp("2020-02-24"), None),
             ],
         ),
         (
             [10, 20, 30],
-            np.dtype("int64"),
             [
-                (np.iinfo("int64").min, 10),
+                (None, 10),
                 (10, 20),
                 (20, 30),
-                (30, np.iinfo("int64").max),
+                (30, None),
             ],
         ),
     ],
 )
-def test_build_intervals(change_points, dtype, expected_intervals):
+def test_build_intervals(change_points, expected_intervals):
     """Check correctness of intervals generation with list of change points."""
-    intervals = BaseChangePointsModelAdapter._build_intervals(change_points=change_points, dtype=dtype)
+    intervals = BaseChangePointsModelAdapter._build_intervals(change_points=change_points)
     assert isinstance(intervals, list)
     assert len(intervals) == len(expected_intervals)
     for (exp_left, exp_right), (real_left, real_right) in zip(expected_intervals, intervals):
