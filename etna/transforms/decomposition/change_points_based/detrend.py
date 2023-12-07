@@ -23,9 +23,14 @@ class _OneSegmentChangePointsTrendTransform(_OneSegmentChangePointsTransform):
     @staticmethod
     def _get_features(series: pd.Series) -> np.ndarray:
         """Convert ETNA timestamp-index to a list of timestamps to fit regression models."""
-        timestamps = series.index
-        timestamps = np.array([[ts.timestamp()] for ts in timestamps])
-        return timestamps
+        timestamps = series.index.to_series()
+
+        if pd.api.types.is_integer_dtype(timestamps.dtype):
+            timestamps = timestamps.astype("float").to_numpy()
+        else:
+            timestamps = timestamps.apply(lambda ts: ts.timestamp()).to_numpy()
+
+        return timestamps.reshape((-1, 1))
 
     def _apply_transformation(self, df: pd.DataFrame, transformed_series: pd.Series) -> pd.DataFrame:
         df.loc[:, self.in_column] -= transformed_series

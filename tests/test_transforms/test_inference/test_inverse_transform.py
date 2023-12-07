@@ -468,10 +468,38 @@ class TestInverseTransformTrain:
         "transform, dataset_name, expected_changes",
         [
             # decomposition
+            (
+                ChangePointsSegmentationTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -737,35 +765,6 @@ class TestInverseTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # decomposition
-            (
-                ChangePointsSegmentationTransform(
-                    in_column="target",
-                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
-                    out_column="res",
-                ),
-                "regular_ts",
-                {},
-            ),
-            (
-                ChangePointsTrendTransform(in_column="target"),
-                "regular_ts",
-                {"change": {"target"}},
-            ),
-            (
-                ChangePointsLevelTransform(in_column="target"),
-                "regular_ts",
-                {"change": {"target"}},
-            ),
-            (
-                TrendTransform(
-                    in_column="target",
-                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
-                    out_column="res",
-                ),
-                "regular_ts",
-                {},
-            ),
             # missing_values
             (
                 ResampleWithDistributionTransform(
