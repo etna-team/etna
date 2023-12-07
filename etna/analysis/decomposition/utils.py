@@ -3,8 +3,10 @@ from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -145,7 +147,7 @@ def _get_seasonal_in_cycle_num(
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
-    freq: str,
+    freq: Optional[str],
 ) -> pd.Series:
     """Get number for each point within cycle in a series of timestamps."""
     cycle_functions: Dict[Tuple[SeasonalPlotCycle, str], Callable[[pd.Series], pd.Series]] = {
@@ -164,6 +166,7 @@ def _get_seasonal_in_cycle_num(
     if isinstance(cycle, int):
         pass
     else:
+        freq = cast(str, freq)
         key = (SeasonalPlotCycle(cycle), freq)
         if key in cycle_functions:
             return cycle_functions[key](timestamp)
@@ -179,15 +182,17 @@ def _get_seasonal_in_cycle_name(
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
-    freq: str,
+    freq: Optional[str],
 ) -> pd.Series:
     """Get unique name for each point within the cycle in a series of timestamps."""
     if isinstance(cycle, int):
         pass
     elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.week:
+        freq = cast(str, freq)
         if freq == "D":
             return timestamp.dt.strftime("%a")
     elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.year:
+        freq = cast(str, freq)
         if freq == "M" or freq == "MS":
             return timestamp.dt.strftime("%b")
 
@@ -197,7 +202,7 @@ def _get_seasonal_in_cycle_name(
 
 def _seasonal_split(
     timestamp: pd.Series,
-    freq: str,
+    freq: Optional[str],
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
@@ -246,7 +251,7 @@ def _resample(df: pd.DataFrame, freq: str, aggregation: Union[Literal["sum"], Li
 
 def _prepare_seasonal_plot_df(
     ts: "TSDataset",
-    freq: str,
+    freq: Optional[str],
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
@@ -264,20 +269,37 @@ def _prepare_seasonal_plot_df(
 
     # make resampling if necessary
     if ts.freq != freq:
+        if ts.freq is None:
+            raise ValueError("Resampling isn't supported for data with integer timestamp!")
+        elif freq is None:
+            raise ValueError("Value None for freq parameter isn't supported for data with datetime timestamp!")
+
         df = _resample(df=df, freq=freq, aggregation=aggregation)
 
     # process alignment
     if isinstance(cycle, int):
         timestamp = df.index
         num_to_add = -len(timestamp) % cycle
-        # if we want align by the first value, then we should append NaNs to timestamp
-        to_add_index = None
-        if SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.first:
-            to_add_index = pd.date_range(start=timestamp.max(), periods=num_to_add + 1, closed="right", freq=freq)
-        # if we want to align by the last value, then we should prepend NaNs to timestamp
-        elif SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.last:
-            to_add_index = pd.date_range(end=timestamp.min(), periods=num_to_add + 1, closed="left", freq=freq)
+
+        if freq is None:
+            # if we want to align by the first value, then we should append NaNs to timestamp
+            to_add_index = None
+            if SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.first:
+                to_add_index = np.arange(timestamp.max() + 1, timestamp.max() + 1 + num_to_add)
+            # if we want to align by the last value, then we should prepend NaNs to timestamp
+            elif SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.last:
+                to_add_index = np.arange(timestamp.min() - num_to_add, timestamp.min())
+        else:
+            # if we want to align by the first value, then we should append NaNs to timestamp
+            to_add_index = None
+            if SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.first:
+                to_add_index = pd.date_range(start=timestamp.max(), periods=num_to_add + 1, closed="right", freq=freq)
+            # if we want to align by the last value, then we should prepend NaNs to timestamp
+            elif SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.last:
+                to_add_index = pd.date_range(end=timestamp.min(), periods=num_to_add + 1, closed="left", freq=freq)
 
         df = pd.concat((df, pd.DataFrame(None, index=to_add_index))).sort_index()
+    elif freq is None:
+        raise ValueError("Setting non-integer cycle isn't supported for data with integer timestamp!")
 
     return df

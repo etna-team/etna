@@ -6,7 +6,9 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Type
 from typing import Union
+from typing import cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -84,12 +86,12 @@ def plot_trend(
 
 def plot_time_series_with_change_points(
     ts: "TSDataset",
-    change_points: Dict[str, List[pd.Timestamp]],
+    change_points: Dict[str, List[Union[pd.Timestamp, int]]],
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot segments with their trend change points.
 
@@ -110,6 +112,11 @@ def plot_time_series_with_change_points(
         start timestamp for plot
     end:
         end timestamp for plot
+
+    Raises
+    ------
+    ValueError:
+        Datetime ``start`` or ``end`` is used for data with integer timestamp.
     """
     start, end = _get_borders_ts(ts, start, end)
 
@@ -147,8 +154,8 @@ def plot_time_series_with_change_points(
 
 def plot_change_points_interactive(
     ts,
-    change_point_model: BaseEstimator,
-    model: BaseCost,
+    change_point_model: Type[BaseEstimator],
+    model: Union[str, BaseCost],
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
     model_params: List[str],
     predict_params: List[str],
@@ -156,8 +163,8 @@ def plot_change_points_interactive(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot a time series with indicated change points.
 
@@ -196,6 +203,11 @@ def plot_change_points_interactive(
     Jupyter notebook might display the results incorrectly,
     in this case try to use ``!jupyter nbextension enable --py widgetsnbextension``.
 
+    Raises
+    ------
+    ValueError:
+        Datetime ``start`` or ``end`` is used for data with integer timestamp.
+
     Examples
     --------
     >>> from etna.datasets import TSDataset
@@ -211,6 +223,8 @@ def plot_change_points_interactive(
     from ipywidgets import FloatSlider
     from ipywidgets import IntSlider
     from ipywidgets import interact
+
+    start, end = _get_borders_ts(ts, start, end)
 
     if segments is None:
         segments = sorted(ts.segments)
@@ -360,7 +374,7 @@ def stl_plot(
 
 def seasonal_plot(
     ts: "TSDataset",
-    freq: Optional[str] = None,
+    freq: Union[Optional[str], Literal["not_given"]] = "not_given",
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ] = "year",
@@ -386,6 +400,7 @@ def seasonal_plot(
 
         * if set, resampling will be made using ``aggregation`` parameter.
           If given frequency is too low, then the frequency of ``ts`` will be used.
+          This option isn't supported for data with integer timestamp.
 
     cycle:
         period of seasonality to capture (see :class:`~etna.analysis.decomposition.utils.SeasonalPlotCycle`)
@@ -406,26 +421,34 @@ def seasonal_plot(
         number of columns in subplots
     figsize:
         size of the figure per subplot with one segment in inches
+
+    Raises
+    ------
+    ValueError:
+        Resampling isn't supported for data with integer timestamp
+    ValueError:
+        Setting non-integer cycle isn't supported for data with integer timestamp
+    ValueError:
+        Value None for freq parameter isn't supported for data with datetime timestamp
     """
     if plot_params is None:
         plot_params = {}
-    if freq is None:
+    if freq == "not_given":
         freq = ts.freq
+        freq = cast(Optional[str], freq)
     if segments is None:
         segments = sorted(ts.segments)
 
-    # TODO: fix this typing in https://github.com/etna-team/etna/milestone/5
     df = _prepare_seasonal_plot_df(
         ts=ts,
-        freq=freq,  # type: ignore
+        freq=freq,
         cycle=cycle,
         alignment=alignment,
         aggregation=aggregation,
         in_column=in_column,
         segments=segments,
     )
-    # TODO: fix this typing in https://github.com/etna-team/etna/milestone/5
-    seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq=freq, cycle=cycle)  # type: ignore
+    seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq=freq, cycle=cycle)
 
     colors = plt.get_cmap(cmap)
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)

@@ -41,15 +41,14 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
 
     @staticmethod
     def _get_x(df) -> np.ndarray:
-        series_len = len(df)
         x = df.index.to_series()
 
-        if x.dtype == "int":
+        if pd.api.types.is_integer_dtype(x.dtype):
             x = x.astype("float").to_numpy()
         else:
             x = x.apply(lambda ts: ts.timestamp()).to_numpy()
 
-        x = x.reshape(series_len, 1)
+        x = x.reshape(-1, 1)
         return x
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":

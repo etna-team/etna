@@ -22,7 +22,6 @@ from typing_extensions import Literal
 
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
-from etna.datasets.utils import TimestampType
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
@@ -123,7 +122,8 @@ class TSDataset:
         freq:
             frequency of timestamp in df, possible values:
 
-            - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+            - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
+              for datetime timestamp
 
             - None for integer timestamp
 
@@ -576,8 +576,8 @@ class TSDataset:
         n_segments: int = 10,
         column: str = "target",
         segments: Optional[Sequence[str]] = None,
-        start: Optional[Union[TimestampType, str]] = None,
-        end: Optional[Union[TimestampType, str]] = None,
+        start: Optional[Union[pd.Timestamp, int, str]] = None,
+        end: Optional[Union[pd.Timestamp, int, str]] = None,
         seed: int = 1,
         figsize: Tuple[int, int] = (10, 5),
     ):
@@ -603,7 +603,7 @@ class TSDataset:
         Raises
         ------
         ValueError:
-            Non-integer timestamp parameter is used for integer-indexed timestamp.
+            Datetime ``start`` or ``end`` is used for data with integer timestamp.
         """
         if segments is None:
             segments = self.segments
@@ -921,12 +921,12 @@ class TSDataset:
 
     def _find_all_borders(
         self,
-        train_start: Optional[Union[TimestampType, str]],
-        train_end: Optional[Union[TimestampType, str]],
-        test_start: Optional[Union[TimestampType, str]],
-        test_end: Optional[Union[TimestampType, str]],
+        train_start: Optional[Union[pd.Timestamp, int, str]],
+        train_end: Optional[Union[pd.Timestamp, int, str]],
+        test_start: Optional[Union[pd.Timestamp, int, str]],
+        test_end: Optional[Union[pd.Timestamp, int, str]],
         test_size: Optional[int],
-    ) -> Tuple[TimestampType, TimestampType, TimestampType, TimestampType]:
+    ) -> Tuple[Union[pd.Timestamp, int], Union[pd.Timestamp, int], Union[pd.Timestamp, int], Union[pd.Timestamp, int]]:
         """Find borders for train_test_split if some values wasn't specified."""
         # prepare and validate values
         train_start = _check_timestamp_param(param=train_start, param_name="train_start", freq=self.freq)
@@ -996,10 +996,10 @@ class TSDataset:
 
     def train_test_split(
         self,
-        train_start: Optional[Union[TimestampType, str]] = None,
-        train_end: Optional[Union[TimestampType, str]] = None,
-        test_start: Optional[Union[TimestampType, str]] = None,
-        test_end: Optional[Union[TimestampType, str]] = None,
+        train_start: Optional[Union[pd.Timestamp, int, str]] = None,
+        train_end: Optional[Union[pd.Timestamp, int, str]] = None,
+        test_start: Optional[Union[pd.Timestamp, int, str]] = None,
+        test_end: Optional[Union[pd.Timestamp, int, str]] = None,
         test_size: Optional[int] = None,
     ) -> Tuple["TSDataset", "TSDataset"]:
         """Split given df with train-test timestamp indices or size of test set.

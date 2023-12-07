@@ -300,7 +300,7 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
 
 def get_anomalies_hist(
     ts: "TSDataset", in_column: str = "target", bins_number: int = 10
-) -> typing.Dict[str, List[pd.Timestamp]]:
+) -> typing.Dict[str, List[typing.Union[pd.Timestamp, int]]]:
     """
     Get point outliers in time series using histogram model.
 

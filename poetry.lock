@@ -6251,11 +6251,11 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 
 [extras]
 all = ["optuna", "prophet", "pytorch-forecasting", "pytorch-lightning", "pyts", "sqlalchemy", "statsforecast", "torch", "tsfresh", "wandb"]
-all-dev = ["GitPython", "Sphinx", "black", "click", "click", "codespell", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "isort", "jupyter", "mypy", "myst-parser", "nbconvert", "nbqa", "nbsphinx", "optuna", "pep8-naming", "prophet", "pydata-sphinx-theme", "pytest", "pytest-cov", "pytest-shard", "pytorch-forecasting", "pytorch-lightning", "pyts", "semver", "semver", "sphinx-design", "sphinx-mathjax-offline", "sqlalchemy", "statsforecast", "torch", "tsfresh", "types-PyYAML", "types-setuptools", "wandb"]
+all-dev = ["GitPython", "Sphinx", "black", "click", "click", "codespell", "flake8", "flake8-bugbear", "flake8-comprehensions", "flake8-docstrings", "ipywidgets", "isort", "jupyter", "mypy", "myst-parser", "nbconvert", "nbqa", "nbsphinx", "optuna", "pep8-naming", "prophet", "pydata-sphinx-theme", "pytest", "pytest-cov", "pytest-shard", "pytorch-forecasting", "pytorch-lightning", "pyts", "semver", "semver", "sphinx-design", "sphinx-mathjax-offline", "sqlalchemy", "statsforecast", "torch", "tsfresh", "types-PyYAML", "types-setuptools", "wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 docs = ["GitPython", "Sphinx", "jupyter", "myst-parser", "nbsphinx", "pydata-sphinx-theme", "sphinx-design", "sphinx-mathjax-offline"]
-jupyter = ["black", "jupyter", "nbconvert"]
+jupyter = ["black", "ipywidgets", "jupyter", "nbconvert"]
 prophet = ["prophet"]
 release = ["click", "semver"]
 statsforecast = ["statsforecast"]
@@ -6267,4 +6267,4 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8.0, <3.11.0"
-content-hash = "94b8eb777cfc0d1a9487eadb3e9bd7b73fbed0ddfe190e8acf8f1b106a850944"
+content-hash = "a337c82112d96af5cf8d4b54ec95cf6c3c2d4e57e933487e1fe585d0cf81ee42"

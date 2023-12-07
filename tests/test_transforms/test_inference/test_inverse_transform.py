@@ -58,8 +58,8 @@ from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from tests.test_transforms.utils import assert_column_changes
-from tests.test_transforms.utils import convert_ts_to_int_timestamp
 from tests.test_transforms.utils import find_columns_diff
+from tests.utils import convert_ts_to_int_timestamp
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 
@@ -499,8 +499,36 @@ class TestInverseTransformTrain:
         "transform, dataset_name, expected_changes",
         [
             # decomposition
+            (
+                ChangePointsSegmentationTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (
+                TrendTransform(
+                    in_column="target",
+                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                    out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -788,7 +816,7 @@ class TestInverseTransformTrain:
     )
     def test_inverse_transform_train_int_timestamp(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
     @pytest.mark.parametrize(
@@ -818,36 +846,8 @@ class TestInverseTransformTrain:
         "transform, dataset_name, expected_changes",
         [
             # decomposition
-            (
-                ChangePointsSegmentationTransform(
-                    in_column="target",
-                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
-                    out_column="res",
-                ),
-                "regular_ts",
-                {},
-            ),
-            (
-                ChangePointsTrendTransform(in_column="target"),
-                "regular_ts",
-                {"change": {"target"}},
-            ),
-            (
-                ChangePointsLevelTransform(in_column="target"),
-                "regular_ts",
-                {"change": {"target"}},
-            ),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
-            (
-                TrendTransform(
-                    in_column="target",
-                    change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
-                    out_column="res",
-                ),
-                "regular_ts",
-                {},
-            ),
             # missing_values
             (
                 ResampleWithDistributionTransform(
@@ -875,7 +875,7 @@ class TestInverseTransformTrain:
     )
     def test_inverse_transform_train_int_timestamp_fail(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
 
