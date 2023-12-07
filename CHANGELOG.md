@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update detrend transforms (`LinearTrendTransform`, `TheilSenTrendTransform`) to handle integer timestamp ([#163](https://github.com/etna-team/etna/pull/163))
 - Update `ResampleWithDistributionTransform` to work with integer timestamp ([#165](https://github.com/etna-team/etna/pull/165))
 - 
-- 
+- Update change point transforms (`ChangePointsSegmentationTransform`, `ChangePointsTrendTransform`, `ChangePointsLevelTransform`, `TrendTransform`) to handle integer timestamp ([#176](https://github.com/etna-team/etna/pull/176))
 - 
 
 ### Fixed
