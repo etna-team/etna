@@ -792,7 +792,7 @@ class TestTransformTrain:
     )
     def test_transform_train_int_timestamp_not_supported(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, bias=10)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         with pytest.raises(ValueError, match="Transform can't work with integer index"):
             self._test_transform_train(ts_int_timestamp, transform, expected_changes={})
 
