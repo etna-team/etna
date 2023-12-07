@@ -118,21 +118,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         self.fit_results = model.fit()
         return self
 
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Subtract trend and seasonal component.
-
-        Parameters
-        ----------
-        df:
-            Features dataframe with time
-
-        Returns
-        -------
-        :
-            Dataframe with extracted features
-        """
-        result = df
+    def _get_season_trend(self, df: pd.DataFrame) -> pd.Series:
         if self.fit_results is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
 
@@ -150,6 +136,24 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         else:
             season_trend = self.fit_results.get_prediction(start=first_valid_index, end=last_valid_index).predicted_mean
 
+        return season_trend
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Subtract trend and seasonal component.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe with time
+
+        Returns
+        -------
+        :
+            Dataframe with extracted features
+        """
+        result = df
+        season_trend = self._get_season_trend(df=df)
         result[self.in_column] -= season_trend
         return result
 
@@ -168,23 +172,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
             Dataframe with extracted features
         """
         result = df
-        if self.fit_results is None:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
-
-        first_valid_index = df[self.in_column].first_valid_index()
-        last_valid_index = df[self.in_column].last_valid_index()
-
-        if pd.api.types.is_integer_dtype(df.index):
-            start = first_valid_index - self._first_int_index
-            end = last_valid_index - self._first_int_index
-            if start < 0:
-                raise ValueError("Transform can't work on integer timestamp before training data!")
-
-            season_trend = self.fit_results.get_prediction(start=start, end=end).predicted_mean
-            season_trend.index = np.arange(first_valid_index, last_valid_index + 1)
-        else:
-            season_trend = self.fit_results.get_prediction(start=first_valid_index, end=last_valid_index).predicted_mean
-
+        season_trend = self._get_season_trend(df=df)
         for colum_name in df.columns:
             result.loc[:, colum_name] += season_trend
         return result
