@@ -14,9 +14,9 @@ from sklearn.preprocessing import StandardScaler
 from etna import SETTINGS
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import determine_num_steps
 from etna.loggers import tslogger
 from etna.models.base import log_decorator
-from etna.models.utils import determine_num_steps
 
 if SETTINGS.torch_required:
     import pytorch_lightning as pl

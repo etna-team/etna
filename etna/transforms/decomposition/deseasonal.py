@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 from statsmodels.tsa.seasonal import seasonal_decompose
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
-from etna.models.utils import determine_freq
-from etna.models.utils import determine_num_steps
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
 
