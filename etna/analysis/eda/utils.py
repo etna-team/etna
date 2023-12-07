@@ -62,7 +62,7 @@ def _create_holidays_df(holidays, index: pd.Index, as_is: bool) -> pd.DataFrame:
 def _create_holidays_df_str(holidays: str, index: pd.Index, as_is: bool):
     if as_is:
         raise ValueError("Parameter `as_is` should be used with `holidays`: pd.DataFrame, not string.")
-    if index.dtype == "int":
+    if pd.api.types.is_integer_dtype(index.dtype):
         raise ValueError("Parameter `holidays` should be pd.DataFrame for data with integer timestamp!")
     timestamp = index.tolist()
     country_holidays = holidays_lib.country_holidays(country=holidays)
@@ -101,7 +101,7 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is
             if periods < 0:
                 raise ValueError("Upper windows should be non-negative.")
 
-            if index.dtype == "int":
+            if pd.api.types.is_integer_dtype(index.dtype):
                 ds_upper_bound = np.arange(periods + 1)
             else:
                 freq = pd.infer_freq(index)
@@ -115,7 +115,7 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is
             if periods > 0:
                 raise ValueError("Lower windows should be non-positive.")
 
-            if index.dtype == "int":
+            if pd.api.types.is_integer_dtype(index.dtype):
                 ds_lower_bound = np.arange(abs(periods) + 1)
             else:
                 freq = pd.infer_freq(index)

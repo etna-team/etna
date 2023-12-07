@@ -135,7 +135,7 @@ class HolidayTransform(IrreversibleTransform):
         """
         out_column = self._get_column_name()
         if self.in_column is None:
-            if df.index.dtype == "int":
+            if pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
             feature = self._compute_feature(timestamp=df.index).values

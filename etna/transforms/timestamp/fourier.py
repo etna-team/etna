@@ -3,12 +3,12 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.datasets.utils import TimestampType
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.models.utils import determine_num_steps
@@ -106,7 +106,7 @@ class FourierTransform(IrreversibleTransform):
         self.out_column = out_column
         self.in_column = in_column
 
-        self._reference_timestamp: Optional[TimestampType] = None
+        self._reference_timestamp: Union[pd.Timestamp, int, None] = None
         self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
 
         if self.in_column is None:
@@ -223,7 +223,7 @@ class FourierTransform(IrreversibleTransform):
             transformed dataframe
         """
         if self.in_column is None:
-            if df.index.dtype == "int":
+            if pd.api.types.is_integer_dtype(df.index.dtype):
                 timestamp = df.index.to_series()
             else:
                 timestamp = self._convert_sequential_timestamp_datetime_to_int(timestamp=df.index)

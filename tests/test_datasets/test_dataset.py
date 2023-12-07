@@ -837,7 +837,7 @@ def test_to_dataset_segment_conversion(df_segments_int):
 def test_to_dataset_on_integer_timestamp():
     classic_df = generate_ar_df(periods=30, freq=None, n_segments=2)
     df = TSDataset.to_dataset(classic_df)
-    assert df.index.dtype == "int"
+    assert pd.api.types.is_integer_dtype(df.index.dtype)
 
 
 @pytest.mark.xfail

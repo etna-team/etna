@@ -206,7 +206,7 @@ class TimeFlagsTransform(IrreversibleTransform):
             Dataframe with extracted features
         """
         if self.in_column is None:
-            if df.index.dtype == "int":
+            if pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
             timestamp = pd.Series(df.index)

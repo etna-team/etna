@@ -3,10 +3,10 @@ from typing import Union
 
 import pandas as pd
 
-from etna.datasets.utils import TimestampType
 
-
-def determine_num_steps(start_timestamp: TimestampType, end_timestamp: TimestampType, freq: Optional[str]) -> int:
+def determine_num_steps(
+    start_timestamp: Union[pd.Timestamp, int], end_timestamp: Union[pd.Timestamp, int], freq: Optional[str]
+) -> int:
     """Determine how many steps of ``freq`` should we make from ``start_timestamp`` to reach ``end_timestamp``.
 
     Parameters
