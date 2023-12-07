@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `get_historical_forecasts` to pipelines for forecast estimation at each fold on the historical dataset ([#143](https://github.com/etna-team/etna/pull/143))
 - `ConformalPredictionIntervals` method for prediction intervals estimation ([#152](https://github.com/etna-team/etna/pull/152))
 - Add DeepARNativeModel ([#114](https://github.com/etna-team/etna/pull/114))
+- Create page about internal datasets in documentation ([#175](https://github.com/etna-team/etna/pull/175))
 - 
 
 
