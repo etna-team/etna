@@ -179,7 +179,6 @@ class FourierTransform(IrreversibleTransform):
         result.columns.names = ["segment", "feature"]
         return result
 
-    # TODO: добавить обработку пропусков
     def _compute_features(self, timestamp: pd.Series) -> pd.DataFrame:
         features = pd.DataFrame(index=timestamp.index)
         elapsed = timestamp / self.period
