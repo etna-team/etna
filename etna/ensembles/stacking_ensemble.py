@@ -227,7 +227,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         num_timestamps = y.shape[0]
 
         # Format the forecast into TSDataset
-        segment_col = [segment for segment in forecasts[0].segments for _ in range(num_timestamps)]
+        segment_col = [segment for segment in ts.segments for _ in range(num_timestamps)]
         x.loc[:, "segment"] = segment_col
         x.loc[:, "timestamp"] = x.index.values
         df_exog = TSDataset.to_dataset(x)

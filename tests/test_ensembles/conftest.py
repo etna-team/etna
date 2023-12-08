@@ -49,7 +49,7 @@ def naive_pipeline() -> Pipeline:
 
 
 @pytest.fixture
-def naive_pipeline_top_down_market() -> Pipeline:
+def naive_pipeline_top_down_market_14() -> Pipeline:
     """Generate pipeline with NaiveModel."""
     pipeline = HierarchicalPipeline(
         model=NaiveModel(14),
@@ -61,7 +61,7 @@ def naive_pipeline_top_down_market() -> Pipeline:
 
 
 @pytest.fixture
-def naive_pipeline_top_down_product() -> Pipeline:
+def naive_pipeline_top_down_product_14() -> Pipeline:
     """Generate pipeline with NaiveModel."""
     pipeline = HierarchicalPipeline(
         model=NaiveModel(14),
@@ -73,7 +73,7 @@ def naive_pipeline_top_down_product() -> Pipeline:
 
 
 @pytest.fixture
-def naive_pipeline_bottom_up_market() -> Pipeline:
+def naive_pipeline_bottom_up_market_14() -> Pipeline:
     """Generate pipeline with NaiveModel."""
     pipeline = HierarchicalPipeline(
         model=NaiveModel(14),
@@ -108,17 +108,17 @@ def voting_ensemble_pipeline(
 
 @pytest.fixture
 def voting_ensemble_hierarchical_pipeline(
-    naive_pipeline_top_down_market: HierarchicalPipeline, naive_pipeline_bottom_up_market: HierarchicalPipeline
+    naive_pipeline_top_down_market_14: HierarchicalPipeline, naive_pipeline_bottom_up_market_14: HierarchicalPipeline
 ) -> VotingEnsemble:
-    pipeline = VotingEnsemble(pipelines=[naive_pipeline_top_down_market, naive_pipeline_bottom_up_market])
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline_top_down_market_14, naive_pipeline_bottom_up_market_14])
     return pipeline
 
 
 @pytest.fixture
 def voting_ensemble_mix_pipeline(
-    naive_pipeline: Pipeline, naive_pipeline_top_down_product: HierarchicalPipeline
+    naive_pipeline: Pipeline, naive_pipeline_top_down_product_14: HierarchicalPipeline
 ) -> VotingEnsemble:
-    pipeline = VotingEnsemble(pipelines=[naive_pipeline, naive_pipeline_top_down_product])
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline, naive_pipeline_top_down_product_14])
     return pipeline
 
 
@@ -138,17 +138,17 @@ def stacking_ensemble_pipeline(
 
 @pytest.fixture
 def stacking_ensemble_hierarchical_pipeline(
-    naive_pipeline_top_down_market: HierarchicalPipeline, naive_pipeline_bottom_up_market: HierarchicalPipeline
+    naive_pipeline_top_down_market_14: HierarchicalPipeline, naive_pipeline_bottom_up_market_14: HierarchicalPipeline
 ) -> StackingEnsemble:
-    pipeline = StackingEnsemble(pipelines=[naive_pipeline_top_down_market, naive_pipeline_bottom_up_market])
+    pipeline = StackingEnsemble(pipelines=[naive_pipeline_top_down_market_14, naive_pipeline_bottom_up_market_14])
     return pipeline
 
 
 @pytest.fixture
 def stacking_ensemble_mix_pipeline(
-    naive_pipeline: Pipeline, naive_pipeline_top_down_product: HierarchicalPipeline
+    naive_pipeline: Pipeline, naive_pipeline_top_down_product_14: HierarchicalPipeline
 ) -> StackingEnsemble:
-    pipeline = StackingEnsemble(pipelines=[naive_pipeline, naive_pipeline_top_down_product])
+    pipeline = StackingEnsemble(pipelines=[naive_pipeline, naive_pipeline_top_down_product_14])
     return pipeline
 
 

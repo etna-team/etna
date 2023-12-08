@@ -593,7 +593,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     @staticmethod
     def _validate_backtest_dataset(
         ts: TSDataset, n_folds: int, horizon: int, stride: int
-    ):  # TODO: переписать нахрен, занимает 20%
+    ):  # TODO: try to optimize, works really slow on datasets with large number of segments
         """Check all segments have enough timestamps to validate forecaster with given number of splits."""
         min_required_length = horizon + (n_folds - 1) * stride
         segments = set(ts.df.columns.get_level_values("segment"))

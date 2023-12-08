@@ -10,7 +10,6 @@ from etna.metrics import MAE
 from etna.models import NaiveModel
 from etna.pipeline import HierarchicalPipeline
 from etna.pipeline import Pipeline
-from etna.reconciliation import BottomUpReconciliator
 from etna.reconciliation import TopDownReconciliator
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
@@ -31,60 +30,48 @@ def direct_ensemble_pipeline() -> DirectEnsemble:
 
 
 @pytest.fixture
-def naive_pipeline_top_down_market() -> Pipeline:
+def naive_pipeline_top_down_market_7() -> Pipeline:
     """Generate pipeline with NaiveModel."""
     pipeline = HierarchicalPipeline(
         model=NaiveModel(),
         transforms=[],
-        horizon=1,
-        reconciliator=TopDownReconciliator(source_level="total", target_level="market", period=1, method="AHP"),
+        horizon=7,
+        reconciliator=TopDownReconciliator(source_level="total", target_level="market", period=14, method="AHP"),
     )
     return pipeline
 
 
 @pytest.fixture
-def naive_pipeline_bottom_up_market() -> Pipeline:
+def naive_pipeline_top_down_product_7() -> Pipeline:
     """Generate pipeline with NaiveModel."""
     pipeline = HierarchicalPipeline(
         model=NaiveModel(),
         transforms=[],
-        horizon=2,
-        reconciliator=BottomUpReconciliator(source_level="product", target_level="market"),
-    )
-    return pipeline
-
-
-@pytest.fixture
-def naive_pipeline_top_down_product() -> Pipeline:
-    """Generate pipeline with NaiveModel."""
-    pipeline = HierarchicalPipeline(
-        model=NaiveModel(),
-        transforms=[],
-        horizon=1,
-        reconciliator=TopDownReconciliator(source_level="total", target_level="product", period=1, method="AHP"),
+        horizon=7,
+        reconciliator=TopDownReconciliator(source_level="total", target_level="product", period=14, method="AHP"),
     )
     return pipeline
 
 
 @pytest.fixture
 def direct_ensemble_hierarchical_pipeline(
-    naive_pipeline_top_down_market, naive_pipeline_bottom_up_market
+    naive_pipeline_top_down_market_7, naive_pipeline_bottom_up_market_14
 ) -> DirectEnsemble:
     ensemble = DirectEnsemble(
         pipelines=[
-            naive_pipeline_top_down_market,
-            naive_pipeline_bottom_up_market,
+            naive_pipeline_top_down_market_7,
+            naive_pipeline_bottom_up_market_14,
         ]
     )
     return ensemble
 
 
 @pytest.fixture
-def direct_ensemble_mix_pipeline(naive_pipeline_top_down_product) -> DirectEnsemble:
+def direct_ensemble_mix_pipeline(naive_pipeline_top_down_product_7) -> DirectEnsemble:
     ensemble = DirectEnsemble(
         pipelines=[
-            naive_pipeline_top_down_product,
-            Pipeline(model=NaiveModel(), transforms=[], horizon=2),
+            naive_pipeline_top_down_product_7,
+            Pipeline(model=NaiveModel(), transforms=[], horizon=14),
         ]
     )
     return ensemble
