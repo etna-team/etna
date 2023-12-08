@@ -103,7 +103,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
 
         if pd.api.types.is_integer_dtype(df.index):
             self._first_int_index = df.index[0]
-            # create fake index, it works more reliable than dealing with numpy data
+            # create daily index, because get_prediction of holt model doesn't work after fitting with numpy data
             fake_index = pd.date_range(start="2020-01-01", periods=len(df), freq="D")
             df.index = pd.Index(fake_index, name=df.index.name)
 
@@ -131,6 +131,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
             if start < 0:
                 raise ValueError("Transform can't work on integer timestamp before training data!")
 
+            # call get_prediction by integer indices start, end, it works fine after using fake daily index during fit
             season_trend = self.fit_results.get_prediction(start=start, end=end).predicted_mean
             season_trend.index = np.arange(first_valid_index, last_valid_index + 1)
         else:
