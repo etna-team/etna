@@ -11,12 +11,12 @@ from tbats.bats import BATS
 from tbats.tbats import TBATS
 from tbats.tbats.Model import Model
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
-from etna.models.utils import determine_freq
-from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
 
 

@@ -408,6 +408,8 @@ class TestTransformTrain:
             ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
+            (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
+            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             (
                 TrendTransform(
                     in_column="target",
@@ -719,9 +721,6 @@ class TestTransformTrain:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # decomposition
-            (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
-            (DeseasonalityTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),

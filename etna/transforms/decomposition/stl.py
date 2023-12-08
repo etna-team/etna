@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.base.tsa_model import TimeSeriesModel
@@ -80,6 +81,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         self.model_kwargs = model_kwargs
         self.stl_kwargs = stl_kwargs
         self.fit_results: Optional[STLForecastResults] = None
+        self._first_int_index: Optional[int] = None
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentSTLTransform":
         """
@@ -92,15 +94,22 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: _OneSegmentSTLTransform
+        :
             instance after processing
         """
         df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
+
+        if pd.api.types.is_integer_dtype(df.index):
+            self._first_int_index = df.index[0]
+            # create daily index, because get_prediction of holt model doesn't work after fitting with numpy data
+            fake_index = pd.date_range(start="2020-01-01", periods=len(df), freq="D")
+            df.index = pd.Index(fake_index, name=df.index.name)
+
         model = STLForecast(
-            df[self.in_column],
-            self.model,
+            endog=df[self.in_column],
+            model=self.model,
             model_kwargs=self.model_kwargs,
             period=self.period,
             robust=self.robust,
@@ -108,6 +117,27 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         )
         self.fit_results = model.fit()
         return self
+
+    def _get_season_trend(self, df: pd.DataFrame) -> pd.Series:
+        if self.fit_results is None:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
+
+        first_valid_index = df[self.in_column].first_valid_index()
+        last_valid_index = df[self.in_column].last_valid_index()
+
+        if pd.api.types.is_integer_dtype(df.index):
+            start = first_valid_index - self._first_int_index
+            end = last_valid_index - self._first_int_index
+            if start < 0:
+                raise ValueError("Transform can't work on integer timestamp before training data!")
+
+            # call get_prediction by integer indices start, end, it works fine after using fake daily index during fit
+            season_trend = self.fit_results.get_prediction(start=start, end=end).predicted_mean
+            season_trend.index = np.arange(first_valid_index, last_valid_index + 1)
+        else:
+            season_trend = self.fit_results.get_prediction(start=first_valid_index, end=last_valid_index).predicted_mean
+
+        return season_trend
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -120,16 +150,11 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: pd.DataFrame
+        :
             Dataframe with extracted features
         """
         result = df
-        if self.fit_results is not None:
-            season_trend = self.fit_results.get_prediction(
-                start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
-            ).predicted_mean
-        else:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
+        season_trend = self._get_season_trend(df=df)
         result[self.in_column] -= season_trend
         return result
 
@@ -144,19 +169,13 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: pd.DataFrame
+        :
             Dataframe with extracted features
         """
         result = df
-        if self.fit_results is None:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
-        season_trend = self.fit_results.get_prediction(
-            start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
-        ).predicted_mean
-
+        season_trend = self._get_season_trend(df=df)
         for colum_name in df.columns:
             result.loc[:, colum_name] += season_trend
-
         return result
 
 

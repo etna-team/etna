@@ -7,7 +7,7 @@ from typing import Union
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.models.utils import determine_num_steps
+from etna.datasets.utils import determine_num_steps
 from etna.transforms.base import IrreversibleTransform
 
 

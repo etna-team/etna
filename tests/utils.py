@@ -6,9 +6,9 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import determine_num_steps
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
-from etna.models.utils import determine_num_steps
 
 
 def to_be_fixed(raises, match=None):
