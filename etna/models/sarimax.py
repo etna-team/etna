@@ -15,6 +15,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.distributions import IntDistribution
@@ -23,8 +25,6 @@ from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
-from etna.models.utils import determine_freq
-from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
 
 warnings.filterwarnings(

@@ -13,6 +13,8 @@ from statsforecast.models import AutoCES
 from statsforecast.models import AutoETS
 from statsforecast.models import AutoTheta
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.libs.statsforecast import ARIMA
@@ -22,8 +24,6 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
-from etna.models.utils import determine_freq
-from etna.models.utils import determine_num_steps
 
 StatsForecastModel = Union[AutoCES, AutoARIMA, AutoTheta, AutoETS, ARIMA]
 

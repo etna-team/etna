@@ -17,7 +17,7 @@ from typing_extensions import Literal
 from etna.commands.utils import estimate_max_n_folds
 from etna.commands.utils import remove_params
 from etna.datasets import TSDataset
-from etna.models.utils import determine_num_steps
+from etna.datasets.utils import determine_num_steps
 from etna.pipeline import Pipeline
 
 ADDITIONAL_FORECAST_PARAMETERS = {"start_timestamp", "estimate_n_folds"}
