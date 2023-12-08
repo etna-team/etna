@@ -7,6 +7,7 @@ from typing import Tuple
 
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import IrreversiblePerSegmentWrapper
@@ -31,7 +32,9 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
     `Time Series of Price Anomaly Detection <https://towardsdatascience.com/time-series-of-price-anomaly-detection-13586cd5ff46>`_
     """
 
-    def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
+    def __init__(
+        self, find_special_weekday: bool = True, find_special_month_day: bool = True, in_column: Optional[str] = None
+    ):
         """
         Create instance of _OneSegmentSpecialDaysTransform.
 
@@ -41,6 +44,8 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
             flag, if True, find special weekdays in transform
         find_special_month_day:
             flag, if True, find special monthdays in transform
+        in_column:
+            name of column to work with; if not given, index is used, only datetime index is supported
 
         Raises
         ------
@@ -58,6 +63,8 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
 
         self.anomaly_week_days: Optional[Tuple[int]] = None
         self.anomaly_month_days: Optional[Tuple[int]] = None
+
+        self.in_column = in_column
 
         self.res_type: Dict[str, Any]
         if self.find_special_weekday and find_special_month_day:
@@ -78,8 +85,16 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
         df: pd.DataFrame
             value series with index column in timestamp format
         """
-        common_df = df[["target"]].reset_index()
+        if self.in_column is None:
+            if pd.api.types.is_integer_dtype(df.index.dtype):
+                raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
+
+            common_df = df[["target"]].reset_index()
+        else:
+            common_df = df[[self.in_column, "target"]]
         common_df.columns = ["datetime", "value"]
+
+        common_df = common_df.dropna()
 
         if self.find_special_weekday:
             self.anomaly_week_days = self._find_anomaly_day_in_week(common_df)
@@ -103,22 +118,33 @@ class _OneSegmentSpecialDaysTransform(OneSegmentTransform):
             pd.DataFrame with 'anomaly_weekday', 'anomaly_monthday' or both of them columns no-timestamp indexed that
             contains 1 at i-th position if i-th day is a special day
         """
-        common_df = df[["target"]].reset_index()
+        if self.in_column is None:
+            common_df = df[["target"]].reset_index()
+        else:
+            common_df = df[[self.in_column, "target"]].reset_index(drop=True)
         common_df.columns = ["datetime", "value"]
+        common_df_no_nans = common_df.dropna()
 
-        to_add = pd.DataFrame([self.res_type["df_sample"]] * len(df), columns=self.res_type["columns"])
+        to_add = pd.DataFrame(
+            [self.res_type["df_sample"]] * len(common_df_no_nans),
+            columns=self.res_type["columns"],
+            index=common_df_no_nans.index,
+        )
 
         if self.find_special_weekday:
             if self.anomaly_week_days is None:
                 raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
-            to_add["anomaly_weekdays"] += self._marked_special_week_day(common_df, self.anomaly_week_days)
+            to_add["anomaly_weekdays"] += self._marked_special_week_day(common_df_no_nans, self.anomaly_week_days)
             to_add["anomaly_weekdays"] = to_add["anomaly_weekdays"].astype("category")
 
         if self.find_special_month_day:
             if self.anomaly_month_days is None:
                 raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
-            to_add["anomaly_monthdays"] += self._marked_special_month_day(common_df, self.anomaly_month_days)
+            to_add["anomaly_monthdays"] += self._marked_special_month_day(common_df_no_nans, self.anomaly_month_days)
             to_add["anomaly_monthdays"] = to_add["anomaly_monthdays"].astype("category")
+
+        # add NaNs in features
+        to_add = to_add.reindex(common_df.index)
 
         to_add.index = df.index
         to_return = pd.concat([df, to_add], axis=1)
@@ -185,7 +211,9 @@ class SpecialDaysTransform(IrreversiblePerSegmentWrapper):
     it uses information from the whole train part.
     """
 
-    def __init__(self, find_special_weekday: bool = True, find_special_month_day: bool = True):
+    def __init__(
+        self, find_special_weekday: bool = True, find_special_month_day: bool = True, in_column: Optional[str] = None
+    ):
         """
         Create instance of SpecialDaysTransform.
 
@@ -195,6 +223,8 @@ class SpecialDaysTransform(IrreversiblePerSegmentWrapper):
             flag, if True, find special weekdays in transform
         find_special_month_day:
             flag, if True, find special monthdays in transform
+        in_column:
+            name of column to work with; if not given, index is used, only datetime index is supported
 
         Raises
         ------
@@ -203,13 +233,43 @@ class SpecialDaysTransform(IrreversiblePerSegmentWrapper):
         """
         self.find_special_weekday = find_special_weekday
         self.find_special_month_day = find_special_month_day
+        self.in_column = in_column
+
+        if self.in_column is None:
+            self.in_column_regressor: Optional[bool] = True
+        else:
+            self.in_column_regressor = None
+
+        if in_column is None:
+            required_features = ["target"]
+        else:
+            required_features = [in_column, "target"]
         super().__init__(
-            transform=_OneSegmentSpecialDaysTransform(self.find_special_weekday, self.find_special_month_day),
-            required_features=["target"],
+            transform=_OneSegmentSpecialDaysTransform(
+                find_special_weekday=self.find_special_weekday,
+                find_special_month_day=self.find_special_month_day,
+                in_column=self.in_column,
+            ),
+            required_features=required_features,
         )
+
+    def fit(self, ts: TSDataset) -> "SpecialDaysTransform":
+        """Fit the transform."""
+        if self.in_column is None:
+            self.in_column_regressor = True
+        else:
+            self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+
+        if not self.in_column_regressor:
+            return []
+
         output_columns = []
         if self.find_special_weekday:
             output_columns.append("anomaly_weekdays")

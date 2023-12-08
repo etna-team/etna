@@ -55,6 +55,26 @@ def ts_with_exog(regular_ts) -> TSDataset:
 
 
 @pytest.fixture
+def ts_with_external_timestamp(regular_ts) -> TSDataset:
+    df = regular_ts.to_pandas(flatten=True)
+    df_exog = df.copy()
+    df_exog["external_timestamp"] = df["timestamp"]
+    df_exog.drop(columns=["target"], inplace=True)
+    ts = TSDataset(df=TSDataset.to_dataset(df).iloc[5:], df_exog=TSDataset.to_dataset(df_exog), freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_with_external_int_timestamp(regular_ts) -> TSDataset:
+    df = regular_ts.to_pandas(flatten=True)
+    df_exog = df.copy()
+    df_exog["external_timestamp"] = np.arange(10, 110).tolist() * 3
+    df_exog.drop(columns=["target"], inplace=True)
+    ts = TSDataset(df=TSDataset.to_dataset(df).iloc[5:], df_exog=TSDataset.to_dataset(df_exog), freq="D")
+    return ts
+
+
+@pytest.fixture
 def positive_ts() -> TSDataset:
     periods = 100
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="D")})

@@ -8,6 +8,7 @@ from typing import Sequence
 import numpy as np
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import IrreversibleTransform
@@ -47,6 +48,7 @@ class DateFlagsTransform(IrreversibleTransform):
         special_days_in_week: Sequence[int] = (),
         special_days_in_month: Sequence[int] = (),
         out_column: Optional[str] = None,
+        in_column: Optional[str] = None,
     ):
         """Create instance of DateFlags.
 
@@ -84,6 +86,13 @@ class DateFlagsTransform(IrreversibleTransform):
             * if don't set, name will be ``transform.__repr__()``,
               repr will be made for transform that creates exactly this column
 
+        in_column:
+            name of column to work with; if not given, index is used, only datetime index is supported
+
+        Raises
+        ------
+        ValueError:
+            if all features aren't set in transform
         """
         if not any(
             [
@@ -106,7 +115,13 @@ class DateFlagsTransform(IrreversibleTransform):
                 f"week_number_in_year, month_number_in_year, season_number, year_number, is_weekend should be True or any of "
                 f"special_days_in_week, special_days_in_month should be not empty."
             )
-        super().__init__(required_features=["target"])
+
+        if in_column is None:
+            required_features = ["target"]
+        else:
+            required_features = [in_column]
+        super().__init__(required_features=required_features)
+
         self.day_number_in_week = day_number_in_week
         self.day_number_in_month = day_number_in_month
         self.day_number_in_year = day_number_in_year
@@ -121,6 +136,12 @@ class DateFlagsTransform(IrreversibleTransform):
         self.special_days_in_month = special_days_in_month
 
         self.out_column = out_column
+        self.in_column = in_column
+
+        if self.in_column is None:
+            self.in_column_regressor: Optional[bool] = True
+        else:
+            self.in_column_regressor = None
 
         # create empty init parameters
         self._empty_parameters = dict(
@@ -148,6 +169,12 @@ class DateFlagsTransform(IrreversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+
+        if not self.in_column_regressor:
+            return []
+
         features = [
             "day_number_in_week",
             "day_number_in_month",
@@ -166,9 +193,81 @@ class DateFlagsTransform(IrreversibleTransform):
         ]
         return output_columns
 
+    def fit(self, ts: TSDataset) -> "DateFlagsTransform":
+        """Fit the transform."""
+        if self.in_column is None:
+            self.in_column_regressor = True
+        else:
+            self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
     def _fit(self, df: pd.DataFrame) -> "DateFlagsTransform":
         """Fit model. In this case of DateFlags does nothing."""
         return self
+
+    def _compute_features(self, timestamp: pd.Series) -> pd.DataFrame:
+        timestamp_no_nans = timestamp.dropna()
+        features = pd.DataFrame(index=timestamp_no_nans.index)
+
+        if self.day_number_in_week:
+            features[self._get_column_name("day_number_in_week")] = self._get_day_number_in_week(
+                timestamp_series=timestamp_no_nans
+            )
+
+        if self.day_number_in_month:
+            features[self._get_column_name("day_number_in_month")] = self._get_day_number_in_month(
+                timestamp_series=timestamp_no_nans
+            )
+
+        if self.day_number_in_year:
+            features[self._get_column_name("day_number_in_year")] = self._get_day_number_in_year(
+                timestamp_series=timestamp_no_nans
+            )
+
+        if self.week_number_in_month:
+            features[self._get_column_name("week_number_in_month")] = self._get_week_number_in_month(
+                timestamp_series=timestamp_no_nans
+            )
+
+        if self.week_number_in_year:
+            features[self._get_column_name("week_number_in_year")] = self._get_week_number_in_year(
+                timestamp_series=timestamp_no_nans
+            )
+
+        if self.month_number_in_year:
+            features[self._get_column_name("month_number_in_year")] = self._get_month_number_in_year(
+                timestamp_series=timestamp_no_nans
+            )
+
+        if self.season_number:
+            features[self._get_column_name("season_number")] = self._get_season_number(
+                timestamp_series=timestamp_no_nans
+            )
+
+        if self.year_number:
+            features[self._get_column_name("year_number")] = self._get_year(timestamp_series=timestamp_no_nans)
+
+        if self.is_weekend:
+            features[self._get_column_name("is_weekend")] = self._get_weekends(timestamp_series=timestamp_no_nans)
+
+        if self.special_days_in_week:
+            features[self._get_column_name("special_days_in_week")] = self._get_special_day_in_week(
+                special_days=self.special_days_in_week, timestamp_series=timestamp_no_nans
+            )
+
+        if self.special_days_in_month:
+            features[self._get_column_name("special_days_in_month")] = self._get_special_day_in_month(
+                special_days=self.special_days_in_month, timestamp_series=timestamp_no_nans
+            )
+
+        for feature in features.columns:
+            features[feature] = features[feature].astype("category")
+
+        # add NaNs in features
+        features = features.reindex(timestamp.index)
+
+        return features
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Get required features from df.
@@ -183,73 +282,32 @@ class DateFlagsTransform(IrreversibleTransform):
         :
             dataframe with extracted features
         """
-        features = pd.DataFrame(index=df.index)
-        timestamp_series = pd.Series(df.index)
+        if self.in_column is None:
+            if pd.api.types.is_integer_dtype(df.index.dtype):
+                raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
-        if self.day_number_in_week:
-            features[self._get_column_name("day_number_in_week")] = self._get_day_number_in_week(
-                timestamp_series=timestamp_series
-            )
+            timestamp = pd.Series(df.index)
+            features = self._compute_features(timestamp=timestamp)
+            features.index = df.index
 
-        if self.day_number_in_month:
-            features[self._get_column_name("day_number_in_month")] = self._get_day_number_in_month(
-                timestamp_series=timestamp_series
-            )
+            dataframes = []
+            for seg in df.columns.get_level_values("segment").unique():
+                tmp = df[seg].join(features)
+                _idx = tmp.columns.to_frame()
+                _idx.insert(0, "segment", seg)
+                tmp.columns = pd.MultiIndex.from_frame(_idx)
+                dataframes.append(tmp)
+            result = pd.concat(dataframes, axis=1).sort_index(axis=1)
+            result.columns.names = ["segment", "feature"]
 
-        if self.day_number_in_year:
-            features[self._get_column_name("day_number_in_year")] = self._get_day_number_in_year(
-                timestamp_series=timestamp_series
-            )
+        else:
+            flat_timestamp_df = TSDataset.to_flatten(df=df, features=[self.in_column])
+            features = self._compute_features(timestamp=flat_timestamp_df[self.in_column])
+            features["timestamp"] = flat_timestamp_df["timestamp"]
+            features["segment"] = flat_timestamp_df["segment"]
+            wide_df = TSDataset.to_dataset(features)
+            result = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
 
-        if self.week_number_in_month:
-            features[self._get_column_name("week_number_in_month")] = self._get_week_number_in_month(
-                timestamp_series=timestamp_series
-            )
-
-        if self.week_number_in_year:
-            features[self._get_column_name("week_number_in_year")] = self._get_week_number_in_year(
-                timestamp_series=timestamp_series
-            )
-
-        if self.month_number_in_year:
-            features[self._get_column_name("month_number_in_year")] = self._get_month_number_in_year(
-                timestamp_series=timestamp_series
-            )
-
-        if self.season_number:
-            features[self._get_column_name("season_number")] = self._get_season_number(
-                timestamp_series=timestamp_series
-            )
-
-        if self.year_number:
-            features[self._get_column_name("year_number")] = self._get_year(timestamp_series=timestamp_series)
-
-        if self.is_weekend:
-            features[self._get_column_name("is_weekend")] = self._get_weekends(timestamp_series=timestamp_series)
-
-        if self.special_days_in_week:
-            features[self._get_column_name("special_days_in_week")] = self._get_special_day_in_week(
-                special_days=self.special_days_in_week, timestamp_series=timestamp_series
-            )
-
-        if self.special_days_in_month:
-            features[self._get_column_name("special_days_in_month")] = self._get_special_day_in_month(
-                special_days=self.special_days_in_month, timestamp_series=timestamp_series
-            )
-
-        for feature in features.columns:
-            features[feature] = features[feature].astype("category")
-
-        dataframes = []
-        for seg in df.columns.get_level_values("segment").unique():
-            tmp = df[seg].join(features)
-            _idx = tmp.columns.to_frame()
-            _idx.insert(0, "segment", seg)
-            tmp.columns = pd.MultiIndex.from_frame(_idx)
-            dataframes.append(tmp)
-
-        result = pd.concat(dataframes, axis=1).sort_index(axis=1)
-        result.columns.names = ["segment", "feature"]
         return result
 
     @staticmethod

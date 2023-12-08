@@ -3,13 +3,18 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
+from etna.datasets import TSDataset
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.transforms.base import IrreversibleTransform
+
+_DEFAULT_FREQ = object()
 
 
 class FourierTransform(IrreversibleTransform):
@@ -34,6 +39,7 @@ class FourierTransform(IrreversibleTransform):
         order: Optional[int] = None,
         mods: Optional[Sequence[int]] = None,
         out_column: Optional[str] = None,
+        in_column: Optional[str] = None,
     ):
         """Create instance of FourierTransform.
 
@@ -59,6 +65,13 @@ class FourierTransform(IrreversibleTransform):
 
             * if don't set, name will be ``transform.__repr__()``,
               repr will be made for transform that creates exactly this column
+
+        in_column:
+            name of column to work with:
+
+            * if ``in_column`` is ``None`` (default) both datetime and integer timestamps are supported;
+
+            * if ``in_column`` isn't ``None`` only numeric columns are supported
 
         Raises
         ------
@@ -91,7 +104,21 @@ class FourierTransform(IrreversibleTransform):
             raise ValueError("There should be exactly one option set: order or mods")
 
         self.out_column = out_column
-        super().__init__(required_features=["target"])
+        self.in_column = in_column
+
+        self._reference_timestamp: Union[pd.Timestamp, int, None] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
+
+        if self.in_column is None:
+            self.in_column_regressor: Optional[bool] = True
+        else:
+            self.in_column_regressor = None
+
+        if in_column is None:
+            required_features = ["target"]
+        else:
+            required_features = [in_column]
+        super().__init__(required_features=required_features)
 
     def _get_column_name(self, mod: int) -> str:
         if self.out_column is None:
@@ -101,8 +128,25 @@ class FourierTransform(IrreversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+
+        if not self.in_column_regressor:
+            return []
+
         output_columns = [self._get_column_name(mod=mod) for mod in self._mods]
         return output_columns
+
+    def fit(self, ts: TSDataset) -> "FourierTransform":
+        """Fit the transform."""
+        if self.in_column is None:
+            self.in_column_regressor = True
+            # necessary for datetime timestamp
+            self._freq = ts.freq
+        else:
+            self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
 
     def _fit(self, df: pd.DataFrame) -> "FourierTransform":
         """Fit method does nothing and is kept for compatibility.
@@ -114,12 +158,15 @@ class FourierTransform(IrreversibleTransform):
 
         Returns
         -------
-        result: FourierTransform
+        result:
         """
+        if self.in_column is None:
+            # necessary for datetime timestamp
+            self._reference_timestamp = df.index[0]
         return self
 
     @staticmethod
-    def _construct_answer(df: pd.DataFrame, features: pd.DataFrame) -> pd.DataFrame:
+    def _construct_answer_for_index(df: pd.DataFrame, features: pd.DataFrame) -> pd.DataFrame:
         dataframes = []
         for seg in df.columns.get_level_values("segment").unique():
             tmp = df[seg].join(features)
@@ -132,6 +179,35 @@ class FourierTransform(IrreversibleTransform):
         result.columns.names = ["segment", "feature"]
         return result
 
+    def _compute_features(self, timestamp: pd.Series) -> pd.DataFrame:
+        features = pd.DataFrame(index=timestamp.index)
+        elapsed = timestamp / self.period
+
+        for mod in self._mods:
+            order = (mod + 1) // 2
+            is_cos = mod % 2 == 0
+
+            features[self._get_column_name(mod)] = np.sin(2 * np.pi * order * elapsed + np.pi / 2 * is_cos)
+
+        return features
+
+    def _convert_sequential_timestamp_datetime_to_int(self, timestamp: pd.Series):
+        if self._reference_timestamp is None:
+            raise ValueError("The transform isn't fitted!")
+
+        # we should always align timestamps to some fixed point
+        if timestamp[0] >= self._reference_timestamp:
+            start_idx = determine_num_steps(
+                start_timestamp=self._reference_timestamp, end_timestamp=timestamp[0], freq=self._freq
+            )
+        else:
+            start_idx = -determine_num_steps(
+                start_timestamp=timestamp[0], end_timestamp=self._reference_timestamp, freq=self._freq
+            )
+        int_timestamp = pd.Series(np.arange(start_idx, start_idx + len(timestamp)))
+
+        return int_timestamp
+
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add harmonics to the dataset.
 
@@ -142,19 +218,32 @@ class FourierTransform(IrreversibleTransform):
 
         Returns
         -------
-        result: pd.Dataframe
+        result:
             transformed dataframe
         """
-        features = pd.DataFrame(index=df.index)
-        elapsed = np.arange(features.shape[0]) / self.period
+        if self.in_column is None:
+            if pd.api.types.is_integer_dtype(df.index.dtype):
+                timestamp = df.index.to_series()
+            else:
+                timestamp = self._convert_sequential_timestamp_datetime_to_int(timestamp=df.index)
+            features = self._compute_features(timestamp=timestamp)
+            features.index = df.index
+            result = self._construct_answer_for_index(df=df, features=features)
+        else:
+            flat_timestamp_df = TSDataset.to_flatten(df=df, features=[self.in_column])
 
-        for mod in self._mods:
-            order = (mod + 1) // 2
-            is_cos = mod % 2 == 0
+            timestamp_dtype = df.dtypes.iloc[0]
+            if pd.api.types.is_numeric_dtype(timestamp_dtype):
+                timestamp = flat_timestamp_df[self.in_column]
+            else:
+                raise ValueError("Only numeric data is supported if in_column is set!")
 
-            features[self._get_column_name(mod)] = np.sin(2 * np.pi * order * elapsed + np.pi / 2 * is_cos)
-
-        return self._construct_answer(df, features)
+            features = self._compute_features(timestamp=timestamp)
+            features["timestamp"] = flat_timestamp_df["timestamp"]
+            features["segment"] = flat_timestamp_df["segment"]
+            wide_df = TSDataset.to_dataset(features)
+            result = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
+        return result
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
