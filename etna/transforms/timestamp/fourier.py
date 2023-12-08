@@ -9,9 +9,9 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
-from etna.models.utils import determine_num_steps
 from etna.transforms.base import IrreversibleTransform
 
 _DEFAULT_FREQ = object()
