@@ -34,6 +34,7 @@ from etna.models import StatsForecastAutoETSModel
 from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
@@ -120,6 +121,10 @@ class TestForecastInSampleFullNoTarget:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 DeepStateModel(
@@ -255,6 +260,10 @@ class TestForecastInSampleFull:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 DeepStateModel(
@@ -367,6 +376,10 @@ class TestForecastInSampleSuffixNoTarget:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -464,6 +477,10 @@ class TestForecastInSampleSuffix:
             (SeasonalMovingAverageModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -782,6 +799,10 @@ class TestForecastOutSamplePrefix:
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -936,6 +957,20 @@ class TestForecastOutSampleSuffix:
         "model, transforms",
         [
             (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed_deepar(self, model, transforms, example_tsds):
+        """This test is expected to fail due to autoregression in DeepAR."""
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
                     input_size=1,
@@ -1061,6 +1096,10 @@ class TestForecastMixedInOutSample:
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -1205,6 +1244,10 @@ class TestForecastSubsetSegments:
                 [],
             ),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -1299,6 +1342,10 @@ class TestForecastNewSegments:
             (NaiveModel(lag=3), []),
             (DeadlineMovingAverageModel(window=1), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),

@@ -35,3 +35,11 @@ def ts_dataset_weekly_function_with_horizon(weekly_period_df):
         return ts_train, ts_test
 
     return wrapper
+
+
+@pytest.fixture()
+def df_with_ascending_window_mean():
+    segment_1 = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=len(segment_1)))
+    df = pd.DataFrame({"timestamp": ts_range, "target": segment_1, "segment": ["segment_1"] * len(segment_1)})
+    return df

@@ -212,6 +212,43 @@ def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSData
         assert isinstance(df, pd.DataFrame)
 
 
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_backtest_hierarchical_pipeline(
+    voting_ensemble_hierarchical_pipeline: VotingEnsemble,
+    product_level_simple_hierarchical_ts_long_history: TSDataset,
+    n_jobs: int,
+):
+    """Check that backtest works with VotingEnsemble of hierarchical pipelines."""
+    results = voting_ensemble_hierarchical_pipeline.backtest(
+        ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_backtest_mix_pipeline(
+    voting_ensemble_mix_pipeline: VotingEnsemble,
+    product_level_simple_hierarchical_ts_long_history: TSDataset,
+    n_jobs: int,
+):
+    """Check that backtest works with VotingEnsemble of pipeline and hierarchical pipeline."""
+    results = voting_ensemble_mix_pipeline.backtest(
+        ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_get_historical_forecasts(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
+    """Check that get_historical_forecasts works with VotingEnsemble."""
+    n_folds = 3
+    forecasts = voting_ensemble_pipeline.get_historical_forecasts(ts=example_tsds, n_jobs=n_jobs, n_folds=n_folds)
+    assert isinstance(forecasts, pd.DataFrame)
+    assert len(forecasts) == n_folds * voting_ensemble_pipeline.horizon
+
+
 @pytest.mark.parametrize("load_ts", [True, False])
 def test_save_load(load_ts, voting_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)

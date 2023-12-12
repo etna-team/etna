@@ -359,8 +359,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        with tslogger.disable():
-            _, forecasts, _ = self.backtest(ts=ts, metrics=[_DummyMetric()], n_folds=n_folds)
+        forecasts = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
 
         self._add_forecast_borders(ts=ts, backtest_forecasts=forecasts, quantiles=quantiles, predictions=predictions)
 
@@ -592,7 +591,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return stride
 
     @staticmethod
-    def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int, stride: int):
+    def _validate_backtest_dataset(
+        ts: TSDataset, n_folds: int, horizon: int, stride: int
+    ):  # TODO: try to optimize, works really slow on datasets with large number of segments
         """Check all segments have enough timestamps to validate forecaster with given number of splits."""
         min_required_length = horizon + (n_folds - 1) * stride
         segments = set(ts.df.columns.get_level_values("segment"))
@@ -674,6 +675,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
     ) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
+        if y_true.has_hierarchy():
+            if y_true.current_df_level != y_pred.current_df_level:
+                y_true = y_true.get_level_dataset(y_pred.current_df_level)  # type: ignore
+
         metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
@@ -994,3 +999,71 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         tslogger.finish_experiment()
 
         return metrics_df, forecast_df, fold_info_df
+
+    def get_historical_forecasts(
+        self,
+        ts: TSDataset,
+        n_folds: Union[int, List[FoldMask]] = 5,
+        mode: Optional[str] = None,
+        n_jobs: int = 1,
+        refit: Union[bool, int] = True,
+        stride: Optional[int] = None,
+        joblib_params: Optional[Dict[str, Any]] = None,
+        forecast_params: Optional[Dict[str, Any]] = None,
+    ) -> pd.DataFrame:
+        """Estimate forecast for each fold on the historical dataset.
+
+        If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit models in backtest
+        n_folds:
+            Number of folds or the list of fold masks
+        mode:
+            Train generation policy: 'expand' or 'constant'. Works only if ``n_folds`` is integer.
+            By default, is set to 'expand'.
+        n_jobs:
+            Number of jobs to run in parallel
+        refit:
+            Determines how often pipeline should be retrained during iteration over folds.
+
+            * If ``True``: pipeline is retrained on each fold.
+
+            * If ``False``: pipeline is trained only on the first fold.
+
+            * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
+
+        stride:
+            Number of points between folds. Works only if ``n_folds`` is integer. By default, is set to ``horizon``.
+        joblib_params:
+            Additional parameters for :py:class:`joblib.Parallel`
+        forecast_params:
+            Additional parameters for :py:func:`~etna.pipeline.base.BasePipeline.forecast`
+
+        Returns
+        -------
+        :
+            Forecast dataframe
+
+        Raises
+        ------
+        ValueError:
+            If ``mode`` is set when ``n_folds`` are ``List[FoldMask]``.
+        ValueError:
+            If ``stride`` is set when ``n_folds`` are ``List[FoldMask]``.
+        """
+        with tslogger.disable():
+            _, forecasts, _ = self.backtest(
+                ts=ts,
+                metrics=[_DummyMetric()],
+                n_folds=n_folds,
+                mode=mode,
+                n_jobs=n_jobs,
+                refit=refit,
+                stride=stride,
+                joblib_params=joblib_params,
+                forecast_params=forecast_params,
+            )
+        return forecasts

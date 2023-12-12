@@ -331,6 +331,43 @@ def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TS
         assert isinstance(df, pd.DataFrame)
 
 
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_backtest_hierarchical_pipeline(
+    stacking_ensemble_hierarchical_pipeline: StackingEnsemble,
+    product_level_simple_hierarchical_ts_long_history: TSDataset,
+    n_jobs: int,
+):
+    """Check that backtest works with StackingEnsemble of hierarchical pipelines."""
+    results = stacking_ensemble_hierarchical_pipeline.backtest(
+        ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_backtest_mix_pipeline(
+    stacking_ensemble_mix_pipeline: StackingEnsemble,
+    product_level_simple_hierarchical_ts_long_history: TSDataset,
+    n_jobs: int,
+):
+    """Check that backtest works with StackingEnsemble of pipeline and hierarchical pipeline."""
+    results = stacking_ensemble_mix_pipeline.backtest(
+        ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_get_historical_forecasts(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
+    """Check that get_historical_forecasts works with StackingEnsemble."""
+    n_folds = 3
+    forecast = stacking_ensemble_pipeline.get_historical_forecasts(ts=example_tsds, n_jobs=n_jobs, n_folds=n_folds)
+    assert isinstance(forecast, pd.DataFrame)
+    assert len(forecast) == n_folds * stacking_ensemble_pipeline.horizon
+
+
 @pytest.mark.parametrize("load_ts", [True, False])
 def test_save_load(stacking_ensemble_pipeline, example_tsds, load_ts):
     assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)

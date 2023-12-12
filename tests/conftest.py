@@ -556,6 +556,20 @@ def product_level_df():
 
 
 @pytest.fixture
+def product_level_df_long_history(periods=200):
+    n_segments = 4
+    df = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range(start="2000-01-01", periods=periods, freq="D")) * n_segments,
+            "segment": ["a"] * periods + ["b"] * periods + ["c"] * periods + ["d"] * periods,
+            "target": np.random.uniform(low=0, high=100, size=periods * n_segments),
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
 def product_level_df_w_nans():
     df = pd.DataFrame(
         {
@@ -648,6 +662,12 @@ def market_level_simple_hierarchical_ts(market_level_df, hierarchical_structure)
 @pytest.fixture
 def product_level_simple_hierarchical_ts(product_level_df, hierarchical_structure):
     ts = TSDataset(df=product_level_df, freq="D", hierarchical_structure=hierarchical_structure)
+    return ts
+
+
+@pytest.fixture
+def product_level_simple_hierarchical_ts_long_history(product_level_df_long_history, hierarchical_structure):
+    ts = TSDataset(df=product_level_df_long_history, freq="D", hierarchical_structure=hierarchical_structure)
     return ts
 
 
