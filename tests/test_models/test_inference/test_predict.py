@@ -375,6 +375,10 @@ class TestPredictInSampleSuffix:
             ),
             (RNNModel(input_size=2, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
+                DeepARNativeModel(input_size=2, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
+            (
                 MLPModel(input_size=3, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
             ),
