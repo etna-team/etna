@@ -669,15 +669,6 @@ class TestForecastOutSample:
             (NaiveModel(lag=3), []),
             (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (RNNModel(input_size=2, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (
-                DeepARNativeModel(input_size=2, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [],
-            ),
-            (
-                MLPModel(input_size=3, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [LagTransform(in_column="target", lags=[5, 6])],
-            ),
         ],
     )
     def test_forecast_out_sample_int_timestamp(self, model, transforms, example_tsds):
@@ -700,7 +691,17 @@ class TestForecastOutSample:
             (StatsForecastAutoCESModel(), []),
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                    DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7,
+                                      trainer_params=dict(max_epochs=1)),
+                    [],
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                    MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                    [LagTransform(in_column="target", lags=[5, 6])],
+            ),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
