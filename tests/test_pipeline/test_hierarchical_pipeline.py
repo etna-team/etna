@@ -276,6 +276,24 @@ def test_backtest(market_level_constant_hierarchical_ts, reconciliator):
         BottomUpReconciliator(target_level="total", source_level="market"),
     ),
 )
+def test_get_historical_forecasts(market_level_constant_hierarchical_ts, reconciliator):
+    ts = market_level_constant_hierarchical_ts
+    n_folds = 2
+    model = NaiveModel()
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
+    forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
+    assert isinstance(forecasts, pd.DataFrame)
+    assert len(forecasts) == n_folds * pipeline.horizon
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="AHP"),
+        TopDownReconciliator(target_level="market", source_level="total", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
 def test_backtest_w_transforms(market_level_constant_hierarchical_ts, reconciliator):
     ts = market_level_constant_hierarchical_ts
     model = LinearPerSegmentModel()

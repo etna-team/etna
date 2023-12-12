@@ -252,6 +252,15 @@ def test_backtest_forecasts_sanity(step_ts: TSDataset):
     assert np.all(forecast_df == expected_forecast_df)
 
 
+def test_get_historical_forecasts_sanity(step_ts: TSDataset):
+    """Check that AutoRegressivePipeline.get_historical_forecasts gives correct forecasts according to the simple case."""
+    ts, expected_metrics_df, expected_forecast_df = step_ts
+    pipeline = AutoRegressivePipeline(model=NaiveModel(), horizon=5, step=1)
+    forecast_df = pipeline.get_historical_forecasts(ts, n_folds=3)
+
+    assert np.all(forecast_df == expected_forecast_df)
+
+
 @pytest.mark.parametrize(
     "model, transforms",
     [

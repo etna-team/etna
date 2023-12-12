@@ -1,5 +1,3 @@
-from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Sequence
 
@@ -7,9 +5,6 @@ import pandas as pd
 
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
-from etna.loggers import tslogger
-from etna.metrics import MAE
-from etna.metrics import Metric
 from etna.models.base import ModelType
 from etna.pipeline.pipeline import Pipeline
 from etna.reconciliation.base import BaseReconciliator
@@ -280,21 +275,6 @@ class HierarchicalPipeline(Pipeline):
         forecast_reconciled = self.reconciliator.reconcile(forecast)
         return forecast_reconciled
 
-    def _compute_metrics(
-        self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
-    ) -> Dict[str, Dict[str, float]]:
-        """Compute metrics for given y_true, y_pred."""
-        if y_true.current_df_level != self.reconciliator.target_level:
-            y_true = y_true.get_level_dataset(self.reconciliator.target_level)
-
-        if y_pred.current_df_level == self.reconciliator.source_level:
-            y_pred = self.reconciliator.reconcile(y_pred)
-
-        metrics_values: Dict[str, Dict[str, float]] = {}
-        for metric in metrics:
-            metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
-        return metrics_values
-
     def _forecast_prediction_interval(
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
@@ -306,8 +286,7 @@ class HierarchicalPipeline(Pipeline):
         try:
             # TODO: rework intervals estimation for `BottomUpReconciliator`
 
-            with tslogger.disable():
-                _, forecasts, _ = self.backtest(ts=ts, metrics=[MAE()], n_folds=n_folds)
+            forecasts = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
 
             source_ts = self.reconciliator.aggregate(ts=ts)
             self._add_forecast_borders(

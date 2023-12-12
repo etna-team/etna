@@ -125,7 +125,9 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             # TODO: Fix slicing with explicit passing the segments in issue #775
             horizon, forecast = horizons[idx], forecasts[idx][:, segments, "target"]
             forecast_df.iloc[:horizon] = forecast
-        forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
+        forecast_dataset = TSDataset(
+            df=forecast_df, freq=forecasts[0].freq, hierarchical_structure=forecasts[0].hierarchical_structure
+        )
         return forecast_dataset
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:

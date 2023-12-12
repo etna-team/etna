@@ -11,37 +11,44 @@ from etna import SETTINGS
 from etna.distributions import BaseDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
-from etna.models.base import DeepBaseModel
-from etna.models.base import DeepBaseNet
 
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
 
+    from etna.models.base import DeepBaseModel
+    from etna.models.base import DeepBaseNet
+    from etna.models.nn.deepar_native.loss import DeepARLoss
+    from etna.models.nn.deepar_native.loss import GaussianLoss
 
-class RNNBatch(TypedDict):
-    """Batch specification for RNN."""
+
+class DeepARNativeBatch(TypedDict):
+    """Batch specification for DeepAR."""
 
     encoder_real: "torch.Tensor"
     decoder_real: "torch.Tensor"
     encoder_target: "torch.Tensor"
     decoder_target: "torch.Tensor"
     segment: "torch.Tensor"
+    weight: "torch.Tensor"
 
 
-class RNNNet(DeepBaseNet):
-    """RNN based Lightning module with LSTM cell."""
+class DeepARNativeNet(DeepBaseNet):
+    """DeepAR based Lightning module with LSTM cell."""
 
     def __init__(
         self,
         input_size: int,
         num_layers: int,
+        dropout: float,
         hidden_size: int,
         lr: float,
-        loss: "torch.nn.Module",
+        scale: bool,
+        n_samples: int,
+        loss: DeepARLoss,
         optimizer_params: Optional[dict],
     ) -> None:
-        """Init RNN based on LSTM cell.
+        """Init DeepAR.
 
         Parameters
         ----------
@@ -49,10 +56,16 @@ class RNNNet(DeepBaseNet):
             size of the input feature space: target plus extra features
         num_layers:
             number of layers
+        dropout:
+            dropout rate in rnn layer
         hidden_size:
             size of the hidden state
         lr:
             learning rate
+        scale:
+            if True, scale target values in batch before training by :math:`1 + mean`, where :math:`mean` is mean of target values in the encoder part of batch
+        n_samples:
+            if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return mean of `n_samples` generated from Monte Carlo sampling
         loss:
             loss function
         optimizer_params:
@@ -60,18 +73,33 @@ class RNNNet(DeepBaseNet):
         """
         super().__init__()
         self.save_hyperparameters()
-        self.num_layers = num_layers
         self.input_size = input_size
+        self.num_layers = num_layers
+        self.dropout = dropout
         self.hidden_size = hidden_size
-        self.loss = torch.nn.MSELoss() if loss is None else loss
-        self.rnn = nn.LSTM(
-            num_layers=self.num_layers, hidden_size=self.hidden_size, input_size=self.input_size, batch_first=True
-        )
-        self.projection = nn.Linear(in_features=self.hidden_size, out_features=1)
         self.lr = lr
+        self.scale = scale
+        self.n_samples = n_samples
+        self.loss = loss
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
+        self.rnn = nn.LSTM(
+            num_layers=self.num_layers,
+            hidden_size=self.hidden_size,
+            input_size=self.input_size,
+            batch_first=True,
+            dropout=self.dropout,
+        )
 
-    def forward(self, x: RNNBatch, *args, **kwargs):  # type: ignore
+        self.projection = self._get_projection_layers()
+
+    def _get_projection_layers(self):
+        layers_loc = [nn.Linear(in_features=self.hidden_size, out_features=1)]
+        layers_scale = [nn.Linear(in_features=self.hidden_size, out_features=1), nn.Softplus()]
+        if not isinstance(self.loss, GaussianLoss):
+            layers_loc.append(nn.Softplus())
+        return nn.ModuleDict({"loc": nn.Sequential(*layers_loc), "scale": nn.Sequential(*layers_scale)})
+
+    def forward(self, x: DeepARNativeBatch, *args, **kwargs):  # type: ignore
         """Forward pass.
 
         Parameters
@@ -88,22 +116,40 @@ class RNNNet(DeepBaseNet):
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
-        output, (h_n, c_n) = self.rnn(encoder_real)
-        forecast = torch.zeros_like(decoder_target)  # (batch_size, decoder_length, 1)
+        weights = x["weight"]
+        forecasts = torch.zeros((decoder_target.shape[0], decoder_target.shape[1], self.n_samples))
 
-        for i in range(decoder_length - 1):
-            output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))
-            forecast_point = self.projection(output[:, -1]).flatten()
-            forecast[:, i, 0] = forecast_point
-            decoder_real[:, i + 1, 0] = forecast_point
+        for j in range(self.n_samples):
+            _, (h_n, c_n) = self.rnn(encoder_real)
+            for i in range(decoder_length):
+                output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))  # (batch_size, 1, hidden_size)
+                loc, scale = self.get_distribution_params(output)
+                forecast_point = self.loss.sample(
+                    loc=loc, scale=scale, weights=weights, theoretical_mean=self.n_samples == 1
+                ).flatten()  # (batch_size)
+                forecasts[:, i, j] = forecast_point
+                if i < decoder_length - 1:
+                    decoder_real[:, i + 1, 0] = forecast_point
+        return torch.mean(forecasts, dim=2).unsqueeze(2)
 
-        # Last point is computed out of the loop because `decoder_real[:, i + 1, 0]` would cause index error
-        output, (h_n, c_n) = self.rnn(decoder_real[:, decoder_length - 1, None], (h_n, c_n))
-        forecast_point = self.projection(output[:, -1]).flatten()
-        forecast[:, decoder_length - 1, 0] = forecast_point
-        return forecast
+    def get_distribution_params(self, output):
+        """Pass data from lstm layer through linear layers to get distribution parameters.
 
-    def step(self, batch: RNNBatch, *args, **kwargs):  # type: ignore
+        Parameters
+        ----------
+        output:
+            output data from lstm layer
+
+        Returns
+        -------
+        :
+            distribution parameters
+        """
+        loc = self.projection["loc"](output)
+        scale = self.projection["scale"](output)
+        return loc, scale
+
+    def step(self, batch: DeepARNativeBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
 
         Parameters
@@ -118,22 +164,22 @@ class RNNNet(DeepBaseNet):
         """
         encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
-
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
-
-        decoder_length = decoder_real.shape[1]
-
-        output, (_, _) = self.rnn(torch.cat((encoder_real, decoder_real), dim=1))
-
-        target_prediction = output[:, -decoder_length:]
-        target_prediction = self.projection(target_prediction)  # (batch_size, decoder_length, 1)
-
-        loss = self.loss(target_prediction, decoder_target)
-        return loss, decoder_target, target_prediction
+        weights = batch["weight"]
+        target = torch.cat((encoder_target, decoder_target), dim=1)  # (batch_size, encoder_length+decoder_length-1, 1)
+        output, (_, _) = self.rnn(
+            torch.cat((encoder_real, decoder_real), dim=1)
+        )  # (batch_size, encoder_length+decoder_length-1, hidden_size)
+        loc, scale = self.get_distribution_params(output)  # (batch_size, encoder_length+decoder_length-1, 1)
+        target_prediction = self.loss.sample(loc=loc, scale=scale, weights=weights, theoretical_mean=True)
+        loss = self.loss(inputs=target, loc=loc, scale=scale, weights=weights)
+        return loss, target, target_prediction
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
+        segment = df["segment"].values[0]
+        values_target = df["target"].values
         values_real = (
             df.select_dtypes(include=[np.number])
             .assign(target_shifted=df["target"].shift(1))
@@ -141,8 +187,6 @@ class RNNNet(DeepBaseNet):
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
             .values
         )
-        values_target = df["target"].values
-        segment = df["segment"].values[0]
 
         def _make(
             values_real: np.ndarray,
@@ -159,6 +203,7 @@ class RNNNet(DeepBaseNet):
                 "encoder_target": list(),
                 "decoder_target": list(),
                 "segment": None,
+                "weight": None,
             }
             total_length = len(values_target)
             total_sample_length = encoder_length + decoder_length
@@ -167,17 +212,22 @@ class RNNNet(DeepBaseNet):
                 return None
 
             # Get shifted target and concatenate it with real values features
-            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
+            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length].copy()
 
             # Get shifted target and concatenate it with real values features
-            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
+            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length].copy()
             sample["encoder_real"] = sample["encoder_real"][1:]
 
-            target = values_target[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
+            target = values_target[start_idx : start_idx + total_sample_length].reshape(-1, 1)
             sample["encoder_target"] = target[1:encoder_length]
             sample["decoder_target"] = target[encoder_length:]
 
             sample["segment"] = segment
+            sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
+            sample["encoder_real"][:, 0] = values_real[start_idx + 1 : start_idx + encoder_length, 0] / sample["weight"]
+            sample["decoder_real"][:, 0] = (
+                values_real[start_idx + encoder_length : start_idx + total_sample_length, 0] / sample["weight"]
+            )
 
             return sample
 
@@ -202,8 +252,8 @@ class RNNNet(DeepBaseNet):
         return optimizer
 
 
-class RNNModel(DeepBaseModel):
-    """RNN based model on LSTM cell.
+class DeepARNativeModel(DeepBaseModel):
+    """DeepAR based model on LSTM cell.
 
     Note
     ----
@@ -214,12 +264,15 @@ class RNNModel(DeepBaseModel):
     def __init__(
         self,
         input_size: int,
-        decoder_length: int,
         encoder_length: int,
+        decoder_length: int,
         num_layers: int = 2,
+        dropout: float = 0.0,
         hidden_size: int = 16,
         lr: float = 1e-3,
-        loss: Optional["torch.nn.Module"] = None,
+        scale: bool = True,
+        n_samples: int = 1,
+        loss: Optional["DeepARLoss"] = None,
         train_batch_size: int = 16,
         test_batch_size: int = 16,
         optimizer_params: Optional[dict] = None,
@@ -229,7 +282,7 @@ class RNNModel(DeepBaseModel):
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
     ):
-        """Init RNN model based on LSTM cell.
+        """Init DeepAR model based on LSTM cell.
 
         Parameters
         ----------
@@ -241,12 +294,21 @@ class RNNModel(DeepBaseModel):
             decoder length
         num_layers:
             number of layers
+        dropout:
+            dropout rate in rnn layer
         hidden_size:
             size of the hidden state
         lr:
             learning rate
+        scale:
+            if True, scale target values in batch before training by :math:`1 + mean`, where :math:`mean` is mean of target values in the encoder part of batch
+        n_samples:
+            if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return mean of `n_samples` generated from Monte Carlo sampling
         loss:
-            loss function, MSELoss by default
+            loss function
+                * :py:class:`etna.models.nn.deepar_native.loss.GaussianLoss`: use Gaussian distribution for counting loss
+
+                * :py:class:`etna.models.nn.deepar_native.loss.NegativeBinomialLoss`: use NegativeBinomial distribution for counting loss. Can be used only for positive data
         train_batch_size:
             batch size for training
         test_batch_size:
@@ -254,7 +316,7 @@ class RNNModel(DeepBaseModel):
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         trainer_params:
-            Pytorch lightning  trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch lightning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:
@@ -271,18 +333,24 @@ class RNNModel(DeepBaseModel):
         """
         self.input_size = input_size
         self.num_layers = num_layers
+        self.dropout = dropout
         self.hidden_size = hidden_size
         self.lr = lr
-        self.loss = loss
+        self.scale = scale
+        self.n_samples = n_samples
         self.optimizer_params = optimizer_params
+        self.loss = loss
         super().__init__(
-            net=RNNNet(
+            net=DeepARNativeNet(
                 input_size=input_size,
                 num_layers=num_layers,
+                dropout=dropout,
                 hidden_size=hidden_size,
                 lr=lr,
-                loss=nn.MSELoss() if loss is None else loss,
+                scale=scale,
+                n_samples=n_samples,
                 optimizer_params=optimizer_params,
+                loss=GaussianLoss() if loss is None else loss,
             ),
             decoder_length=decoder_length,
             encoder_length=encoder_length,
@@ -311,4 +379,5 @@ class RNNModel(DeepBaseModel):
             "hidden_size": IntDistribution(low=4, high=64, step=4),
             "lr": FloatDistribution(low=1e-5, high=1e-2, log=True),
             "encoder_length": IntDistribution(low=1, high=20),
+            "dropout": FloatDistribution(low=0.0, high=0.3),
         }
