@@ -296,6 +296,8 @@ class TestPredictInSampleSuffix:
             (MovingAverageModel(window=3), []),
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
         ],
     )
     def test_predict_in_sample_suffix_int_timestamp(self, model, transforms, example_tsds):
@@ -313,8 +315,6 @@ class TestPredictInSampleSuffix:
             (HoltWintersModel(), []),
             (SimpleExpSmoothingModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (StatsForecastARIMAModel(), []),
             (StatsForecastAutoARIMAModel(), []),
             (StatsForecastAutoCESModel(), []),

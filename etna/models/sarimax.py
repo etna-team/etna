@@ -34,6 +34,8 @@ warnings.filterwarnings(
     module="statsmodels.tsa.base.tsa_model",
 )
 
+_DEFAULT_FREQ = object()
+
 
 class _SARIMAXBaseAdapter(BaseAdapter):
     """Base class for adapters based on :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`."""
@@ -41,7 +43,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
     def __init__(self):
         self.regressor_columns = None
         self._fit_results = None
-        self._freq = None
+        self._freq: Union[str, None] = _DEFAULT_FREQ  # type: ignore
         self._first_train_timestamp = None
         self._last_train_timestamp = None
 
@@ -86,11 +88,11 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         end_timestamp = df["timestamp"].max()
         # determine index of start_timestamp if counting from first timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from first timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if prediction_interval:
@@ -370,11 +372,11 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         # determine index of start_timestamp if counting from last timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from last timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if start_idx > 1:
