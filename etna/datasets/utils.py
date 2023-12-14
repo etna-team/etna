@@ -91,13 +91,10 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
         raise ValueError("There should be 'timestamp' column")
 
     # construct long version
-    segments_results = []
-    for segment in segments:
-        df_segment = df.copy()
-        df_segment["segment"] = segment
-        segments_results.append(df_segment)
-
-    df_long = pd.concat(segments_results, ignore_index=True)
+    n_segments, n_timestamps = len(segments), df.shape[0]
+    df_long = pd.DataFrame(np.tile(A=df, reps=(n_segments, 1)), columns=df.columns)
+    df_long = df_long.astype(df.dtypes)
+    df_long["segment"] = np.repeat(a=segments, repeats=n_timestamps)
 
     # construct wide version if necessary
     if format_enum == DataFrameFormat.wide:
