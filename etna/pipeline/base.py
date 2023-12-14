@@ -595,7 +595,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Check all segments have enough timestamps to validate forecaster with given number of splits."""
         min_required_length = horizon + (n_folds - 1) * stride
 
-        df = ts.df.loc[:, (slice(None), "target")]
+        df = ts.df.loc[:, pd.IndexSlice[:, "target"]]
         num_timestamps = df.shape[0]
         not_na = ~np.isnan(df.values)
         min_idx = np.argmax(not_na, axis=0)
