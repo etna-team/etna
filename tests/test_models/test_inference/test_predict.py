@@ -296,6 +296,11 @@ class TestPredictInSampleSuffix:
             (MovingAverageModel(window=3), []),
             (NaiveModel(lag=3), []),
             (SeasonalMovingAverageModel(), []),
+            (StatsForecastARIMAModel(), []),
+            (StatsForecastAutoARIMAModel(), []),
+            (StatsForecastAutoCESModel(), []),
+            (StatsForecastAutoETSModel(), []),
+            (StatsForecastAutoThetaModel(), []),
         ],
     )
     def test_predict_in_sample_suffix_int_timestamp(self, model, transforms, example_tsds):
@@ -315,11 +320,6 @@ class TestPredictInSampleSuffix:
             (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
