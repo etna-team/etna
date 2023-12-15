@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `DateFlagsTransform`, `TimeFlagsTransform`, `HolidayTransform`, `SpecialDaysTransform`, `FourierTransform` to work with external timestamp ([#169](https://github.com/etna-team/etna/pull/169))
 - Update `analysis` module to work with integer timestamp ([#161](https://github.com/etna-team/etna/pull/161))
 - 
-- 
+- Update `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel` to handle integer timestamp ([#197](https://github.com/etna-team/etna/pull/197))
 - Update `MRMRFeatureSelectionTransform` to handle integer timestamp ([#164](https://github.com/etna-team/etna/pull/164))
 - 
 - Update deseasonality transforms (`STLTransform`, `DeseasonalityTransform`) to handle integer timestamp ([#174](https://github.com/etna-team/etna/pull/174))
