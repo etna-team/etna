@@ -16,7 +16,27 @@ from etna.datasets.utils import set_columns_wide
 @pytest.fixture
 def df_exog_no_segments() -> pd.DataFrame:
     timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
-    df = pd.DataFrame({"timestamp": timestamp, "exog_1": 1, "exog_2": 2, "exog_3": 3})
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "exog_bool": True,
+            "exog_int": 1,
+            "exog_float": 2.0,
+            "exog_category": 3,
+            "exog_string": "4",
+            "exog_datetime": pd.Timestamp("2000-01-01"),
+        }
+    )
+    df = df.astype(
+        {
+            "exog_bool": "bool",
+            "exog_int": "int16",
+            "exog_float": "float64",
+            "exog_category": "category",
+            "exog_string": "string",
+        },
+        copy=False,
+    )
     return df
 
 
@@ -45,6 +65,11 @@ def test_duplicate_data_long_format(df_exog_no_segments):
     expected_columns = set(df_exog_no_segments.columns)
     expected_columns.add("segment")
     assert set(df_duplicated.columns) == expected_columns
+
+    expected_dtypes = df_exog_no_segments.dtypes.sort_index()
+    obtained_dtypes = df_duplicated.drop(columns=["segment"]).dtypes.sort_index()
+    assert (expected_dtypes == obtained_dtypes).all()
+
     for segment in segments:
         df_temp = df_duplicated[df_duplicated["segment"] == segment].reset_index(drop=True)
         for column in df_exog_no_segments.columns:
@@ -57,6 +82,11 @@ def test_duplicate_data_wide_format(df_exog_no_segments):
     df_duplicated = duplicate_data(df=df_exog_no_segments, segments=segments, format="wide")
     expected_columns_segment = set(df_exog_no_segments.columns)
     expected_columns_segment.remove("timestamp")
+
+    expected_dtypes = df_exog_no_segments.dtypes.sort_index()
+    obtained_dtypes = TSDataset.to_flatten(df_duplicated).drop(columns=["segment"]).dtypes.sort_index()
+    assert (expected_dtypes == obtained_dtypes).all()
+
     for segment in segments:
         df_temp = df_duplicated.loc[:, pd.IndexSlice[segment, :]]
         df_temp.columns = df_temp.columns.droplevel("segment")
