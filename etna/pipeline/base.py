@@ -600,7 +600,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         not_na = ~np.isnan(df.values)
         min_idx = np.argmax(not_na, axis=0)
 
-        short_history_mask = np.logical_or((num_timestamps - min_idx) < min_required_length, np.all(~not_na, axis=1))
+        short_history_mask = np.logical_or((num_timestamps - min_idx) < min_required_length, np.all(~not_na, axis=0))
         short_segments = np.array(ts.segments)[short_history_mask]
         if len(short_segments) > 0:
             raise ValueError(

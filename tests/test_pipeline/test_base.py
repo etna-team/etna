@@ -1,8 +1,10 @@
 import pathlib
+import re
 from typing import Any
 from typing import Dict
 from unittest.mock import MagicMock
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -128,3 +130,61 @@ def test_predict_calls_private_predict(prediction_interval, quantiles, example_t
         quantiles=quantiles,
         return_components=False,
     )
+
+
+@pytest.fixture
+def ts_short_segment():
+    df = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range(start="2000-01-01", periods=5, freq="D")) * 2,
+            "segment": ["segment_1"] * 5 + ["short"] * 5,
+            "target": [1] * 5 + [np.NAN, np.NAN, np.NAN, 1, 2],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_empty_segment():
+    df = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range(start="2000-01-01", periods=5, freq="D")) * 2,
+            "segment": ["segment_1"] * 5 + ["empty"] * 5,
+            "target": [1] * 5 + [np.NAN] * 5,
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df, freq="D")
+    return ts
+
+
+def test_validate_backtest_dataset_pass(ts_short_segment, n_folds=1, horizon=2, stride=1):
+    BasePipeline._validate_backtest_dataset(ts_short_segment, n_folds=n_folds, horizon=horizon, stride=stride)
+
+
+def test_validate_backtest_dataset_fails_short_segment(ts_short_segment, n_folds=1, horizon=3, stride=1):
+    min_required_length = horizon + (n_folds - 1) * stride
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"All the series from feature dataframe should contain at least "
+            f"{horizon} + {n_folds - 1} * {stride} = {min_required_length} timestamps; "
+            f"series short does not."
+        ),
+    ):
+        BasePipeline._validate_backtest_dataset(ts_short_segment, n_folds=n_folds, horizon=horizon, stride=stride)
+
+
+def test_validate_backtest_dataset_fails_empty_segment(ts_empty_segment, n_folds=1, horizon=1, stride=1):
+    min_required_length = horizon + (n_folds - 1) * stride
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"All the series from feature dataframe should contain at least "
+            f"{horizon} + {n_folds - 1} * {stride} = {min_required_length} timestamps; "
+            f"series empty does not."
+        ),
+    ):
+        BasePipeline._validate_backtest_dataset(ts_empty_segment, n_folds=n_folds, horizon=horizon, stride=stride)
