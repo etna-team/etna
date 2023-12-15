@@ -92,8 +92,7 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
 
     # construct long version
     n_segments, n_timestamps = len(segments), df.shape[0]
-    df_long = pd.DataFrame(np.tile(A=df, reps=(n_segments, 1)), columns=df.columns)
-    df_long = df_long.astype(df.dtypes)
+    df_long = df.iloc[np.tile(np.arange(n_timestamps), n_segments)]
     df_long["segment"] = np.repeat(a=segments, repeats=n_timestamps)
 
     # construct wide version if necessary
