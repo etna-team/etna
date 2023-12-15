@@ -5,19 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## Unreleased
 ### Added
-- Add params_to_tune for DeepStateModel ([#115](https://github.com/etna-team/etna/issues/115))
-- 
-- 
-- Handle new functionality for prediction intervals in the `plot_forecast` ([#130](https://github.com/etna-team/etna/pull/130))  
-- Add `get_historical_forecasts` to pipelines for forecast estimation at each fold on the historical dataset ([#143](https://github.com/etna-team/etna/pull/143))
-- `ConformalPredictionIntervals` method for prediction intervals estimation ([#152](https://github.com/etna-team/etna/pull/152))
-- Add DeepARNativeModel ([#114](https://github.com/etna-team/etna/pull/114))
-- `EmpiricalPredictionIntervals` method for prediction intervals estimation ([#173](https://github.com/etna-team/etna/pull/173))
-- Prediction intervals tutorial notebook ([#189](https://github.com/etna-team/etna/pull/189))
--
-- 
 - 
 - 
 - 
@@ -35,11 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Changed
-- Change warning condition on loading object saved under different library version ([#31](https://github.com/etna-team/etna/issues/31))
-- 
-- 
-- 
-- 
 - 
 - 
 - 
@@ -58,25 +43,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+-
+
+## [2.4.0] - 2023-12-15
+### Added
+- Add `params_to_tune` for `DeepStateModel` ([#115](https://github.com/etna-team/etna/issues/115))
+- Handle new functionality for prediction intervals in the `plot_forecast` ([#130](https://github.com/etna-team/etna/pull/130))  
+- Add `get_historical_forecasts` to pipelines for forecast estimation at each fold on the historical dataset ([#143](https://github.com/etna-team/etna/pull/143))
+- `ConformalPredictionIntervals` method for prediction intervals estimation ([#152](https://github.com/etna-team/etna/pull/152))
+- Add `DeepARNativeModel` ([#114](https://github.com/etna-team/etna/pull/114))
+- `EmpiricalPredictionIntervals` method for prediction intervals estimation ([#173](https://github.com/etna-team/etna/pull/173))
+- Prediction intervals tutorial notebook ([#189](https://github.com/etna-team/etna/pull/189))
+
+### Changed
+- Change warning condition on loading object saved under different library version ([#31](https://github.com/etna-team/etna/issues/31))
+
+### Fixed
 - Speed up segment column creation in `TSDataset.to_hierarchical_dataset` ([#194](https://github.com/etna-team/etna/pull/194))
 - Speed up `BasePipeline._validate_backtest_dataset` ([#194](https://github.com/etna-team/etna/pull/194))
 - Speed up `datasets.utils.duplicate_data` ([#194](https://github.com/etna-team/etna/pull/194))
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
 
 ## [2.3.0] - 2023-10-24
 ### Added
