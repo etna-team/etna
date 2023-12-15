@@ -180,6 +180,22 @@ We have prepared a set of tutorials for an easy introduction:
   - Loading pretrained analyzer 
   - Analyzing segments predictability
 
+  
+#### [Prediction intervals](https://github.com/etna-team/etna/tree/master/examples/306-prediction_intervals.ipynb)
+- Loading and preparing data
+- Estimating intervals using builtin method
+    - Accessing prediction intervals in `TSDataset`
+    - Computing interval metrics
+- Estimating prediction intervals using `experimental.prediction_intervals` module
+    - `NaiveVariancePredictionIntervals`
+    - `ConformalPredictionIntervals`
+    - `EmpiricalPredictionIntervals`
+    - Prediction intervals for ensembles
+- Custom prediction interval method
+    - Non-parametric method
+    - Estimating historical residuals
+
+
 ## Scripts
 
 ### Hyperparameter search

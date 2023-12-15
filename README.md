@@ -177,8 +177,8 @@ To set up a configuration for your project you should create a `.etna` file at t
 
 We have also prepared a set of tutorials for an easy introduction:
 
-| Notebook                                                                                                                     |                                                                                                                                         Interactive launch |
-|:-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| Notebook                                                                                                                    |                                                                                                                                        Interactive launch |
+|:----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------:|
 | [Get started](https://github.com/etna-team/etna/tree/master/examples/101-get_started.ipynb)                                 |                [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/101-get_started.ipynb) |
 | [Backtest](https://github.com/etna-team/etna/tree/master/examples/102-backtest.ipynb)                                       |                   [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/102-backtest.ipynb) |
 | [EDA](https://github.com/etna-team/etna/tree/master/examples/103-EDA.ipynb)                                                 |                        [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/103-EDA.ipynb) |
@@ -196,6 +196,7 @@ We have also prepared a set of tutorials for an easy introduction:
 | [Hierarchical time series](https://github.com/etna-team/etna/blob/master/examples/303-hierarchical_pipeline.ipynb)          |      [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/303-hierarchical_pipeline.ipynb) |
 | [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecast_interpretation.ipynb)         |    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/304-forecast_interpretation.ipynb) |
 | [Classification](https://github.com/etna-team/etna/blob/master/examples/305-classification.ipynb)                           |             [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/305-classification.ipynb) |
+| [Prediction intervals](https://github.com/etna-team/etna/tree/master/examples/306-prediction_intervals.ipynb)               |       [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/306-prediction_intervals.ipynb) |
 
 ## Documentation
 
