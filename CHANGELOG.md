@@ -58,9 +58,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - 
-- 
-- 
-- 
+- Speed up segment column creation in `TSDataset.to_hierarchical_dataset` ([#194](https://github.com/etna-team/etna/pull/194))
+- Speed up `BasePipeline._validate_backtest_dataset` ([#194](https://github.com/etna-team/etna/pull/194))
+- Speed up `datasets.utils.duplicate_data` ([#194](https://github.com/etna-team/etna/pull/194))
 - 
 - 
 - 
