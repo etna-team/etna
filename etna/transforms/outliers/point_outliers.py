@@ -2,7 +2,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Type
-from typing import Union
+from typing import Union, Tuple
 
 import pandas as pd
 from typing_extensions import Literal
@@ -49,7 +49,7 @@ class MedianOutliersTransform(OutliersTransform):
         self.alpha = alpha
         super().__init__(in_column=in_column)
 
-    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+    def detect_outliers(self, ts: TSDataset) -> Tuple[Dict[str, List[pd.Timestamp]], Dict[str, pd.Series]]:
         """Call :py:func:`~etna.analysis.outliers.median_outliers.get_anomalies_median` function with self parameters.
 
         Parameters

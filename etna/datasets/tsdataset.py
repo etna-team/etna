@@ -13,6 +13,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 from typing import Union
+from etna.datasets.utils import set_columns_wide
 
 import numpy as np
 import pandas as pd
@@ -1050,10 +1051,8 @@ class TSDataset:
         df_update:
             Dataframe with new values in wide ETNA format.
         """
-        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
-        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
-            : self.df.index.max(), self.idx[self.segments, columns_to_update]
-        ]
+        columns_to_update = df_update.columns.get_level_values("feature").unique().tolist()
+        self.df = set_columns_wide(df_left=self.df, df_right=df_update, features_left=columns_to_update, timestamps_right=self.index)
 
     def add_columns_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None

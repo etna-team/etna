@@ -3,6 +3,8 @@ import typing
 
 import numpy as np
 import pandas as pd
+from typing import Dict, List, Tuple
+from collections import defaultdict
 
 if typing.TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -10,7 +12,7 @@ if typing.TYPE_CHECKING:
 
 def get_anomalies_median(
     ts: "TSDataset", in_column: str = "target", window_size: int = 10, alpha: float = 3
-) -> typing.Dict[str, typing.List[pd.Timestamp]]:
+) -> Tuple[Dict[str, List[pd.Timestamp]], Dict[str, pd.Series]]:
     """
     Get point outliers in time series using median model (estimation model-based method).
 
@@ -33,22 +35,32 @@ def get_anomalies_median(
     :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
-    outliers_per_segment = {}
-    segments = ts.segments
-    for seg in segments:
-        anomalies: typing.List[int] = []
+    segments = np.array(sorted(ts.segments))
+    values = ts.df.loc[:, pd.IndexSlice[segments, in_column]].values
+    timestamps = ts.index.values
 
-        segment_df = ts.df[seg].reset_index()
-        values = segment_df[in_column].values
-        timestamp = segment_df["timestamp"].values
+    anomalies_rows, anomalies_cols = [], []
+    n_iter = math.ceil(len(timestamps) / window_size)
+    for i in range(n_iter):
+        left_border = i * window_size
+        right_border = min(left_border + window_size, len(values))
+        med = np.median(values[left_border:right_border])
+        std = np.std(values[left_border:right_border])
+        diff = np.abs(values[left_border:right_border] - med)
+        row, col = np.nonzero(diff > std * alpha)
+        row += left_border
+        anomalies_rows.extend(row)
+        anomalies_cols.extend(col)
 
-        n_iter = math.ceil(len(values) / window_size)
-        for i in range(n_iter):
-            left_border = i * window_size
-            right_border = min(left_border + window_size, len(values))
-            med = np.median(values[left_border:right_border])
-            std = np.std(values[left_border:right_border])
-            diff = np.abs(values[left_border:right_border] - med)
-            anomalies.extend(np.where(diff > std * alpha)[0] + left_border)
-        outliers_per_segment[seg] = [timestamp[i] for i in anomalies]
-    return outliers_per_segment
+    anomalies_df = pd.DataFrame({
+        "timestamp": timestamps[anomalies_rows],
+        "segment": segments[anomalies_cols],
+        "target": values[anomalies_rows, anomalies_cols]
+    })
+
+    outliers_per_segment, outliers_values_per_segment = defaultdict(list), dict()
+    for segment, df in anomalies_df.groupby("segment"):
+        outliers_per_segment[segment] = df["timestamp"].values
+        outliers_values_per_segment[segment] = pd.Series(index=df["timestamp"].values, data=df["target"].values)
+
+    return outliers_per_segment, outliers_values_per_segment, anomalies_rows, anomalies_cols

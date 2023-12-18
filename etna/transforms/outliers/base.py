@@ -27,8 +27,9 @@ class OutliersTransform(ReversibleTransform, ABC):
         super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
-        self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self.original_values: Optional[Dict[str, pd.Series]] = None
         self._fit_segments: Optional[List[str]] = None
+        self.cols, self.row = None, None
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
@@ -39,23 +40,6 @@ class OutliersTransform(ReversibleTransform, ABC):
             List with regressors created by the transform.
         """
         return []
-
-    def _save_original_values(self, ts: TSDataset):
-        """
-        Save values to be replaced with NaNs.
-
-        Parameters
-        ----------
-        ts:
-            original TSDataset
-        """
-        if self.outliers_timestamps is None:
-            raise ValueError("Something went wrong during outliers detection stage! Check the transform parameters.")
-        self.original_values = dict()
-        for segment, timestamps in self.outliers_timestamps.items():
-            segment_ts = ts[:, segment, :]
-            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
-            self.original_values[segment] = segment_values
 
     def _fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -72,10 +56,8 @@ class OutliersTransform(ReversibleTransform, ABC):
             instance with saved outliers
         """
         ts = TSDataset(df, freq=pd.infer_freq(df.index))
-        self.outliers_timestamps = self.detect_outliers(ts)
-        self._save_original_values(ts)
+        self.outliers_timestamps, self.original_values, self.row, self.cols = self.detect_outliers(ts)
         self._fit_segments = ts.segments
-
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -103,10 +85,7 @@ class OutliersTransform(ReversibleTransform, ABC):
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         segments = df.columns.get_level_values("segment").unique().tolist()
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
-        for segment in segments:
-            # to locate only present indices
-            segment_outliers_timestamps = df.index.intersection(self.outliers_timestamps[segment])
-            df.loc[segment_outliers_timestamps, pd.IndexSlice[segment, self.in_column]] = np.NaN
+        df.values[self.row, self.cols] = np.NaN
         return df
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -135,8 +114,7 @@ class OutliersTransform(ReversibleTransform, ABC):
         segments = df.columns.get_level_values("segment").unique().tolist()
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
         for segment in segments:
-            segment_ts = df[segment, self.in_column]
-            segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
+            df.loc[self.outliers_timestamps[segment], pd.IndexSlice[segment, :]] = self.original_values[segment]
         return df
 
     @abstractmethod
