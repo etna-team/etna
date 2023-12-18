@@ -33,6 +33,15 @@ def dfs_w_exog():
     return train, test
 
 
+@pytest.fixture()
+def dfs_w_exog_int_timestamp(dfs_w_exog):
+    shift = 10
+    train_df, test_df = dfs_w_exog
+    train_df["timestamp"] = np.arange(len(train_df)) + shift
+    test_df["timestamp"] = np.arange(len(test_df)) + len(train_df) + shift
+    return train_df, test_df
+
+
 @pytest.fixture
 def ts_with_non_convertable_category_regressor(example_tsds) -> TSDataset:
     ts = example_tsds

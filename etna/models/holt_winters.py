@@ -23,6 +23,8 @@ from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.utils import select_observations
 
+_DEFAULT_FREQ = object()
+
 
 class _HoltWintersAdapter(BaseAdapter):
     """
@@ -197,9 +199,9 @@ class _HoltWintersAdapter(BaseAdapter):
         self._model: Optional[ExponentialSmoothing] = None
         self._result: Optional[HoltWintersResultsWrapper] = None
 
-        self._first_train_timestamp: Optional[pd.Timestamp] = None
-        self._last_train_timestamp: Optional[pd.Timestamp] = None
-        self._train_freq: Optional[str] = None
+        self._first_train_timestamp: Union[pd.Timestamp, int, None] = None
+        self._last_train_timestamp: Union[pd.Timestamp, int, None] = None
+        self._train_freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
 
     def _check_not_used_columns(self, df: pd.DataFrame):
         columns = df.columns
@@ -227,9 +229,15 @@ class _HoltWintersAdapter(BaseAdapter):
         """
         self._train_freq = determine_freq(timestamps=df["timestamp"])
         self._check_not_used_columns(df)
+        self._first_train_timestamp = df["timestamp"].min()
+        self._last_train_timestamp = df["timestamp"].max()
 
         targets = df["target"]
-        targets.index = df["timestamp"]
+        if pd.api.types.is_integer_dtype(df["timestamp"]):
+            # make index start with zero
+            targets.index = df["timestamp"] - self._first_train_timestamp
+        else:
+            targets.index = df["timestamp"]
 
         self._model = ExponentialSmoothing(
             endog=targets,
@@ -255,9 +263,6 @@ class _HoltWintersAdapter(BaseAdapter):
             **self.fit_kwargs,
         )
 
-        self._first_train_timestamp = targets.index.min()
-        self._last_train_timestamp = targets.index.max()
-
         return self
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
@@ -277,7 +282,16 @@ class _HoltWintersAdapter(BaseAdapter):
         if self._result is None or self._model is None:
             raise ValueError("This model is not fitted! Fit the model before calling predict method!")
 
-        forecast = self._result.predict(start=df["timestamp"].min(), end=df["timestamp"].max())
+        start_timestamp = df["timestamp"].min()
+        end_timestamp = df["timestamp"].max()
+        start_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._train_freq
+        )
+        end_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._train_freq
+        )
+
+        forecast = self._result.predict(start=start_idx, end=end_idx)
         y_pred = forecast.values
         return y_pred
 
@@ -329,7 +343,7 @@ class _HoltWintersAdapter(BaseAdapter):
         model = self._model
         fit_result = self._result
 
-        if fit_result is None or model is None or self._train_freq is None:
+        if fit_result is None or model is None or self._train_freq is _DEFAULT_FREQ:
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
@@ -400,7 +414,7 @@ class _HoltWintersAdapter(BaseAdapter):
         model = self._model
         fit_result = self._result
 
-        if fit_result is None or model is None or self._train_freq is None:
+        if fit_result is None or model is None or self._train_freq is _DEFAULT_FREQ:
             raise ValueError("This model is not fitted!")
 
         if df["timestamp"].min() < self._first_train_timestamp or df["timestamp"].max() > self._last_train_timestamp:

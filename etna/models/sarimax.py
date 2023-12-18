@@ -64,12 +64,13 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         self.regressor_columns = regressors
         self._check_not_used_columns(df)
 
+        self._first_train_timestamp = df["timestamp"].min()
+        self._last_train_timestamp = df["timestamp"].max()
+
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
         self._freq = determine_freq(timestamps=df["timestamp"])
-        self._first_train_timestamp = df["timestamp"].min()
-        self._last_train_timestamp = df["timestamp"].max()
 
         return self
 
@@ -86,11 +87,11 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         end_timestamp = df["timestamp"].max()
         # determine index of start_timestamp if counting from first timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from first timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if prediction_interval:
@@ -206,7 +207,12 @@ class _SARIMAXBaseAdapter(BaseAdapter):
                 result = df[self.regressor_columns].astype(float)
             except ValueError as e:
                 raise ValueError(f"Only convertible to float features are allowed! Error: {str(e)}")
-            result.index = df["timestamp"]
+
+            if pd.api.types.is_integer_dtype(df["timestamp"]):
+                # make index start with zero
+                result.index = df["timestamp"] - self._first_train_timestamp
+            else:
+                result.index = df["timestamp"]
         else:
             result = None
 
@@ -370,11 +376,11 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         # determine index of start_timestamp if counting from last timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from last timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if start_idx > 1:
