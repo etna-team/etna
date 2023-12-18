@@ -131,6 +131,10 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         start_timestamp = df[self.in_column].first_valid_index()
         end_timestamp = df[self.in_column].last_valid_index()
 
+        # if all values are NaNs
+        if start_timestamp is None:
+            return pd.Series([], dtype=float)
+
         start_idx = determine_num_steps(
             start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
