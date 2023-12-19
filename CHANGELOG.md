@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
-- Fix method `to_dict` for `SklearnPerSegmentModel` and `SklearnMultiSegmentModel`
+- Fix method `to_dict` for `SklearnPerSegmentModel` and `SklearnMultiSegmentModel`([#199](https://github.com/etna-team/etna/pull/199))
 - 
 - 
 - 

@@ -4,6 +4,7 @@ import pickle
 import hydra_slayer
 import pytest
 from ruptures import Binseg
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 
 from etna.core import BaseMixin
@@ -15,6 +16,8 @@ from etna.metrics import SMAPE
 from etna.models import AutoARIMAModel
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
+from etna.models import SklearnMultiSegmentModel
+from etna.models import SklearnPerSegmentModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
 from etna.models.nn import TFTModel
@@ -134,6 +137,8 @@ def test_to_dict_transforms_with_expected(target_object, expected):
             ),
             marks=pytest.mark.xfail(raises=AssertionError),
         ),
+        SklearnPerSegmentModel(regressor=RandomForestRegressor()),
+        SklearnMultiSegmentModel(regressor=RandomForestRegressor()),
     ],
 )
 def test_to_dict_models(target_model):
