@@ -246,6 +246,13 @@ def test_not_present_part():
             pd.to_datetime("2010-11-26 21:02:00"),
             tuple(),
         ),
+        (
+            "australian_wine_sales_monthly",
+            (176, 1),
+            pd.to_datetime("1980-01-01 00:00:00"),
+            pd.to_datetime("1994-08-01 00:00:00"),
+            tuple(),
+        ),
     ],
 )
 def test_dataset_statistics(dataset_name, expected_shape, expected_min_date, expected_max_date, dataset_parts):
@@ -391,6 +398,7 @@ def test_list_datasets():
         "ETTh1",
         "ETTh2",
         "IHEPC_T",
+        "australian_wine_sales_monthly",
     ],
 )
 def test_dataset_hash(dataset_name):
