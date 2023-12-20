@@ -224,6 +224,11 @@ def example_reg_tsds(random_seed) -> TSDataset:
     return tsds
 
 
+@pytest.fixture
+def example_reg_tsds_int_timestamp(example_reg_tsds) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=example_reg_tsds, shift=10)
+
+
 @pytest.fixture()
 def outliers_tsds():
     timestamp1 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-01"))
@@ -354,7 +359,7 @@ def example_tsdf(random_seed) -> TSDataset:
 
 @pytest.fixture
 def example_tsdf_int_timestamp(example_tsdf) -> TSDataset:
-    ts = convert_ts_to_int_timestamp(example_tsdf)
+    ts = convert_ts_to_int_timestamp(example_tsdf, shift=10)
     return ts
 
 
