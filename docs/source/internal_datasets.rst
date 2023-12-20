@@ -168,6 +168,12 @@ List of internal datasets
      - ("2006-12-16 17:24:00", "2010-11-26 21:02:00"), original
      - No exog data
      - full
+   * - :ref:`australian_wine_sales_monthly <Australian wine sales dataset>`
+     - monthly
+     - 176 observations, 1 segments
+     - ("1980-01-01 00:00:00", "1994-08-01 00:00:00"), original
+     - No exog data
+     - full
 
 
 
@@ -336,4 +342,17 @@ Loading names:
 References:
 
 - https://archive.ics.uci.edu/dataset/235/individual+household+electric+power+consumption
+
+
+Australian wine sales dataset
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+This dataset consists of wine sales by Australian wine makers between Jan 1980 – Aug 1994.
+
+Loading names:
+
+- ``australian_wine_sales_monthly`` with parts: full (176 observations)
+
+References:
+
+- https://www.rdocumentation.org/packages/forecast/versions/8.1/topics/wineind
 
