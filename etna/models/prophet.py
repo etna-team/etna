@@ -394,7 +394,7 @@ class ProphetModel(
     daily_seasonality = 'auto', holidays = None, seasonality_mode = 'additive',
     seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, changepoint_prior_scale = 0.05,
     mcmc_samples = 0, interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None,
-    additional_seasonality_params = (), )
+    additional_seasonality_params = (), timestamp_column = None, )
     >>> forecast = model.forecast(future)
     >>> forecast
     segment    segment_0 segment_1 segment_2 segment_3
