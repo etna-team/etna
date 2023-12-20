@@ -19,7 +19,6 @@
 
 <p align="center">
   <a href="https://t.me/etna_support"><img alt="Telegram" src="https://img.shields.io/badge/channel-telegram-blue" /></a>
-  <a href="https://github.com/etna-team/etna/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/github/discussions/etna-team/etna" /></a>
   <a href="https://github.com/etna-team/etna/graphs/contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/etna-team/etna.svg" /></a>
   <a href="https://github.com/etna-team/etna/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/etna-team/etna?style=social" /></a>
 </p>
