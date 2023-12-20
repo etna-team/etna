@@ -350,7 +350,7 @@ def determine_num_steps(
         End timestamp isn't reachable with a given frequency
     """
     if start_timestamp > end_timestamp:
-        raise ValueError("Start train timestamp should be less or equal than end timestamp!")
+        raise ValueError("Start timestamp should be less or equal than end timestamp!")
 
     if freq is None:
         if int(start_timestamp) != start_timestamp:

@@ -93,7 +93,7 @@ class TestForecastInSampleFullNoTarget:
             (SARIMAXModel(), []),
             (AutoARIMAModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
         ],
     )
@@ -219,7 +219,7 @@ class TestForecastInSampleFull:
             (SARIMAXModel(), []),
             (AutoARIMAModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
         ],
     )
@@ -369,7 +369,7 @@ class TestForecastInSampleSuffixNoTarget:
             (SARIMAXModel(), []),
             (AutoARIMAModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (MovingAverageModel(window=3), []),
             (NaiveModel(lag=3), []),
@@ -470,7 +470,7 @@ class TestForecastInSampleSuffix:
             (SARIMAXModel(), []),
             (AutoARIMAModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (MovingAverageModel(window=3), []),
             (NaiveModel(lag=3), []),
@@ -583,7 +583,7 @@ class TestForecastOutSample:
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (MovingAverageModel(window=3), []),
             (SeasonalMovingAverageModel(), []),
@@ -664,6 +664,9 @@ class TestForecastOutSample:
             (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
             (AutoARIMAModel(), []),
             (SARIMAXModel(), []),
+            (HoltModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
+            (SimpleExpSmoothingModel(), []),
             (MovingAverageModel(window=3), []),
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
@@ -677,7 +680,7 @@ class TestForecastOutSample:
         ],
     )
     def test_forecast_out_sample_int_timestamp(self, model, transforms, example_tsds):
-        ts_int_timestamp = convert_ts_to_int_timestamp(example_tsds, shift=10)
+        ts_int_timestamp = convert_ts_to_int_timestamp(example_tsds, shift=-10)
         self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
 
     @to_be_fixed(raises=Exception)
@@ -685,9 +688,6 @@ class TestForecastOutSample:
         "model, transforms",
         [
             (ProphetModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
@@ -793,7 +793,7 @@ class TestForecastOutSamplePrefix:
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (MovingAverageModel(window=3), []),
             (SeasonalMovingAverageModel(), []),
@@ -929,7 +929,7 @@ class TestForecastOutSampleSuffix:
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),
@@ -1097,7 +1097,7 @@ class TestForecastMixedInOutSample:
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (MovingAverageModel(window=3), []),
             (SeasonalMovingAverageModel(), []),
@@ -1222,7 +1222,7 @@ class TestForecastSubsetSegments:
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (MovingAverageModel(window=3), []),
             (SeasonalMovingAverageModel(), []),
@@ -1418,7 +1418,7 @@ class TestForecastNewSegments:
             (ProphetModel(), []),
             (SARIMAXModel(), []),
             (HoltModel(), []),
-            (HoltWintersModel(), []),
+            (HoltWintersModel(seasonal="add", seasonal_periods=7), []),
             (SimpleExpSmoothingModel(), []),
             (BATSModel(use_trend=True), []),
             (TBATSModel(use_trend=True), []),

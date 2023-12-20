@@ -4,7 +4,6 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.base.tsa_model import TimeSeriesModel
@@ -12,10 +11,14 @@ from statsmodels.tsa.exponential_smoothing.ets import ETSModel
 from statsmodels.tsa.forecasting.stl import STLForecast
 from statsmodels.tsa.forecasting.stl import STLForecastResults
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
+
+_DEFAULT_FREQ = object()
 
 
 class _OneSegmentSTLTransform(OneSegmentTransform):
@@ -81,7 +84,8 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         self.model_kwargs = model_kwargs
         self.stl_kwargs = stl_kwargs
         self.fit_results: Optional[STLForecastResults] = None
-        self._first_int_index: Optional[int] = None
+        self._first_train_timestamp: Union[pd.Timestamp, int, None] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentSTLTransform":
         """
@@ -101,14 +105,16 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         if df[self.in_column].isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
 
+        self._first_train_timestamp = df.index.min()
+        self._freq = determine_freq(df.index)
+
+        endog = df[self.in_column]
         if pd.api.types.is_integer_dtype(df.index):
-            self._first_int_index = df.index[0]
-            # create daily index, because get_prediction of holt model doesn't work after fitting with numpy data
-            fake_index = pd.date_range(start="2020-01-01", periods=len(df), freq="D")
-            df.index = pd.Index(fake_index, name=df.index.name)
+            # make index start with zero
+            endog.index = endog.index - self._first_train_timestamp
 
         model = STLForecast(
-            endog=df[self.in_column],
+            endog=endog,
             model=self.model,
             model_kwargs=self.model_kwargs,
             period=self.period,
@@ -122,21 +128,24 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         if self.fit_results is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
 
-        first_valid_index = df[self.in_column].first_valid_index()
-        last_valid_index = df[self.in_column].last_valid_index()
+        start_timestamp = df[self.in_column].first_valid_index()
+        end_timestamp = df[self.in_column].last_valid_index()
 
-        if pd.api.types.is_integer_dtype(df.index):
-            start = first_valid_index - self._first_int_index
-            end = last_valid_index - self._first_int_index
-            if start < 0:
-                raise ValueError("Transform can't work on integer timestamp before training data!")
+        # if all values are NaNs
+        if start_timestamp is None:
+            return pd.Series([], dtype=float)
 
-            # call get_prediction by integer indices start, end, it works fine after using fake daily index during fit
-            season_trend = self.fit_results.get_prediction(start=start, end=end).predicted_mean
-            season_trend.index = np.arange(first_valid_index, last_valid_index + 1)
-        else:
-            season_trend = self.fit_results.get_prediction(start=first_valid_index, end=last_valid_index).predicted_mean
+        start_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
+        )
+        end_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
+        )
 
+        prediction = self.fit_results.get_prediction(start=start_idx, end=end_idx).predicted_mean.values
+
+        index = df.index[df.index.get_loc(start_timestamp) : df.index.get_loc(end_timestamp) + 1]
+        season_trend = pd.Series(prediction, index=index)
         return season_trend
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:

@@ -380,7 +380,7 @@ def test_determine_num_steps_ok(start_timestamp, end_timestamp, freq, answer):
     ],
 )
 def test_determine_num_steps_fail_wrong_order(start_timestamp, end_timestamp, freq):
-    with pytest.raises(ValueError, match="Start train timestamp should be less or equal than end timestamp"):
+    with pytest.raises(ValueError, match="Start timestamp should be less or equal than end timestamp"):
         _ = determine_num_steps(start_timestamp=start_timestamp, end_timestamp=end_timestamp, freq=freq)
 
 
