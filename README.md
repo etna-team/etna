@@ -239,8 +239,7 @@ To ask the questions or discuss the library you can join our [telegram chat](htt
 
 ### ETNA.Team
 
-[Andrey Alekseev](https://github.com/iKintosh),
-[Nikita Barinov](https://github.com/diadorer),
+Current team members:
 [Dmitriy Bunin](https://github.com/Mr-Geekman),
 [Aleksandr Chikov](https://github.com/alex-hse-repository),
 [Vladislav Denisov](https://github.com/v-v-denisov),
@@ -249,21 +248,34 @@ To ask the questions or discuss the library you can join our [telegram chat](htt
 [Artem Makhin](https://github.com/Ama16),
 [Ivan Mitskovets](https://github.com/imitskovets),
 [Albina Munirova](https://github.com/albinamunirova),
+[Ivan Nedosekov](https://github.com/GrozniyToaster),
+[Rodion Petrov](https://github.com/Noidor1)
+[Maxim Zherelo](https://github.com/brsnw250)
+[Yakov Malyshev](https://github.com/ostreech1997)
+[Egor Baturin](https://github.com/egoriyaa)
+[Alexandr Kuznetsov](https://github.com/Alexander76Kuznetsov),
+
+Former team members:
+[Andrey Alekseev](https://github.com/iKintosh),
+[Nikita Barinov](https://github.com/diadorer),
 [Julia Shenshina](https://github.com/julia-shenshina),
 [Yuriy Tarasyuk](https://github.com/DBcreator),
 [Konstantin Vedernikov](https://github.com/scanhex12),
-[Ivan Nedosekov](https://github.com/GrozniyToaster),
-[Rodion Petrov](https://github.com/Noidor1)
+[Nikolai Romantsov](https://github.com/WinstonDovlatov),
+[Sergei Zhuravlev](https://github.com/malodetz),
+[Artem Levashov](https://github.com/soft1q),
+[Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ### ETNA.Contributors
 
-[WinstonDovlatov](https://github.com/WinstonDovlatov),
+[GooseIt](https://github.com/GooseIt),
+[smetam](https://github.com/smetam),
+[aleksander43smith](https://github.com/aleksander43smith),
+[looopka](https://github.com/looopka),
 [mvakhmenin](https://github.com/mvakhmenin),
 [Carlosbogo](https://github.com/Carlosbogo),
+[GoshaLetov](https://github.com/GoshaLetov),
 [Pacman1984](https://github.com/Pacman1984),
-[looopka](https://github.com/looopka),
-[Artem Levashov](https://github.com/soft1q),
-[Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ## License
 
