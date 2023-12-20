@@ -190,6 +190,11 @@ def example_tsds(random_seed) -> TSDataset:
 
 
 @pytest.fixture
+def example_tsds_int_timestamp(example_tsds) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=example_tsds, shift=10)
+
+
+@pytest.fixture
 def example_reg_tsds(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
