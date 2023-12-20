@@ -329,6 +329,9 @@ class TestPredictInSampleSuffix:
             (SARIMAXModel(), [], "example_tsds"),
             (AutoARIMAModel(), [], "example_tsds"),
             (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
             (MovingAverageModel(window=3), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (SeasonalMovingAverageModel(), [], "example_tsds"),
@@ -364,9 +367,6 @@ class TestPredictInSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms, dataset_name",
         [
-            (HoltModel(), [], "example_tsds"),
-            (HoltWintersModel(), [], "example_tsds"),
-            (SimpleExpSmoothingModel(), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
