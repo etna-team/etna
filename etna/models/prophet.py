@@ -350,7 +350,6 @@ class _ProphetAdapter(BaseAdapter):
             self.model = self._create_model()
 
 
-# TODO: дополнить документацию требованиями на timestamp_column
 class ProphetModel(
     PerSegmentModelMixin, PredictionIntervalContextIgnorantModelMixin, PredictionIntervalContextIgnorantAbstractModel
 ):
@@ -506,6 +505,7 @@ class ProphetModel(
             'mode', 'condition_name' will be used for :py:meth:`prophet.Prophet.add_seasonality` method call.
         timestamp_column:
             Name of a column to be used as timestamp. If not given, index is used.
+            Column is expected to be regressor containing datetime values with some fixed frequency.
         """
         self.growth = growth
         self.n_changepoints = n_changepoints
