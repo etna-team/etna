@@ -752,6 +752,35 @@ def get_ihepc_dataset(dataset_dir: Path) -> None:
     df_full.to_csv(dataset_dir / f"IHEPC_T_full.csv.gz", index=True, compression="gzip", float_format="%.8f")
 
 
+def get_australian_wine_sales_daataset(dataset_dir: Path) -> None:
+    """
+    Download and save Australian total wine sales by wine makers in bottles.
+
+    This dataset consists of wine sales by Australian wine makers between Jan 1980 – Aug 1994.
+
+    References
+    ----------
+    .. [1] https://www.rdocumentation.org/packages/forecast/versions/8.1/topics/wineind
+    """
+    url = (
+        "https://raw.githubusercontent.com/etna-team/etna/9417d61976305ea5980e91cd06d6f33c6c7c4560/"
+        "examples/data/monthly-australian-wine-sales.csv"
+    )
+
+    dataset_dir.mkdir(exist_ok=True, parents=True)
+
+    df = pd.read_csv(url, sep=",")
+    df["timestamp"] = pd.to_datetime(df["month"])
+    df["target"] = df["sales"]
+    df.drop(columns=["month", "sales"], inplace=True)
+    df["segment"] = "main"
+    df_full = TSDataset.to_dataset(df)
+
+    df_full.to_csv(
+        dataset_dir / f"australian_wine_sales_monthly_full.csv.gz", index=True, compression="gzip", float_format="%.8f"
+    )
+
+
 def list_datasets() -> List[str]:
     """Return a list of available internal datasets."""
     return sorted(datasets_dict.keys())
@@ -983,5 +1012,11 @@ datasets_dict: Dict[str, Dict] = {
         "freq": "T",
         "parts": ("full",),
         "hash": {"full": "8909138462ea130b9809907e947ffae6"},
+    },
+    "australian_wine_sales_monthly": {
+        "get_dataset_function": get_australian_wine_sales_daataset,
+        "freq": "MS",
+        "parts": ("full",),
+        "hash": {"full": "2dd34b5306d5e5372727e4d610b713be"},
     },
 }
