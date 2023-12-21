@@ -670,6 +670,8 @@ class TestForecastOutSample:
             (MovingAverageModel(window=3), []),
             (SeasonalMovingAverageModel(), []),
             (NaiveModel(lag=3), []),
+            (BATSModel(use_trend=True), []),
+            (TBATSModel(use_trend=True), []),
             (StatsForecastARIMAModel(), []),
             (StatsForecastAutoARIMAModel(), []),
             (StatsForecastAutoCESModel(), []),
@@ -689,8 +691,6 @@ class TestForecastOutSample:
         [
             (ProphetModel(), []),
             (DeadlineMovingAverageModel(window=1), []),
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
             (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
             (
                 DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),

@@ -34,6 +34,8 @@ warnings.filterwarnings(
     module="statsmodels.tsa.base.tsa_model",
 )
 
+_DEFAULT_FREQ = object()
+
 
 class _SARIMAXBaseAdapter(BaseAdapter):
     """Base class for adapters based on :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`."""
@@ -41,7 +43,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
     def __init__(self):
         self.regressor_columns = None
         self._fit_results = None
-        self._freq = None
+        self._freq: Union[str, None] = _DEFAULT_FREQ  # type: ignore
         self._first_train_timestamp = None
         self._last_train_timestamp = None
 
