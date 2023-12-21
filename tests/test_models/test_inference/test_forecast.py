@@ -758,6 +758,8 @@ class TestForecastOutSample:
             (MovingAverageModel(window=3), [], "example_tsds"),
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
             (StatsForecastAutoARIMAModel(), [], "example_tsds"),
             (StatsForecastAutoCESModel(), [], "example_tsds"),
@@ -793,8 +795,6 @@ class TestForecastOutSample:
         "model, transforms, dataset_name",
         [
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
-            (BATSModel(use_trend=True), [], "example_tsds"),
-            (TBATSModel(use_trend=True), [], "example_tsds"),
             (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
