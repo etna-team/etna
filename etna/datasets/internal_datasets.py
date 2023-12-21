@@ -21,7 +21,7 @@ import pandas as pd
 
 from etna.datasets.tsdataset import TSDataset
 
-_DOWNLOAD_PATH = Path.home() / ".etna"
+_DOWNLOAD_PATH = Path.home() / ".etna" / "internal_datasets"
 EXOG_SUBDIRECTORY = "exog"
 
 
@@ -593,7 +593,7 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_test_ = df_full_.tail(test_size)
 
         df_full_exog_ = pd.DataFrame(
-            {"timestamp": new_timestamps, "segment": [seg] * len(target_full), "target": initial_timestamps}
+            {"timestamp": new_timestamps, "segment": [seg] * len(target_full), "origin_timestamp": initial_timestamps}
         )
         df_test_exog_ = df_full_exog_.tail(test_size)
 

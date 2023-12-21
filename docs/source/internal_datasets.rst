@@ -38,25 +38,25 @@ List of internal datasets
      - train, test, full
    * - :ref:`m3_monthly <m3 dataset>`
      - monthly
-     - 144 observations, 2856 segments
+     - 144 observations, 1428 segments
      - ("2010-01-31 00:00:00", "2021-12-31 00:00:00"), synthetic
      - Original timestamp column
      - train, test, full
    * - :ref:`m3_quarterly <m3 dataset>`
      - quarterly
-     - 72 observations, 1512 segments
+     - 72 observations, 756 segments
      - ("2004-03-31 00:00:00", "2021-12-31 00:00:00"), synthetic
      - Original timestamp column
      - train, test, full
    * - :ref:`m3_other <m3 dataset>`
      - unknown, expected quarterly
-     - 104 observations, 348 segments
+     - 104 observations, 174 segments
      - ("1996-03-31 00:00:00", "2021-12-31 00:00:00"), synthetic
      - Original timestamp column
      - train, test, full
    * - :ref:`m3_yearly <m3 dataset>`
      - yearly
-     - 47 observations, 1290 segments
+     - 47 observations, 645 segments
      - ("1975-12-31 00:00:00", "2021-12-31 00:00:00"), synthetic
      - Original timestamp column
      - train, test, full
@@ -116,19 +116,19 @@ List of internal datasets
      - train, test, full
    * - :ref:`tourism_monthly <tourism dataset>`
      - monthly
-     - 333 observations, 732 segments
+     - 333 observations, 366 segments
      - ("1994-05-01 00:00:00", "2022-01-01 00:00:00"), synthetic
      - Original timestamp column
      - train, test, full
    * - :ref:`tourism_quarterly <tourism dataset>`
      - quarterly
-     - 130 observations, 854 segments
+     - 130 observations, 427 segments
      - ("1989-09-30 00:00:00", "2021-12-31 00:00:00"), synthetic
      - Original timestamp column
      - train, test, full
    * - :ref:`tourism_yearly <tourism dataset>`
      - yearly
-     - 47 observations, 1036 segments
+     - 47 observations, 518 segments
      - ("1975-12-31 00:00:00", "2021-12-31 00:00:00"), synthetic
      - Original timestamp column
      - train, test, full
