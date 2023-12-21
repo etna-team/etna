@@ -35,8 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix `traffic_2008` ([128](https://github.com/etna-team/etna/pull/128))
--
-
+- Fix number of segments in docs, column name for tourism dataset and change default save path ([#206](https://github.com/etna-team/etna/pull/206))
 
 ## [2.3.0] - 2023-10-24
 ### Added
