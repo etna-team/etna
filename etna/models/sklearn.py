@@ -137,6 +137,7 @@ class SklearnPerSegmentModel(
             sklearn model for regression
         """
         super().__init__(base_model=_SklearnAdapter(regressor=regressor))
+        self.regressor = regressor
 
 
 class SklearnMultiSegmentModel(
@@ -156,3 +157,4 @@ class SklearnMultiSegmentModel(
             Sklearn model for regression
         """
         super().__init__(base_model=_SklearnAdapter(regressor=regressor))
+        self.regressor = regressor
