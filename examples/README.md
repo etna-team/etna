@@ -179,6 +179,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Loading dataset 
   - Loading pretrained analyzer 
   - Analyzing segments predictability
+
   
 #### [Prediction intervals](https://github.com/etna-team/etna/tree/master/examples/306-prediction_intervals.ipynb)
 - Loading and preparing data
@@ -193,6 +194,7 @@ We have prepared a set of tutorials for an easy introduction:
 - Custom prediction interval method
     - Non-parametric method
     - Estimating historical residuals
+
 
 ## Scripts
 
