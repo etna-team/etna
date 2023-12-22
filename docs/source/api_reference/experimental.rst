@@ -36,6 +36,7 @@ Prediction Intervals:
    prediction_intervals.BasePredictionIntervals
    prediction_intervals.NaiveVariancePredictionIntervals
    prediction_intervals.ConformalPredictionIntervals
+   prediction_intervals.EmpiricalPredictionIntervals
 
 Prediction Intervals utilities:
 

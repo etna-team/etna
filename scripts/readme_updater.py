@@ -6,6 +6,7 @@ This scripts depends on the fact that contributors section goes after the team s
 and license section goes after the contributors section.
 """
 
+import itertools
 import json
 import pathlib
 import re
@@ -17,10 +18,6 @@ from typing import List
 
 ROOT_PATH = pathlib.Path(__file__).parent.resolve().parent
 REPO = "/repos/etna-team/etna/contributors"
-OLD_TEAM = [
-    "[Artem Levashov](https://github.com/soft1q)",
-    "[Aleksey Podkidyshev](https://github.com/alekseyen)",
-]
 
 
 def get_contributors() -> List[Dict[str, Any]]:
@@ -41,8 +38,9 @@ def get_team_nicknames() -> List[str]:
     team_list_start = readme.index("### ETNA.Team\n")
     contributors_list_start = readme.index("### ETNA.Contributors\n")
     team_list = readme[team_list_start:contributors_list_start]
-    team_list = [x.strip() for x in team_list[1:] if len(x.strip())]
-    team_nicknames = [re.findall(r"https://github.com/(.*)\)", x)[0] for x in team_list]
+    team_list = [x.strip() for x in team_list if len(x.strip())]
+    team_nicknames = [re.findall(r"https://github.com/(.*)\)", x) for x in team_list]
+    team_nicknames = list(itertools.chain.from_iterable(team_nicknames))
     return team_nicknames
 
 
@@ -55,9 +53,7 @@ def write_contributors(contributors: List[Dict[str, Any]]):
     contributors_start = readme.index("### ETNA.Contributors\n")
     license_start = readme.index("## License\n")
 
-    lines = [f"[{x['login']}]({x['html_url']}),\n" for x in contributors]
-    old_team_lines = [f"{x},\n" for x in OLD_TEAM[:-1]] + [f"{OLD_TEAM[-1]}\n"]
-    contributors_lines = lines + old_team_lines
+    contributors_lines = [f"[{x['login']}]({x['html_url']}),\n" for x in contributors]
     lines_to_write = readme[: (contributors_start + 1)] + ["\n"] + contributors_lines + ["\n"] + readme[license_start:]
     with open(readme_path, "w") as fp:
         fp.writelines(lines_to_write)

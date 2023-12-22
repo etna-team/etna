@@ -594,15 +594,20 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     def _validate_backtest_dataset(ts: TSDataset, n_folds: int, horizon: int, stride: int):
         """Check all segments have enough timestamps to validate forecaster with given number of splits."""
         min_required_length = horizon + (n_folds - 1) * stride
-        segments = set(ts.df.columns.get_level_values("segment"))
-        for segment in segments:
-            segment_target = ts[:, segment, "target"]
-            if len(segment_target) < min_required_length:
-                raise ValueError(
-                    f"All the series from feature dataframe should contain at least "
-                    f"{horizon} + {n_folds-1} * {stride} = {min_required_length} timestamps; "
-                    f"series {segment} does not."
-                )
+
+        df = ts.df.loc[:, pd.IndexSlice[:, "target"]]
+        num_timestamps = df.shape[0]
+        not_na = ~np.isnan(df.values)
+        min_idx = np.argmax(not_na, axis=0)
+
+        short_history_mask = np.logical_or((num_timestamps - min_idx) < min_required_length, np.all(~not_na, axis=0))
+        short_segments = np.array(ts.segments)[short_history_mask]
+        if len(short_segments) > 0:
+            raise ValueError(
+                f"All the series from feature dataframe should contain at least "
+                f"{horizon} + {n_folds - 1} * {stride} = {min_required_length} timestamps; "
+                f"series {short_segments[0]} does not."
+            )
 
     @staticmethod
     def _generate_masks_from_n_folds(
@@ -673,6 +678,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
     ) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
+        if y_true.has_hierarchy():
+            if y_true.current_df_level != y_pred.current_df_level:
+                y_true = y_true.get_level_dataset(y_pred.current_df_level)  # type: ignore
+
         metrics_values: Dict[str, Dict[str, float]] = {}
         for metric in metrics:
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
