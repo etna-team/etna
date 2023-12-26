@@ -198,9 +198,8 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         df_flat["target"] = df_flat["target"].fillna(0)
 
         inference_min_timestamp = df_flat["timestamp"].min()
-        # TODO: fix this typing in https://github.com/etna-team/etna/milestone/5
         time_idx_shift = determine_num_steps(
-            start_timestamp=self.min_timestamp, end_timestamp=inference_min_timestamp, freq=ts.freq  # type: ignore
+            start_timestamp=self.min_timestamp, end_timestamp=inference_min_timestamp, freq=ts.freq
         )
         mapping_time_idx = {x: i + time_idx_shift for i, x in enumerate(ts.index)}
         df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
@@ -267,7 +266,7 @@ class PytorchForecastingMixin:
             raise ValueError("Trainer or model is None")
         return self
 
-    def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> pd.Timestamp:
+    def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> Union[pd.Timestamp, int]:
         return ts.index[-horizon]
 
     def _is_in_sample_prediction(self, ts: TSDataset, horizon: int) -> bool:
@@ -276,7 +275,11 @@ class PytorchForecastingMixin:
 
     def _is_prediction_with_gap(self, ts: TSDataset, horizon: int) -> bool:
         first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
-        first_timestamp_after_train = pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]
+        if pd.api.types.is_integer_dtype(ts.index.dtype):
+            first_timestamp_after_train = self._last_train_timestamp + 1
+        else:
+            first_timestamp_after_train = pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]
+
         return first_prediction_timestamp > first_timestamp_after_train
 
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
