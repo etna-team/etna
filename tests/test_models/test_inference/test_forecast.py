@@ -677,30 +677,6 @@ class TestForecastOutSample:
             (StatsForecastAutoCESModel(), []),
             (StatsForecastAutoETSModel(), []),
             (StatsForecastAutoThetaModel(), []),
-            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
-        ],
-    )
-    def test_forecast_out_sample_int_timestamp(self, model, transforms, example_tsds):
-        ts_int_timestamp = convert_ts_to_int_timestamp(example_tsds, shift=-10)
-        self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "model, transforms",
-        [
-            (ProphetModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [],
-            ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (
-                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [LagTransform(in_column="target", lags=[5, 6])],
-            ),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -730,6 +706,30 @@ class TestForecastOutSample:
                     lr=0.01,
                 ),
                 [],
+            ),
+            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+        ],
+    )
+    def test_forecast_out_sample_int_timestamp(self, model, transforms, example_tsds):
+        ts_int_timestamp = convert_ts_to_int_timestamp(example_tsds, shift=-10)
+        self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
+
+    @to_be_fixed(raises=Exception)
+    @pytest.mark.parametrize(
+        "model, transforms",
+        [
+            (ProphetModel(), []),
+            (DeadlineMovingAverageModel(window=1), []),
+            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
             ),
             (
                 DeepStateModel(
