@@ -112,7 +112,9 @@ class MLPNet(DeepBaseNet):
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterable[dict]:
         """Make samples from segment DataFrame."""
         values_real = (
-            df.select_dtypes(include=[np.number]).pipe(lambda x: x[[i for i in x.columns if i != "target"]]).values
+            df.drop(["target", "segment", "timestamp"], axis=1).select_dtypes(include=[np.number])
+            # .pipe(lambda x: x[[i for i in x.columns if i != "target"]])
+            .values
         )
         values_target = df["target"].values
         segment = df["segment"].values[0]

@@ -3,6 +3,7 @@ from typing import Dict
 from typing import Iterator
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -25,6 +26,7 @@ class DeepStateBatch(TypedDict):
     decoder_real: Tensor  # (batch_size, horizon, input_size)
     datetime_index: Tensor  # (batch_size, num_models , seq_length + horizon)
     encoder_target: Tensor  # (batch_size, seq_length, 1)
+    segment: Tensor  # (batch_size)
 
 
 class DeepStateNet(DeepBaseNet):
@@ -179,7 +181,7 @@ class DeepStateNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.drop(columns=["target", "segment", "timestamp"]).values
+        values_real = df.drop(columns=["target", "segment", "timestamp"]).select_dtypes(include=[np.number]).values
         values_real = torch.from_numpy(values_real).float()
         values_datetime = torch.from_numpy(self.ssm.generate_datetime_index(df["timestamp"]))
         values_datetime = values_datetime.to(torch.int64)

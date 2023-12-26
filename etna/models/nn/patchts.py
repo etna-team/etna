@@ -197,7 +197,8 @@ class PatchTSNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.select_dtypes(include=[np.number]).values
+        # TODO: is it ok that it passes target into values_real?
+        values_real = df.drop(["segment", "timestamp"], axis=1).select_dtypes(include=[np.number]).values
         values_target = df["target"].values
         segment = df["segment"].values[0]
 

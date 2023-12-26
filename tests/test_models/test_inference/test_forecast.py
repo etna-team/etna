@@ -766,6 +766,22 @@ class TestForecastOutSample:
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
+            ),
+            (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
                         max_encoder_length=5,
@@ -827,22 +843,6 @@ class TestForecastOutSample:
         "model, transforms, dataset_name",
         [
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
-            (
-                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [],
-                "example_tsds",
-            ),
-            (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [],
-                "example_tsds",
-            ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
-            (
-                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
-                [LagTransform(in_column="target", lags=[5, 6])],
-                "example_tsds",
-            ),
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),

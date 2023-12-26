@@ -55,24 +55,47 @@ def test_patchts_model_run_weekly_overfit_with_scaler_medium_patch(ts_dataset_we
     assert mae(ts_test, future) < 1.3
 
 
-def test_patchts_make_samples(example_df):
-    rnn_module = MagicMock()
+@pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
+def test_patchts_make_samples(df_name, request):
+    df = request.getfixturevalue(df_name)
+    module = MagicMock()
     encoder_length = 8
     decoder_length = 4
 
     ts_samples = list(
-        PatchTSNet.make_samples(rnn_module, df=example_df, encoder_length=encoder_length, decoder_length=decoder_length)
+        PatchTSNet.make_samples(module, df=df, encoder_length=encoder_length, decoder_length=decoder_length)
     )
     first_sample = ts_samples[0]
     second_sample = ts_samples[1]
 
+    assert len(ts_samples) == len(df) - encoder_length - decoder_length + 1
+
+    expected_first_sample = {
+        "encoder_real": df[["target", "regressor_float", "regressor_int"]].iloc[:encoder_length].values,
+        "decoder_real": df[["target", "regressor_float", "regressor_int"]]
+        .iloc[encoder_length : encoder_length + decoder_length]
+        .values,
+        "encoder_target": df[["target"]].iloc[:encoder_length].values,
+        "decoder_target": df[["target"]].iloc[encoder_length : encoder_length + decoder_length].values,
+    }
+    expected_second_sample = {
+        "encoder_real": df[["target", "regressor_float", "regressor_int"]].iloc[1 : encoder_length + 1].values,
+        "decoder_real": df[["target", "regressor_float", "regressor_int"]]
+        .iloc[encoder_length + 1 : encoder_length + decoder_length + 1]
+        .values,
+        "encoder_target": df[["target"]].iloc[1 : encoder_length + 1].values,
+        "decoder_target": df[["target"]].iloc[encoder_length + 1 : encoder_length + decoder_length + 1].values,
+    }
+
+    assert first_sample.keys() == {"encoder_real", "decoder_real", "encoder_target", "decoder_target", "segment"}
     assert first_sample["segment"] == "segment_1"
-    assert first_sample["encoder_real"].shape == (encoder_length, 1)
-    assert first_sample["decoder_real"].shape == (decoder_length, 1)
-    assert first_sample["encoder_target"].shape == (encoder_length, 1)
-    assert first_sample["decoder_target"].shape == (decoder_length, 1)
-    np.testing.assert_equal(example_df[["target"]].iloc[:encoder_length], first_sample["encoder_real"])
-    np.testing.assert_equal(example_df[["target"]].iloc[1 : encoder_length + 1], second_sample["encoder_real"])
+    for key in expected_first_sample:
+        np.testing.assert_equal(first_sample[key], expected_first_sample[key])
+
+    assert second_sample.keys() == {"encoder_real", "decoder_real", "encoder_target", "decoder_target", "segment"}
+    assert second_sample["segment"] == "segment_1"
+    for key in expected_second_sample:
+        np.testing.assert_equal(second_sample[key], expected_second_sample[key])
 
 
 def test_save_load(example_tsds):
