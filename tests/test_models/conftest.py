@@ -1,7 +1,7 @@
 from copy import deepcopy
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets import generate_ar_df
