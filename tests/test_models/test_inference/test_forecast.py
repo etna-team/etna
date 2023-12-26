@@ -766,6 +766,38 @@ class TestForecastOutSample:
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+                "example_tsds",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -809,38 +841,6 @@ class TestForecastOutSample:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-                "example_tsds",
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
                 "example_tsds",
             ),
             (
