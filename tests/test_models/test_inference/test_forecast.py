@@ -1718,7 +1718,7 @@ class TestForecastNewSegments:
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
-                    input_size=1,
+                    input_size=0,
                     encoder_length=7,
                     decoder_length=7,
                     trainer_params=dict(max_epochs=1),
