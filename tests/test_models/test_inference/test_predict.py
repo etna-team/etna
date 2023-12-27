@@ -180,6 +180,18 @@ class TestPredictInSampleFull:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -304,6 +316,18 @@ class TestPredictInSampleSuffix:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -396,6 +420,18 @@ class TestPredictInSampleSuffix:
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
             ),
         ],
     )
@@ -578,6 +614,18 @@ class TestPredictOutSample:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -728,6 +776,18 @@ class TestPredictOutSamplePrefix:
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
             ),
             (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
@@ -1067,6 +1127,18 @@ class TestPredictMixedInOutSample:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -1226,6 +1298,18 @@ class TestPredictSubsetSegments:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -1348,6 +1432,18 @@ class TestPredictNewSegments:
                 ),
                 [],
                 "example_tsds",
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [],
+                "ts_with_external_timestamp",
             ),
             (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),

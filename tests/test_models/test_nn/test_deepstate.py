@@ -1,5 +1,9 @@
+import numpy as np
+import pandas as pd
 import pytest
 
+from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import MAE
 from etna.models.nn import DeepStateModel
 from etna.models.nn.deepstate import CompositeSSM
@@ -45,6 +49,98 @@ def test_deepstate_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_functi
 
     mae = MAE("macro")
     assert mae(ts_test, future) < 0.001
+
+
+def test_fit_int_timestamp_fail(example_tsds_int_timestamp):
+    ts = example_tsds_int_timestamp
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+    )
+    with pytest.raises(ValueError, match="Invalid timestamp! Only datetime type is supported."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_present_fail(example_tsds):
+    ts = example_tsds
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+        timestamp_column="unknown_feature",
+    )
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It isn't present in a given dataset."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_regressor_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = pd.date_range(start="2020-01-01", periods=100)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, known_future=[], freq=None)
+
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+        timestamp_column="external_timestamp",
+    )
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It should be a regressor."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_datetime_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = np.arange(100)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide.iloc[:-5], df_exog=df_exog_wide, known_future="all", freq=None)
+
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+        timestamp_column="external_timestamp",
+    )
+    with pytest.raises(ValueError, match="Invalid timestamp_column! Only datetime type is supported."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_sequential_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = (
+        pd.date_range(start="2020-01-01", periods=50).tolist() + pd.date_range(start="2021-01-01", periods=50).tolist()
+    )
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide.iloc[:-5], df_exog=df_exog_wide, known_future="all", freq=None)
+
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+        timestamp_column="external_timestamp",
+    )
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It doesn't contain sequential timestamps."):
+        model.fit(ts)
 
 
 def test_save_load(example_tsds):

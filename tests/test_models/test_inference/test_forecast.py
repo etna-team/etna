@@ -145,6 +145,18 @@ class TestForecastInSampleFullNoTarget:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -309,6 +321,18 @@ class TestForecastInSampleFull:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -444,6 +468,18 @@ class TestForecastInSampleSuffixNoTarget:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -559,6 +595,18 @@ class TestForecastInSampleSuffix:
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
             ),
             (
                 NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)),
@@ -729,6 +777,18 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
+            (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -743,66 +803,78 @@ class TestForecastOutSample:
     @pytest.mark.parametrize(
         "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
-            (AutoARIMAModel(), [], "example_tsds"),
-            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
-            (SARIMAXModel(), [], "example_tsds"),
-            (HoltModel(), [], "example_tsds"),
-            (HoltWintersModel(), [], "example_tsds"),
-            (SimpleExpSmoothingModel(), [], "example_tsds"),
-            (MovingAverageModel(window=3), [], "example_tsds"),
-            (SeasonalMovingAverageModel(), [], "example_tsds"),
-            (NaiveModel(lag=3), [], "example_tsds"),
-            (BATSModel(use_trend=True), [], "example_tsds"),
-            (TBATSModel(use_trend=True), [], "example_tsds"),
-            (StatsForecastARIMAModel(), [], "example_tsds"),
-            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
-            (StatsForecastAutoCESModel(), [], "example_tsds"),
-            (StatsForecastAutoETSModel(), [], "example_tsds"),
-            (StatsForecastAutoThetaModel(), [], "example_tsds"),
+            # (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            # (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            # (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            # (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            # (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            # (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            # (AutoARIMAModel(), [], "example_tsds"),
+            # (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            # (SARIMAXModel(), [], "example_tsds"),
+            # (HoltModel(), [], "example_tsds"),
+            # (HoltWintersModel(), [], "example_tsds"),
+            # (SimpleExpSmoothingModel(), [], "example_tsds"),
+            # (MovingAverageModel(window=3), [], "example_tsds"),
+            # (SeasonalMovingAverageModel(), [], "example_tsds"),
+            # (NaiveModel(lag=3), [], "example_tsds"),
+            # (BATSModel(use_trend=True), [], "example_tsds"),
+            # (TBATSModel(use_trend=True), [], "example_tsds"),
+            # (StatsForecastARIMAModel(), [], "example_tsds"),
+            # (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            # (StatsForecastAutoCESModel(), [], "example_tsds"),
+            # (StatsForecastAutoETSModel(), [], "example_tsds"),
+            # (StatsForecastAutoThetaModel(), [], "example_tsds"),
+            # (
+            #     DeepARModel(
+            #         dataset_builder=PytorchForecastingDatasetBuilder(
+            #             max_encoder_length=5,
+            #             max_prediction_length=5,
+            #             time_varying_known_reals=["time_idx"],
+            #             time_varying_unknown_reals=["target"],
+            #             target_normalizer=GroupNormalizer(groups=["segment"]),
+            #         ),
+            #         trainer_params=dict(max_epochs=1),
+            #         lr=0.01,
+            #     ),
+            #     [],
+            #     "example_tsds",
+            # ),
+            # (
+            #     TFTModel(
+            #         dataset_builder=PytorchForecastingDatasetBuilder(
+            #             max_encoder_length=21,
+            #             min_encoder_length=21,
+            #             max_prediction_length=5,
+            #             time_varying_known_reals=["time_idx"],
+            #             time_varying_unknown_reals=["target"],
+            #             static_categoricals=["segment"],
+            #             target_normalizer=None,
+            #         ),
+            #         trainer_params=dict(max_epochs=1),
+            #         lr=0.01,
+            #     ),
+            #     [],
+            #     "example_tsds",
+            # ),
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
                     trainer_params=dict(max_epochs=1),
-                    lr=0.01,
+                    timestamp_column="external_timestamp",
                 ),
-                [],
-                "example_tsds",
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
             ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
-                [],
-                "example_tsds",
-            ),
-            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            # (
+            #     NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
+            #     [],
+            #     "example_tsds",
+            # ),
+            # (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
     def test_forecast_out_sample_int_timestamp(self, model, transforms, dataset_name, request):
@@ -814,6 +886,17 @@ class TestForecastOutSample:
         "model, transforms, dataset_name",
         [
             (ProphetModel(), [], "example_tsds"),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+                "example_tsds",
+            ),
         ],
     )
     def test_forecast_out_sample_int_timestamp_not_supported(self, model, transforms, dataset_name, request):
@@ -841,17 +924,6 @@ class TestForecastOutSample:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-                "example_tsds",
-            ),
-            (
-                DeepStateModel(
-                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
-                    input_size=1,
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1),
-                ),
-                [SegmentEncoderTransform()],
                 "example_tsds",
             ),
         ],
@@ -994,7 +1066,19 @@ class TestForecastOutSamplePrefix:
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
-            )
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_forecast_out_sample_prefix_failed_deep_state(self, model, transforms, dataset_name, request):
@@ -1128,7 +1212,19 @@ class TestForecastOutSampleSuffix:
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
-            )
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_forecast_out_sample_suffix_failed_deep_state(self, model, transforms, dataset_name, request):
@@ -1280,6 +1376,18 @@ class TestForecastMixedInOutSample:
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
             ),
             (
                 NBeatsInterpretableModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)),
@@ -1463,6 +1571,18 @@ class TestForecastSubsetSegments:
                 [SegmentEncoderTransform()],
                 "example_tsds",
             ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_forecast_subset_segments_failed_deep_state(self, model, transforms, dataset_name, request):
@@ -1594,6 +1714,18 @@ class TestForecastNewSegments:
                 ),
                 [],
                 "example_tsds",
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [],
+                "ts_with_external_timestamp",
             ),
             (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),

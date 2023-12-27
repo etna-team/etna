@@ -3,17 +3,20 @@ from typing import Dict
 from typing import Iterator
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
 from torch import Tensor
 from typing_extensions import TypedDict
 
+from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
 from etna.models.base import DeepBaseModel
 from etna.models.base import DeepBaseNet
+from etna.models.decorators import log_decorator
 from etna.models.nn.deepstate import LDS
 from etna.models.nn.deepstate import CompositeSSM
 
@@ -38,6 +41,7 @@ class DeepStateNet(DeepBaseNet):
         n_samples: int,
         lr: float,
         optimizer_params: Optional[dict],
+        timestamp_column: Optional[str] = None,
     ):
         """Create instance of DeepStateNet.
 
@@ -55,6 +59,8 @@ class DeepStateNet(DeepBaseNet):
             Learning rate.
         optimizer_params:
             Parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
+        timestamp_column:
+            Name of a column to be used as timestamp. If not given, "timestamp" is used.
         """
         super().__init__()
         self.save_hyperparameters()
@@ -64,6 +70,8 @@ class DeepStateNet(DeepBaseNet):
         self.n_samples = n_samples
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
+        self.timestamp_column = timestamp_column
+        self._timestamp_column = "timestamp" if self.timestamp_column is None else self.timestamp_column
         self.latent_dim = self.ssm.latent_dim()
 
         self.RNN = nn.LSTM(
@@ -179,9 +187,9 @@ class DeepStateNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.drop(columns=["target", "segment", "timestamp"]).values
+        values_real = df.drop(columns=["target", "segment", "timestamp"]).select_dtypes(exclude=[np.datetime64]).values
         values_real = torch.from_numpy(values_real).float()
-        values_datetime = torch.from_numpy(self.ssm.generate_datetime_index(df["timestamp"]))
+        values_datetime = torch.from_numpy(self.ssm.generate_datetime_index(df[self._timestamp_column]))
         values_datetime = values_datetime.to(torch.int64)
         values_target = df["target"].values
         values_target = torch.from_numpy(values_target).float()
@@ -266,6 +274,7 @@ class DeepStateModel(DeepBaseModel):
         test_dataloader_params: Optional[dict] = None,
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
+        timestamp_column: Optional[str] = None,
     ):
         """Init Deep State Model.
 
@@ -306,6 +315,9 @@ class DeepStateModel(DeepBaseModel):
                 * **train_size**: (*float*) value from 0 to 1 - fraction of samples to use for training
                 * **generator**: (*Optional[torch.Generator]*) - generator for reproducibile train-test splitting
                 * **torch_dataset_size**: (*Optional[int]*) - number of samples in dataset, in case of dataset not implementing ``__len__``
+        timestamp_column:
+            Name of a column to be used as timestamp. If not given, index is used.
+            Column is expected to be regressor containing datetime values with some fixed frequency.
         """
         self.ssm = ssm
         self.input_size = input_size
@@ -313,6 +325,7 @@ class DeepStateModel(DeepBaseModel):
         self.n_samples = n_samples
         self.lr = lr
         self.optimizer_params = optimizer_params
+        self.timestamp_column = timestamp_column
         super().__init__(
             net=DeepStateNet(
                 ssm=self.ssm,
@@ -321,6 +334,7 @@ class DeepStateModel(DeepBaseModel):
                 n_samples=self.n_samples,
                 lr=self.lr,
                 optimizer_params=self.optimizer_params,
+                timestamp_column=self.timestamp_column,
             ),
             encoder_length=encoder_length,
             decoder_length=decoder_length,
@@ -332,6 +346,98 @@ class DeepStateModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
+
+    def _validate_timestamp(self, ts: TSDataset):
+        if self.timestamp_column is None:
+            if not pd.api.types.is_datetime64_dtype(ts.index):
+                raise ValueError("Invalid timestamp! Only datetime type is supported.")
+
+        else:
+            if self.timestamp_column not in ts.columns.get_level_values(level="feature"):
+                raise ValueError("Invalid timestamp_column! It isn't present in a given dataset.")
+
+            if self.timestamp_column not in ts.regressors:
+                raise ValueError("Invalid timestamp_column! It should be a regressor.")
+
+            df = ts.to_pandas(features=[self.timestamp_column])
+
+            for _, column_values in df.items():
+                if not pd.api.types.is_datetime64_dtype(column_values):
+                    raise ValueError("Invalid timestamp_column! Only datetime type is supported.")
+
+                if len(column_values) >= 3 and pd.infer_freq(column_values) is None:
+                    raise ValueError("Invalid timestamp_column! It doesn't contain sequential timestamps.")
+
+    @log_decorator
+    def fit(self, ts: TSDataset) -> "DeepBaseModel":
+        """Fit model.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset with features
+
+        Returns
+        -------
+        :
+            Model after fit
+        """
+        self._validate_timestamp(ts=ts)
+        return super().fit(ts=ts)
+
+    @log_decorator
+    def forecast(self, ts: "TSDataset", prediction_size: int, return_components: bool = False) -> "TSDataset":
+        """Make predictions.
+
+        This method will make autoregressive predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features and expected decoder length for context
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns forecast components
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        self._validate_timestamp(ts=ts)
+        return super().forecast(ts=ts, prediction_size=prediction_size, return_components=return_components)
+
+    @log_decorator
+    def predict(
+        self,
+        ts: "TSDataset",
+        prediction_size: int,
+        return_components: bool = False,
+    ) -> "TSDataset":
+        """Make predictions.
+
+        This method will make predictions using true values instead of predicted on a previous step.
+        It can be useful for making in-sample forecasts.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features and expected decoder length for context
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns prediction components
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        self._validate_timestamp(ts=ts)
+        return super().predict(ts=ts, prediction_size=prediction_size, return_components=return_components)
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
