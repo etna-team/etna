@@ -59,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update change point transforms (`ChangePointsSegmentationTransform`, `ChangePointsTrendTransform`, `ChangePointsLevelTransform`, `TrendTransform`) to handle integer timestamp ([#176](https://github.com/etna-team/etna/pull/176))
 - Update `BATSModel`, `TBATSModel` models to work with integer timestamp ([#195](https://github.com/etna-team/etna/pull/195))
 - Update `ProphetModel` to handle external timestamp ([#203](https://github.com/etna-team/etna/pull/203))
+- Update `DeadlineMovingAverageModel` to hangle external timestamp ([#213](https://github.com/etna-team/etna/pull/213))
 
 ### Fixed
 - 
