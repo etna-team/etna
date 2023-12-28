@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import numpy as np
 from lightning_fabric.utilities.seed import seed_everything
 from typing_extensions import get_args
@@ -18,13 +20,13 @@ def make_prediction(model, ts, prediction_size, method_name) -> TSDataset:
 
 def _test_prediction_in_sample_full(ts, model, transforms, method_name):
     df = ts.to_pandas()
+    forecast_ts = deepcopy(ts)
 
     # fitting
     ts.fit_transform(transforms)
     model.fit(ts)
 
     # forecasting
-    forecast_ts = TSDataset(df, freq=ts.freq)
     forecast_ts.transform(transforms)
     prediction_size = len(forecast_ts.index)
     forecast_ts = make_prediction(model=model, ts=forecast_ts, prediction_size=prediction_size, method_name=method_name)
@@ -38,13 +40,13 @@ def _test_prediction_in_sample_full(ts, model, transforms, method_name):
 
 def _test_prediction_in_sample_suffix(ts, model, transforms, method_name, num_skip_points):
     df = ts.to_pandas()
+    forecast_ts = deepcopy(ts)
 
     # fitting
     ts.fit_transform(transforms)
     model.fit(ts)
 
     # forecasting
-    forecast_ts = TSDataset(df, freq=ts.freq)
     forecast_ts.transform(transforms)
     prediction_size = len(forecast_ts.index) - num_skip_points
     forecast_ts.df = forecast_ts.df.iloc[(num_skip_points - model.context_size) :]

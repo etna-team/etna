@@ -77,6 +77,18 @@ def long_periodic_ts():
     return ts
 
 
+@pytest.fixture()
+def long_ts_with_external_timestamp() -> TSDataset:
+    df = generate_ar_df(periods=400, start_time=10, n_segments=2, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=400, start_time=10, n_segments=2, freq=None)
+    df_exog["target"] = pd.date_range(start="2020-01-01", periods=400).tolist() * 2
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide.iloc[:-10], df_exog=df_exog_wide, known_future="all", freq=None)
+    return ts
+
+
 def test_sma_model_fit_with_exogs_warning(example_reg_tsds):
     ts = example_reg_tsds
     model = SeasonalMovingAverageModel()
@@ -194,14 +206,105 @@ def test_deadline_get_context_beginning_fail_not_enough_context(
         _ = DeadlineMovingAverageModel._get_context_beginning(df, prediction_size, seasonality, window)
 
 
-@pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
-def test_deadline_model_forecast(simple_tsdf, model):
-    _check_forecast(ts=simple_tsdf, model=model(window=1), horizon=7)
+@pytest.mark.parametrize(
+    "ts_name, timestamp_column",
+    [
+        ("simple_tsdf", None),
+        ("ts_with_external_timestamp", "external_timestamp"),
+    ],
+)
+def test_deadline_model_forecast(ts_name, timestamp_column, request):
+    ts = request.getfixturevalue(ts_name)
+    model = DeadlineMovingAverageModel(window=1, timestamp_column=timestamp_column)
+    _check_forecast(ts=ts, model=model, horizon=7)
 
 
-@pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
-def test_deadline_model_predict(simple_tsdf, model):
-    _check_predict(ts=simple_tsdf, model=model(window=1), prediction_size=7)
+@pytest.mark.parametrize(
+    "ts_name, timestamp_column",
+    [
+        ("simple_tsdf", None),
+        ("ts_with_external_timestamp", "external_timestamp"),
+    ],
+)
+def test_deadline_model_predict(ts_name, timestamp_column, request):
+    ts = request.getfixturevalue(ts_name)
+    model = DeadlineMovingAverageModel(window=1, timestamp_column=timestamp_column)
+    _check_predict(ts=ts, model=model, prediction_size=7)
+
+
+def test_fit_int_timestamp_fail(example_tsds_int_timestamp):
+    ts = example_tsds_int_timestamp
+    model = DeadlineMovingAverageModel(window=1)
+    with pytest.raises(ValueError, match="Invalid timestamp! Only datetime type is supported."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_present_fail(example_tsds):
+    ts = example_tsds
+    model = DeadlineMovingAverageModel(window=1, timestamp_column="unknown_feature")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It isn't present in a given dataset."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_regressor_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = pd.date_range(start="2020-01-01", periods=100)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, known_future=[], freq=None)
+
+    model = DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It should be a regressor."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_datetime_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = np.arange(100)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide.iloc[:-5], df_exog=df_exog_wide, known_future="all", freq=None)
+
+    model = DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! Only datetime type is supported."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_sequential_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = (
+        pd.date_range(start="2020-01-01", periods=50).tolist() + pd.date_range(start="2021-01-01", periods=50).tolist()
+    )
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide.iloc[:-5], df_exog=df_exog_wide, known_future="all", freq=None)
+
+    model = DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It doesn't contain sequential timestamps."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_different_freq_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=2, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=2, freq=None)
+    df_exog["target"] = (
+        pd.date_range(start="2020-01-01", periods=100, freq="D").tolist()
+        + pd.date_range(start="2021-01-01", periods=100, freq="H").tolist()
+    )
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide.iloc[:-5], df_exog=df_exog_wide, known_future="all", freq=None)
+
+    model = DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! Only one freq could be used for all segments."):
+        model.fit(ts)
 
 
 def test_deadline_model_fit_fail_not_supported_freq():
@@ -834,6 +937,9 @@ def test_deadline_ma_predict_components_correct_names(
     assert sorted(forecast.target_components_names) == sorted(expected_components_names)
 
 
+@pytest.mark.parametrize(
+    "ts_name, timestamp_column", [("long_periodic_ts", None), ("long_ts_with_external_timestamp", "external_timestamp")]
+)
 @pytest.mark.parametrize("method", ("predict", "forecast"))
 @pytest.mark.parametrize(
     "window,seasonality",
@@ -843,12 +949,15 @@ def test_deadline_ma_predict_components_correct_names(
         (1, "year"),
     ),
 )
-def test_deadline_ma_predict_components_sum_up_to_target(long_periodic_ts, method, window, seasonality, horizon=10):
-    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
-    model.fit(ts=long_periodic_ts)
+def test_deadline_ma_predict_components_sum_up_to_target(
+    ts_name, timestamp_column, method, window, seasonality, request, horizon=10
+):
+    ts = request.getfixturevalue(ts_name)
+    model = DeadlineMovingAverageModel(window=window, seasonality=seasonality, timestamp_column=timestamp_column)
+    model.fit(ts=ts)
 
     method_to_call = getattr(model, method)
-    forecast = method_to_call(ts=long_periodic_ts, prediction_size=horizon, return_components=True)
+    forecast = method_to_call(ts=ts, prediction_size=horizon, return_components=True)
 
     target = forecast.to_pandas(features=["target"])
     components = forecast.get_target_components()

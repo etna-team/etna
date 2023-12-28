@@ -9,6 +9,7 @@ import pandas as pd
 from typing_extensions import assert_never
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import determine_freq
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
@@ -39,7 +40,7 @@ class DeadlineMovingAverageModel(
     with weights of :math:`1/window`.
     """
 
-    def __init__(self, window: int = 3, seasonality: str = "month"):
+    def __init__(self, window: int = 3, seasonality: str = "month", timestamp_column: Optional[str] = None):
         """Initialize deadline moving average model.
 
         Length of the context is equal to the number of ``window`` months or years, depending on the ``seasonality``.
@@ -50,9 +51,13 @@ class DeadlineMovingAverageModel(
             Number of values taken for forecast for each point.
         seasonality:
             Only allowed values are "month" and "year".
+        timestamp_column:
+            Name of a column to be used as timestamp. If not given, index is used.
+            Column is expected to be regressor containing datetime values with some fixed frequency.
         """
         self.window = window
         self.seasonality = SeasonalityMode(seasonality)
+        self.timestamp_column = timestamp_column
         self._freqs_available = {"H", "D"}
         self._freq: Optional[str] = None
 
@@ -60,6 +65,34 @@ class DeadlineMovingAverageModel(
         """Check if model is fitted."""
         if self._freq is None:
             raise ValueError("Model is not fitted! Fit the model before trying the find out context size!")
+
+    def _validate_timestamp(self, ts: TSDataset):
+        if self.timestamp_column is None:
+            if not pd.api.types.is_datetime64_dtype(ts.index):
+                raise ValueError("Invalid timestamp! Only datetime type is supported.")
+
+        else:
+            if self.timestamp_column not in ts.columns.get_level_values(level="feature"):
+                raise ValueError("Invalid timestamp_column! It isn't present in a given dataset.")
+
+            if self.timestamp_column not in ts.regressors:
+                raise ValueError("Invalid timestamp_column! It should be a regressor.")
+
+            df = ts.to_pandas(features=[self.timestamp_column])
+
+            freq_values = set()
+            for _, column_values in df.items():
+                if not pd.api.types.is_datetime64_dtype(column_values):
+                    raise ValueError("Invalid timestamp_column! Only datetime type is supported.")
+
+                if len(column_values) >= 3:
+                    inferred_freq = pd.infer_freq(column_values)
+                    freq_values.add(inferred_freq)
+                    if inferred_freq is None:
+                        raise ValueError(f"Invalid timestamp_column! It doesn't contain sequential timestamps.")
+
+            if len(freq_values) > 1:
+                raise ValueError(f"Invalid timestamp_column! Only one freq could be used for all segments.")
 
     @property
     def context_size(self) -> int:
@@ -94,6 +127,8 @@ class DeadlineMovingAverageModel(
     def _check_not_used_columns(self, ts: TSDataset):
         columns = set(ts.columns.get_level_values("feature"))
         columns_not_used = columns.difference({"target"})
+        if self.timestamp_column is not None:
+            columns_not_used = columns_not_used.difference({self.timestamp_column})
         if columns_not_used:
             warnings.warn(
                 message=f"This model doesn't work with exogenous features. "
@@ -113,12 +148,22 @@ class DeadlineMovingAverageModel(
         :
             Model after fit
         """
-        # we make a normalization to treat "1d" like "D"
-        freq = pd.tseries.frequencies.to_offset(ts.freq).freqstr
+        self._check_not_used_columns(ts)
+        self._validate_timestamp(ts=ts)
+
+        if self.timestamp_column is None:
+            # we make a normalization to treat "1d" like "D"
+            freq = pd.tseries.frequencies.to_offset(ts.freq).freqstr
+        else:
+            segment = ts.segments[0]
+            timestamps = ts.to_pandas(features=[self.timestamp_column]).loc[
+                :, pd.IndexSlice[segment, self.timestamp_column]
+            ]
+            freq = determine_freq(timestamps)
+
         if freq not in self._freqs_available:
             raise ValueError(f"Freq {freq} is not supported! Use daily or hourly frequency!")
 
-        self._check_not_used_columns(ts)
         self._freq = freq
         return self
 
@@ -174,11 +219,11 @@ class DeadlineMovingAverageModel(
 
         return first_index
 
-    def _get_previous_date(self, date, offset):
+    def _get_previous_date(self, date, offset) -> pd.Timestamp:
         """Get previous date using seasonality offset."""
-        if self.seasonality == SeasonalityMode.month:
+        if self.seasonality is SeasonalityMode.month:
             prev_date = date - pd.DateOffset(months=offset)
-        elif self.seasonality == SeasonalityMode.year:
+        elif self.seasonality is SeasonalityMode.year:
             prev_date = date - pd.DateOffset(years=offset)
         else:
             assert_never(self.seasonality)
@@ -243,8 +288,8 @@ class DeadlineMovingAverageModel(
 
     def _forecast(
         self, df: pd.DataFrame, prediction_size: int, return_components: bool = False
-    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
-        """Make autoregressive forecasts on a wide dataframe."""
+    ) -> Tuple[np.ndarray, Optional[pd.DataFrame]]:
+        """Make autoregressive forecasts on a wide datetime-indexed dataframe."""
         context_beginning = self._get_context_beginning(
             df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
         )
@@ -263,9 +308,7 @@ class DeadlineMovingAverageModel(
             result_template=result_template, context=result_template, prediction_size=prediction_size
         )
 
-        df = df.iloc[-prediction_size:]
         y_pred = result_values[-prediction_size:]
-        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         target_components_df = None
         if return_components:
@@ -273,6 +316,42 @@ class DeadlineMovingAverageModel(
                 result_template=result_template, context=result_template, prediction_size=prediction_size
             )
 
+        return y_pred, target_components_df
+
+    def _assemble_predictions(
+        self, prediction_method, df: pd.DataFrame, prediction_size: int, return_components: bool = False
+    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
+        if self.timestamp_column is None:
+            y_pred, target_components_df = prediction_method(
+                df=df, prediction_size=prediction_size, return_components=return_components
+            )
+        else:
+            y_pred_values = []
+            target_components_values = []
+
+            segments = df.columns.get_level_values("segment").unique()
+            for segment in segments:
+                segment_df = df.loc[:, pd.IndexSlice[[segment], "target"]]
+                segment_df_timestamp = df.loc[:, pd.IndexSlice[segment, self.timestamp_column]]
+                segment_df.index = pd.Index(segment_df_timestamp, name=df.index.name)
+                segment_y_pred, segment_target_components_df = prediction_method(
+                    df=segment_df, prediction_size=prediction_size, return_components=return_components
+                )
+
+                y_pred_values.append(segment_y_pred)
+                if segment_target_components_df is not None:
+                    segment_target_components_df.index = df.index[-prediction_size:]
+                    target_components_values.append(segment_target_components_df)
+
+            y_pred = np.concatenate(y_pred_values, axis=-1)
+
+            if return_components:
+                target_components_df = pd.concat(target_components_values, axis=1)
+            else:
+                target_components_df = None
+
+        df = df.iloc[-prediction_size:]
+        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
         return df, target_components_df
 
     def forecast(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
@@ -305,10 +384,14 @@ class DeadlineMovingAverageModel(
             if forecast context contains NaNs
         """
         self._validate_fitted()
+        self._validate_timestamp(ts=ts)
 
         df = ts.to_pandas()
-        new_df, target_components_df = self._forecast(
-            df=df, prediction_size=prediction_size, return_components=return_components
+        new_df, target_components_df = self._assemble_predictions(
+            prediction_method=self._forecast,
+            df=df,
+            prediction_size=prediction_size,
+            return_components=return_components,
         )
         ts.df = new_df
 
@@ -319,8 +402,8 @@ class DeadlineMovingAverageModel(
 
     def _predict(
         self, df: pd.DataFrame, prediction_size: int, return_components: bool = False
-    ) -> Tuple[pd.DataFrame, Optional[pd.DataFrame]]:
-        """Make predictions on a wide dataframe using true values as autoregression context."""
+    ) -> Tuple[np.ndarray, Optional[pd.DataFrame]]:
+        """Make predictions on a wide datetime-indexed dataframe using true values as autoregression context."""
         context_beginning = self._get_context_beginning(
             df=df, prediction_size=prediction_size, seasonality=self.seasonality, window=self.window
         )
@@ -337,9 +420,7 @@ class DeadlineMovingAverageModel(
             result_template=result_template, context=context, prediction_size=prediction_size
         )
 
-        df = df.iloc[-prediction_size:]
         y_pred = result_values[-prediction_size:]
-        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         target_components_df = None
         if return_components:
@@ -347,7 +428,7 @@ class DeadlineMovingAverageModel(
                 result_template=result_template, context=context, prediction_size=prediction_size
             )
 
-        return df, target_components_df
+        return y_pred, target_components_df
 
     def predict(self, ts: TSDataset, prediction_size: int, return_components: bool = False) -> TSDataset:
         """Make predictions using true values as autoregression context (teacher forcing).
@@ -379,10 +460,11 @@ class DeadlineMovingAverageModel(
             if forecast context contains NaNs
         """
         self._validate_fitted()
+        self._validate_timestamp(ts=ts)
 
         df = ts.to_pandas()
-        new_df, target_components_df = self._predict(
-            df=df, prediction_size=prediction_size, return_components=return_components
+        new_df, target_components_df = self._assemble_predictions(
+            prediction_method=self._predict, df=df, prediction_size=prediction_size, return_components=return_components
         )
         ts.df = new_df
 

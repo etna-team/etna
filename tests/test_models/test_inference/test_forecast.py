@@ -123,6 +123,11 @@ class TestForecastInSampleFullNoTarget:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
             (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
+            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -287,6 +292,11 @@ class TestForecastInSampleFull:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
             (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
+            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -417,6 +427,11 @@ class TestForecastInSampleSuffixNoTarget:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
             (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
+            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -533,6 +548,11 @@ class TestForecastInSampleSuffix:
             (NaiveModel(lag=3), [], "example_tsds"),
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
@@ -662,6 +682,11 @@ class TestForecastOutSample:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
@@ -758,6 +783,11 @@ class TestForecastOutSample:
             (MovingAverageModel(window=3), [], "example_tsds"),
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
@@ -814,6 +844,7 @@ class TestForecastOutSample:
         "model, transforms, dataset_name",
         [
             (ProphetModel(), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
         ],
     )
     def test_forecast_out_sample_int_timestamp_not_supported(self, model, transforms, dataset_name, request):
@@ -826,7 +857,6 @@ class TestForecastOutSample:
     @pytest.mark.parametrize(
         "model, transforms, dataset_name",
         [
-            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
             (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
@@ -914,6 +944,11 @@ class TestForecastOutSamplePrefix:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
@@ -1068,6 +1103,11 @@ class TestForecastOutSampleSuffix:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
@@ -1255,6 +1295,11 @@ class TestForecastMixedInOutSample:
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
             (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
+            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
@@ -1397,6 +1442,11 @@ class TestForecastSubsetSegments:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
@@ -1534,6 +1584,11 @@ class TestForecastNewSegments:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],

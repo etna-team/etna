@@ -109,6 +109,11 @@ class TestPredictInSampleFull:
             (NaiveModel(lag=3), [], "example_tsds"),
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_predict_in_sample_full_failed_not_enough_context(self, model, transforms, dataset_name, request):
@@ -227,6 +232,11 @@ class TestPredictInSampleSuffix:
             (NaiveModel(lag=3), [], "example_tsds"),
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
@@ -335,6 +345,11 @@ class TestPredictInSampleSuffix:
             (MovingAverageModel(window=3), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
@@ -355,6 +370,7 @@ class TestPredictInSampleSuffix:
         "model, transforms, dataset_name",
         [
             (ProphetModel(), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
         ],
     )
     def test_predict_in_sample_suffix_int_timestamp_not_supported(self, model, transforms, dataset_name, request):
@@ -369,7 +385,6 @@ class TestPredictInSampleSuffix:
     @pytest.mark.parametrize(
         "model, transforms, dataset_name",
         [
-            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
             (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
@@ -508,6 +523,11 @@ class TestPredictOutSample:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_predict_out_sample(self, model, transforms, dataset_name, request):
@@ -660,6 +680,11 @@ class TestPredictOutSamplePrefix:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_predict_out_sample_prefix(self, model, transforms, dataset_name, request):
@@ -815,6 +840,11 @@ class TestPredictOutSampleSuffix:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_predict_out_sample_suffix(self, model, transforms, dataset_name, request):
@@ -997,6 +1027,11 @@ class TestPredictMixedInOutSample:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_predict_mixed_in_out_sample(self, model, transforms, dataset_name, request):
@@ -1149,6 +1184,11 @@ class TestPredictSubsetSegments:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
             (BATSModel(use_trend=True), [], "example_tsds"),
             (TBATSModel(use_trend=True), [], "example_tsds"),
             (StatsForecastARIMAModel(), [], "example_tsds"),
@@ -1278,6 +1318,11 @@ class TestPredictNewSegments:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeadlineMovingAverageModel(window=1, timestamp_column="external_timestamp"),
+                [],
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_predict_new_segments(self, model, transforms, dataset_name, request):
