@@ -150,6 +150,7 @@ class TSDataset:
         if df_exog is not None:
             self.df_exog = self._cast_segment_to_str(df=df_exog.copy(deep=True))
             if freq is not None:
+                self._check_timestamp_type(self.df_exog)
                 self.df_exog.index = pd.to_datetime(self.df_exog.index)
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             if self.current_df_level == self.current_df_exog_level:
@@ -198,6 +199,26 @@ class TSDataset:
         df.columns = pd.MultiIndex.from_frame(columns_frame)
         return df
 
+    @staticmethod
+    def _check_timestamp_type(df: pd.DataFrame):
+        if df.index.dtype == "int":
+            warnings.warn(
+                "Timestamp contains numeric values, which can lead to unexpected results if freq is not None."
+            )
+            return True
+        return False
+
+    @staticmethod
+    def _cast_index_to_datetime(df: pd.DataFrame, freq: str) -> pd.DataFrame:
+        periods = df.index.max() - df.index.min() + 1
+        new_index_int = np.arange(df.index.min(), df.index.max() + 1)
+        df = df.reindex(new_index_int)
+        # print(df.head())
+        new_index_timestamp = pd.date_range(end="today", periods=periods, freq=freq).date
+        # print(new_index_timestamp)
+        df.index = new_index_timestamp
+        return df
+
     @classmethod
     def _prepare_df(cls, df: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
         # cast segment to str type
@@ -214,6 +235,8 @@ class TSDataset:
             df.index.name = index_name
 
         else:
+            if cls._check_timestamp_type(df):
+                df = cls._cast_index_to_datetime(df, freq)
             try:
                 df.index = pd.to_datetime(df.index)
                 inferred_freq = pd.infer_freq(df.index)
