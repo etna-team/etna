@@ -213,9 +213,7 @@ class TSDataset:
         periods = df.index.max() - df.index.min() + 1
         new_index_int = np.arange(df.index.min(), df.index.max() + 1)
         df = df.reindex(new_index_int)
-        # print(df.head())
         new_index_timestamp = pd.date_range(end="today", periods=periods, freq=freq).date
-        # print(new_index_timestamp)
         df.index = new_index_timestamp
         return df
 
