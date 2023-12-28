@@ -58,35 +58,24 @@ def test_mlp_make_samples(df_name, request):
     ts_samples = list(
         MLPNet.make_samples(mlp_module, df=df, encoder_length=encoder_length, decoder_length=decoder_length)
     )
-    first_sample = ts_samples[0]
-    second_sample = ts_samples[1]
 
     assert len(ts_samples) == math.ceil(len(df) / decoder_length)
 
-    expected_first_sample = {
-        "decoder_real": df[["regressor_float", "regressor_int"]]
-        .iloc[encoder_length : encoder_length + decoder_length]
-        .values,
-        "decoder_target": df[["target"]].iloc[encoder_length : encoder_length + decoder_length].values,
-    }
-    expected_second_sample = {
-        "decoder_real": df[["regressor_float", "regressor_int"]]
-        .iloc[encoder_length + decoder_length : encoder_length + decoder_length * 2]
-        .values,
-        "decoder_target": df[["target"]]
-        .iloc[encoder_length + decoder_length : encoder_length + decoder_length * 2]
-        .values,
-    }
+    num_samples_check = 2
+    for i in range(num_samples_check):
+        expected_sample = {
+            "decoder_real": df[["regressor_float", "regressor_int"]]
+            .iloc[encoder_length + decoder_length * i : encoder_length + decoder_length * (i + 1)]
+            .values,
+            "decoder_target": df[["target"]]
+            .iloc[encoder_length + decoder_length * i : encoder_length + decoder_length * (i + 1)]
+            .values,
+        }
 
-    assert first_sample.keys() == {"decoder_real", "decoder_target", "segment"}
-    assert first_sample["segment"] == "segment_1"
-    for key in expected_first_sample:
-        np.testing.assert_equal(first_sample[key], expected_first_sample[key])
-
-    assert second_sample.keys() == {"decoder_real", "decoder_target", "segment"}
-    assert second_sample["segment"] == "segment_1"
-    for key in expected_second_sample:
-        np.testing.assert_equal(second_sample[key], expected_second_sample[key])
+        assert ts_samples[i].keys() == {"decoder_real", "decoder_target", "segment"}
+        assert ts_samples[i]["segment"] == "segment_1"
+        for key in expected_sample:
+            np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
 
 
 def test_mlp_forward_fail_nans():

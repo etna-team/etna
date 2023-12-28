@@ -52,8 +52,7 @@ def test_make_samples(df_name, request):
     assert first_sample["target"] is None
     assert first_sample["target_mask"] is None
     assert first_sample["segment"] == "segment_1"
-    for key in expected_first_sample:
-        np.testing.assert_equal(first_sample[key], expected_first_sample[key])
+    np.testing.assert_equal(first_sample["history"], expected_first_sample["history"])
 
 
 @pytest.mark.parametrize(
