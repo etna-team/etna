@@ -342,6 +342,9 @@ def test_create_ts_with_int_timestamp():
     pd.testing.assert_frame_equal(ts.to_pandas(), df_wide)
 
 
+@pytest.mark.filterwarnings(
+    "ignore: Timestamp contains numeric values, which can lead to unexpected results if freq is not None."
+)
 def test_create_ts_with_int_timestamp_with_freq():
     df = generate_ar_df(periods=10, freq=None, n_segments=3)
     df_wide = TSDataset.to_dataset(df)
@@ -382,6 +385,9 @@ def test_create_ts_with_exog_int_timestamp():
     pd.testing.assert_frame_equal(ts.to_pandas(), expected_merged)
 
 
+@pytest.mark.filterwarnings(
+    "ignore: Timestamp contains numeric values, which can lead to unexpected results if freq is not None."
+)
 def test_create_ts_with_exog_int_timestamp_with_freq():
     df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
     df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
