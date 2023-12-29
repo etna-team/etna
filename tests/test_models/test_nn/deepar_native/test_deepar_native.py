@@ -54,8 +54,10 @@ def test_deepar_model_run_weekly_overfit(
     assert mae(ts_test, future) < eps
 
 
-@pytest.mark.parametrize("scale, mean_1, mean_2", [(False, 0, 0), (True, 3, 4)])
-def test_deepar_make_samples(df_with_ascending_window_mean, scale, mean_1, mean_2):
+@pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
+@pytest.mark.parametrize("scale, weights", [(False, [1, 1]), (True, [3, 4])])
+def test_deepar_make_samples(df_name, scale, weights, request):
+    df = request.getfixturevalue(df_name)
     deepar_module = MagicMock(scale=scale)
     encoder_length = 4
     decoder_length = 1
@@ -63,26 +65,41 @@ def test_deepar_make_samples(df_with_ascending_window_mean, scale, mean_1, mean_
     ts_samples = list(
         DeepARNativeNet.make_samples(
             deepar_module,
-            df=df_with_ascending_window_mean,
+            df=df,
             encoder_length=encoder_length,
             decoder_length=decoder_length,
         )
     )
-    first_sample = ts_samples[0]
-    second_sample = ts_samples[1]
 
-    assert first_sample["segment"] == "segment_1"
-    assert first_sample["encoder_real"].shape == (encoder_length - 1, 1)
-    assert first_sample["decoder_real"].shape == (decoder_length, 1)
-    assert first_sample["encoder_target"].shape == (encoder_length - 1, 1)
-    assert first_sample["decoder_target"].shape == (decoder_length, 1)
-    np.testing.assert_almost_equal(
-        df_with_ascending_window_mean[["target"]].iloc[: encoder_length - 1],
-        first_sample["encoder_real"] * (1 + mean_1),
-    )
-    np.testing.assert_almost_equal(
-        df_with_ascending_window_mean[["target"]].iloc[1:encoder_length], second_sample["encoder_real"] * (1 + mean_2)
-    )
+    assert len(ts_samples) == len(df) - encoder_length - decoder_length + 1
+
+    num_samples_check = 2
+    df["target_shifted"] = df["target"].shift(1)
+    for i in range(num_samples_check):
+        df[f"target_shifted_scaled_{i}"] = df["target_shifted"] / weights[i]
+        expected_sample = {
+            "encoder_real": df[[f"target_shifted_scaled_{i}", "regressor_float", "regressor_int"]]
+            .iloc[1 + i : encoder_length + i]
+            .values,
+            "decoder_real": df[[f"target_shifted_scaled_{i}", "regressor_float", "regressor_int"]]
+            .iloc[encoder_length + i : encoder_length + decoder_length + i]
+            .values,
+            "encoder_target": df[["target"]].iloc[1 + i : encoder_length + i].values,
+            "decoder_target": df[["target"]].iloc[encoder_length + i : encoder_length + decoder_length + i].values,
+            "weight": weights[i],
+        }
+
+        assert ts_samples[i].keys() == {
+            "encoder_real",
+            "decoder_real",
+            "encoder_target",
+            "decoder_target",
+            "segment",
+            "weight",
+        }
+        assert ts_samples[i]["segment"] == "segment_1"
+        for key in expected_sample:
+            np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
 
 
 @pytest.mark.parametrize("encoder_length", [1, 2, 10])
