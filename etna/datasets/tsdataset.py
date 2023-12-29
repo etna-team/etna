@@ -150,7 +150,7 @@ class TSDataset:
         if df_exog is not None:
             self.df_exog = self._cast_segment_to_str(df=df_exog.copy(deep=True))
             if freq is not None:
-                self.df_exog.index = pd.to_datetime(self.df_exog.index)
+                self._cast_index_to_datetime(self.df_exog, freq)
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(df=self.df)
@@ -198,6 +198,15 @@ class TSDataset:
         df.columns = pd.MultiIndex.from_frame(columns_frame)
         return df
 
+    @staticmethod
+    def _cast_index_to_datetime(df: pd.DataFrame, freq: str) -> pd.DataFrame:
+        if pd.api.types.is_numeric_dtype(df.index):
+            warnings.warn(
+                f"Timestamp contains numeric values, and given freq is {freq}. Timestamp will be converted to datetime."
+            )
+        df.index = pd.to_datetime(df.index)
+        return df
+
     @classmethod
     def _prepare_df(cls, df: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
         # cast segment to str type
@@ -214,8 +223,8 @@ class TSDataset:
             df.index.name = index_name
 
         else:
+            cls._cast_index_to_datetime(df, freq)
             try:
-                df.index = pd.to_datetime(df.index)
                 inferred_freq = pd.infer_freq(df.index)
             except ValueError:
                 warnings.warn("TSDataset freq can't be inferred")

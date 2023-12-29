@@ -342,6 +342,18 @@ def test_create_ts_with_int_timestamp():
     pd.testing.assert_frame_equal(ts.to_pandas(), df_wide)
 
 
+@pytest.mark.filterwarnings(
+    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime.",
+    "ignore: You probably set wrong freq. Discovered freq in you data is N, you set D",
+)
+def test_create_ts_with_int_timestamp_with_freq():
+    df = generate_ar_df(periods=10, freq=None, n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df_wide, freq="D")
+
+    assert ts.index.dtype == "datetime64[ns]"
+
+
 def test_create_ts_with_exog_datetime_timestamp():
     freq = "D"
     df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
@@ -370,6 +382,22 @@ def test_create_ts_with_exog_int_timestamp():
     expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1, level=(0, 1))
     pd.testing.assert_index_equal(ts.index, df_wide.index)
     pd.testing.assert_frame_equal(ts.to_pandas(), expected_merged)
+
+
+@pytest.mark.filterwarnings(
+    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime.",
+    "ignore: You probably set wrong freq. Discovered freq in you data is N, you set D",
+)
+def test_create_ts_with_exog_int_timestamp_with_freq():
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+
+    assert ts.index.dtype == "datetime64[ns]"
 
 
 def test_create_ts_missing_datetime_timestamp():
@@ -1556,3 +1584,20 @@ def test_target_quantiles_names_deprecation_warning(ts_with_prediction_intervals
 def test_plot_fail_incorrect_start_end_type(params, match, tsdf_int_with_exog):
     with pytest.raises(ValueError, match=match):
         tsdf_int_with_exog.plot(**params)
+
+
+@pytest.mark.filterwarnings("ignore: You probably set wrong freq. Discovered freq in you data is N, you set D")
+def test_check_timestamp_type_warning():
+    match = "Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime."
+
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+
+    with pytest.warns(UserWarning, match=match):
+        TSDataset(df=df_wide, freq="D")
+
+    with pytest.warns(UserWarning, match=match):
+        TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
