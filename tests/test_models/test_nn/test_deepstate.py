@@ -54,6 +54,10 @@ def test_deepstate_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_functi
 @pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
 def test_deepstate_make_samples(df_name, request):
     df = request.getfixturevalue(df_name)
+
+    # this model can't work with this type of columns
+    df.drop(columns=["regressor_bool", "regressor_str"], inplace=True)
+
     ssm = MagicMock()
     datetime_index = np.arange(len(df))
     ssm.generate_datetime_index.return_value = datetime_index[np.newaxis, :]
@@ -71,8 +75,10 @@ def test_deepstate_make_samples(df_name, request):
     df["datetime_index"] = datetime_index
     for i in range(num_samples_check):
         expected_sample = {
-            "encoder_real": df[["regressor_float", "regressor_int"]].iloc[i : encoder_length + i].values,
-            "decoder_real": df[["regressor_float", "regressor_int"]]
+            "encoder_real": df[["regressor_float", "regressor_int", "regressor_int_cat"]]
+            .iloc[i : encoder_length + i]
+            .values,
+            "decoder_real": df[["regressor_float", "regressor_int", "regressor_int_cat"]]
             .iloc[encoder_length + i : encoder_length + decoder_length + i]
             .values,
             "encoder_target": df[["target"]].iloc[i : encoder_length + i].values,

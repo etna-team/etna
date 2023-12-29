@@ -51,6 +51,7 @@ def example_make_samples_df():
             "regressor_int": timestamp.weekday * 3,
             "regressor_bool": timestamp.weekday.isin([5, 6]),
             "regressor_str": timestamp.weekday.astype(str),
+            "regressor_int_cat": timestamp.weekday.astype("category"),
         }
     )
     return df
