@@ -150,8 +150,7 @@ class TSDataset:
         if df_exog is not None:
             self.df_exog = self._cast_segment_to_str(df=df_exog.copy(deep=True))
             if freq is not None:
-                self._check_timestamp_type(self.df_exog)
-                self.df_exog.index = pd.to_datetime(self.df_exog.index)
+                self._cast_index_to_datetime(self.df_exog, freq)
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(df=self.df)
@@ -200,21 +199,12 @@ class TSDataset:
         return df
 
     @staticmethod
-    def _check_timestamp_type(df: pd.DataFrame):
-        if df.index.dtype == "int":
-            warnings.warn(
-                "Timestamp contains numeric values, which can lead to unexpected results if freq is not None."
-            )
-            return True
-        return False
-
-    @staticmethod
     def _cast_index_to_datetime(df: pd.DataFrame, freq: str) -> pd.DataFrame:
-        periods = df.index.max() - df.index.min() + 1
-        new_index_int = np.arange(df.index.min(), df.index.max() + 1)
-        df = df.reindex(new_index_int)
-        new_index_timestamp = pd.date_range(end="today", periods=periods, freq=freq).date
-        df.index = new_index_timestamp
+        if pd.api.types.is_numeric_dtype(df.index):
+            warnings.warn(
+                f"Timestamp contains numeric values, and given freq is {freq}. Timestamp will be converted to datetime."
+            )
+        df.index = pd.to_datetime(df.index)
         return df
 
     @classmethod
@@ -233,10 +223,8 @@ class TSDataset:
             df.index.name = index_name
 
         else:
-            if cls._check_timestamp_type(df):
-                df = cls._cast_index_to_datetime(df, freq)
+            cls._cast_index_to_datetime(df, freq)
             try:
-                df.index = pd.to_datetime(df.index)
                 inferred_freq = pd.infer_freq(df.index)
             except ValueError:
                 warnings.warn("TSDataset freq can't be inferred")

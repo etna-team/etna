@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `EmpiricalPredictionIntervals` method for prediction intervals estimation ([#173](https://github.com/etna-team/etna/pull/173))
 - 
 -
-- Add warning on trying to pass numeric timestamp if freq is not None and add `_cast_index_to_datetime` ([#179](https://github.com/etna-team/etna/issues/179))
+- Add warning on trying to pass numeric timestamp if freq is not None and add `_cast_index_to_datetime` ([#214](https://github.com/etna-team/etna/pull/214))
 - 
 - 
 - 
