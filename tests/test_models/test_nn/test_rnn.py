@@ -45,24 +45,37 @@ def test_rnn_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
     assert mae(ts_test, future) < 0.06
 
 
-def test_rnn_make_samples(example_df):
+@pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
+def test_rnn_make_samples(df_name, request):
+    df = request.getfixturevalue(df_name)
     rnn_module = MagicMock()
     encoder_length = 8
     decoder_length = 4
 
     ts_samples = list(
-        RNNNet.make_samples(rnn_module, df=example_df, encoder_length=encoder_length, decoder_length=decoder_length)
+        RNNNet.make_samples(rnn_module, df=df, encoder_length=encoder_length, decoder_length=decoder_length)
     )
-    first_sample = ts_samples[0]
-    second_sample = ts_samples[1]
 
-    assert first_sample["segment"] == "segment_1"
-    assert first_sample["encoder_real"].shape == (encoder_length - 1, 1)
-    assert first_sample["decoder_real"].shape == (decoder_length, 1)
-    assert first_sample["encoder_target"].shape == (encoder_length - 1, 1)
-    assert first_sample["decoder_target"].shape == (decoder_length, 1)
-    np.testing.assert_equal(example_df[["target"]].iloc[: encoder_length - 1], first_sample["encoder_real"])
-    np.testing.assert_equal(example_df[["target"]].iloc[1:encoder_length], second_sample["encoder_real"])
+    assert len(ts_samples) == len(df) - encoder_length - decoder_length + 1
+
+    num_samples_check = 2
+    df["target_shifted"] = df["target"].shift(1)
+    for i in range(num_samples_check):
+        expected_sample = {
+            "encoder_real": df[["target_shifted", "regressor_float", "regressor_int"]]
+            .iloc[1 + i : encoder_length + i]
+            .values,
+            "decoder_real": df[["target_shifted", "regressor_float", "regressor_int"]]
+            .iloc[encoder_length + i : encoder_length + decoder_length + i]
+            .values,
+            "encoder_target": df[["target"]].iloc[1 + i : encoder_length + i].values,
+            "decoder_target": df[["target"]].iloc[encoder_length + i : encoder_length + decoder_length + i].values,
+        }
+
+        assert ts_samples[i].keys() == {"encoder_real", "decoder_real", "encoder_target", "decoder_target", "segment"}
+        assert ts_samples[i]["segment"] == "segment_1"
+        for key in expected_sample:
+            np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
 
 
 @pytest.mark.parametrize("encoder_length", [1, 2, 10])

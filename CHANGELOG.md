@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Change warning condition on loading object saved under different library version ([#31](https://github.com/etna-team/etna/issues/31))
 - 
-- 
+- Add ignoring of integer timestamp as a feature into native DL models ([#210](https://github.com/etna-team/etna/pull/210))
 - Update `pytorch_forecasting` models to handle integer timestamp ([#208](https://github.com/etna-team/etna/pull/208))
 - Update `datasets` module to work with integer timestamp ([#146](https://github.com/etna-team/etna/pull/146))
 - 

@@ -33,18 +33,26 @@ def nbeats_interpretable_net():
     )
 
 
-def test_make_samples(example_tsdf):
+@pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
+def test_make_samples(df_name, request):
+    df = request.getfixturevalue(df_name)
     module = MagicMock()
-    df = example_tsdf.to_flatten(example_tsdf.df)
-    segment_1_df = df[df.segment == "segment_1"]
 
-    sample = list(NBeatsBaseNet.make_samples(module, df=segment_1_df, encoder_length=-1, decoder_length=-1))[0]
+    ts_samples = list(NBeatsBaseNet.make_samples(module, df=df, encoder_length=-1, decoder_length=-1))
+    first_sample = ts_samples[0]
 
-    assert sample["target"] is None
-    assert sample["target_mask"] is None
-    assert sample["segment"] == "segment_1"
-    assert tuple(sample["history"].shape) == (len(segment_1_df),)
-    np.testing.assert_allclose(segment_1_df["target"].values, sample["history"])
+    assert len(ts_samples) == 1
+
+    expected_first_sample = {
+        "history": df["target"].values,
+    }
+
+    assert first_sample.keys() == {"history", "history_mask", "target", "target_mask", "segment"}
+    assert first_sample["history_mask"] is None
+    assert first_sample["target"] is None
+    assert first_sample["target_mask"] is None
+    assert first_sample["segment"] == "segment_1"
+    np.testing.assert_equal(first_sample["history"], expected_first_sample["history"])
 
 
 @pytest.mark.parametrize(
