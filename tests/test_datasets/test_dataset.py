@@ -342,6 +342,16 @@ def test_create_ts_with_int_timestamp():
     pd.testing.assert_frame_equal(ts.to_pandas(), df_wide)
 
 
+def test_create_ts_with_int_timestamp_with_freq():
+    df = generate_ar_df(periods=10, freq=None, n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df_wide, freq="D")
+    inferred_freq = pd.infer_freq(ts.index)
+
+    assert ts.index.dtype == "datetime64[ns]"
+    assert inferred_freq == "D"
+
+
 def test_create_ts_with_exog_datetime_timestamp():
     freq = "D"
     df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
@@ -370,6 +380,20 @@ def test_create_ts_with_exog_int_timestamp():
     expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1, level=(0, 1))
     pd.testing.assert_index_equal(ts.index, df_wide.index)
     pd.testing.assert_frame_equal(ts.to_pandas(), expected_merged)
+
+
+def test_create_ts_with_exog_int_timestamp_with_freq():
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+    inferred_freq = pd.infer_freq(ts.index)
+
+    assert ts.index.dtype == "datetime64[ns]"
+    assert inferred_freq == "D"
 
 
 def test_create_ts_missing_datetime_timestamp():
