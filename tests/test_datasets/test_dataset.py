@@ -343,7 +343,8 @@ def test_create_ts_with_int_timestamp():
 
 
 @pytest.mark.filterwarnings(
-    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime."
+    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime.",
+    "ignore: You probably set wrong freq. Discovered freq in you data is N, you set D",
 )
 def test_create_ts_with_int_timestamp_with_freq():
     df = generate_ar_df(periods=10, freq=None, n_segments=3)
@@ -384,7 +385,8 @@ def test_create_ts_with_exog_int_timestamp():
 
 
 @pytest.mark.filterwarnings(
-    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime."
+    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime.",
+    "ignore: You probably set wrong freq. Discovered freq in you data is N, you set D",
 )
 def test_create_ts_with_exog_int_timestamp_with_freq():
     df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
