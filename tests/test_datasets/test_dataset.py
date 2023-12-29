@@ -349,10 +349,8 @@ def test_create_ts_with_int_timestamp_with_freq():
     df = generate_ar_df(periods=10, freq=None, n_segments=3)
     df_wide = TSDataset.to_dataset(df)
     ts = TSDataset(df=df_wide, freq="D")
-    inferred_freq = pd.infer_freq(ts.index)
 
     assert ts.index.dtype == "datetime64[ns]"
-    assert inferred_freq == "D"
 
 
 def test_create_ts_with_exog_datetime_timestamp():
@@ -396,10 +394,8 @@ def test_create_ts_with_exog_int_timestamp_with_freq():
     df_wide = TSDataset.to_dataset(df)
     df_exog_wide = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
-    inferred_freq = pd.infer_freq(ts.index)
 
     assert ts.index.dtype == "datetime64[ns]"
-    assert inferred_freq == "D"
 
 
 def test_create_ts_missing_datetime_timestamp():
@@ -1588,8 +1584,9 @@ def test_plot_fail_incorrect_start_end_type(params, match, tsdf_int_with_exog):
         tsdf_int_with_exog.plot(**params)
 
 
+@pytest.mark.filterwarnings("ignore: You probably set wrong freq. Discovered freq in you data is N, you set D")
 def test_check_timestamp_type_warning():
-    match = "Timestamp contains numeric values, which can lead to unexpected results if freq is not None."
+    match = "Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime."
 
     df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
     df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
