@@ -146,17 +146,20 @@ def test_fit_external_timestamp_not_sequential_fail():
         model.fit(ts)
 
 
+@pytest.mark.parametrize("timestamp_column", ["timestamp", "external_timestamp"])
 @pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
-def test_deepstate_make_samples(df_name, request):
+def test_deepstate_make_samples(timestamp_column, df_name, request):
     df = request.getfixturevalue(df_name)
-
     # this model can't work with this type of columns
     df.drop(columns=["regressor_bool", "regressor_str"], inplace=True)
+
+    if timestamp_column != "timestamp":
+        df["external_timestamp"] = df["timestamp"]
 
     ssm = MagicMock()
     datetime_index = np.arange(len(df))
     ssm.generate_datetime_index.return_value = datetime_index[np.newaxis, :]
-    module = MagicMock(ssm=ssm)
+    module = MagicMock(ssm=ssm, timestamp_column=timestamp_column)
     encoder_length = 8
     decoder_length = 4
 

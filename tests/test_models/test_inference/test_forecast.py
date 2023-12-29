@@ -874,16 +874,16 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
-                    DeepStateModel(
-                        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
-                        input_size=1,
-                        encoder_length=7,
-                        decoder_length=7,
-                        trainer_params=dict(max_epochs=1),
-                        timestamp_column="external_timestamp",
-                    ),
-                    [SegmentEncoderTransform()],
-                    "ts_with_external_timestamp",
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                    timestamp_column="external_timestamp",
+                ),
+                [SegmentEncoderTransform()],
+                "ts_with_external_timestamp",
             ),
             (
                 NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),

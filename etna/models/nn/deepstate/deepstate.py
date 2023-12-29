@@ -3,7 +3,6 @@ from typing import Dict
 from typing import Iterator
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -42,7 +41,7 @@ class DeepStateNet(DeepBaseNet):
         n_samples: int,
         lr: float,
         optimizer_params: Optional[dict],
-        timestamp_column: Optional[str] = None,
+        timestamp_column: Optional[str],
     ):
         """Create instance of DeepStateNet.
 
@@ -71,8 +70,7 @@ class DeepStateNet(DeepBaseNet):
         self.n_samples = n_samples
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
-        self.timestamp_column = timestamp_column
-        self._timestamp_column = "timestamp" if self.timestamp_column is None else self.timestamp_column
+        self.timestamp_column = "timestamp" if timestamp_column is None else timestamp_column
         self.latent_dim = self.ssm.latent_dim()
 
         self.RNN = nn.LSTM(
@@ -188,9 +186,9 @@ class DeepStateNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.drop(columns=["target", "segment", "timestamp"]).select_dtypes(exclude=[np.datetime64]).values
+        values_real = df.drop(columns=["target", "segment", "timestamp", self.timestamp_column]).values
         values_real = torch.from_numpy(values_real).float()
-        values_datetime = torch.from_numpy(self.ssm.generate_datetime_index(df[self._timestamp_column]))
+        values_datetime = torch.from_numpy(self.ssm.generate_datetime_index(df[self.timestamp_column]))
         values_datetime = values_datetime.to(torch.int64)
         values_target = df["target"].values
         values_target = torch.from_numpy(values_target).float()
