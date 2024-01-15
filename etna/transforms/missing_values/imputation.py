@@ -3,7 +3,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -12,6 +11,7 @@ from sklearn.impute import SimpleImputer
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.distributions import IntDistribution
+from etna.transforms import MeanTransform
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
 
@@ -163,14 +163,6 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
         self._fit_segments = sorted(set(df.columns.get_level_values("segment")))
 
-        if self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
-            nan_timestamps = {}
-            for segment in self._fit_segments:
-                series = df.loc[:, pd.IndexSlice[segment, self.in_column]]
-                series = series[series.first_valid_index() :]
-                nan_timestamps[segment] = series[series.isna()].index
-            self._nan_timestamps = nan_timestamps
-
         if self._strategy is ImputerMode.mean:
             self._mean_imputer.fit(df)
 
@@ -193,7 +185,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         if self._fit_segments is None:
             raise ValueError("Transform is not fitted!")
 
-        segments = sorted(set(df.columns.get_level_values("segment")))
+        segments = df.columns.get_level_values("segment").unique()
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
         nans_mask = df.isna()
@@ -218,8 +210,6 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         :
             Filled Dataframe.
         """
-        segments = sorted(set(df.columns.get_level_values("segment")))
-
         if self._strategy is ImputerMode.constant:
             df.fillna(value=self.constant_value, inplace=True)
         elif self._strategy is ImputerMode.forward_fill:
@@ -227,16 +217,11 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         elif self._strategy is ImputerMode.mean:
             self._mean_imputer.transform(df)
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
-            self._nan_timestamps = cast(Dict[str, List[pd.Timestamp]], self._nan_timestamps)
-            timestamp_to_index = {timestamp: i for i, timestamp in enumerate(df.index)}
-            for segment in segments:
-                history = self.seasonality * self.window if self.window != -1 else len(df)
-                for timestamp in self._nan_timestamps[segment]:
-                    i = timestamp_to_index[timestamp]
-                    indexes = np.arange(i - self.seasonality, i - self.seasonality - history, -self.seasonality)
-                    indexes = indexes[indexes >= 0]
-                    values = df.loc[df.index[indexes], pd.IndexSlice[segment, self.in_column]]
-                    df.loc[timestamp, pd.IndexSlice[segment, self.in_column]] = np.nanmean(values)
+            transform = MeanTransform(
+                in_column=self.in_column, window=self.window, seasonality=self.seasonality, out_column="sma"
+            )
+            df_filled = transform._transform(df)
+            df.where(self._nans_to_impute_mask, df_filled.loc[:, pd.IndexSlice[:, "sma"]], inplace=True)
 
         if self.default_value is not None:
             df.fillna(value=self.default_value, inplace=True)
