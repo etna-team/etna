@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import cast
 
 import numpy as np
@@ -103,6 +104,8 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         self._strategy = ImputerMode(strategy)
         self._fill_value: Optional[Dict[str, float]] = None
         self._nan_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self._fit_segments: Optional[Sequence[str]] = None
+        self._nans_to_impute_mask: Optional[pd.DataFrame] = None
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
@@ -116,26 +119,30 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         df:
             Dataframe in etna wide format.
         """
-        segments = sorted(set(df.columns.get_level_values("segment")))
-        features = df.loc[:, pd.IndexSlice[segments, self.in_column]]
-        if features.isna().all().any():
+        if df.isna().all().any():
             raise ValueError("Series hasn't non NaN values which means it is empty and can't be filled.")
 
-        nan_timestamps = {}
-        for segment in segments:
-            series = features.loc[:, pd.IndexSlice[segment, self.in_column]]
-            series = series[series.first_valid_index() :]
-            nan_timestamps[segment] = series[series.isna()].index
+        self._fit_segments = sorted(set(df.columns.get_level_values("segment")))
+
+        if self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
+            nan_timestamps = {}
+            for segment in self._fit_segments:
+                series = df.loc[:, pd.IndexSlice[segment, self.in_column]]
+                series = series[series.first_valid_index() :]
+                nan_timestamps[segment] = series[series.isna()].index
+            self._nan_timestamps = nan_timestamps
 
         fill_value = {}
         if self._strategy is ImputerMode.mean:
-            mean_values = features.mean().to_dict()
+            mean_values = df.mean().to_dict()
             # take only segment from multiindex key
             mean_values = {key[0]: value for key, value in mean_values.items()}
             fill_value = mean_values
 
-        self._nan_timestamps = nan_timestamps
         self._fill_value = fill_value
+
+        _beginning_nans_mask = df.fillna(method="ffill").isna()
+        self._nans_to_impute_mask = df.isna() & (~_beginning_nans_mask)
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Transform dataframe.
@@ -150,24 +157,17 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         :
             Transformed Dataframe in etna wide format.
         """
-        if self._fill_value is None or self._nan_timestamps is None:
+        if self._fill_value is None:
             raise ValueError("Transform is not fitted!")
 
         segments = sorted(set(df.columns.get_level_values("segment")))
-        check_new_segments(transform_segments=segments, fit_segments=self._nan_timestamps.keys())
+        check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
-        cur_nans = {}
-        for segment in segments:
-            series = df.loc[:, pd.IndexSlice[segment, self.in_column]]
-            cur_nans[segment] = series[series.isna()].index
+        nans_mask = df.isna()
+        nans_to_restore_mask = nans_mask.mask(self._nans_to_impute_mask, False)
 
         result_df = self._fill(df)
-
-        # restore nans not in self.nan_timestamps
-        for segment in segments:
-            restore_nans = cur_nans[segment].difference(self._nan_timestamps[segment])
-            result_df.loc[restore_nans, pd.IndexSlice[segment, self.in_column]] = np.nan
-
+        result_df.mask(nans_to_restore_mask, inplace=True)
         return result_df
 
     def _fill(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -186,7 +186,6 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             Filled Dataframe.
         """
         self._fill_value = cast(Dict[str, float], self._fill_value)
-        self._nan_timestamps = cast(Dict[str, List[pd.Timestamp]], self._nan_timestamps)
         segments = sorted(set(df.columns.get_level_values("segment")))
 
         if self._strategy is ImputerMode.constant:
@@ -199,6 +198,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             for segment in segments:
                 df.loc[:, pd.IndexSlice[segment, self.in_column]].fillna(value=self._fill_value[segment], inplace=True)
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
+            self._nan_timestamps = cast(Dict[str, List[pd.Timestamp]], self._nan_timestamps)
             timestamp_to_index = {timestamp: i for i, timestamp in enumerate(df.index)}
             for segment in segments:
                 history = self.seasonality * self.window if self.window != -1 else len(df)
@@ -226,15 +226,13 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         :
             Dataframe after applying inverse transformation.
         """
-        if self._fill_value is None or self._nan_timestamps is None:
+        if self._fill_value is None:
             raise ValueError("Transform is not fitted!")
 
         segments = sorted(set(df.columns.get_level_values("segment")))
-        check_new_segments(transform_segments=segments, fit_segments=self._nan_timestamps.keys())
+        check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
 
-        for segment in segments:
-            index = df.index.intersection(self._nan_timestamps[segment])
-            df.loc[index, pd.IndexSlice[segment, self.in_column]] = np.NaN
+        df.mask(self._nans_to_impute_mask, inplace=True)
         return df
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
