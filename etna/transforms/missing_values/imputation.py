@@ -189,11 +189,9 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         segments = sorted(set(df.columns.get_level_values("segment")))
 
         if self._strategy is ImputerMode.constant:
-            new_values = df.loc[:, pd.IndexSlice[:, self.in_column]].fillna(value=self.constant_value)
-            df.loc[:, pd.IndexSlice[:, self.in_column]] = new_values
+            df.fillna(value=self.constant_value, inplace=True)
         elif self._strategy is ImputerMode.forward_fill:
-            new_values = df.loc[:, pd.IndexSlice[:, self.in_column]].fillna(method="ffill")
-            df.loc[:, pd.IndexSlice[:, self.in_column]] = new_values
+            df.fillna(method="ffill", inplace=True)
         elif self._strategy is ImputerMode.mean:
             for segment in segments:
                 df.loc[:, pd.IndexSlice[segment, self.in_column]].fillna(value=self._fill_value[segment], inplace=True)
