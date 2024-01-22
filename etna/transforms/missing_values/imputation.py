@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 
+import bottleneck as bn
 import numpy as np
 import pandas as pd
 from sklearn.impute import SimpleImputer
@@ -225,19 +226,15 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         elif self._strategy is ImputerMode.mean:
             self._mean_imputer.transform(df)
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
-            segments = df.columns.get_level_values("segment").unique()
-            timestamp_to_index = {timestamp: i for i, timestamp in enumerate(df.index)}
-            for segment in segments:
-                series = df.loc[:, pd.IndexSlice[segment, self.in_column]]
-                series = series[series.first_valid_index() :]
-                nan_timestamps = series[series.isna()].index
-                history = self.seasonality * self.window if self.window != -1 else len(df)
-                for timestamp in nan_timestamps:
-                    i = timestamp_to_index[timestamp]
-                    indexes = np.arange(i - self.seasonality, i - self.seasonality - history, -self.seasonality)
-                    indexes = indexes[indexes >= 0]
-                    values = df.loc[df.index[indexes], pd.IndexSlice[segment, self.in_column]]
-                    df.loc[timestamp, pd.IndexSlice[segment, self.in_column]] = np.nanmean(values)
+            history = self.seasonality * self.window if self.window != -1 else len(df)
+            nan_mask = df.isna().values
+            nan_indexes = np.arange(len(df))[nan_mask.any(axis=1)]
+            for i in nan_indexes:
+                indexes = np.arange(i - self.seasonality, i - self.seasonality - history, -self.seasonality)
+                indexes = indexes[indexes >= 0]
+                if len(indexes) > 0:
+                    impute_values = bn.nanmean(df.iloc[indexes], axis=0)
+                    df.iloc[i] = np.where(nan_mask[i], impute_values, df.iloc[i])
         elif self._strategy is ImputerMode.seasonal_statistics:
             lag_transform = LagTransform(in_column=self.in_column, lags=[self.seasonality], out_column="lag")
             sma_transform = MeanTransform(
