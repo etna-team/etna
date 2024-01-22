@@ -61,6 +61,7 @@ class ImputerMode(str, Enum):
     running_mean = "running_mean"
     forward_fill = "forward_fill"
     seasonal = "seasonal"
+    seasonal_statistics = "seasonal_statistics"
     constant = "constant"
 
     @classmethod
@@ -110,7 +111,9 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
             - If "forward_fill" then replace missing dates using last existing value
 
-            - If "seasonal" then replace missing dates using seasonal moving average
+            - If "seasonal" then replace missing dates using seasonal moving average in autoregressive manner
+
+            - If "seasonal_statistics" then replace missing dates using seasonal moving average on existing values
 
             - If "constant" then replace missing dates using constant value.
 
@@ -212,6 +215,9 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         :
             Filled Dataframe.
         """
+        if self._nans_to_impute_mask is None:
+            raise ValueError("Transform is not fitted!")
+
         if self._strategy is ImputerMode.constant:
             df.fillna(value=self.constant_value, inplace=True)
         elif self._strategy is ImputerMode.forward_fill:
@@ -219,17 +225,38 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         elif self._strategy is ImputerMode.mean:
             self._mean_imputer.transform(df)
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
-            lag_transform = LagTransform(in_column=self.in_column, lags=1, out_column="tmp")
+            segments = df.columns.get_level_values("segment").unique()
+            timestamp_to_index = {timestamp: i for i, timestamp in enumerate(df.index)}
+            for segment in segments:
+                series = df.loc[:, pd.IndexSlice[segment, self.in_column]]
+                series = series[series.first_valid_index() :]
+                nan_timestamps = series[series.isna()].index
+                history = self.seasonality * self.window if self.window != -1 else len(df)
+                for timestamp in nan_timestamps:
+                    i = timestamp_to_index[timestamp]
+                    indexes = np.arange(i - self.seasonality, i - self.seasonality - history, -self.seasonality)
+                    indexes = indexes[indexes >= 0]
+                    values = df.loc[df.index[indexes], pd.IndexSlice[segment, self.in_column]]
+                    df.loc[timestamp, pd.IndexSlice[segment, self.in_column]] = np.nanmean(values)
+        elif self._strategy is ImputerMode.seasonal_statistics:
+            lag_transform = LagTransform(in_column=self.in_column, lags=[self.seasonality], out_column="lag")
             sma_transform = MeanTransform(
-                in_column="tmp_1",
+                in_column=f"lag_{self.seasonality}",
                 window=self.window,
                 seasonality=self.seasonality,
-                min_periods=0,
                 fillna=np.NaN,
                 out_column="sma",
             )
-            df_filled = sma_transform._transform(lag_transform._transform(df))
-            df.mask(self._nans_to_impute_mask, df_filled.loc[:, pd.IndexSlice[:, "sma"]], inplace=True)
+            df_filled = (
+                sma_transform._transform(lag_transform._transform(df))
+                .loc[:, pd.IndexSlice[:, "sma"]]
+                .rename(columns={"sma": self.in_column})
+            )
+
+            index_intersection = df.index.intersection(self._nans_to_impute_mask.index)
+            df.loc[index_intersection] = df.loc[index_intersection].mask(
+                self._nans_to_impute_mask.loc[index_intersection], df_filled.loc[index_intersection]
+            )
 
         if self.default_value is not None:
             df.fillna(value=self.default_value, inplace=True)
