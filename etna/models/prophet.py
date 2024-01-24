@@ -220,9 +220,6 @@ class _ProphetAdapter(BaseAdapter):
             if not pd.api.types.is_datetime64_dtype(df[self.timestamp_column]):
                 raise ValueError("Invalid timestamp_column! Only datetime type is supported.")
 
-            if len(df[self.timestamp_column]) >= 3 and pd.infer_freq(df[self.timestamp_column]) is None:
-                raise ValueError("Invalid timestamp_column! It doesn't contain sequential timestamps.")
-
     def _prepare_prophet_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """Prepare dataframe for fit and predict."""
         if self.regressor_columns is None:
@@ -505,7 +502,7 @@ class ProphetModel(
             'mode', 'condition_name' will be used for :py:meth:`prophet.Prophet.add_seasonality` method call.
         timestamp_column:
             Name of a column to be used as timestamp. If not given, index is used.
-            Column is expected to be regressor containing datetime values with some fixed frequency.
+            Column is expected to be regressor containing datetime values.
         """
         self.growth = growth
         self.n_changepoints = n_changepoints
