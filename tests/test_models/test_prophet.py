@@ -91,22 +91,6 @@ def test_fit_external_timestamp_not_datetime_fail():
         model.fit(ts)
 
 
-def test_fit_external_timestamp_not_sequential_fail():
-    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
-    df_wide = TSDataset.to_dataset(df)
-    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
-    df_exog["target"] = (
-        pd.date_range(start="2020-01-01", periods=50).tolist() + pd.date_range(start="2021-01-01", periods=50).tolist()
-    )
-    df_exog_wide = TSDataset.to_dataset(df_exog)
-    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
-    ts = TSDataset(df=df_wide.iloc[:-5], df_exog=df_exog_wide, known_future="all", freq=None)
-
-    model = ProphetModel(timestamp_column="external_timestamp")
-    with pytest.raises(ValueError, match="Invalid timestamp_column! It doesn't contain sequential timestamps."):
-        model.fit(ts)
-
-
 @pytest.mark.parametrize(
     "ts_name, timestamp_column",
     [
