@@ -8,7 +8,390 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
+from etna.pipeline import FoldMask
 from etna.pipeline.base import BasePipeline
+
+
+@pytest.mark.parametrize(
+    "first_train_timestamp, last_train_timestamp, target_timestamps",
+    [
+        (None, pd.Timestamp("2020-01-05"), [pd.Timestamp("2020-01-06")]),
+        (None, pd.Timestamp("2020-01-05"), ["2020-01-06"]),
+        (None, "2020-01-05", [pd.Timestamp("2020-01-06")]),
+        (None, "2020-01-05", ["2020-01-06"]),
+        (None, "2020-01-05", ["2020-01-06", "2020-01-07"]),
+        (None, "2020-01-05", ["2020-01-06", "2020-01-06"]),
+        (None, "2020-01-05", ["2020-01-07", "2020-01-06"]),
+        (None, 5, [6]),
+        (None, 5, [6, 7]),
+        (None, 5, [6, 6]),
+        (None, 5, [7, 6]),
+        ("2020-01-01", "2020-01-01", ["2020-01-06"]),
+        ("2020-01-01", "2020-01-05", ["2020-01-06"]),
+        ("2020-01-01", "2020-01-05", ["2020-01-06", "2020-01-07"]),
+        (1, 1, [6]),
+        (1, 5, [6]),
+        (1, 5, [6, 7]),
+    ],
+)
+def test_fold_mask_init_ok(first_train_timestamp, last_train_timestamp, target_timestamps):
+    _ = FoldMask(
+        first_train_timestamp=first_train_timestamp,
+        last_train_timestamp=last_train_timestamp,
+        target_timestamps=target_timestamps,
+    )
+
+
+@pytest.mark.parametrize(
+    "first_train_timestamp, last_train_timestamp, target_timestamps",
+    [
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-01"), [pd.Timestamp("2020-01-02")]),
+        (5, 1, [2]),
+        ("2020-01-05", "2020-01-01", ["2020-01-02"]),
+    ],
+)
+def test_fold_mask_init_fail_wrong_order_first_last_training_timestamps(
+    first_train_timestamp, last_train_timestamp, target_timestamps
+):
+    with pytest.raises(ValueError, match="Last train timestamp should be not sooner than first train timestamp"):
+        _ = FoldMask(
+            first_train_timestamp=first_train_timestamp,
+            last_train_timestamp=last_train_timestamp,
+            target_timestamps=target_timestamps,
+        )
+
+
+@pytest.mark.parametrize(
+    "first_train_timestamp, last_train_timestamp, target_timestamps",
+    [
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-05"), []),
+        (None, pd.Timestamp("2020-01-05"), []),
+        (1, 5, []),
+        ("2020-01-01", "2020-01-05", []),
+    ],
+)
+def test_fold_mask_init_fail_wrong_fail_empty_target_timestamps(
+    first_train_timestamp, last_train_timestamp, target_timestamps
+):
+    with pytest.raises(ValueError, match="Target timestamps should not be empty"):
+        _ = FoldMask(
+            first_train_timestamp=first_train_timestamp,
+            last_train_timestamp=last_train_timestamp,
+            target_timestamps=target_timestamps,
+        )
+
+
+@pytest.mark.parametrize(
+    "first_train_timestamp, last_train_timestamp, target_timestamps",
+    [
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-05"), [pd.Timestamp("2020-01-02")]),
+        (None, pd.Timestamp("2020-01-05"), [pd.Timestamp("2020-01-02")]),
+        (1, 5, [2]),
+        ("2020-01-01", "2020-01-05", ["2020-01-02"]),
+    ],
+)
+def test_fold_mask_init_fail_target_timestamps_before_train_end(
+    first_train_timestamp, last_train_timestamp, target_timestamps
+):
+    with pytest.raises(ValueError, match="Target timestamps should be strictly later then last train timestamp"):
+        _ = FoldMask(
+            first_train_timestamp=first_train_timestamp,
+            last_train_timestamp=last_train_timestamp,
+            target_timestamps=target_timestamps,
+        )
+
+
+@pytest.mark.parametrize(
+    "first_train_timestamp, last_train_timestamp, target_timestamps",
+    [
+        (None, 5, [pd.Timestamp("2020-01-06")]),
+        (None, 5, ["2020-01-06"]),
+        (None, "2020-01-05", [6]),
+        (None, 5, [6, "2020-01-07"]),
+        (None, "2020-01-05", ["2020-01-06", 7]),
+        (1, 5, ["2020-01-06"]),
+        (1, "2020-01-05", [6]),
+        (1, "2020-01-05", ["2020-01-06"]),
+        ("2020-01-01", 5, [6]),
+        ("2020-01-01", "2020-01-05", [6]),
+        ("2020-01-01", 5, ["2020-01-06"]),
+        (1, 5, [6, "2020-01-07"]),
+        ("2020-01-01", "2020-01-05", ["2020-01-06", 7]),
+    ],
+)
+def test_fold_mask_init_fail_mismatched_types(first_train_timestamp, last_train_timestamp, target_timestamps):
+    with pytest.raises(ValueError, match="All timestamps should be one of two possible types: pd.Timestamp or int"):
+        _ = FoldMask(
+            first_train_timestamp=first_train_timestamp,
+            last_train_timestamp=last_train_timestamp,
+            target_timestamps=target_timestamps,
+        )
+
+
+@pytest.mark.parametrize(
+    "ts_name, horizon, fold_mask",
+    [
+        (
+            "example_tsds",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-03", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+        ),
+        (
+            "example_tsds",
+            10,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-05", target_timestamps=["2020-01-10"]),
+        ),
+        (
+            "example_tsds",
+            10,
+            FoldMask(
+                first_train_timestamp=None,
+                last_train_timestamp="2020-01-05",
+                target_timestamps=["2020-01-10", "2020-01-12"],
+            ),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[16]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=10, last_train_timestamp=15, target_timestamps=[16]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=12, last_train_timestamp=15, target_timestamps=[16]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            10,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[20]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            10,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[20, 22]),
+        ),
+    ],
+)
+def test_fold_mask_validate_on_dataset_ok(ts_name, fold_mask, horizon, request):
+    ts = request.getfixturevalue(ts_name)
+    fold_mask.validate_on_dataset(ts=ts, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, horizon, fold_mask",
+    [
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp="2019-01-01", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp="2021-01-01", last_train_timestamp="2021-01-05", target_timestamps=["2021-01-06"]
+            ),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-01 01:00",
+                last_train_timestamp="2020-01-05",
+                target_timestamps=["2020-01-06"],
+            ),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(first_train_timestamp=5, last_train_timestamp=15, target_timestamps=[16]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=5, last_train_timestamp=15, target_timestamps=[16]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=210, last_train_timestamp=215, target_timestamps=[216]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+        ),
+    ],
+)
+def test_fold_mask_validate_on_dataset_fail_not_present_first_train_timestamp(ts_name, fold_mask, horizon, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match="First train timestamp isn't present in a given dataset"):
+        fold_mask.validate_on_dataset(ts=ts, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, horizon, fold_mask",
+    [
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2021-01-05", target_timestamps=["2021-01-06"]
+            ),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2021-01-05", target_timestamps=["2021-01-06"]),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp=None,
+                last_train_timestamp="2020-01-05 01:00",
+                target_timestamps=["2020-01-06"],
+            ),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=10, last_train_timestamp=215, target_timestamps=[216]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=215, target_timestamps=[216]),
+        ),
+    ],
+)
+def test_fold_mask_validate_on_dataset_fail_not_present_last_train_timestamp(ts_name, fold_mask, horizon, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match="Last train timestamp isn't present in a given dataset"):
+        fold_mask.validate_on_dataset(ts=ts, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, horizon, fold_mask",
+    [
+        (
+            "example_tsds",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-05", target_timestamps=["2021-01-06"]
+            ),
+        ),
+        (
+            "example_tsds",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-05", target_timestamps=["2021-01-06"]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=10, last_train_timestamp=15, target_timestamps=[216]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[216]),
+        ),
+    ],
+)
+def test_fold_mask_validate_on_dataset_fail_not_present_some_target_timestamps(ts_name, fold_mask, horizon, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match="Some target timestamps aren't present in a given dataset"):
+        fold_mask.validate_on_dataset(ts=ts, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, horizon, fold_mask",
+    [
+        (
+            "ts_with_nans_in_tails",
+            1,
+            FoldMask(
+                first_train_timestamp=None,
+                last_train_timestamp="2020-01-31 22:00",
+                target_timestamps=["2020-01-31 23:00"],
+            ),
+        ),
+    ],
+)
+def test_fold_mask_validate_on_dataset_fail_not_enough_future(ts_name, fold_mask, horizon, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match="Last train timestamp should be not later than"):
+        fold_mask.validate_on_dataset(ts=ts, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, horizon, fold_mask",
+    [
+        (
+            "example_tsds",
+            3,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-10"]
+            ),
+        ),
+        (
+            "example_tsds",
+            3,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-05", target_timestamps=["2020-01-10"]),
+        ),
+        (
+            "example_tsds",
+            3,
+            FoldMask(
+                first_train_timestamp=None,
+                last_train_timestamp="2020-01-05",
+                target_timestamps=["2020-01-06", "2020-01-10"],
+            ),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            3,
+            FoldMask(first_train_timestamp=10, last_train_timestamp=15, target_timestamps=[20]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            3,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[20]),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            3,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[16, 20]),
+        ),
+    ],
+)
+def test_fold_mask_validate_on_dataset_fail_not_enough_horizon(ts_name, fold_mask, horizon, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match="Last target timestamp should be not later than"):
+        fold_mask.validate_on_dataset(ts=ts, horizon=horizon)
 
 
 @pytest.mark.parametrize(
