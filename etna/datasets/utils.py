@@ -166,13 +166,13 @@ def set_columns_wide(
     # prepare indexing
     timestamps_left_index = slice(None) if timestamps_left is None else timestamps_left
     timestamps_right_index = slice(None) if timestamps_right is None else timestamps_right
-    segments_left_index = slice(None) if segments_left is None else sorted(segments_left)
-    segments_right_index = slice(None) if segments_right is None else sorted(segments_right)
-    features_left_index = slice(None) if features_left is None else sorted(features_left)
-    features_right_index = slice(None) if features_right is None else sorted(features_right)
+    segments_left_index = slice(None) if segments_left is None else segments_left
+    segments_right_index = slice(None) if segments_right is None else segments_right
+    features_left_index = slice(None) if features_left is None else features_left
+    features_right_index = slice(None) if features_right is None else features_right
 
     right_value = df_right.loc[timestamps_right_index, (segments_right_index, features_right_index)]
-    df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value
+    df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
 
     return df_left
 

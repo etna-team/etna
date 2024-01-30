@@ -25,7 +25,6 @@ from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import inverse_transform_target_components
-from etna.datasets.utils import set_columns_wide
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -1051,10 +1050,10 @@ class TSDataset:
         df_update:
             Dataframe with new values in wide ETNA format.
         """
-        columns_to_update = df_update.columns.get_level_values("feature").unique().tolist()
-        self.df = set_columns_wide(
-            df_left=self.df, df_right=df_update, features_left=columns_to_update, timestamps_right=self.index
-        )
+        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
+        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
+            : self.df.index.max(), self.idx[self.segments, columns_to_update]
+        ]
 
     def add_columns_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
