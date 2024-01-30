@@ -197,9 +197,16 @@ def ts_with_features() -> TSDataset:
 @pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
 def test_prediction_decomposition(ts_with_features, model):
     train, test = ts_with_features.train_test_split(test_size=10)
-    test.df = test.df.loc[
-        pd.IndexSlice[:], pd.IndexSlice[:, ["target", "exog", "cat_exog"]]
-    ]  # Order differs from train
+    assert_prediction_components_are_present(model=model, train=train, test=test)
+
+
+@pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
+def test_prediction_decomposition_with_shuffled_columns(
+    ts_with_features, model, train_order=("target", "cat_exog", "exog"), test_order=("target", "exog", "cat_exog")
+):
+    train, test = ts_with_features.train_test_split(test_size=10)
+    train.df = train.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, train_order]]
+    test.df = test.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, test_order]]
     assert_prediction_components_are_present(model=model, train=train, test=test)
 
 
