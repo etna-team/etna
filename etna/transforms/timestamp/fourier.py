@@ -25,10 +25,12 @@ class FourierTransform(IrreversibleTransform):
 
     Transform can accept timestamp data in two forms:
 
-    - As index. In this case the dataset index is used to compute features. The features will be the same for each segment.
+    - As index. In this case the dataset index is used to compute features.
+      The features will be the same for each segment.
 
     - As external column. In this case for each segment its ``in_column`` will be used to compute features.
-      It is expected that for each segment we have the same type of timestamp data and for datetime type there is only one frequency.
+      It is expected that for each segment we have the same type of timestamp data (datetime or numeric)
+      and for datetime type only one frequency is used.
 
     If we are working with external column, there is a difference in handling numeric and datetime data:
 
@@ -268,16 +270,16 @@ class FourierTransform(IrreversibleTransform):
         return features
 
     def _convert_regular_timestamp_datetime_to_numeric(
-        self, timestamp: pd.Series, reference_timestamp: pd.Timestamp, freq: Optional[str]
+        self, timestamps: pd.Series, reference_timestamp: pd.Timestamp, freq: Optional[str]
     ) -> pd.Series:
         # we should always align timestamps to some fixed point
-        end_timestamp = timestamp[-1]
+        end_timestamp = timestamps[-1]
         if end_timestamp >= reference_timestamp:
             end_idx = determine_num_steps(start_timestamp=reference_timestamp, end_timestamp=end_timestamp, freq=freq)
         else:
             end_idx = -determine_num_steps(start_timestamp=end_timestamp, end_timestamp=reference_timestamp, freq=freq)
 
-        numeric_timestamp = pd.Series(np.arange(end_idx - len(timestamp) + 1, end_idx + 1))
+        numeric_timestamp = pd.Series(np.arange(end_idx - len(timestamps) + 1, end_idx + 1))
 
         return numeric_timestamp
 
@@ -302,7 +304,7 @@ class FourierTransform(IrreversibleTransform):
                 timestamp = df.index.to_series()
             else:
                 timestamp = self._convert_regular_timestamp_datetime_to_numeric(
-                    timestamp=df.index, reference_timestamp=self._reference_timestamp, freq=self._freq
+                    timestamps=df.index, reference_timestamp=self._reference_timestamp, freq=self._freq
                 )
             features = self._compute_features(timestamp=timestamp)
             features.index = df.index
@@ -320,7 +322,7 @@ class FourierTransform(IrreversibleTransform):
                 for segment in segments:
                     segment_timestamp = df[segment][self.in_column]
                     int_segment_timestamp = self._convert_regular_timestamp_datetime_to_numeric(
-                        timestamp=segment_timestamp,
+                        timestamps=segment_timestamp,
                         reference_timestamp=self._reference_timestamp,
                         freq=self._freq,
                     )

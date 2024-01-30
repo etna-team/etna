@@ -1,7 +1,6 @@
 from copy import deepcopy
 
 import numpy as np
-import numpy.testing
 import pandas as pd
 import pytest
 
