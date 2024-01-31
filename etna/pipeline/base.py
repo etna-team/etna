@@ -96,16 +96,13 @@ class FoldMask(BaseMixin):
             else:
                 target_timestamps_processed.append(timestamp)
 
-        if first_train_timestamp is None:
-            same_types = self._check_same_types(last_train_timestamp, *target_timestamps_processed)
-        else:
-            same_types = self._check_same_types(
-                first_train_timestamp, last_train_timestamp, *target_timestamps_processed
-            )
-        if not same_types:
-            raise ValueError("All timestamps should be one of two possible types: pd.Timestamp or int!")
+        self._validate_parameters_same_type(
+            first_train_timestamp=first_train_timestamp,
+            last_train_timestamp=last_train_timestamp,
+            target_timestamps=target_timestamps_processed,
+        )
 
-        target_timestamps = sorted(set(target_timestamps_processed))
+        target_timestamps = sorted(target_timestamps_processed)
 
         self._validate_first_last_train_timestamps_order(
             first_train_timestamp=first_train_timestamp, last_train_timestamp=last_train_timestamp
@@ -117,8 +114,30 @@ class FoldMask(BaseMixin):
         self.target_timestamps = target_timestamps
 
     @staticmethod
+    def _validate_parameters_same_type(
+        first_train_timestamp: Union[pd.Timestamp, int, str, None],
+        last_train_timestamp: Union[pd.Timestamp, int],
+        target_timestamps: List[Union[pd.Timestamp, int]],
+    ):
+        """Check that first train timestamp, last train timestamp, target timestamps has the same type."""
+        if first_train_timestamp is not None:
+            values_to_check = [first_train_timestamp, last_train_timestamp, *target_timestamps]
+        else:
+            values_to_check = [last_train_timestamp, *target_timestamps]
+
+        types: Set[type] = set()
+        for value in values_to_check:
+            if isinstance(value, np.integer):
+                types.add(int)
+            else:
+                types.add(type(value))
+
+        if len(types) > 1:
+            raise ValueError("All timestamps should be one of two possible types: pd.Timestamp or int!")
+
+    @staticmethod
     def _validate_first_last_train_timestamps_order(
-        first_train_timestamp: Union[pd.Timestamp, int, str, None], last_train_timestamp: Union[pd.Timestamp, int, str]
+        first_train_timestamp: Union[pd.Timestamp, int, None], last_train_timestamp: Union[pd.Timestamp, int]
     ):
         """Check that last train timestamp is later than first train timestamp."""
         if first_train_timestamp is not None and last_train_timestamp < first_train_timestamp:  # type: ignore
@@ -126,7 +145,7 @@ class FoldMask(BaseMixin):
 
     @staticmethod
     def _validate_target_timestamps(
-        last_train_timestamp: Union[pd.Timestamp, int, str], target_timestamps: List[Union[pd.Timestamp, int, str]]
+        last_train_timestamp: Union[pd.Timestamp, int], target_timestamps: List[Union[pd.Timestamp, int]]
     ):
         """Check that all target timestamps aren't empty and later than last train timestamp."""
         if len(target_timestamps) == 0:
@@ -135,18 +154,6 @@ class FoldMask(BaseMixin):
         first_target_timestamp = target_timestamps[0]
         if first_target_timestamp <= last_train_timestamp:  # type: ignore
             raise ValueError("Target timestamps should be strictly later then last train timestamp!")
-
-    @staticmethod
-    def _check_same_types(*args: Union[pd.Timestamp, int]):
-        """Check that all args are of the same type."""
-        types: Set[type] = set()
-        for arg in args:
-            if isinstance(arg, np.integer):
-                types.add(int)
-            else:
-                types.add(type(arg))
-
-        return len(types) == 1
 
     def validate_on_dataset(self, ts: TSDataset, horizon: int):
         """Validate fold mask on the dataset with specified horizon.
