@@ -206,66 +206,66 @@ class DateFlagsTransform(IrreversibleTransform):
         """Fit model. In this case of DateFlags does nothing."""
         return self
 
-    def _compute_features(self, timestamp: pd.Series) -> pd.DataFrame:
-        timestamp_no_nans = timestamp.dropna()
-        features = pd.DataFrame(index=timestamp_no_nans.index)
+    def _compute_features(self, timestamps: pd.Series) -> pd.DataFrame:
+        timestamps_no_nans = timestamps.dropna()
+        features = pd.DataFrame(index=timestamps_no_nans.index)
 
         if self.day_number_in_week:
             features[self._get_column_name("day_number_in_week")] = self._get_day_number_in_week(
-                timestamp_series=timestamp_no_nans
+                timestamp_series=timestamps_no_nans
             )
 
         if self.day_number_in_month:
             features[self._get_column_name("day_number_in_month")] = self._get_day_number_in_month(
-                timestamp_series=timestamp_no_nans
+                timestamp_series=timestamps_no_nans
             )
 
         if self.day_number_in_year:
             features[self._get_column_name("day_number_in_year")] = self._get_day_number_in_year(
-                timestamp_series=timestamp_no_nans
+                timestamp_series=timestamps_no_nans
             )
 
         if self.week_number_in_month:
             features[self._get_column_name("week_number_in_month")] = self._get_week_number_in_month(
-                timestamp_series=timestamp_no_nans
+                timestamp_series=timestamps_no_nans
             )
 
         if self.week_number_in_year:
             features[self._get_column_name("week_number_in_year")] = self._get_week_number_in_year(
-                timestamp_series=timestamp_no_nans
+                timestamp_series=timestamps_no_nans
             )
 
         if self.month_number_in_year:
             features[self._get_column_name("month_number_in_year")] = self._get_month_number_in_year(
-                timestamp_series=timestamp_no_nans
+                timestamp_series=timestamps_no_nans
             )
 
         if self.season_number:
             features[self._get_column_name("season_number")] = self._get_season_number(
-                timestamp_series=timestamp_no_nans
+                timestamp_series=timestamps_no_nans
             )
 
         if self.year_number:
-            features[self._get_column_name("year_number")] = self._get_year(timestamp_series=timestamp_no_nans)
+            features[self._get_column_name("year_number")] = self._get_year(timestamp_series=timestamps_no_nans)
 
         if self.is_weekend:
-            features[self._get_column_name("is_weekend")] = self._get_weekends(timestamp_series=timestamp_no_nans)
+            features[self._get_column_name("is_weekend")] = self._get_weekends(timestamp_series=timestamps_no_nans)
 
         if self.special_days_in_week:
             features[self._get_column_name("special_days_in_week")] = self._get_special_day_in_week(
-                special_days=self.special_days_in_week, timestamp_series=timestamp_no_nans
+                special_days=self.special_days_in_week, timestamp_series=timestamps_no_nans
             )
 
         if self.special_days_in_month:
             features[self._get_column_name("special_days_in_month")] = self._get_special_day_in_month(
-                special_days=self.special_days_in_month, timestamp_series=timestamp_no_nans
+                special_days=self.special_days_in_month, timestamp_series=timestamps_no_nans
             )
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
 
         # add NaNs in features
-        features = features.reindex(timestamp.index)
+        features = features.reindex(timestamps.index)
 
         return features
 
@@ -286,8 +286,8 @@ class DateFlagsTransform(IrreversibleTransform):
             if pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
-            timestamp = pd.Series(df.index)
-            features = self._compute_features(timestamp=timestamp)
+            timestamps = pd.Series(df.index)
+            features = self._compute_features(timestamps=timestamps)
             features.index = df.index
 
             dataframes = []
@@ -301,10 +301,10 @@ class DateFlagsTransform(IrreversibleTransform):
             result.columns.names = ["segment", "feature"]
 
         else:
-            flat_timestamp_df = TSDataset.to_flatten(df=df, features=[self.in_column])
-            features = self._compute_features(timestamp=flat_timestamp_df[self.in_column])
-            features["timestamp"] = flat_timestamp_df["timestamp"]
-            features["segment"] = flat_timestamp_df["segment"]
+            flat_df = TSDataset.to_flatten(df=df, features=[self.in_column])
+            features = self._compute_features(timestamps=flat_df[self.in_column])
+            features["timestamp"] = flat_df["timestamp"]
+            features["segment"] = flat_df["segment"]
             wide_df = TSDataset.to_dataset(features)
             result = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
 

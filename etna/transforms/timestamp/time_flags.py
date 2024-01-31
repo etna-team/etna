@@ -153,41 +153,41 @@ class TimeFlagsTransform(IrreversibleTransform):
         """Fit datetime model."""
         return self
 
-    def _compute_features(self, timestamp: pd.Series) -> pd.DataFrame:
-        timestamp_no_nans = timestamp.dropna()
-        features = pd.DataFrame(index=timestamp_no_nans.index)
+    def _compute_features(self, timestamps: pd.Series) -> pd.DataFrame:
+        timestamps_no_nans = timestamps.dropna()
+        features = pd.DataFrame(index=timestamps_no_nans.index)
 
         if self.minute_in_hour_number:
-            minute_in_hour_number = self._get_minute_number(timestamp_series=timestamp_no_nans)
+            minute_in_hour_number = self._get_minute_number(timestamp_series=timestamps_no_nans)
             features[self._get_column_name("minute_in_hour_number")] = minute_in_hour_number
 
         if self.fifteen_minutes_in_hour_number:
             fifteen_minutes_in_hour_number = self._get_period_in_hour(
-                timestamp_series=timestamp_no_nans, period_in_minutes=15
+                timestamp_series=timestamps_no_nans, period_in_minutes=15
             )
             features[self._get_column_name("fifteen_minutes_in_hour_number")] = fifteen_minutes_in_hour_number
 
         if self.hour_number:
-            hour_number = self._get_hour_number(timestamp_series=timestamp_no_nans)
+            hour_number = self._get_hour_number(timestamp_series=timestamps_no_nans)
             features[self._get_column_name("hour_number")] = hour_number
 
         if self.half_hour_number:
-            half_hour_number = self._get_period_in_hour(timestamp_series=timestamp_no_nans, period_in_minutes=30)
+            half_hour_number = self._get_period_in_hour(timestamp_series=timestamps_no_nans, period_in_minutes=30)
             features[self._get_column_name("half_hour_number")] = half_hour_number
 
         if self.half_day_number:
-            half_day_number = self._get_period_in_day(timestamp_series=timestamp_no_nans, period_in_hours=12)
+            half_day_number = self._get_period_in_day(timestamp_series=timestamps_no_nans, period_in_hours=12)
             features[self._get_column_name("half_day_number")] = half_day_number
 
         if self.one_third_day_number:
-            one_third_day_number = self._get_period_in_day(timestamp_series=timestamp_no_nans, period_in_hours=8)
+            one_third_day_number = self._get_period_in_day(timestamp_series=timestamps_no_nans, period_in_hours=8)
             features[self._get_column_name("one_third_day_number")] = one_third_day_number
 
         for feature in features.columns:
             features[feature] = features[feature].astype("category")
 
         # add NaNs in features
-        features = features.reindex(timestamp.index)
+        features = features.reindex(timestamps.index)
 
         return features
 
@@ -209,8 +209,8 @@ class TimeFlagsTransform(IrreversibleTransform):
             if pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
-            timestamp = pd.Series(df.index)
-            features = self._compute_features(timestamp=timestamp)
+            timestamps = pd.Series(df.index)
+            features = self._compute_features(timestamps=timestamps)
             features.index = df.index
 
             dataframes = []
@@ -224,10 +224,10 @@ class TimeFlagsTransform(IrreversibleTransform):
             result.columns.names = ["segment", "feature"]
 
         else:
-            flat_timestamp_df = TSDataset.to_flatten(df=df, features=[self.in_column])
-            features = self._compute_features(timestamp=flat_timestamp_df[self.in_column])
-            features["timestamp"] = flat_timestamp_df["timestamp"]
-            features["segment"] = flat_timestamp_df["segment"]
+            flat_df = TSDataset.to_flatten(df=df, features=[self.in_column])
+            features = self._compute_features(timestamps=flat_df[self.in_column])
+            features["timestamp"] = flat_df["timestamp"]
+            features["segment"] = flat_df["segment"]
             wide_df = TSDataset.to_dataset(features)
             result = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
 

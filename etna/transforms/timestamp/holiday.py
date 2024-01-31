@@ -100,13 +100,13 @@ class HolidayTransform(IrreversibleTransform):
         """
         return self
 
-    def _compute_feature(self, timestamp: pd.Series) -> pd.Series:
-        if (timestamp[1] - timestamp[0]) > datetime.timedelta(days=1):
+    def _compute_feature(self, timestamps: pd.Series) -> pd.Series:
+        if (timestamps[1] - timestamps[0]) > datetime.timedelta(days=1):
             raise ValueError("Frequency of data should be no more than daily.")
 
         if self._mode is HolidayTransformMode.category:
             values = []
-            for t in timestamp:
+            for t in timestamps:
                 if t is pd.NaT:
                     values.append(pd.NA)
                 elif t in self.holidays:
@@ -115,7 +115,7 @@ class HolidayTransform(IrreversibleTransform):
                     values.append(self._no_holiday_name)
             result = pd.Series(values)
         else:
-            result = pd.Series([int(x in self.holidays) if x is not pd.NaT else pd.NA for x in timestamp])
+            result = pd.Series([int(x in self.holidays) if x is not pd.NaT else pd.NA for x in timestamps])
 
         return result
 
@@ -138,7 +138,7 @@ class HolidayTransform(IrreversibleTransform):
             if pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
-            feature = self._compute_feature(timestamp=df.index).values
+            feature = self._compute_feature(timestamps=df.index).values
             cols = df.columns.get_level_values("segment").unique()
             encoded_matrix = feature.reshape(-1, 1).repeat(len(cols), axis=1)
             encoded_df = pd.DataFrame(
@@ -150,7 +150,7 @@ class HolidayTransform(IrreversibleTransform):
             df = df.join(encoded_df).sort_index(axis=1)
         else:
             features = TSDataset.to_flatten(df=df, features=[self.in_column])
-            features[out_column] = self._compute_feature(timestamp=features[self.in_column]).astype("category")
+            features[out_column] = self._compute_feature(timestamps=features[self.in_column]).astype("category")
             features.drop(columns=[self.in_column], inplace=True)
             wide_df = TSDataset.to_dataset(features)
             df = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
