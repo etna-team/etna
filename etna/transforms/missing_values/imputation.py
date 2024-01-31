@@ -50,9 +50,11 @@ class SimpleImputerSubsegment(SimpleImputer):
         old_statistics = self.statistics_.copy()
         self.n_features_in_ = len(segments)
         self.statistics_ = self.statistics_[[self._segment_to_index[segment] for segment in segments]]
-        super().transform(X.values)  # noqa: N803
-        self.n_features_in_ = len(old_statistics)
-        self.statistics_ = old_statistics
+        try:
+            super().transform(X.values)  # noqa: N803
+        finally:
+            self.n_features_in_ = len(old_statistics)
+            self.statistics_ = old_statistics
 
 
 class ImputerMode(str, Enum):
@@ -147,7 +149,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         self._strategy = ImputerMode(strategy)
         self._fit_segments: Optional[Sequence[str]] = None
         self._nans_to_impute_mask: Optional[pd.DataFrame] = None
-        self._mean_imputer: SimpleImputerSubsegment = SimpleImputerSubsegment(strategy="mean", copy=False)
+        self._mean_imputer: Optional[SimpleImputerSubsegment] = None
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
@@ -167,6 +169,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         self._fit_segments = sorted(set(df.columns.get_level_values("segment")))
 
         if self._strategy is ImputerMode.mean:
+            self._mean_imputer = SimpleImputerSubsegment(strategy="mean", copy=False)
             self._mean_imputer.fit(df)
 
         _beginning_nans_mask = df.fillna(method="ffill").isna()
@@ -216,7 +219,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         :
             Filled Dataframe.
         """
-        if self._nans_to_impute_mask is None:
+        if self._nans_to_impute_mask is None or (self.strategy is ImputerMode.mean and self._mean_imputer is None):
             raise ValueError("Transform is not fitted!")
 
         if self._strategy is ImputerMode.constant:
@@ -224,7 +227,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         elif self._strategy is ImputerMode.forward_fill:
             df.fillna(method="ffill", inplace=True)
         elif self._strategy is ImputerMode.mean:
-            self._mean_imputer.transform(df)
+            self._mean_imputer.transform(df)  # type: ignore
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
             history = self.seasonality * self.window if self.window != -1 else len(df)
             nan_mask = df.isna().values
