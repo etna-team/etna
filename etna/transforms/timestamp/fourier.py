@@ -170,7 +170,7 @@ class FourierTransform(IrreversibleTransform):
         super().fit(ts)
         return self
 
-    def _validate_external_timestamp(self, df: pd.DataFrame):
+    def _validate_external_timestamps(self, df: pd.DataFrame):
         df = df.droplevel("feature", axis=1)
 
         # here we are assuming that every segment has the same timestamp dtype
@@ -181,10 +181,10 @@ class FourierTransform(IrreversibleTransform):
         segments = df.columns.unique()
         freq_values = set()
         for segment in segments:
-            timestamp = df[segment]
-            timestamp = timestamp.loc[timestamp.first_valid_index() :]
-            if len(timestamp) >= 3:
-                cur_freq = pd.infer_freq(timestamp)
+            timestamps = df[segment]
+            timestamps = timestamps.loc[timestamps.first_valid_index() :]
+            if len(timestamps) >= 3:
+                cur_freq = pd.infer_freq(timestamps)
                 if cur_freq is None:
                     raise ValueError(
                         f"Invalid in_column values! Datetime values should be regular timestamps with some frequency. "
@@ -207,9 +207,9 @@ class FourierTransform(IrreversibleTransform):
             return None
 
         sample_segment = df.columns[0]
-        sample_timestamp = df[sample_segment]
-        sample_timestamp = sample_timestamp.loc[sample_timestamp.first_valid_index() :]
-        result = determine_freq(sample_timestamp)
+        sample_timestamps = df[sample_segment]
+        sample_timestamps = sample_timestamps.loc[sample_timestamps.first_valid_index() :]
+        result = determine_freq(sample_timestamps)
         return result
 
     def _infer_external_reference_timestamp(self, df: pd.DataFrame) -> Union[pd.Timestamp, int]:
@@ -219,8 +219,8 @@ class FourierTransform(IrreversibleTransform):
             return 0
 
         sample_segment = df.columns[0]
-        sample_timestamp = df[sample_segment]
-        reference_timestamp = sample_timestamp.loc[sample_timestamp.first_valid_index()]
+        sample_timestamps = df[sample_segment]
+        reference_timestamp = sample_timestamps.loc[sample_timestamps.first_valid_index()]
         return reference_timestamp
 
     def _fit(self, df: pd.DataFrame) -> "FourierTransform":
@@ -238,7 +238,7 @@ class FourierTransform(IrreversibleTransform):
         if self.in_column is None:
             self._reference_timestamp = df.index[0]
         else:
-            self._validate_external_timestamp(df)
+            self._validate_external_timestamps(df)
             self._freq = self._infer_external_freq(df)
             self._reference_timestamp = self._infer_external_reference_timestamp(df)
         return self
@@ -257,9 +257,9 @@ class FourierTransform(IrreversibleTransform):
         result.columns.names = ["segment", "feature"]
         return result
 
-    def _compute_features(self, timestamp: pd.Series) -> pd.DataFrame:
-        features = pd.DataFrame(index=timestamp.index)
-        elapsed = timestamp / self.period
+    def _compute_features(self, timestamps: pd.Series) -> pd.DataFrame:
+        features = pd.DataFrame(index=timestamps.index)
+        elapsed = timestamps / self.period
 
         for mod in self._mods:
             order = (mod + 1) // 2
@@ -269,7 +269,7 @@ class FourierTransform(IrreversibleTransform):
 
         return features
 
-    def _convert_regular_timestamp_datetime_to_numeric(
+    def _convert_regular_timestamps_datetime_to_numeric(
         self, timestamps: pd.Series, reference_timestamp: pd.Timestamp, freq: Optional[str]
     ) -> pd.Series:
         # we should always align timestamps to some fixed point
@@ -301,40 +301,40 @@ class FourierTransform(IrreversibleTransform):
 
         if self.in_column is None:
             if pd.api.types.is_integer_dtype(df.index.dtype):
-                timestamp = df.index.to_series()
+                timestamps = df.index.to_series()
             else:
-                timestamp = self._convert_regular_timestamp_datetime_to_numeric(
+                timestamps = self._convert_regular_timestamps_datetime_to_numeric(
                     timestamps=df.index, reference_timestamp=self._reference_timestamp, freq=self._freq
                 )
-            features = self._compute_features(timestamp=timestamp)
+            features = self._compute_features(timestamps=timestamps)
             features.index = df.index
             result = self._construct_answer_for_index(df=df, features=features)
         else:
             # here we are assuming that every segment has the same timestamp dtype
             timestamp_dtype = df.dtypes.iloc[0]
             if pd.api.types.is_numeric_dtype(timestamp_dtype):
-                flat_timestamp_df = TSDataset.to_flatten(df=df)
-                timestamp = flat_timestamp_df[self.in_column]
+                flat_df = TSDataset.to_flatten(df=df)
+                timestamps = flat_df[self.in_column]
             else:
-                self._validate_external_timestamp(df=df)
+                self._validate_external_timestamps(df=df)
                 segments = df.columns.get_level_values("segment").unique()
-                int_timestamp_values = []
+                int_values = []
                 for segment in segments:
-                    segment_timestamp = df[segment][self.in_column]
-                    int_segment_timestamp = self._convert_regular_timestamp_datetime_to_numeric(
-                        timestamps=segment_timestamp,
+                    segment_timestamps = df[segment][self.in_column]
+                    int_segment = self._convert_regular_timestamps_datetime_to_numeric(
+                        timestamps=segment_timestamps,
                         reference_timestamp=self._reference_timestamp,
                         freq=self._freq,
                     )
-                    int_timestamp_values.append(int_segment_timestamp)
+                    int_values.append(int_segment)
 
-                df_int_timestamp = pd.DataFrame(np.array(int_timestamp_values).T, index=df.index, columns=df.columns)
-                flat_timestamp_df = TSDataset.to_flatten(df=df_int_timestamp)
-                timestamp = flat_timestamp_df[self.in_column]
+                df_int = pd.DataFrame(np.array(int_values).T, index=df.index, columns=df.columns)
+                flat_df = TSDataset.to_flatten(df=df_int)
+                timestamps = flat_df[self.in_column]
 
-            features = self._compute_features(timestamp=timestamp)
-            features["timestamp"] = flat_timestamp_df["timestamp"]
-            features["segment"] = flat_timestamp_df["segment"]
+            features = self._compute_features(timestamps=timestamps)
+            features["timestamp"] = flat_df["timestamp"]
+            features["segment"] = flat_df["segment"]
             wide_df = TSDataset.to_dataset(features)
             result = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
         return result
