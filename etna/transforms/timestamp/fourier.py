@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import determine_freq
 from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
@@ -20,17 +21,38 @@ _DEFAULT_FREQ = object()
 class FourierTransform(IrreversibleTransform):
     """Adds fourier features to the dataset.
 
+    Transform can work with two types of timestamp data: numeric and datetime.
+
+    Transform can accept timestamp data in two forms:
+
+    - As index. In this case the dataset index is used to compute features.
+      The features will be the same for each segment.
+
+    - As external column. In this case for each segment its ``in_column`` will be used to compute features.
+      It is expected that for each segment we have the same type of timestamp data (datetime or numeric)
+      and for datetime type only one frequency is used.
+
+    If we are working with external column, there is a difference in handling numeric and datetime data:
+
+    - Numeric data can have missing values at any place.
+
+    - Datetime data could have missing values only at the beginning of each segment.
+
     Notes
     -----
-    To understand how transform works we recommend:
-    `Fourier series <https://otexts.com/fpp2/useful-predictors.html#fourier-series>`_.
+    To understand how transform works we recommend reading:
+    `Fourier series <https://otexts.com/fpp3/useful-predictors.html#fourier-series>`_.
 
-    * Parameter ``period`` is responsible for the seasonality we want to capture.
-    * Parameters ``order`` and ``mods`` define which harmonics will be used.
+    If we already have a numeric data then for a mode $m$ with a period $p$ we have:
 
-    Parameter ``order`` is a more user-friendly version of ``mods``.
-    For example, ``order=2`` can be represented as ``mods=[1, 2, 3, 4]`` if ``period`` > 4 and
-    as ``mods=[1, 2, 3]`` if 3 <= ``period`` <= 4.
+    .. math::
+        & k = \\left \\lfloor \\frac{m}{2} \\right \\rfloor
+        \\\\
+        & f_{m, i} = \\sin \\left( \\frac{2 \\pi k i}{p} + \\frac{\\pi}{2} (m \\mod 2) \\right)
+
+    If we have datetime data, then it first should be transformed into numeric.
+    During fitting the transform saves frequency and some datetime timestamp as a reference point.
+    During transformation it uses reference point to compute number of frequency units between reference point and each timestamp.
     """
 
     def __init__(
@@ -55,8 +77,8 @@ class FourierTransform(IrreversibleTransform):
             ``order`` should be >= 1 and <= ceil(period/2))
         mods:
             alternative and precise way of defining which harmonics will be used,
-            for example ``mods=[1, 3, 4]`` means that sin of the first order
-            and sin and cos of the second order will be used;
+            for example, ``order=2`` can be represented as ``mods=[1, 2, 3, 4]`` if ``period`` > 4 and
+            as ``mods=[1, 2, 3]`` if 3 <= ``period`` <= 4.
 
             ``mods`` should be >= 1 and < period
         out_column:
@@ -71,7 +93,8 @@ class FourierTransform(IrreversibleTransform):
 
             * if ``in_column`` is ``None`` (default) both datetime and integer timestamps are supported;
 
-            * if ``in_column`` isn't ``None`` only numeric columns are supported
+            * if ``in_column`` isn't ``None`` datetime and numeric columns are supported,
+              but for datetime values only regular timestamps with some frequency are supported
 
         Raises
         ------
@@ -140,13 +163,65 @@ class FourierTransform(IrreversibleTransform):
     def fit(self, ts: TSDataset) -> "FourierTransform":
         """Fit the transform."""
         if self.in_column is None:
-            self.in_column_regressor = True
-            # necessary for datetime timestamp
             self._freq = ts.freq
+            self.in_column_regressor = True
         else:
             self.in_column_regressor = self.in_column in ts.regressors
         super().fit(ts)
         return self
+
+    def _validate_external_timestamps(self, df: pd.DataFrame):
+        df = df.droplevel("feature", axis=1)
+
+        # here we are assuming that every segment has the same timestamp dtype
+        timestamp_dtype = df.dtypes.iloc[0]
+        if not pd.api.types.is_datetime64_dtype(timestamp_dtype):
+            return
+
+        segments = df.columns.unique()
+        freq_values = set()
+        for segment in segments:
+            timestamps = df[segment]
+            timestamps = timestamps.loc[timestamps.first_valid_index() :]
+            if len(timestamps) >= 3:
+                cur_freq = pd.infer_freq(timestamps)
+                if cur_freq is None:
+                    raise ValueError(
+                        f"Invalid in_column values! Datetime values should be regular timestamps with some frequency. "
+                        f"This doesn't hold for segment {segment}"
+                    )
+                freq_values.add(cur_freq)
+
+        if len(freq_values) > 1:
+            raise ValueError(
+                f"Invalid in_column values! Datetime values should have the same frequency for every segment. "
+                f"Discovered frequencies: {freq_values}"
+            )
+
+    def _infer_external_freq(self, df: pd.DataFrame) -> Optional[str]:
+        df = df.droplevel("feature", axis=1)
+
+        # here we are assuming that every segment has the same timestamp dtype
+        timestamp_dtype = df.dtypes.iloc[0]
+        if not pd.api.types.is_datetime64_dtype(timestamp_dtype):
+            return None
+
+        sample_segment = df.columns[0]
+        sample_timestamps = df[sample_segment]
+        sample_timestamps = sample_timestamps.loc[sample_timestamps.first_valid_index() :]
+        result = determine_freq(sample_timestamps)
+        return result
+
+    def _infer_external_reference_timestamp(self, df: pd.DataFrame) -> Union[pd.Timestamp, int]:
+        # here we are assuming that every segment has the same timestamp dtype
+        timestamp_dtype = df.dtypes.iloc[0]
+        if not pd.api.types.is_datetime64_dtype(timestamp_dtype):
+            return 0
+
+        sample_segment = df.columns[0]
+        sample_timestamps = df[sample_segment]
+        reference_timestamp = sample_timestamps.loc[sample_timestamps.first_valid_index()]
+        return reference_timestamp
 
     def _fit(self, df: pd.DataFrame) -> "FourierTransform":
         """Fit method does nothing and is kept for compatibility.
@@ -161,8 +236,11 @@ class FourierTransform(IrreversibleTransform):
         result:
         """
         if self.in_column is None:
-            # necessary for datetime timestamp
             self._reference_timestamp = df.index[0]
+        else:
+            self._validate_external_timestamps(df)
+            self._freq = self._infer_external_freq(df)
+            self._reference_timestamp = self._infer_external_reference_timestamp(df)
         return self
 
     @staticmethod
@@ -179,9 +257,9 @@ class FourierTransform(IrreversibleTransform):
         result.columns.names = ["segment", "feature"]
         return result
 
-    def _compute_features(self, timestamp: pd.Series) -> pd.DataFrame:
-        features = pd.DataFrame(index=timestamp.index)
-        elapsed = timestamp / self.period
+    def _compute_features(self, timestamps: pd.Series) -> pd.DataFrame:
+        features = pd.DataFrame(index=timestamps.index)
+        elapsed = timestamps / self.period
 
         for mod in self._mods:
             order = (mod + 1) // 2
@@ -191,22 +269,19 @@ class FourierTransform(IrreversibleTransform):
 
         return features
 
-    def _convert_sequential_timestamp_datetime_to_int(self, timestamp: pd.Series):
-        if self._reference_timestamp is None:
-            raise ValueError("The transform isn't fitted!")
-
+    def _convert_regular_timestamps_datetime_to_numeric(
+        self, timestamps: pd.Series, reference_timestamp: pd.Timestamp, freq: Optional[str]
+    ) -> pd.Series:
         # we should always align timestamps to some fixed point
-        if timestamp[0] >= self._reference_timestamp:
-            start_idx = determine_num_steps(
-                start_timestamp=self._reference_timestamp, end_timestamp=timestamp[0], freq=self._freq
-            )
+        end_timestamp = timestamps[-1]
+        if end_timestamp >= reference_timestamp:
+            end_idx = determine_num_steps(start_timestamp=reference_timestamp, end_timestamp=end_timestamp, freq=freq)
         else:
-            start_idx = -determine_num_steps(
-                start_timestamp=timestamp[0], end_timestamp=self._reference_timestamp, freq=self._freq
-            )
-        int_timestamp = pd.Series(np.arange(start_idx, start_idx + len(timestamp)))
+            end_idx = -determine_num_steps(start_timestamp=end_timestamp, end_timestamp=reference_timestamp, freq=freq)
 
-        return int_timestamp
+        numeric_timestamp = pd.Series(np.arange(end_idx - len(timestamps) + 1, end_idx + 1))
+
+        return numeric_timestamp
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add harmonics to the dataset.
@@ -221,26 +296,45 @@ class FourierTransform(IrreversibleTransform):
         result:
             transformed dataframe
         """
+        if self._freq is _DEFAULT_FREQ:
+            raise ValueError("The transform isn't fitted!")
+
         if self.in_column is None:
             if pd.api.types.is_integer_dtype(df.index.dtype):
-                timestamp = df.index.to_series()
+                timestamps = df.index.to_series()
             else:
-                timestamp = self._convert_sequential_timestamp_datetime_to_int(timestamp=df.index)
-            features = self._compute_features(timestamp=timestamp)
+                timestamps = self._convert_regular_timestamps_datetime_to_numeric(
+                    timestamps=df.index, reference_timestamp=self._reference_timestamp, freq=self._freq
+                )
+            features = self._compute_features(timestamps=timestamps)
             features.index = df.index
             result = self._construct_answer_for_index(df=df, features=features)
         else:
-            flat_timestamp_df = TSDataset.to_flatten(df=df, features=[self.in_column])
-
+            # here we are assuming that every segment has the same timestamp dtype
             timestamp_dtype = df.dtypes.iloc[0]
             if pd.api.types.is_numeric_dtype(timestamp_dtype):
-                timestamp = flat_timestamp_df[self.in_column]
+                flat_df = TSDataset.to_flatten(df=df)
+                timestamps = flat_df[self.in_column]
             else:
-                raise ValueError("Only numeric data is supported if in_column is set!")
+                self._validate_external_timestamps(df=df)
+                segments = df.columns.get_level_values("segment").unique()
+                int_values = []
+                for segment in segments:
+                    segment_timestamps = df[segment][self.in_column]
+                    int_segment = self._convert_regular_timestamps_datetime_to_numeric(
+                        timestamps=segment_timestamps,
+                        reference_timestamp=self._reference_timestamp,
+                        freq=self._freq,
+                    )
+                    int_values.append(int_segment)
 
-            features = self._compute_features(timestamp=timestamp)
-            features["timestamp"] = flat_timestamp_df["timestamp"]
-            features["segment"] = flat_timestamp_df["segment"]
+                df_int = pd.DataFrame(np.array(int_values).T, index=df.index, columns=df.columns)
+                flat_df = TSDataset.to_flatten(df=df_int)
+                timestamps = flat_df[self.in_column]
+
+            features = self._compute_features(timestamps=timestamps)
+            features["timestamp"] = flat_df["timestamp"]
+            features["segment"] = flat_df["segment"]
             wide_df = TSDataset.to_dataset(features)
             result = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
         return result
