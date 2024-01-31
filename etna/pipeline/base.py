@@ -59,6 +59,8 @@ class FoldMask(BaseMixin):
     ):
         """Init FoldMask.
 
+        Values of ``target_timestamps`` are sorted in ascending order.
+
         Notes
         -----
         String value is converted into :py:class`pd.Timestamps` using :py:func:`pandas.to_datetime`.
