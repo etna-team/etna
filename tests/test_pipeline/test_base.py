@@ -20,11 +20,9 @@ from etna.pipeline.base import BasePipeline
         (None, "2020-01-05", [pd.Timestamp("2020-01-06")]),
         (None, "2020-01-05", ["2020-01-06"]),
         (None, "2020-01-05", ["2020-01-06", "2020-01-07"]),
-        (None, "2020-01-05", ["2020-01-06", "2020-01-06"]),
         (None, "2020-01-05", ["2020-01-07", "2020-01-06"]),
         (None, 5, [6]),
         (None, 5, [6, 7]),
-        (None, 5, [6, 6]),
         (None, 5, [7, 6]),
         ("2020-01-01", "2020-01-01", ["2020-01-06"]),
         ("2020-01-01", "2020-01-05", ["2020-01-06"]),
@@ -73,7 +71,31 @@ def test_fold_mask_init_fail_wrong_order_first_last_training_timestamps(
 def test_fold_mask_init_fail_wrong_fail_empty_target_timestamps(
     first_train_timestamp, last_train_timestamp, target_timestamps
 ):
-    with pytest.raises(ValueError, match="Target timestamps should not be empty"):
+    with pytest.raises(ValueError, match="Target timestamps shouldn't be empty"):
+        _ = FoldMask(
+            first_train_timestamp=first_train_timestamp,
+            last_train_timestamp=last_train_timestamp,
+            target_timestamps=target_timestamps,
+        )
+
+
+@pytest.mark.parametrize(
+    "first_train_timestamp, last_train_timestamp, target_timestamps",
+    [
+        (
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-05"),
+            [pd.Timestamp("2020-01-06"), pd.Timestamp("2020-01-06")],
+        ),
+        (None, pd.Timestamp("2020-01-05"), [pd.Timestamp("2020-01-06"), pd.Timestamp("2020-01-06")]),
+        (1, 5, [6, 6]),
+        ("2020-01-01", "2020-01-05", ["2020-01-06", "2020-01-06"]),
+    ],
+)
+def test_fold_mask_init_fail_wrong_fail_duplicated_target_timestamps(
+    first_train_timestamp, last_train_timestamp, target_timestamps
+):
+    with pytest.raises(ValueError, match="Target timestamps shouldn't contain duplicates"):
         _ = FoldMask(
             first_train_timestamp=first_train_timestamp,
             last_train_timestamp=last_train_timestamp,

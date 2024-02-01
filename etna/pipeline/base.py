@@ -81,7 +81,9 @@ class FoldMask(BaseMixin):
         ValueError:
             Last train timestamp should be not sooner than first train timestamp
         ValueError:
-            Target timestamps should not be empty
+            Target timestamps shouldn't be empty
+        ValueError:
+            Target timestamps shouldn't contain duplicates
         ValueError:
             Target timestamps should be strictly later then last train timestamp
         """
@@ -151,7 +153,10 @@ class FoldMask(BaseMixin):
     ):
         """Check that all target timestamps aren't empty and later than last train timestamp."""
         if len(target_timestamps) == 0:
-            raise ValueError("Target timestamps should not be empty!")
+            raise ValueError("Target timestamps shouldn't be empty!")
+
+        if len(target_timestamps) != len(set(target_timestamps)):
+            raise ValueError("Target timestamps shouldn't contain duplicates!")
 
         first_target_timestamp = target_timestamps[0]
         if first_target_timestamp <= last_train_timestamp:  # type: ignore
