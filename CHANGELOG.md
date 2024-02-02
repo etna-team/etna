@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `ProphetModel` to handle external timestamp ([#203](https://github.com/etna-team/etna/pull/203))
 - Remove checking frequency in `timestamp_column` of `ProphetModel` ([#222](https://github.com/etna-team/etna/pull/222))
 - Update `FourierTransform` to handle external datetime timestamp ([#223](https://github.com/etna-team/etna/pull/223))
+- Fix `FourierTransform` on integer index, add inference tests ([#230](https://github.com/etna-team/etna/pull/230))
 
 ### Fixed
 - 
