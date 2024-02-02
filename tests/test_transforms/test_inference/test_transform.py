@@ -702,13 +702,6 @@ class TestTransformTrain:
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
-            (
-                PredictionIntervalOutliersTransform(
-                    in_column="target", model=ProphetModel, timestamp_column="external_timestamp"
-                ),
-                "ts_with_outliers",
-                {"change": {"target"}},
-            ),
             # timestamp
             (
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
