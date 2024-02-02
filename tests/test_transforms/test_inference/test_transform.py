@@ -60,7 +60,6 @@ from etna.transforms.decomposition import RupturesChangePointsModel
 from tests.test_transforms.utils import assert_column_changes
 from tests.utils import convert_ts_to_int_timestamp
 from tests.utils import select_segments_subset
-from tests.utils import to_be_fixed
 
 
 class TestTransformTrain:
@@ -700,6 +699,16 @@ class TestTransformTrain:
                 "ts_to_fill",
                 {"change": {"target"}},
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (
+                PredictionIntervalOutliersTransform(
+                    in_column="target", model=ProphetModel, timestamp_column="external_timestamp"
+                ),
+                "ts_with_outliers",
+                {"change": {"target"}},
+            ),
             # timestamp
             (
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
@@ -777,45 +786,35 @@ class TestTransformTrain:
         self._test_transform_train(ts, transform, expected_changes=expected_changes)
 
     @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            (
-                DateFlagsTransform(out_column="res"),
-                "regular_ts",
-            ),
-            (HolidayTransform(out_column="res", mode="binary"), "regular_ts"),
-            (HolidayTransform(out_column="res", mode="category"), "regular_ts"),
-            (
-                TimeFlagsTransform(out_column="res"),
-                "regular_ts",
-            ),
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_transform_train_int_timestamp_not_supported(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
-        with pytest.raises(ValueError, match="Transform can't work with integer index"):
-            self._test_transform_train(ts_int_timestamp, transform, expected_changes={})
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
+        "transform, dataset_name, error_match",
         [
             # outliers
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (
                 PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
-                "ts_with_outliers",
-                {"change": {"target"}},
+                "ts_with_external_timestamp",
+                "Invalid timestamp! Only datetime type is supported",
             ),
+            # timestamp
+            (DateFlagsTransform(out_column="res"), "regular_ts", "Transform can't work with integer index"),
+            (
+                HolidayTransform(out_column="res", mode="binary"),
+                "regular_ts",
+                "Transform can't work with integer index",
+            ),
+            (
+                HolidayTransform(out_column="res", mode="category"),
+                "regular_ts",
+                "Transform can't work with integer index",
+            ),
+            (TimeFlagsTransform(out_column="res"), "regular_ts", "Transform can't work with integer index"),
+            (SpecialDaysTransform(), "regular_ts", "Transform can't work with integer index"),
         ],
     )
-    def test_transform_train_int_timestamp_fails(self, transform, dataset_name, expected_changes, request):
+    def test_transform_train_int_timestamp_not_supported(self, transform, dataset_name, error_match, request):
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
-        self._test_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
+        with pytest.raises(ValueError, match=error_match):
+            self._test_transform_train(ts_int_timestamp, transform, expected_changes={})
 
 
 class TestTransformTrainSubsetSegments:

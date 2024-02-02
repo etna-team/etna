@@ -391,7 +391,6 @@ class TestInverseTransformTrain:
                 {"change": {"target"}},
             ),
             # timestamp
-            # TODO: fix
             (
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -474,24 +473,6 @@ class TestInverseTransformTrain:
         ],
     )
     def test_inverse_transform_train_fail_resample(self, transform, dataset_name, expected_changes, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_train(ts, transform, expected_changes=expected_changes)
-
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
-                ),
-                "ts_to_resample_int_timestamp",
-                {},
-            ),
-        ],
-    )
-    def test_inverse_transform_train_int_timestamp_non_inplace_resample(
-        self, transform, dataset_name, expected_changes, request
-    ):
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_train(ts, transform, expected_changes=expected_changes)
 
@@ -772,6 +753,9 @@ class TestInverseTransformTrain:
                 "ts_to_fill",
                 {"change": {"target"}},
             ),
+            # outliers
+            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
@@ -822,60 +806,53 @@ class TestInverseTransformTrain:
         self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
 
     @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            (
-                DateFlagsTransform(out_column="res"),
-                "regular_ts",
-            ),
-            (HolidayTransform(out_column="res", mode="binary"), "regular_ts"),
-            (HolidayTransform(out_column="res", mode="category"), "regular_ts"),
-            (
-                TimeFlagsTransform(out_column="res"),
-                "regular_ts",
-            ),
-            (SpecialDaysTransform(), "regular_ts"),
-        ],
-    )
-    def test_inverse_transform_train_int_timestamp_not_supported(self, transform, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
-        with pytest.raises(ValueError, match="Transform can't work with integer index"):
-            self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes={})
-
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
-            # missing_values
             (
                 ResampleWithDistributionTransform(
                     in_column="regressor_exog", distribution_column="target", inplace=False, out_column="res"
                 ),
-                "ts_to_resample",
-                {},
-            ),
-            (
-                ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=True
-                ),
                 "ts_to_resample_int_timestamp",
-                {"change": {"regressor_exog"}},
-            ),
-            # outliers
-            (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
-            (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
-            (
-                PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
-                "ts_with_outliers",
-                {"change": {"target"}},
+                {},
             ),
         ],
     )
-    def test_inverse_transform_train_int_timestamp_fail(self, transform, dataset_name, expected_changes, request):
+    def test_inverse_transform_train_int_timestamp_non_inplace_resample(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_inverse_transform_train(ts, transform, expected_changes=expected_changes)
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name, error_match",
+        [
+            # outliers
+            (
+                PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel),
+                "ts_with_outliers",
+                "Invalid timestamp! Only datetime type is supported",
+            ),
+            # timestamp
+            (DateFlagsTransform(out_column="res"), "regular_ts", "Transform can't work with integer index"),
+            (
+                HolidayTransform(out_column="res", mode="binary"),
+                "regular_ts",
+                "Transform can't work with integer index",
+            ),
+            (
+                HolidayTransform(out_column="res", mode="category"),
+                "regular_ts",
+                "Transform can't work with integer index",
+            ),
+            (TimeFlagsTransform(out_column="res"), "regular_ts", "Transform can't work with integer index"),
+            (SpecialDaysTransform(), "regular_ts", "Transform can't work with integer index"),
+        ],
+    )
+    def test_inverse_transform_train_int_timestamp_not_supported(self, transform, dataset_name, error_match, request):
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
-        self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes=expected_changes)
+        with pytest.raises(ValueError, match=error_match):
+            self._test_inverse_transform_train(ts_int_timestamp, transform, expected_changes={})
 
 
 class TestInverseTransformTrainSubsetSegments:

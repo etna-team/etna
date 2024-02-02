@@ -57,6 +57,25 @@ class OutliersTransform(ReversibleTransform, ABC):
             segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
             self.original_values[segment] = segment_values
 
+    def fit(self, ts: TSDataset) -> "OutliersTransform":
+        """Fit the transform.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        self.outliers_timestamps = self.detect_outliers(ts)
+        self._save_original_values(ts)
+        self._fit_segments = ts.segments
+        super().fit(ts=ts)
+        return self
+
     def _fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
         Find outliers using detection method.
@@ -71,11 +90,6 @@ class OutliersTransform(ReversibleTransform, ABC):
         result: OutliersTransform
             instance with saved outliers
         """
-        ts = TSDataset(df, freq=pd.infer_freq(df.index))
-        self.outliers_timestamps = self.detect_outliers(ts)
-        self._save_original_values(ts)
-        self._fit_segments = ts.segments
-
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
