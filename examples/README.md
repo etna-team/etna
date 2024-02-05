@@ -158,7 +158,7 @@ We have prepared a set of tutorials for an easy introduction:
   - Top-down approach 
 - Exogenous variables for hierarchical forecasts
 
-#### [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecast_interpretation.ipynb)
+#### [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecasting_interpretation.ipynb)
 - Loading dataset
 - Forecast decomposition 
   - CatBoost 
