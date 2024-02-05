@@ -61,11 +61,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `ProphetModel` to handle external timestamp ([#203](https://github.com/etna-team/etna/pull/203))
 - Remove checking frequency in `timestamp_column` of `ProphetModel` ([#222](https://github.com/etna-team/etna/pull/222))
 - Update `FourierTransform` to handle external datetime timestamp ([#223](https://github.com/etna-team/etna/pull/223))
+- Update `FoldMask` to work with integer timestamp, in `validate_on_dataset` method add validation on presence of `FoldMask` parameters in `ts.index`, add tests for `FoldMask` ([#226](https://github.com/etna-team/etna/pull/226))
 
 ### Fixed
 - 
 - 
-- 
+- Prohibit empty list value and duplication of `target_timestamps` parameter in `FoldMask` ([#226](https://github.com/etna-team/etna/pull/226))
 - 
 - 
 - Fix `DeseasonalityTransform` fails to inverse transform short series ([#174](https://github.com/etna-team/etna/pull/174))
