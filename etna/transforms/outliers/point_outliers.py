@@ -4,6 +4,7 @@ from typing import List
 from typing import Type
 from typing import Union
 
+import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
@@ -95,7 +96,7 @@ class DensityOutliersTransform(OutliersTransform):
         window_size: int = 15,
         distance_coef: float = 3,
         n_neighbors: int = 3,
-        distance_func: Callable[[float, float], float] = absolute_difference_distance,
+        distance_func: Callable[[np.ndarray, np.ndarray], np.ndarray] = absolute_difference_distance,
     ):
         """Create instance of DensityOutliersTransform.
 

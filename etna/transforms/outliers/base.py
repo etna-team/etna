@@ -51,11 +51,10 @@ class OutliersTransform(ReversibleTransform, ABC):
         """
         if self.outliers_timestamps is None:
             raise ValueError("Something went wrong during outliers detection stage! Check the transform parameters.")
-        self.original_values = dict()
-        for segment, timestamps in self.outliers_timestamps.items():
-            segment_ts = ts[:, segment, :]
-            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
-            self.original_values[segment] = segment_values
+
+        self.original_values = {
+            segment: ts[timestamps, segment, self.in_column] for segment, timestamps in self.outliers_timestamps.items()
+        }
 
     def _fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -103,7 +102,7 @@ class OutliersTransform(ReversibleTransform, ABC):
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
         segments = df.columns.get_level_values("segment").unique().tolist()
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
-        for segment in segments:
+        for segment in self.outliers_timestamps:
             # to locate only present indices
             segment_outliers_timestamps = df.index.intersection(self.outliers_timestamps[segment])
             df.loc[segment_outliers_timestamps, pd.IndexSlice[segment, self.in_column]] = np.NaN
@@ -134,7 +133,7 @@ class OutliersTransform(ReversibleTransform, ABC):
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
         segments = df.columns.get_level_values("segment").unique().tolist()
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
-        for segment in segments:
+        for segment in self.outliers_timestamps:
             segment_ts = df[segment, self.in_column]
             segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
         return df

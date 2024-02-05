@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
-def absolute_difference_distance(x: float, y: float) -> float:
+def absolute_difference_distance(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     """Calculate distance for :py:func:`get_anomalies_density` function by taking absolute value of difference.
 
     Parameters
@@ -25,7 +25,7 @@ def absolute_difference_distance(x: float, y: float) -> float:
     result: float
         absolute difference between values
     """
-    return abs(x - y)
+    return np.abs(x - y)
 
 
 def get_segment_density_outliers_indices(
@@ -33,7 +33,7 @@ def get_segment_density_outliers_indices(
     window_size: int = 7,
     distance_threshold: float = 10,
     n_neighbors: int = 3,
-    distance_func: Callable[[float, float], float] = absolute_difference_distance,
+    distance_func: Callable[[np.ndarray, np.ndarray], np.ndarray] = absolute_difference_distance,
 ) -> List[int]:
     """Get indices of outliers for one series.
 
@@ -56,32 +56,36 @@ def get_segment_density_outliers_indices(
         list of outliers' indices
     """
 
-    def is_close(item1: float, item2: float) -> int:
+    def is_close(item1: np.ndarray, item2: np.ndarray) -> np.ndarray:
         """Return 1 if item1 is closer to item2 than distance_threshold according to distance_func, 0 otherwise."""
-        return int(distance_func(item1, item2) < distance_threshold)
+        return distance_func(item1, item2) < distance_threshold
+
+    idxs = np.arange(len(series))
+    start_idxs = np.maximum(0, idxs - window_size)
+    end_idxs = np.maximum(0, np.minimum(idxs, len(series) - window_size)) + 1
+
+    deltas: np.ndarray = end_idxs - start_idxs
 
     outliers_indices = []
-    for idx, item in enumerate(series):
-        is_outlier = True
-        left_start = max(0, idx - window_size)
-        left_stop = max(0, min(idx, len(series) - window_size))
-        closeness = None
-        n = 0
-        for i in range(left_start, left_stop + 1):
-            if closeness is None:
-                closeness = [is_close(item, series[j]) for j in range(i, min(i + window_size, len(series)))]
-                n = sum(closeness) - 1
-            else:
-                n -= closeness.pop(0)
-                new_element_is_close = is_close(item, series[i + window_size - 1])
-                closeness.append(new_element_is_close)
-                n += new_element_is_close
-            if n >= n_neighbors:
-                is_outlier = False
+    for idx, item, start_idx, delta in zip(idxs, series, start_idxs, deltas):
+        closeness = is_close(series[start_idx : start_idx + window_size + delta - 1], item)
+
+        num_close = np.cumsum(closeness)
+
+        outlier = True
+        for d in range(delta):
+            est_neighbors = num_close[-delta + d] - num_close[d]
+            if (start_idx + d) != idx:
+                est_neighbors += closeness[d] - 1
+
+            if est_neighbors >= n_neighbors:
+                outlier = False
                 break
-        if is_outlier:
+
+        if outlier:
             outliers_indices.append(idx)
-    return list(outliers_indices)
+
+    return outliers_indices
 
 
 def get_anomalies_density(
@@ -90,7 +94,7 @@ def get_anomalies_density(
     window_size: int = 15,
     distance_coef: float = 3,
     n_neighbors: int = 3,
-    distance_func: Callable[[float, float], float] = absolute_difference_distance,
+    distance_func: Callable[[np.ndarray, np.ndarray], np.ndarray] = absolute_difference_distance,
 ) -> Dict[str, List[pd.Timestamp]]:
     """Compute outliers according to density rule.
 
@@ -127,9 +131,9 @@ def get_anomalies_density(
     for seg in segments:
         # TODO: dropna() now is responsible for removing nan-s at the end of the sequence and in the middle of it
         #   May be error or warning should be raised in this case
-        segment_df = ts[:, seg, :][seg].dropna().reset_index()
-        series = segment_df[in_column].values
-        timestamps = segment_df["timestamp"].values
+        segment_df = ts[:, seg, in_column].dropna()
+        series = segment_df.values
+        timestamps = segment_df.index.values
         series_std = np.std(series)
         if series_std:
             outliers_idxs = get_segment_density_outliers_indices(
@@ -139,10 +143,10 @@ def get_anomalies_density(
                 n_neighbors=n_neighbors,
                 distance_func=distance_func,
             )
-            outliers = [timestamps[i] for i in outliers_idxs]
-            outliers_per_segment[seg] = outliers
-        else:
-            outliers_per_segment[seg] = []
+
+            if len(outliers_idxs):
+                outliers_per_segment[seg] = timestamps[outliers_idxs]
+
     return outliers_per_segment
 
 
