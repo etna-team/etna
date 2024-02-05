@@ -145,7 +145,7 @@ def get_anomalies_density(
             )
 
             if len(outliers_idxs):
-                outliers_per_segment[seg] = timestamps[outliers_idxs]
+                outliers_per_segment[seg] = list(timestamps[outliers_idxs])
 
     return outliers_per_segment
 
