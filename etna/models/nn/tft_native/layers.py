@@ -49,7 +49,7 @@ class GatedLinearUnit(nn.Module):
         x = self.dropout(x)
         a = self.activation_fc(x)
         b = self.sigmoid(self.gated_fc(x))
-        x = torch.matmul(a, b)
+        x = torch.mul(a, b)
         return x
 
 
@@ -191,7 +191,7 @@ class VariableSelectionNetwork(nn.Module):
         }
         self.flatten_grn = GatedResidualNetwork(
             input_size=self.input_size * self.num_features,
-            output_size=self.input_size,
+            output_size=self.num_features,
             dropout=self.dropout,
             context=self.context,
         )
@@ -223,13 +223,19 @@ class VariableSelectionNetwork(nn.Module):
         :
             output batch of data with shapes (batch_size, num_timestamps, output_size)
         """
-        output = torch.zeros(list(x.values())[0].size() + torch.Size([len(x)]))
+        output = torch.zeros(
+            list(x.values())[0].size() + torch.Size([len(x)])
+        )  # (batch_size, num_timestamps, input_size, num_features)
         for i, (feature, embedding) in enumerate(x.items()):
             output[:, :, :, i] = self.grns[feature](embedding)
-        flatten_input = torch.cat(list(x.values()), dim=-1)
-        flatten_grn_output = self.flatten_grn(x=flatten_input, context=context)
-        feature_weights = self.softmax(flatten_grn_output).unsqueeze(dim=-2)
-        output = (output * feature_weights).sum(dim=-1)
+        flatten_input = torch.cat(list(x.values()), dim=-1)  # (batch_size, num_timestamps, input_size * num_features)
+        flatten_grn_output = self.flatten_grn(
+            x=flatten_input, context=context
+        )  # (batch_size, num_timestamps, num_features)
+        feature_weights = self.softmax(flatten_grn_output).unsqueeze(
+            dim=-2
+        )  # (batch_size, num_timestamps, 1, num_features)
+        output = (output * feature_weights).sum(dim=-1)  # (batch_size, num_timestamps, input_size)
         return output
 
 
