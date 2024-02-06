@@ -64,7 +64,7 @@ class ImputerMode(str, Enum):
     running_mean = "running_mean"
     forward_fill = "forward_fill"
     seasonal = "seasonal"
-    seasonal_statistics = "seasonal_statistics"
+    seasonal_nonautoreg = "seasonal_nonautoreg"
     constant = "constant"
 
     @classmethod
@@ -114,9 +114,11 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
             - If "forward_fill" then replace missing dates using last existing value
 
-            - If "seasonal" then replace missing dates using seasonal moving average in autoregressive manner
+            - If "seasonal" then replace missing dates using seasonal moving average in autoregressive manner,
+             point are imputed one by one in time order, already imputed points are used to impute the next points
 
-            - If "seasonal_statistics" then replace missing dates using seasonal moving average on existing values
+            - If "seasonal_nonautoreg" then replace missing dates using seasonal moving average of existing values,
+             all points are imputed using only existing points
 
             - If "constant" then replace missing dates using constant value.
 
@@ -238,7 +240,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
                 if len(indexes) > 0:
                     impute_values = bn.nanmean(df.iloc[indexes], axis=0)
                     df.iloc[i] = np.where(nan_mask[i], impute_values, df.iloc[i])
-        elif self._strategy is ImputerMode.seasonal_statistics:
+        elif self._strategy is ImputerMode.seasonal_nonautoreg:
             lag_transform = LagTransform(in_column=self.in_column, lags=[self.seasonality], out_column="lag")
             sma_transform = MeanTransform(
                 in_column=f"lag_{self.seasonality}",

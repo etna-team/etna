@@ -211,7 +211,7 @@ class TestTransformTrainSubsetSegments:
             (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill"),
             (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill"),
             (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill"),
-            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_statistics"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill"),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -422,7 +422,7 @@ class TestTransformFutureSubsetSegments:
             (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill"),
             (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill"),
             (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill"),
-            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_statistics"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill"),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
