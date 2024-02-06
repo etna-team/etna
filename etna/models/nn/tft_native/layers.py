@@ -1,5 +1,4 @@
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -34,7 +33,7 @@ class GatedLinearUnit(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.gated_fc = nn.Linear(self.input_size, self.output_size)
 
-    def forward(self, x: torch.tensor) -> torch.tensor:
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Forward pass.
 
         Parameters
@@ -78,7 +77,7 @@ class GateAddNorm(nn.Module):
         self.glu = GatedLinearUnit(input_size=self.input_size, output_size=self.output_size, dropout=self.dropout)
         self.norm = nn.LayerNorm(self.output_size)
 
-    def forward(self, x: torch.tensor, residual: torch.tensor) -> torch.tensor:
+    def forward(self, x: torch.Tensor, residual: torch.Tensor) -> torch.Tensor:
         """Forward pass.
 
         Parameters
@@ -135,7 +134,7 @@ class GatedResidualNetwork(nn.Module):
             dropout=self.dropout,
         )
 
-    def forward(self, x: torch.tensor, context: Optional[torch.tensor] = None) -> torch.tensor:
+    def forward(self, x: torch.Tensor, context: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Forward pass.
 
         Parameters
@@ -162,7 +161,7 @@ class GatedResidualNetwork(nn.Module):
 class VariableSelectionNetwork(nn.Module):
     """Variable Selection Network."""
 
-    def __init__(self, input_size: int, features: List = (), context: bool = False, dropout: float = 0.1) -> None:
+    def __init__(self, input_size: int, features: Tuple[str], context: bool = False, dropout: float = 0.1) -> None:
         """Init Variable Selection Network.
 
         Parameters
@@ -209,7 +208,7 @@ class VariableSelectionNetwork(nn.Module):
         """
         return len(self.features)
 
-    def forward(self, x: Dict[str : torch.tensor], context: Optional[torch.tensor] = None) -> torch.tensor:
+    def forward(self, x: Dict[str, torch.Tensor], context: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Forward pass.
 
         Parameters
@@ -224,7 +223,7 @@ class VariableSelectionNetwork(nn.Module):
         :
             output batch of data with shapes (batch_size, num_timestamps, output_size)
         """
-        output = []  # TODO try 4-dimention tensor
+        output = []  # TODO try 4-dimension tensor
         for feature, embedding in x.items():
             output.append(self.grns[feature](embedding))
         output = torch.stack(output, dim=-1)
@@ -270,7 +269,7 @@ class StaticCovariateEncoder(nn.Module):
             input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, context=False
         )
 
-    def forward(self, x: torch.tensor) -> Tuple[torch.tensor, torch.tensor, torch.tensor, torch.tensor]:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """Forward pass.
 
         Parameters
