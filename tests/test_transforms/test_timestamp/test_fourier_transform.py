@@ -11,6 +11,7 @@ from etna.models import LinearPerSegmentModel
 from etna.transforms.timestamp import FourierTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import convert_ts_to_int_timestamp
 
 
 def add_seasonality(series: pd.Series, period: int, magnitude: float) -> pd.Series:
@@ -69,7 +70,8 @@ def example_ts_external_datetime_timestamp(example_df):
     df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += pd.Timedelta("6H")
     df_exog_wide = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
-    return ts
+    ts_int_index = convert_ts_to_int_timestamp(ts=ts, shift=10)
+    return ts_int_index
 
 
 @pytest.fixture
@@ -113,7 +115,8 @@ def example_ts_external_int_timestamp(example_df):
     df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += 6
     df_exog_wide = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
-    return ts
+    ts_int_index = convert_ts_to_int_timestamp(ts=ts, shift=10)
+    return ts_int_index
 
 
 @pytest.fixture

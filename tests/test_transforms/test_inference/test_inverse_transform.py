@@ -392,7 +392,22 @@ class TestInverseTransformTrain:
             ),
             # timestamp
             (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
                 {},
             ),
@@ -401,6 +416,8 @@ class TestInverseTransformTrain:
                 "ts_with_external_int_timestamp",
                 {},
             ),
+            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
             (
                 HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -411,9 +428,15 @@ class TestInverseTransformTrain:
                 "ts_with_external_timestamp",
                 {},
             ),
+            (SpecialDaysTransform(), "regular_ts", {}),
             (
                 SpecialDaysTransform(in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
                 {},
             ),
             (
@@ -421,24 +444,6 @@ class TestInverseTransformTrain:
                 "ts_with_external_timestamp",
                 {},
             ),
-            (
-                DateFlagsTransform(out_column="res"),
-                "regular_ts",
-                {},
-            ),
-            (
-                FourierTransform(period=7, order=2, out_column="res"),
-                "regular_ts",
-                {},
-            ),
-            (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
-            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
-            (
-                TimeFlagsTransform(out_column="res"),
-                "regular_ts",
-                {},
-            ),
-            (SpecialDaysTransform(), "regular_ts", {}),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -769,6 +774,11 @@ class TestInverseTransformTrain:
             ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
                 {},
             ),
@@ -1018,7 +1028,11 @@ class TestInverseTransformTrainSubsetSegments:
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
             ),
-            (FourierTransform(period=7, order=2), "regular_ts"),
+            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
@@ -1258,7 +1272,11 @@ class TestInverseTransformFutureSubsetSegments:
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
             ),
-            (FourierTransform(period=7, order=2), "regular_ts"),
+            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
@@ -1515,6 +1533,11 @@ class TestInverseTransformTrainNewSegments:
             (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {},
             ),
             (
@@ -1884,6 +1907,11 @@ class TestInverseTransformFutureNewSegments:
             (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {},
             ),
             (
@@ -2406,6 +2434,11 @@ class TestInverseTransformFutureWithTarget:
             ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
                 {},
             ),
@@ -2861,6 +2894,11 @@ class TestInverseTransformFutureWithoutTarget:
             (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {},
             ),
             (

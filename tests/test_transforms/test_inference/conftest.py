@@ -61,7 +61,7 @@ def ts_with_external_timestamp(regular_ts) -> TSDataset:
     df_exog["external_timestamp"] = df["timestamp"]
     df_exog.drop(columns=["target"], inplace=True)
     ts = TSDataset(
-        df=TSDataset.to_dataset(df).iloc[5:-1], df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all"
+        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all"
     )
     return ts
 
@@ -73,7 +73,7 @@ def ts_with_external_int_timestamp(regular_ts) -> TSDataset:
     df_exog["external_timestamp"] = np.arange(10, 110).tolist() * 3
     df_exog.drop(columns=["target"], inplace=True)
     ts = TSDataset(
-        df=TSDataset.to_dataset(df).iloc[5:-1], df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all"
+        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all"
     )
     return ts
 

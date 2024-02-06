@@ -365,6 +365,11 @@ class TestTransformTrain:
             ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
@@ -715,6 +720,11 @@ class TestTransformTrain:
             ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
@@ -964,7 +974,11 @@ class TestTransformTrainSubsetSegments:
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
             ),
-            (FourierTransform(period=7, order=2), "regular_ts"),
+            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
@@ -1191,7 +1205,11 @@ class TestTransformFutureSubsetSegments:
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
             ),
-            (FourierTransform(period=7, order=2), "regular_ts"),
+            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
@@ -1405,6 +1423,11 @@ class TestTransformTrainNewSegments:
             (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
             (
@@ -1760,6 +1783,11 @@ class TestTransformFutureNewSegments:
             (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
             (
@@ -2198,6 +2226,11 @@ class TestTransformFutureWithTarget:
             ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_int_timestamp",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
@@ -2612,6 +2645,11 @@ class TestTransformFutureWithoutTarget:
             (
                 FourierTransform(period=7, order=2, out_column="res"),
                 "regular_ts",
+                {"create": {"res_1", "res_2", "res_3", "res_4"}},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
                 {"create": {"res_1", "res_2", "res_3", "res_4"}},
             ),
             (

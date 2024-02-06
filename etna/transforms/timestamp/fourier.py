@@ -273,7 +273,7 @@ class FourierTransform(IrreversibleTransform):
         self, timestamps: pd.Series, reference_timestamp: pd.Timestamp, freq: Optional[str]
     ) -> pd.Series:
         # we should always align timestamps to some fixed point
-        end_timestamp = timestamps[-1]
+        end_timestamp = timestamps.iloc[-1]
         if end_timestamp >= reference_timestamp:
             end_idx = determine_num_steps(start_timestamp=reference_timestamp, end_timestamp=end_timestamp, freq=freq)
         else:
@@ -304,7 +304,7 @@ class FourierTransform(IrreversibleTransform):
                 timestamps = df.index.to_series()
             else:
                 timestamps = self._convert_regular_timestamps_datetime_to_numeric(
-                    timestamps=df.index, reference_timestamp=self._reference_timestamp, freq=self._freq
+                    timestamps=df.index.to_series(), reference_timestamp=self._reference_timestamp, freq=self._freq
                 )
             features = self._compute_features(timestamps=timestamps)
             features.index = df.index
