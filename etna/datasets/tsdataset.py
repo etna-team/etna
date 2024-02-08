@@ -1651,3 +1651,13 @@ class TSDataset:
         ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
 
         return _TorchDataset(ts_samples=ts_samples)
+
+    def size(self) -> Tuple[int, int, Optional[int]]:
+        allfeatures = 0
+        for segment in self.segments:
+            cur_seg_features = self.df[segment].columns.get_level_values("feature").unique()
+            if allfeatures != 0 and allfeatures != len(cur_seg_features):
+                return len(self.index), len(self.segments), None
+            allfeatures = len(cur_seg_features)
+        return len(self.index), len(self.segments), allfeatures
+
