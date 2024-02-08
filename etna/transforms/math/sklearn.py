@@ -226,10 +226,8 @@ class SklearnTransform(ReversibleTransform):
         return df
 
     def _preprocess_macro(self, df: pd.DataFrame) -> np.ndarray:
-        segments = sorted(set(df.columns.get_level_values("segment")))
-        x = df.loc[:, pd.IndexSlice[:, self.in_column]]
-        x = pd.concat([x[segment] for segment in segments]).values
-        return x
+        x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
+        return x.T.reshape(-1, 1)
 
     def _postprocess_macro(self, df: pd.DataFrame, transformed: np.ndarray) -> np.ndarray:
         time_period_len = len(df)
