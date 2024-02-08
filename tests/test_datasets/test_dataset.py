@@ -605,37 +605,44 @@ def test_dataset_segment_conversion_during_init(df_segments_int):
     ts = TSDataset(df=df, freq="D")
     assert np.all(ts.columns.get_level_values("segment") == ["1", "2"])
 
+
 def test_size_with_diff_number_of_features():
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_1["segment"] = "Moscow"
     df_1["Feature"] = "Feature"
-    df_1["target"] = [x ** 2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
+    df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     df_2["segment"] = "Omsk"
-    df_2["target"] = [x ** 2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
+    df_2["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     tdf_1 = TSDataset.to_dataset(df_1)
     tdf_2 = TSDataset.to_dataset(df_2)
-    tdf = TSDataset(df = tdf_1, df_exog=tdf_2, freq="1d")
-    assert(tdf.size()[0] == len(df_1))
-    assert(tdf.size()[1] == 2)
-    assert(tdf.size()[2] == None)
+    tdf = TSDataset(df=tdf_1, df_exog=tdf_2, freq="1d")
+    assert tdf.size()[0] == len(df_1)
+    assert tdf.size()[1] == 2
+    assert tdf.size()[2] is not None
+
+
 def test_size_target_only():
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
     df_1["segment"] = "Moscow"
-    df_1["target"] = [x ** 2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
+    df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     df_2["segment"] = "Omsk"
-    df_2["target"] = [x ** 2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
+    df_2["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     tdf_1 = TSDataset.to_dataset(df_1)
     tdf_2 = TSDataset.to_dataset(df_2)
     tdf = TSDataset(df=tdf_1, df_exog=tdf_2, freq="1d")
-    assert(tdf.size()[0] == len(df_1))
-    assert(tdf.size()[1] == 2)
-    assert(tdf.size()[2] == 1)
+    assert tdf.size()[0] == len(df_1)
+    assert tdf.size()[1] == 2
+    assert tdf.size()[2] == 1
+
+
 def simple_test_size_(tsdf_with_exog):
-    assert(tsdf_with_exog.size()[0] == 151)
-    assert(tsdf_with_exog.size()[1] == 2)
-    assert(tsdf_with_exog.size()[2] == 2)
+    assert tsdf_with_exog.size()[0] == 151
+    assert tsdf_with_exog.size()[1] == 2
+    assert tsdf_with_exog.size()[2] == 2
+
+
 @pytest.mark.xfail
 def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
     with pytest.raises(ValueError, match="All segments should end at the same timestamp"):
