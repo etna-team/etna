@@ -619,7 +619,7 @@ def test_size_with_diff_number_of_features():
     tdf = TSDataset(df=tdf_1, df_exog=tdf_2, freq="1d")
     assert tdf.size()[0] == len(df_1)
     assert tdf.size()[1] == 2
-    assert tdf.size()[2] is not None
+    assert tdf.size()[2] is None
 
 
 def test_size_target_only():
