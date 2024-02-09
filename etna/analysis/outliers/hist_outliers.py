@@ -316,6 +316,8 @@ def get_anomalies_hist(
         name of the column in which the anomaly is searching
     bins_number:
         number of bins
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------

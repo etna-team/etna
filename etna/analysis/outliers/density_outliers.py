@@ -113,6 +113,8 @@ def get_anomalies_density(
         min number of close neighbors of point not to be outlier
     distance_func:
         distance function
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------

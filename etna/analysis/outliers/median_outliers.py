@@ -30,6 +30,8 @@ def get_anomalies_median(
         number of points in the window
     alpha:
         coefficient for determining the threshold
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------

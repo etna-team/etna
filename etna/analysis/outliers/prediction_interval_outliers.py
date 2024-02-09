@@ -88,6 +88,8 @@ def get_anomalies_prediction_interval(
         * If it is set to "target", then all data will be used for prediction.
 
         * Otherwise, only column data will be used.
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------
