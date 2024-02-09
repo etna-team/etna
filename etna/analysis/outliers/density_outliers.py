@@ -124,16 +124,18 @@ def get_anomalies_density(
     It is a variation of distance-based (index) outlier detection method adopted for timeseries.
     """
     outliers_per_segment = {}
-    for seg in segments:
+
+    segments_df = ts[..., in_column].droplevel("feature", axis=1)
+    stds = np.nanstd(segments_df.values, axis=0)
+
+    for series_std, (segment, series_df) in zip(stds, segments_df.items()):
         # TODO: dropna() now is responsible for removing nan-s at the end of the sequence and in the middle of it
         #   May be error or warning should be raised in this case
-        segment_df = ts[:, seg, in_column].dropna()
-        series = segment_df.values
-        timestamps = segment_df.index.values
-        series_std = np.std(series)
+        series = series_df.dropna()
+
         if series_std:
             outliers_idxs = get_segment_density_outliers_indices(
-                series=series,
+                series=series.values,
                 window_size=window_size,
                 distance_threshold=distance_coef * series_std,
                 n_neighbors=n_neighbors,
