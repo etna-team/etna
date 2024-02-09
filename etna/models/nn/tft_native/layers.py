@@ -291,3 +291,62 @@ class StaticCovariateEncoder(nn.Module):
         c_h = self.grn_h(x, context=None)
         c_e = self.grn_e(x, context=None)
         return c_s, c_c, c_h, c_e
+
+
+class TemporalFusionDecoder(nn.Module):
+    """Temporal Fusion Decoder."""
+    def __init__(self, input_size: int, output_size: int, decoder_length: int,  n_heads: int, dropout: float = 0.1) -> None:
+        """Init Temporal Fusion Decoder.
+
+        Parameters
+        ----------
+        input_size:
+            input size of the feature representation
+        output_size:
+            output size of the feature representation
+        decoder_length:
+            number of prediction timestamps
+        n_heads:
+            number of heads in multi-head attention
+        dropout:
+            dropout rate
+        """
+        super().__init__()
+        self.input_size = input_size
+        self.output_size = output_size
+        self.decoder_length = decoder_length
+        self.n_heads = n_heads
+        self.dropout = dropout
+        self.grn1 = GatedResidualNetwork(
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, context=True
+        )
+        self.attention = nn.MultiheadAttention(
+            embed_dim=self.input_size, num_heads=self.n_heads, dropout=self.dropout, batch_first=True
+        )
+        self.gate_norm = GateAddNorm(input_size=self.input_size, output_size=self.input_size, dropout=self.dropout)
+        self.grn2 = GatedResidualNetwork(
+            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, context=False
+        )
+
+    def forward(self, x: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
+        """Forward pass.
+
+        Parameters
+        ----------
+        x:
+            batch of data with shapes (batch_size, num_timestamps, input_size)
+        context:
+            batch of data passed as the context through the block with shapes (batch_size, num_timestamps, output_size)
+        Returns
+        -------
+        :
+            output batch of data with shapes (batch_size, decoder_length, output_size)
+        """
+        x = self.grn1(x, context)
+        residual = x
+        attn_mask = torch.triu(torch.ones((x.size()[1], x.size()[1]), dtype=bool))
+        attn_mask[:, :-self.encoder_length] = False
+        x = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
+        x = self.gate_norm(x[:, -self.decoder_length:, :], residual[:, -self.decoder_length:, :])
+        output = self.grn2(x)
+        return output
