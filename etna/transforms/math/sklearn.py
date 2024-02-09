@@ -227,7 +227,7 @@ class SklearnTransform(ReversibleTransform):
 
     def _preprocess_macro(self, df: pd.DataFrame) -> np.ndarray:
         x = df.loc[:, pd.IndexSlice[:, self.in_column]].values
-        return x.T.reshape(-1, 1)
+        return x.T.reshape(-1, len(self.in_column))
 
     def _postprocess_macro(self, df: pd.DataFrame, transformed: np.ndarray) -> np.ndarray:
         time_period_len = len(df)
