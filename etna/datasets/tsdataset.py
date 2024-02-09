@@ -1658,11 +1658,12 @@ class TSDataset:
         -------
         :
             Number of time series, number of segments, and number of features (if their amounts are equal in each segment; otherwise, returns None)
+
         """
-        allfeatures = 0
+        current_number_of_features = 0
         for segment in self.segments:
             cur_seg_features = self.df[segment].columns.get_level_values("feature").unique()
-            if allfeatures != 0 and allfeatures != len(cur_seg_features):
+            if current_number_of_features != 0 and current_number_of_features != len(cur_seg_features):
                 return len(self.index), len(self.segments), None
-            allfeatures = len(cur_seg_features)
-        return len(self.index), len(self.segments), allfeatures
+            current_number_of_features = len(cur_seg_features)
+        return len(self.index), len(self.segments), current_number_of_features
