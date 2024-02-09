@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -55,11 +56,6 @@ def get_segment_density_outliers_indices(
     :
         list of outliers' indices
     """
-
-    def is_close(item1: np.ndarray, item2: np.ndarray) -> np.ndarray:
-        """Return 1 if item1 is closer to item2 than distance_threshold according to distance_func, 0 otherwise."""
-        return distance_func(item1, item2) < distance_threshold
-
     idxs = np.arange(len(series))
     start_idxs = np.maximum(0, idxs - window_size)
     end_idxs = np.maximum(0, np.minimum(idxs, len(series) - window_size)) + 1
@@ -68,7 +64,7 @@ def get_segment_density_outliers_indices(
 
     outliers_indices = []
     for idx, item, start_idx, delta in zip(idxs, series, start_idxs, deltas):
-        closeness = is_close(series[start_idx : start_idx + window_size + delta - 1], item)
+        closeness = distance_func(series[start_idx : start_idx + window_size + delta - 1], item) < distance_threshold
 
         num_close = np.cumsum(closeness)
 
@@ -95,7 +91,8 @@ def get_anomalies_density(
     distance_coef: float = 3,
     n_neighbors: int = 3,
     distance_func: Callable[[np.ndarray, np.ndarray], np.ndarray] = absolute_difference_distance,
-) -> Dict[str, List[pd.Timestamp]]:
+    index_only: bool = True,
+) -> Dict[str, Union[List[pd.Timestamp], pd.Series]]:
     """Compute outliers according to density rule.
 
     For each element in the series build all the windows of size ``window_size`` containing this point.
@@ -126,7 +123,6 @@ def get_anomalies_density(
     -----
     It is a variation of distance-based (index) outlier detection method adopted for timeseries.
     """
-    segments = ts.segments
     outliers_per_segment = {}
     for seg in segments:
         # TODO: dropna() now is responsible for removing nan-s at the end of the sequence and in the middle of it
@@ -145,7 +141,13 @@ def get_anomalies_density(
             )
 
             if len(outliers_idxs):
-                outliers_per_segment[seg] = list(timestamps[outliers_idxs])
+                if index_only:
+                    store_values = list(series.index.values[outliers_idxs])
+
+                else:
+                    store_values = series.iloc[outliers_idxs]
+
+                outliers_per_segment[segment] = store_values
 
     return outliers_per_segment
 

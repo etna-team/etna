@@ -63,7 +63,9 @@ class MedianOutliersTransform(OutliersTransform):
         :
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
+        return get_anomalies_median(
+            ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha, index_only=False
+        )
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
@@ -139,6 +141,7 @@ class DensityOutliersTransform(OutliersTransform):
             distance_coef=self.distance_coef,
             n_neighbors=self.n_neighbors,
             distance_func=self.distance_func,
+            index_only=False,
         )
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
@@ -219,6 +222,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             model=self._model_type,
             interval_width=self.interval_width,
             in_column=self.in_column,
+            index_only=False,
             **self.model_kwargs,
         )
 

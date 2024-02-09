@@ -1,5 +1,8 @@
 import math
 import typing
+from typing import Dict
+from typing import List
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -9,8 +12,8 @@ if typing.TYPE_CHECKING:
 
 
 def get_anomalies_median(
-    ts: "TSDataset", in_column: str = "target", window_size: int = 10, alpha: float = 3
-) -> typing.Dict[str, typing.List[pd.Timestamp]]:
+    ts: "TSDataset", in_column: str = "target", window_size: int = 10, alpha: float = 3, index_only: bool = True
+) -> Dict[str, Union[List[pd.Timestamp], pd.Series]]:
     """
     Get point outliers in time series using median model (estimation model-based method).
 
@@ -36,11 +39,10 @@ def get_anomalies_median(
     outliers_per_segment = {}
     segments = ts.segments
     for seg in segments:
-        anomalies: typing.List[int] = []
+        anomalies: List[int] = []
 
         segment_df = ts.df[seg].reset_index()
         values = segment_df[in_column].values
-        timestamp = segment_df["timestamp"].values
 
         n_iter = math.ceil(len(values) / window_size)
         for i in range(n_iter):
@@ -50,5 +52,15 @@ def get_anomalies_median(
             std = np.std(values[left_border:right_border])
             diff = np.abs(values[left_border:right_border] - med)
             anomalies.extend(np.where(diff > std * alpha)[0] + left_border)
-        outliers_per_segment[seg] = [timestamp[i] for i in anomalies]
+
+        if len(anomalies):
+            store_values = segment_df.iloc[anomalies]
+
+            if index_only:
+                store_values = list(store_values["timestamp"].values)
+            else:
+                store_values = pd.Series(store_values[in_column].values, index=store_values["timestamp"])
+
+            outliers_per_segment[seg] = store_values
+
     return outliers_per_segment

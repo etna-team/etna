@@ -6,9 +6,7 @@ from etna.analysis.outliers import get_anomalies_median
 
 def test_const_ts(const_ts_anomal):
     anomal = get_anomalies_median(const_ts_anomal)
-    assert {"segment_0", "segment_1"} == set(anomal.keys())
-    for seg in anomal.keys():
-        assert len(anomal[seg]) == 0
+    assert len(anomal) == 0
 
 
 @pytest.mark.parametrize(

@@ -2,6 +2,7 @@ import typing
 from copy import deepcopy
 from typing import TYPE_CHECKING
 from typing import List
+from typing import Union
 
 import numba
 import numpy as np
@@ -299,8 +300,8 @@ def hist(series: np.ndarray, bins_number: int) -> np.ndarray:
 
 
 def get_anomalies_hist(
-    ts: "TSDataset", in_column: str = "target", bins_number: int = 10
-) -> typing.Dict[str, List[pd.Timestamp]]:
+    ts: "TSDataset", in_column: str = "target", bins_number: int = 10, index_only: bool = True
+) -> typing.Dict[str, Union[List[pd.Timestamp], pd.Series]]:
     """
     Get point outliers in time series using histogram model.
 
@@ -326,9 +327,17 @@ def get_anomalies_hist(
     for seg in segments:
         segment_df = ts.df[seg].reset_index()
         values = segment_df[in_column].values
-        timestamp = segment_df["timestamp"].values
 
         anomalies = hist(values, bins_number)
 
-        outliers_per_segment[seg] = [timestamp[i] for i in anomalies]
+        if len(anomalies):
+            store_values = segment_df.iloc[anomalies]
+
+            if index_only:
+                store_values = list(store_values["timestamp"].values)
+            else:
+                store_values = pd.Series(segment_df[in_column].values, index=store_values["timestamp"])
+
+            outliers_per_segment[seg] = store_values
+
     return outliers_per_segment
