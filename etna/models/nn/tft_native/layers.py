@@ -12,7 +12,7 @@ if SETTINGS.torch_required:
 class GatedLinearUnit(nn.Module):
     """Gated Linear Unit."""
 
-    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1) -> None:
+    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1):
         """Init Gated Linear Unit.
 
         Parameters
@@ -56,7 +56,7 @@ class GatedLinearUnit(nn.Module):
 class GateAddNorm(nn.Module):
     """Gated Add&Norm layer."""
 
-    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1) -> None:
+    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1):
         """Init Add&Norm layer.
 
         Parameters
@@ -99,7 +99,7 @@ class GateAddNorm(nn.Module):
 class GatedResidualNetwork(nn.Module):
     """Gated Residual Network (GRN)."""
 
-    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1, context: bool = False) -> None:
+    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1, context: bool = False):
         """Init GRN.
 
         Parameters
@@ -161,7 +161,7 @@ class GatedResidualNetwork(nn.Module):
 class VariableSelectionNetwork(nn.Module):
     """Variable Selection Network."""
 
-    def __init__(self, input_size: int, features: Tuple[str], context: bool = False, dropout: float = 0.1) -> None:
+    def __init__(self, input_size: int, features: Tuple[str], context: bool = False, dropout: float = 0.1):
         """Init Variable Selection Network.
 
         Parameters
@@ -180,15 +180,17 @@ class VariableSelectionNetwork(nn.Module):
         self.features = features
         self.context = context
         self.dropout = dropout
-        self.grns = {
-            feature: GatedResidualNetwork(
-                input_size=self.input_size,
-                output_size=self.input_size,
-                dropout=self.dropout,
-                context=False,
-            )
-            for feature in self.features
-        }
+        self.grns = nn.ModuleDict(
+            {
+                feature: GatedResidualNetwork(
+                    input_size=self.input_size,
+                    output_size=self.input_size,
+                    dropout=self.dropout,
+                    context=False,
+                )
+                for feature in self.features
+            }
+        )
         self.flatten_grn = GatedResidualNetwork(
             input_size=self.input_size * self.num_features,
             output_size=self.num_features,
@@ -228,6 +230,7 @@ class VariableSelectionNetwork(nn.Module):
         )  # (batch_size, num_timestamps, input_size, num_features)
         for i, (feature, embedding) in enumerate(x.items()):
             output[:, :, :, i] = self.grns[feature](embedding)
+
         flatten_input = torch.cat(list(x.values()), dim=-1)  # (batch_size, num_timestamps, input_size * num_features)
         flatten_grn_output = self.flatten_grn(
             x=flatten_input, context=context
@@ -235,6 +238,7 @@ class VariableSelectionNetwork(nn.Module):
         feature_weights = self.softmax(flatten_grn_output).unsqueeze(
             dim=-2
         )  # (batch_size, num_timestamps, 1, num_features)
+
         output = (output * feature_weights).sum(dim=-1)  # (batch_size, num_timestamps, input_size)
         return output
 
@@ -242,7 +246,7 @@ class VariableSelectionNetwork(nn.Module):
 class StaticCovariateEncoder(nn.Module):
     """Static Covariate Encoder."""
 
-    def __init__(self, input_size: int, output_size: int, output_flatten_size: int, dropout: float = 0.1) -> None:
+    def __init__(self, input_size: int, output_size: int, output_flatten_size: int, dropout: float = 0.1):
         """Init Static Covariate Encoder.
 
         Parameters
@@ -295,7 +299,8 @@ class StaticCovariateEncoder(nn.Module):
 
 class TemporalFusionDecoder(nn.Module):
     """Temporal Fusion Decoder."""
-    def __init__(self, input_size: int, output_size: int, decoder_length: int,  n_heads: int, dropout: float = 0.1) -> None:
+
+    def __init__(self, input_size: int, output_size: int, decoder_length: int, n_heads: int, dropout: float = 0.1):
         """Init Temporal Fusion Decoder.
 
         Parameters
@@ -344,9 +349,11 @@ class TemporalFusionDecoder(nn.Module):
         """
         x = self.grn1(x, context)
         residual = x
-        attn_mask = torch.triu(torch.ones((x.size()[1], x.size()[1]), dtype=bool))
-        attn_mask[:, :-self.encoder_length] = False
+
+        attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1)
+        attn_mask[:, : -self.decoder_length] = False
+
         x = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
-        x = self.gate_norm(x[:, -self.decoder_length:, :], residual[:, -self.decoder_length:, :])
+        x = self.gate_norm(x[:, -self.decoder_length :, :], residual[:, -self.decoder_length :, :])
         output = self.grn2(x)
         return output
