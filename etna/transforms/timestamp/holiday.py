@@ -89,7 +89,7 @@ class HolidayTransform(IrreversibleTransform):
             pd.DataFrame with added holidays
         """
         inferred_freq = pd.infer_freq(df.index)
-        if inferred_freq not in ["D", "H", "T", "S"] and self._mode is not HolidayTransformMode.days_count:
+        if (df.index[1] - df.index[0]) > timedelta(days=1) and self._mode is not HolidayTransformMode.days_count:
             raise ValueError("In default mode frequency of data should be no more than daily.")
 
         cols = df.columns.get_level_values("segment").unique()
@@ -133,7 +133,7 @@ class HolidayTransform(IrreversibleTransform):
             columns=pd.MultiIndex.from_product([cols, [out_column]], names=("segment", "feature")),
             index=df.index,
         )
-        if self._mode is HolidayTransformMode.days_count:
+        if self._mode is not HolidayTransformMode.days_count:
             encoded_df = encoded_df.astype("category")
         df = df.join(encoded_df)
         df = df.sort_index(axis=1)
