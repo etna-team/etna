@@ -99,7 +99,7 @@ class GateAddNorm(nn.Module):
 class GatedResidualNetwork(nn.Module):
     """Gated Residual Network (GRN)."""
 
-    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1, context: bool = False):
+    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1, pass_context: bool = False):
         """Init GRN.
 
         Parameters
@@ -110,19 +110,19 @@ class GatedResidualNetwork(nn.Module):
             output size of the feature representation
         dropout:
             dropout rate
-        context:
+        pass_context:
             whether to pass context vector through the block
         """
         super().__init__()
         self.input_size = input_size
         self.output_size = output_size
         self.dropout = dropout
-        self.context = context
+        self.pass_context = pass_context
 
         self.fc1 = nn.Linear(self.input_size, self.input_size)
         self.elu = nn.ELU()
 
-        if self.context:
+        if self.pass_context:
             self.context_fc = nn.Linear(self.input_size, self.input_size, bias=False)
 
         self.residual_fc = nn.Linear(self.input_size, self.output_size) if self.input_size != self.output_size else None
@@ -161,7 +161,7 @@ class GatedResidualNetwork(nn.Module):
 class VariableSelectionNetwork(nn.Module):
     """Variable Selection Network."""
 
-    def __init__(self, input_size: int, features: Tuple[str], context: bool = False, dropout: float = 0.1):
+    def __init__(self, input_size: int, features: Tuple[str], pass_context: bool = False, dropout: float = 0.1):
         """Init Variable Selection Network.
 
         Parameters
@@ -170,7 +170,7 @@ class VariableSelectionNetwork(nn.Module):
             input size of the feature representation
         features:
             features to pass through the block
-        context:
+        pass_context:
             whether to pass context vector through the block
         dropout:
             dropout rate
@@ -178,7 +178,7 @@ class VariableSelectionNetwork(nn.Module):
         super().__init__()
         self.input_size = input_size
         self.features = features
-        self.context = context
+        self.pass_context = pass_context
         self.dropout = dropout
         self.grns = nn.ModuleDict(
             {
@@ -186,7 +186,7 @@ class VariableSelectionNetwork(nn.Module):
                     input_size=self.input_size,
                     output_size=self.input_size,
                     dropout=self.dropout,
-                    context=False,
+                    pass_context=False,
                 )
                 for feature in self.features
             }
@@ -195,9 +195,9 @@ class VariableSelectionNetwork(nn.Module):
             input_size=self.input_size * self.num_features,
             output_size=self.num_features,
             dropout=self.dropout,
-            context=self.context,
+            pass_context=self.context,
         )
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=2)
 
     @property
     def num_features(self) -> int:
@@ -266,16 +266,16 @@ class StaticCovariateEncoder(nn.Module):
         self.output_flatten_size = output_flatten_size
         self.dropout = dropout
         self.grn_s = GatedResidualNetwork(  # for VariableSelectionNetwork
-            input_size=self.input_size, output_size=self.output_flatten_size, dropout=self.dropout, context=False
+            input_size=self.input_size, output_size=self.output_flatten_size, dropout=self.dropout, pass_context=False
         )
         self.grn_c = GatedResidualNetwork(  # for LSTM
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, context=False
+            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
         )
         self.grn_h = GatedResidualNetwork(  # for LSTM
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, context=False
+            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
         )
         self.grn_e = GatedResidualNetwork(  # for GRN
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, context=False
+            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
         )
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -323,14 +323,14 @@ class TemporalFusionDecoder(nn.Module):
         self.n_heads = n_heads
         self.dropout = dropout
         self.grn1 = GatedResidualNetwork(
-            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, context=True
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=True
         )
         self.attention = nn.MultiheadAttention(
             embed_dim=self.input_size, num_heads=self.n_heads, dropout=self.dropout, batch_first=True
         )
         self.gate_norm = GateAddNorm(input_size=self.input_size, output_size=self.input_size, dropout=self.dropout)
         self.grn2 = GatedResidualNetwork(
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, context=False
+            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
         )
 
     def forward(self, x: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
@@ -351,7 +351,6 @@ class TemporalFusionDecoder(nn.Module):
         residual = x
 
         attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1)
-        attn_mask[:, : -self.decoder_length] = False
 
         x = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
         x = self.gate_norm(x[:, -self.decoder_length :, :], residual[:, -self.decoder_length :, :])
