@@ -1654,11 +1654,14 @@ class TSDataset:
 
     def size(self) -> Tuple[int, int, Optional[int]]:
         """Return size of TSDataset.
+
+        The order of sizes is (number of time series, number of segments,
+        and number of features (if their amounts are equal in each segment; otherwise, returns None)).
+
         Returns
         -------
         :
-            Number of time series, number of segments, and number of features (if their amounts are equal in each segment; otherwise, returns None)
-
+            Tuple of TSDataset sizes
         """
         current_number_of_features = 0
         for segment in self.segments:

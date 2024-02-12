@@ -607,40 +607,32 @@ def test_dataset_segment_conversion_during_init(df_segments_int):
 
 
 def test_size_with_diff_number_of_features():
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
-    df_1["segment"] = "Moscow"
-    df_1["Feature"] = "Feature"
-    df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
-    df_2["segment"] = "Omsk"
-    df_2["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
-    tdf_1 = TSDataset.to_dataset(df_1)
-    tdf_2 = TSDataset.to_dataset(df_2)
-    tdf = TSDataset(df=tdf_1, df_exog=tdf_2, freq="1d")
-    assert tdf.size()[0] == len(df_1)
-    assert tdf.size()[1] == 2
-    assert tdf.size()[2] is None
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp)
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] is None
 
 
 def test_size_target_only():
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
-    df_1["segment"] = "Moscow"
-    df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
-    df_2["segment"] = "Omsk"
-    df_2["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
-    tdf_1 = TSDataset.to_dataset(df_1)
-    tdf_2 = TSDataset.to_dataset(df_2)
-    tdf = TSDataset(df=tdf_1, df_exog=tdf_2, freq="1d")
-    assert tdf.size()[0] == len(df_1)
-    assert tdf.size()[1] == 2
-    assert tdf.size()[2] == 1
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq="D")
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_temp) / 3
+    assert ts_temp.size()[1] == 3
+    assert ts_temp.size()[2] == 1
 
 
-def simple_test_size_(tsdf_with_exog):
-    assert tsdf_with_exog.size()[0] == 151
-    assert tsdf_with_exog.size()[1] == 2
-    assert tsdf_with_exog.size()[2] == 2
+def simple_test_size_():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    df_exog_temp["other_feature"] = 1
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp) / 2
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] == 3
 
 
 @pytest.mark.xfail
