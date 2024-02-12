@@ -1651,3 +1651,22 @@ class TSDataset:
         ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
 
         return _TorchDataset(ts_samples=ts_samples)
+
+    def size(self) -> Tuple[int, int, Optional[int]]:
+        """Return size of TSDataset.
+
+        The order of sizes is (number of time series, number of segments,
+        and number of features (if their amounts are equal in each segment; otherwise, returns None)).
+
+        Returns
+        -------
+        :
+            Tuple of TSDataset sizes
+        """
+        current_number_of_features = 0
+        for segment in self.segments:
+            cur_seg_features = self.df[segment].columns.get_level_values("feature").unique()
+            if current_number_of_features != 0 and current_number_of_features != len(cur_seg_features):
+                return len(self.index), len(self.segments), None
+            current_number_of_features = len(cur_seg_features)
+        return len(self.index), len(self.segments), current_number_of_features
