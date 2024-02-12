@@ -89,7 +89,7 @@ class HolidayTransform(IrreversibleTransform):
             pd.DataFrame with added holidays
         """
         inferred_freq = pd.infer_freq(df.index)
-        if inferred_freq != "D" and self._mode is not HolidayTransformMode.days_count:
+        if inferred_freq not in ["D", "H", "T", "S"] and self._mode is not HolidayTransformMode.days_count:
             raise ValueError("In default mode frequency of data should be no more than daily.")
 
         cols = df.columns.get_level_values("segment").unique()
@@ -103,7 +103,7 @@ class HolidayTransform(IrreversibleTransform):
                 numbers_part = "1" if numbers_part == "" else numbers_part
                 start_date = datetime(2011, 1, 1)
                 new_date = datetime(2011, 1, 1)
-                if letters_part == "W":
+                if letters_part in ["W-SUN", "W-SAT", "W-FRI", "W-THU", "W-WED", "W-TUE", "W-MON"]:
                     start_date = date - timedelta(days=date.weekday())
                     new_date = start_date + pd.DateOffset(weeks=int(numbers_part))
                 elif letters_part in ["M", "MS"]:
