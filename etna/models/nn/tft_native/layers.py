@@ -231,7 +231,9 @@ class VariableSelectionNetwork(nn.Module):
         for i, (feature, embedding) in enumerate(x.items()):
             output[:, :, :, i] = self.grns[feature](embedding)
 
-        flatten_input = torch.cat(list(x.values()), dim=-1)  # (batch_size, num_timestamps, input_size * num_features)
+        flatten_input = torch.cat(
+            [x[feature] for feature in self.features], dim=-1
+        )  # (batch_size, num_timestamps, input_size * num_features)
         flatten_grn_output = self.flatten_grn(
             x=flatten_input, context=context
         )  # (batch_size, num_timestamps, num_features)
