@@ -205,7 +205,7 @@ def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_ts_daily: 
     ts = two_segments_simple_ts_daily
     ts.df.index = index
     holidays_finder = HolidayTransform(out_column="holiday")
-    with pytest.raises(ValueError, match="Frequency of data should be no more than daily."):
+    with pytest.raises(ValueError, match="In default mode frequency of data should be no more than daily."):
         ts = holidays_finder.fit_transform(ts)
 
 
