@@ -1,5 +1,4 @@
 import itertools
-from datetime import datetime
 from datetime import timedelta
 from enum import Enum
 from typing import List
@@ -9,7 +8,34 @@ import holidays
 import numpy as np
 import pandas as pd
 
+from etna.datasets import TSDataset
 from etna.transforms.base import IrreversibleTransform
+
+
+def compare_frequency(freq: str):
+    new_freq = freq
+    secs = 0
+    seconds_in_day = 8640
+    while new_freq != "":
+        numbers_part = "".join(itertools.takewhile(str.isdigit, new_freq))
+        new_freq = new_freq[len(numbers_part) :]
+        numbers_part = "1" if numbers_part == "" else numbers_part
+        letters_part = ""
+        for char in new_freq:
+            if char.isupper():
+                letters_part += char
+            else:
+                break
+        new_freq = new_freq[len(letters_part) + 1 :]
+        if letters_part == "S":
+            secs += int(numbers_part)
+        elif letters_part == "MIN":
+            secs += int(numbers_part) * 60
+        elif letters_part == "H":
+            secs = int(numbers_part) * 360
+        else:
+            return False
+    return secs <= seconds_in_day
 
 
 class HolidayTransformMode(str, Enum):
@@ -31,7 +57,7 @@ class HolidayTransform(IrreversibleTransform):
     HolidayTransform generates series that indicates holidays in given dataset.
 
     In `binary` mode shows the presence of holiday in that day. In `category` mode shows the name of the holiday
-    with value "NO_HOLIDAY" reserved for days without holidays.
+    with value "NO_HOLIDAY" reserved for days without holidays. In the days_count mode, calculate frequency of holidays
     """
 
     _no_holiday_name: str = "NO_HOLIDAY"
@@ -55,6 +81,7 @@ class HolidayTransform(IrreversibleTransform):
         self._mode = HolidayTransformMode(mode)
         self.holidays = holidays.country_holidays(iso_code)
         self.out_column = out_column
+        self.freq = None
 
     def _get_column_name(self) -> str:
         if self.out_column:
@@ -63,14 +90,36 @@ class HolidayTransform(IrreversibleTransform):
             return self.__repr__()
 
     def _fit(self, df: pd.DataFrame) -> "HolidayTransform":
-        """
-        Fit HolidayTransform with data from df. Does nothing in this case.
+        """Fit the transform.
 
         Parameters
         ----------
-        df: pd.DataFrame
-            value series with index column in timestamp format
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
         """
+        return self
+
+    def fit(self, ts: TSDataset) -> "Transform":
+        """Fit the transform.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        df = ts.to_pandas(flatten=False, features=self.required_features)
+        self._fit(df=df)
+        self.freq = ts.freq
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -88,8 +137,12 @@ class HolidayTransform(IrreversibleTransform):
         :
             pd.DataFrame with added holidays
         """
-        inferred_freq = pd.infer_freq(df.index)
-        if (df.index[1] - df.index[0]) > timedelta(days=1) and self._mode is not HolidayTransformMode.days_count:
+        numbers_part = "".join(itertools.takewhile(str.isdigit, self.freq))
+        letters_part = "".join(itertools.dropwhile(str.isdigit, self.freq))
+        numbers_part = "1" if numbers_part == "" else numbers_part
+        if (
+            self.freq != "D" and compare_frequency(self.freq) is False
+        ) and self._mode is not HolidayTransformMode.days_count:
             raise ValueError("In default mode frequency of data should be no more than daily.")
 
         cols = df.columns.get_level_values("segment").unique()
@@ -98,21 +151,16 @@ class HolidayTransform(IrreversibleTransform):
         if self._mode is HolidayTransformMode.days_count:
             encoded_matrix = np.empty(0)
             for date in df.index:
-                numbers_part = "".join(itertools.takewhile(str.isdigit, inferred_freq))
-                letters_part = "".join(itertools.dropwhile(str.isdigit, inferred_freq))
-                numbers_part = "1" if numbers_part == "" else numbers_part
-                start_date = datetime(2011, 1, 1)
-                new_date = datetime(2011, 1, 1)
-                if letters_part in ["W-SUN", "W-SAT", "W-FRI", "W-THU", "W-WED", "W-TUE", "W-MON"]:
+                if letters_part == "W":
                     start_date = date - timedelta(days=date.weekday())
                     new_date = start_date + pd.DateOffset(weeks=int(numbers_part))
                 elif letters_part in ["M", "MS"]:
                     start_date = date.replace(day=1)
                     new_date = start_date + pd.DateOffset(months=int(numbers_part))
-                elif letters_part in ["Q-DEC", "QS-OCT", "QS-DEC", "QS-OST"]:
+                elif letters_part in ["Q", "QS"]:
                     start_date = date.replace(day=1)
                     new_date = start_date + pd.DateOffset(months=3 * int(numbers_part))
-                elif letters_part in ["A-DEC", "AS-JAN"]:
+                elif letters_part in ["Y", "YS"]:
                     start_date = date.replace(month=1, day=1)
                     new_date = start_date + pd.DateOffset(years=int(numbers_part))
                 else:

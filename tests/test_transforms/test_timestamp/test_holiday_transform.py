@@ -42,6 +42,36 @@ def two_segments_simple_ts_daily(simple_constant_df_daily: pd.DataFrame):
 
 
 @pytest.fixture()
+def two_segments_simple_ts_day_15min(simple_constant_df_daily: pd.DataFrame):
+    df_1 = simple_constant_df_daily.reset_index()
+    df_2 = simple_constant_df_daily.reset_index()
+    df_1 = df_1[3:]
+
+    df_1["segment"] = "segment_1"
+    df_2["segment"] = "segment_2"
+
+    classic_df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df, freq="1D 15MIN")
+    return ts
+
+
+@pytest.fixture()
+def two_segments_simple_ts_month(simple_constant_df_daily: pd.DataFrame):
+    df_1 = simple_constant_df_daily.reset_index()
+    df_2 = simple_constant_df_daily.reset_index()
+    df_1 = df_1[3:]
+
+    df_1["segment"] = "segment_1"
+    df_2["segment"] = "segment_2"
+
+    classic_df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df, freq="M")
+    return ts
+
+
+@pytest.fixture()
 def simple_constant_df_hour():
     df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-01-10", freq="H")})
     df["target"] = 42
@@ -201,11 +231,17 @@ def test_holidays_min(iso_code: str, answer: np.array, two_segments_simple_ts_mi
         (pd.date_range(start="2019-11-25", end="2021-02-25", freq="M")),
     ),
 )
-def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_ts_daily: TSDataset):
-    ts = two_segments_simple_ts_daily
-    ts.df.index = index
+def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_ts_day_15min: TSDataset):
+    ts = two_segments_simple_ts_day_15min
     holidays_finder = HolidayTransform(out_column="holiday")
     with pytest.raises(ValueError, match="In default mode frequency of data should be no more than daily."):
+        ts = holidays_finder.fit_transform(ts)
+
+
+def test_holidays_days_count_mode_failed(two_segments_simple_ts_daily: TSDataset):
+    ts = two_segments_simple_ts_daily
+    holidays_finder = HolidayTransform(out_column="holiday", mode="days_count")
+    with pytest.raises(ValueError, match="days_count mode don't support frequency less than Weekly"):
         ts = holidays_finder.fit_transform(ts)
 
 
