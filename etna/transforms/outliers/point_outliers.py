@@ -4,12 +4,10 @@ from typing import List
 from typing import Type
 from typing import Union
 
-import numpy as np
 import pandas as pd
 from typing_extensions import Literal
 
 from etna import SETTINGS
-from etna.analysis import absolute_difference_distance
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
@@ -98,7 +96,7 @@ class DensityOutliersTransform(OutliersTransform):
         window_size: int = 15,
         distance_coef: float = 3,
         n_neighbors: int = 3,
-        distance_func: Callable[[np.ndarray, np.ndarray], np.ndarray] = absolute_difference_distance,
+        distance_func: Union[Literal["absolute_difference"], Callable[[float, float], float]] = "absolute_difference",
     ):
         """Create instance of DensityOutliersTransform.
 
@@ -113,7 +111,8 @@ class DensityOutliersTransform(OutliersTransform):
         n_neighbors:
             min number of close neighbors of point not to be outlier
         distance_func:
-            distance function
+            distance function. If a string is specified, a corresponding vectorized implementation will be used.
+            Custom callable will be used as a scalar function, which will result in worse performance.
         """
         self.window_size = window_size
         self.distance_coef = distance_coef
