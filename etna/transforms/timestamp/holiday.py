@@ -13,6 +13,7 @@ from etna.transforms.base import IrreversibleTransform
 
 
 def compare_frequency(freq: str):
+    """Compare frequency with day."""
     new_freq = freq
     secs = 0
     seconds_in_day = 8640
@@ -81,7 +82,7 @@ class HolidayTransform(IrreversibleTransform):
         self._mode = HolidayTransformMode(mode)
         self.holidays = holidays.country_holidays(iso_code)
         self.out_column = out_column
-        self.freq = None
+        self.freq = ""
 
     def _get_column_name(self) -> str:
         if self.out_column:
@@ -104,7 +105,7 @@ class HolidayTransform(IrreversibleTransform):
         """
         return self
 
-    def fit(self, ts: TSDataset) -> "Transform":
+    def fit(self, ts: TSDataset):
         """Fit the transform.
 
         Parameters
@@ -137,6 +138,8 @@ class HolidayTransform(IrreversibleTransform):
         :
             pd.DataFrame with added holidays
         """
+        if self.freq == "":
+            raise ValueError("You should specify frequency in your dataset")
         numbers_part = "".join(itertools.takewhile(str.isdigit, self.freq))
         letters_part = "".join(itertools.dropwhile(str.isdigit, self.freq))
         numbers_part = "1" if numbers_part == "" else numbers_part
