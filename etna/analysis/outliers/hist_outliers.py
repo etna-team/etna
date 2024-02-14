@@ -338,7 +338,7 @@ def get_anomalies_hist(
             if index_only:
                 store_values = list(store_values["timestamp"].values)
             else:
-                store_values = pd.Series(segment_df[in_column].values, index=store_values["timestamp"])
+                store_values = pd.Series(store_values[in_column].values, index=store_values["timestamp"])
 
             outliers_per_segment[seg] = store_values
 

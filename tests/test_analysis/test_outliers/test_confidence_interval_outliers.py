@@ -1,5 +1,10 @@
+from typing import Dict
+from typing import List
+
 import numpy as np
+import pandas as pd
 import pytest
+from typing_extensions import assert_type
 
 from etna.analysis import get_anomalies_prediction_interval
 from etna.analysis.outliers.prediction_interval_outliers import create_ts_by_column
@@ -77,3 +82,11 @@ def test_get_anomalies_prediction_interval_values(outliers_tsds, model, interval
 )
 def test_get_anomalies_prediction_interval_imbalanced_tsdf(imbalanced_tsdf, model, interval_width, in_column):
     get_anomalies_prediction_interval(imbalanced_tsdf, model=model, interval_width=interval_width, in_column=in_column)
+
+
+@pytest.mark.parametrize("index_only, values_type", ((True, List[pd.Timestamp]), (False, pd.Series)))
+def test_get_anomalies_prediction_interval_index_only(outliers_tsds, index_only, values_type):
+    result = get_anomalies_prediction_interval(
+        outliers_tsds, model=ProphetModel, interval_width=0.95, in_column="target", index_only=index_only
+    )
+    assert_type(result, Dict[str, values_type])

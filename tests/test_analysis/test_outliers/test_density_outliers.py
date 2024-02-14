@@ -1,7 +1,13 @@
+from typing import Callable
+from typing import Dict
 from typing import List
+from typing import Union
+from unittest.mock import MagicMock
 
 import numpy as np
+import pandas as pd
 import pytest
+from typing_extensions import assert_type
 
 from etna.analysis.outliers.density_outliers import absolute_difference_distance
 from etna.analysis.outliers.density_outliers import get_anomalies_density
@@ -40,6 +46,11 @@ def test_default_distance(x, y, expected):
     assert absolute_difference_distance(x, y) == expected
 
 
+def test_absolute_diff_out_format():
+    out = absolute_difference_distance(np.ones(3), np.ones(3))
+    assert isinstance(out, np.ndarray)
+
+
 @pytest.mark.parametrize(
     "window_size,n_neighbors,distance_threshold,expected",
     (
@@ -50,14 +61,28 @@ def test_default_distance(x, y, expected):
         (100, 2, 1.5, [2, 4, 5, 6]),
     ),
 )
+@pytest.mark.parametrize("distance_func", ("absolute_difference", lambda x, y: abs(x - y)))
 def test_get_segment_density_outliers_indices(
-    simple_window: np.array, window_size: int, n_neighbors: int, distance_threshold: float, expected: List[int]
+    simple_window: np.array,
+    window_size: int,
+    n_neighbors: int,
+    distance_threshold: float,
+    expected: List[int],
+    distance_func: Union[str, Callable[[float, float], float]],
 ):
     """Check that outliers in one series computation works correctly."""
     outliers = get_segment_density_outliers_indices(
         series=simple_window, window_size=window_size, n_neighbors=n_neighbors, distance_threshold=distance_threshold
     )
     np.testing.assert_array_equal(outliers, expected)
+
+
+@pytest.mark.parametrize("distance_func", ("abc",))
+def test_get_anomalies_density_invalid_distance(outliers_tsds: TSDataset, distance_func: str):
+    with pytest.raises(NotImplementedError, match=".* is not a valid DistanceFunction"):
+        _ = get_anomalies_density(
+            ts=outliers_tsds, window_size=7, distance_coef=2, n_neighbors=3, distance_func=distance_func
+        )
 
 
 def test_get_anomalies_density_interface(outliers_tsds: TSDataset):
@@ -74,6 +99,20 @@ def test_get_anomalies_density(outliers_tsds: TSDataset):
     for key in expected:
         assert key in outliers
         np.testing.assert_array_equal(outliers[key], expected[key])
+
+
+def test_get_anomalies_density_custom_func_called(outliers_tsds: TSDataset):
+    mock = MagicMock(return_value=0.0)
+    _ = get_anomalies_density(ts=outliers_tsds, window_size=7, distance_coef=2.1, n_neighbors=3, distance_func=mock)
+    mock.assert_called()
+
+
+@pytest.mark.parametrize("index_only, values_type", ((True, List[pd.Timestamp]), (False, pd.Series)))
+def test_get_anomalies_density_index_only(outliers_tsds: TSDataset, index_only: bool, values_type):
+    result = get_anomalies_density(
+        ts=outliers_tsds, window_size=7, distance_coef=2.1, n_neighbors=3, index_only=index_only
+    )
+    assert_type(result, Dict[str, values_type])
 
 
 def test_in_column(outliers_df_with_two_columns):
