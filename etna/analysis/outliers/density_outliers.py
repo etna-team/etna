@@ -1,7 +1,10 @@
+from enum import Enum
+from itertools import islice
 from typing import TYPE_CHECKING
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Literal
 from typing import Union
 
 import numpy as np
@@ -23,10 +26,28 @@ def absolute_difference_distance(x: np.ndarray, y: np.ndarray) -> np.ndarray:
 
     Returns
     -------
-    result: float
+    result: np.ndarray
         absolute difference between values
     """
     return np.abs(x - y)
+
+
+class DistanceFunction(str, Enum):
+    """Enum for points distance measure functions."""
+
+    absolute_difference = "absolute_difference"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} seasonality allowed"
+        )
+
+    def get_callable(self) -> Callable[[np.ndarray, np.ndarray], np.ndarray]:
+        if self.value == DistanceFunction.absolute_difference:
+            return absolute_difference_distance
+        else:
+            raise ValueError("Invalid distance function!")
 
 
 def get_segment_density_outliers_indices(
@@ -34,7 +55,7 @@ def get_segment_density_outliers_indices(
     window_size: int = 7,
     distance_threshold: float = 10,
     n_neighbors: int = 3,
-    distance_func: Callable[[np.ndarray, np.ndarray], np.ndarray] = absolute_difference_distance,
+    distance_func: Union[Literal["absolute_difference"], Callable[[float, float], float]] = "absolute_difference",
 ) -> List[int]:
     """Get indices of outliers for one series.
 
@@ -49,7 +70,8 @@ def get_segment_density_outliers_indices(
     n_neighbors:
         min number of close items that item should have not to be outlier
     distance_func:
-        distance function
+        distance function. If a string is specified, a corresponding vectorized implementation will be used. Custom callable
+        will be used as a scalar function, which will result in worse performance.
 
     Returns
     -------
@@ -62,9 +84,25 @@ def get_segment_density_outliers_indices(
 
     deltas: np.ndarray = end_idxs - start_idxs
 
+    if isinstance(distance_func, str):
+        dist_func = DistanceFunction(distance_func).get_callable()
+
+        def _closeness_func(x, start, stop, y):
+            return (dist_func(x[start:stop], y) < distance_threshold).astype(int)
+
+    else:
+
+        def _closeness_func(x, start, stop, y):
+            return [int(distance_func(elem, y) < distance_threshold) for elem in islice(x, start, stop)]
+
     outliers_indices = []
     for idx, item, start_idx, delta in zip(idxs, series, start_idxs, deltas):
-        closeness = distance_func(series[start_idx : start_idx + window_size + delta - 1], item) < distance_threshold
+        closeness = _closeness_func(
+            x=series,
+            start=start_idx,
+            stop=start_idx + window_size + delta - 1,
+            y=item,
+        )
 
         num_close = np.cumsum(closeness)
 
@@ -90,7 +128,7 @@ def get_anomalies_density(
     window_size: int = 15,
     distance_coef: float = 3,
     n_neighbors: int = 3,
-    distance_func: Callable[[np.ndarray, np.ndarray], np.ndarray] = absolute_difference_distance,
+    distance_func: Union[Literal["absolute_difference"], Callable[[float, float], float]] = "absolute_difference",
     index_only: bool = True,
 ) -> Dict[str, Union[List[pd.Timestamp], pd.Series]]:
     """Compute outliers according to density rule.
@@ -112,7 +150,8 @@ def get_anomalies_density(
     n_neighbors:
         min number of close neighbors of point not to be outlier
     distance_func:
-        distance function
+        distance function. If a string is specified, a corresponding vectorized implementation will be used. Custom callable
+        will be used as a scalar function, which will result in worse performance.
     index_only:
         whether to return only outliers indices. If `False` will return outliers series
 
