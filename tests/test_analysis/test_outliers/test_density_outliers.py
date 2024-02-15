@@ -1,5 +1,4 @@
 from typing import Callable
-from typing import Dict
 from typing import List
 from typing import Union
 from unittest.mock import MagicMock
@@ -7,7 +6,6 @@ from unittest.mock import MagicMock
 import numpy as np
 import pandas as pd
 import pytest
-from typing_extensions import assert_type
 
 from etna.analysis.outliers.density_outliers import absolute_difference_distance
 from etna.analysis.outliers.density_outliers import get_anomalies_density
@@ -107,12 +105,16 @@ def test_get_anomalies_density_custom_func_called(outliers_tsds: TSDataset):
     mock.assert_called()
 
 
-@pytest.mark.parametrize("index_only, values_type", ((True, List[pd.Timestamp]), (False, pd.Series)))
-def test_get_anomalies_density_index_only(outliers_tsds: TSDataset, index_only: bool, values_type):
+@pytest.mark.parametrize("index_only, value_type", ((True, list), (False, pd.Series)))
+def test_get_anomalies_density_index_only(outliers_tsds: TSDataset, index_only: bool, value_type):
     result = get_anomalies_density(
         ts=outliers_tsds, window_size=7, distance_coef=2.1, n_neighbors=3, index_only=index_only
     )
-    assert_type(result, Dict[str, values_type])
+
+    assert isinstance(result, dict)
+    for key, value in result.items():
+        assert isinstance(key, str)
+        assert isinstance(value, value_type)
 
 
 def test_in_column(outliers_df_with_two_columns):

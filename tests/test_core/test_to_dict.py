@@ -97,7 +97,7 @@ def test_to_dict_transforms(target_object):
     [
         (
             DensityOutliersTransform("target", distance_coef=6),
-            {'in_column': 'target', 'window_size': 15, 'distance_coef': 6, 'n_neighbors': 3, 'distance_func': {'_target_': 'etna.analysis.outliers.density_outliers.absolute_difference_distance'}, '_target_': 'etna.transforms.outliers.point_outliers.DensityOutliersTransform'}  # noqa: E501
+            {'in_column': 'target', 'window_size': 15, 'distance_coef': 6, 'n_neighbors': 3, 'distance_func': 'absolute_difference', '_target_': 'etna.transforms.outliers.point_outliers.DensityOutliersTransform'}  # noqa: E501
         ),
         (
             MLPModel(decoder_length=1, hidden_size=[64, 64], input_size=1, trainer_params={"max_epochs": 100, "callbacks": [EarlyStopping(monitor="val_loss", patience=3)]}, lr=0.01, train_batch_size=32, split_params=dict(train_size=0.75)),  # noqa: E501

@@ -1,10 +1,6 @@
-from typing import Dict
-from typing import List
-
 import numpy as np
 import pandas as pd
 import pytest
-from typing_extensions import assert_type
 
 from etna.analysis.outliers import get_anomalies_hist
 from etna.analysis.outliers.hist_outliers import compute_f
@@ -139,12 +135,16 @@ def test_in_column(outliers_df_with_two_columns):
 
 
 @pytest.mark.parametrize(
-    "index_only, values_type",
+    "index_only, value_type",
     (
-        (True, List[pd.Timestamp]),
+        (True, list),
         (False, pd.Series),
     ),
 )
-def test_get_anomalies_hist_index_only(outliers_df_with_two_columns, index_only, values_type):
+def test_get_anomalies_hist_index_only(outliers_df_with_two_columns, index_only, value_type):
     result = get_anomalies_hist(ts=outliers_df_with_two_columns, in_column="feature", index_only=index_only)
-    assert_type(result, Dict[str, values_type])
+
+    assert isinstance(result, dict)
+    for key, value in result.items():
+        assert isinstance(key, str)
+        assert isinstance(value, value_type)
