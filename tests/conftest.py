@@ -718,6 +718,11 @@ def product_level_constant_hierarchical_ts(product_level_constant_hierarchical_d
 
 
 @pytest.fixture
+def product_level_constant_hierarchical_ts_int_timestamp(product_level_constant_hierarchical_ts):
+    return convert_ts_to_int_timestamp(product_level_constant_hierarchical_ts)
+
+
+@pytest.fixture
 def product_level_constant_hierarchical_ts_with_exog(
     product_level_constant_hierarchical_df, market_level_constant_hierarchical_df_exog, hierarchical_structure
 ):

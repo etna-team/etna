@@ -45,7 +45,13 @@ def convert_ts_to_int_timestamp(ts: TSDataset, shift=0):
 
     df.index = pd.Index(np.arange(len(df)) + shift, name=df.index.name)
 
-    ts = TSDataset(df=df, df_exog=df_exog, known_future=ts.known_future, freq=None)
+    ts = TSDataset(
+        df=df,
+        df_exog=df_exog,
+        known_future=ts.known_future,
+        freq=None,
+        hierarchical_structure=ts.hierarchical_structure,
+    )
     return ts
 
 

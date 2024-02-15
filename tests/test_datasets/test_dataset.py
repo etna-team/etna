@@ -402,7 +402,7 @@ def test_create_ts_with_exog_int_timestamp_with_freq():
 
 def test_create_ts_missing_datetime_timestamp():
     freq = "D"
-    df = generate_ar_df(periods=10, start_time=5, freq=freq, n_segments=3, random_seed=0)
+    df = generate_ar_df(periods=10, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=0)
 
     df_wide = TSDataset.to_dataset(df)
     df_wide_missing = df_wide.drop(index=df_wide.index[3:5])
@@ -789,6 +789,30 @@ def test_train_test_split_warning_many_parameters(ts_name, test_size, borders, m
         ),
         (
             "tsdf_with_exog",
+            None,
+            (10, "2021-06-20", "2021-06-26", "2021-07-01"),
+            "Parameter train_start has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
+            None,
+            ("2021-02-03", 10, "2021-06-26", "2021-07-01"),
+            "Parameter train_end has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
+            None,
+            ("2021-02-03", "2021-06-20", 10, "2021-07-01"),
+            "Parameter test_start has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
+            None,
+            ("2021-02-03", "2021-06-20", "2021-06-26", 10),
+            "Parameter test_end has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
             17,
             ("2021-02-01", "2021-06-20", None, "2021-07-01"),
             "The beginning of the test goes before the end of the train",
@@ -805,6 +829,30 @@ def test_train_test_split_warning_many_parameters(ts_name, test_size, borders, m
             None,
             (33, None, None, 181),
             "At least one of train_end, test_start or test_size should be defined",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (pd.Timestamp("2020-01-01"), 170, 176, 181),
+            "Parameter train_start has incorrect type",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (33, pd.Timestamp("2020-01-01"), 176, 181),
+            "Parameter train_end has incorrect type",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (33, 170, pd.Timestamp("2020-01-01"), 181),
+            "Parameter test_start has incorrect type",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (33, 170, 176, pd.Timestamp("2020-01-01")),
+            "Parameter test_end has incorrect type",
         ),
         (
             "tsdf_int_with_exog",
@@ -1575,15 +1623,18 @@ def test_target_quantiles_names_deprecation_warning(ts_with_prediction_intervals
 
 
 @pytest.mark.parametrize(
-    "params, match",
+    "ts_name, params, match",
     [
-        ({"start": "2020-01-01"}, "Parameter start has incorrect type"),
-        ({"end": "2020-01-01"}, "Parameter end has incorrect type"),
+        ("tsdf_with_exog", {"start": 1}, "Parameter start has incorrect type"),
+        ("tsdf_with_exog", {"end": 1}, "Parameter end has incorrect type"),
+        ("tsdf_int_with_exog", {"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ("tsdf_int_with_exog", {"end": "2020-01-01"}, "Parameter end has incorrect type"),
     ],
 )
-def test_plot_fail_incorrect_start_end_type(params, match, tsdf_int_with_exog):
+def test_plot_fail_incorrect_start_end_type(ts_name, params, match, request):
+    ts = request.getfixturevalue(ts_name)
     with pytest.raises(ValueError, match=match):
-        tsdf_int_with_exog.plot(**params)
+        ts.plot(**params)
 
 
 @pytest.mark.filterwarnings("ignore: You probably set wrong freq. Discovered freq in you data is N, you set D")

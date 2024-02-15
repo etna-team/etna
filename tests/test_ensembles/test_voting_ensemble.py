@@ -20,6 +20,7 @@ from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
+from tests.test_pipeline.utils import assert_pipeline_predicts
 
 HORIZON = 7
 
@@ -115,19 +116,6 @@ def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, 
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
-
-
-def test_predict_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline, prophet_pipeline: Pipeline):
-    """Check that VotingEnsemble.predict returns TSDataset of correct length."""
-    ensemble = VotingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline])
-    ensemble.fit(ts=example_tsds)
-    start_idx = 20
-    end_idx = 30
-    prediction = ensemble.predict(
-        ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
-    )
-    assert isinstance(prediction, TSDataset)
-    assert len(prediction.df) == end_idx - start_idx + 1
 
 
 def test_vote_default_weights(simple_tsdf, naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline):
@@ -254,26 +242,60 @@ def test_save_load(load_ts, voting_ensemble_pipeline, example_tsds):
     assert_pipeline_equals_loaded_original(pipeline=voting_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
 
 
-def test_forecast_raise_error_if_no_ts(stacking_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
+def test_forecast_raise_error_if_no_ts(voting_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=voting_ensemble_pipeline, ts=example_tsds)
 
 
-def test_forecasts_without_self_ts(voting_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_without_self_ts(
-        pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "voting_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "voting_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecasts_without_self_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_without_self_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
 
 
-def test_forecast_given_ts(voting_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts(
-        pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "voting_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "voting_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecast_given_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
 
 
-def test_forecast_given_ts_with_prediction_interval(voting_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
-        pipeline=voting_ensemble_pipeline, ts=example_tsds, horizon=voting_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "voting_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "voting_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "voting_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "voting_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_predict(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_predicts(pipeline=ensemble, ts=ts, start_idx=20, end_idx=30)
 
 
 def test_forecast_with_return_components_fails(example_tsds, voting_ensemble_naive):

@@ -140,13 +140,16 @@ def test_acf_nan_begin(df_with_nans_in_head):
 
 
 @pytest.mark.parametrize(
-    "params, match",
+    "ts_name, params, match",
     [
-        ({"start": "2020-01-01"}, "Parameter start has incorrect type"),
-        ({"end": "2020-01-01"}, "Parameter end has incorrect type"),
+        ("example_tsdf", {"start": 10}, "Parameter start has incorrect type"),
+        ("example_tsdf", {"end": 10}, "Parameter end has incorrect type"),
+        ("example_tsdf_int_timestamp", {"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ("example_tsdf_int_timestamp", {"end": "2020-01-01"}, "Parameter end has incorrect type"),
     ],
 )
-def test_plot_holidays_incorrect_start_end_type(params, match, example_tsdf_int_timestamp):
+def test_plot_holidays_incorrect_start_end_type(ts_name, params, match, request):
+    ts = request.getfixturevalue(ts_name)
     holidays = pd.DataFrame(
         {
             "holiday": "Example",
@@ -155,20 +158,23 @@ def test_plot_holidays_incorrect_start_end_type(params, match, example_tsdf_int_
         }
     )
     with pytest.raises(ValueError, match=match):
-        plot_holidays(ts=example_tsdf_int_timestamp, holidays=holidays, **params)
+        plot_holidays(ts=ts, holidays=holidays, **params)
 
 
 @pytest.mark.parametrize(
-    "params, match",
+    "ts_name, params, match",
     [
-        ({"start": "2020-01-01"}, "Parameter start has incorrect type"),
-        ({"end": "2020-01-01"}, "Parameter end has incorrect type"),
+        ("example_tsdf", {"start": 10}, "Parameter start has incorrect type"),
+        ("example_tsdf", {"end": 10}, "Parameter end has incorrect type"),
+        ("example_tsdf_int_timestamp", {"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ("example_tsdf_int_timestamp", {"end": "2020-01-01"}, "Parameter end has incorrect type"),
     ],
 )
-def test_plot_imputation_fail_incorrect_start_end_type(params, match, example_tsdf_int_timestamp):
+def test_plot_imputation_fail_incorrect_start_end_type(ts_name, params, match, request):
+    ts = request.getfixturevalue(ts_name)
     imputer = TimeSeriesImputerTransform(in_column="target", strategy="constant", constant_value=0)
     with pytest.raises(ValueError, match=match):
-        plot_imputation(ts=example_tsdf_int_timestamp, imputer=imputer, **params)
+        plot_imputation(ts=ts, imputer=imputer, **params)
 
 
 def test_distribution_plot_datetime_timestamp(example_tsdf):

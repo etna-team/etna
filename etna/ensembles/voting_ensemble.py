@@ -214,8 +214,8 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,

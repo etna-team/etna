@@ -298,19 +298,24 @@ def inverse_transform_target_components(
 
 
 def _check_timestamp_param(
-    param: Optional[Union[pd.Timestamp, int, str]], param_name: str, freq: Optional[str]
-) -> Optional[Union[pd.Timestamp, int]]:
+    param: Union[pd.Timestamp, int, str, None], param_name: str, freq: Optional[str]
+) -> Union[pd.Timestamp, int, None]:
     if param is None:
         return param
 
     if freq is None:
-        if not isinstance(param, int):
+        if not (isinstance(param, int) or isinstance(param, np.integer)):
             raise ValueError(
                 f"Parameter {param_name} has incorrect type! For integer timestamp only integer parameter type is allowed."
             )
 
         return param
     else:
+        if not isinstance(param, str) and not isinstance(param, pd.Timestamp):
+            raise ValueError(
+                f"Parameter {param_name} has incorrect type! For datetime timestamp only pd.Timestamp or str parameter type is allowed."
+            )
+
         new_param = pd.Timestamp(param)
         return new_param
 

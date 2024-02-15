@@ -2,6 +2,7 @@ import warnings
 from typing import Sequence
 from typing import cast
 
+import numpy as np
 import pandas as pd
 from typing_extensions import get_args
 
@@ -106,10 +107,12 @@ class AutoRegressivePipeline(
 
     def _create_predictions_template(self, ts: TSDataset) -> pd.DataFrame:
         """Create dataframe to fill with forecasts."""
-        prediction_df = ts[:, :, "target"]
-        future_dates = pd.date_range(
-            start=prediction_df.index.max(), periods=self.horizon + 1, freq=ts.freq, closed="right"
-        )
+        prediction_df = ts.to_pandas(features=["target"])
+        last_timestamp = prediction_df.index[-1]
+        if ts.freq is None:
+            future_dates = pd.Index(np.arange(last_timestamp, last_timestamp + self.horizon + 1))[1:]
+        else:
+            future_dates = pd.date_range(start=last_timestamp, periods=self.horizon + 1, freq=ts.freq, closed="right")
         prediction_df = prediction_df.reindex(prediction_df.index.append(future_dates))
         prediction_df.index.name = "timestamp"
         return prediction_df
@@ -173,6 +176,7 @@ class AutoRegressivePipeline(
 
         return prediction_ts
 
+    # TODO: зачем это надо? Мб удалить?
     def _predict(
         self,
         ts: TSDataset,

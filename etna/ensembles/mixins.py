@@ -4,6 +4,7 @@ import zipfile
 from copy import deepcopy
 from typing import List
 from typing import Optional
+from typing import Union
 
 import pandas as pd
 from typing_extensions import Self
@@ -52,8 +53,8 @@ class EnsembleMixin:
     def _predict_pipeline(
         ts: TSDataset,
         pipeline: BasePipeline,
-        start_timestamp: Optional[pd.Timestamp],
-        end_timestamp: Optional[pd.Timestamp],
+        start_timestamp: Union[pd.Timestamp, int, str, None],
+        end_timestamp: Union[pd.Timestamp, int, str, None],
     ) -> TSDataset:
         """Make predict with given pipeline."""
         tslogger.log(msg=f"Start prediction with {pipeline}.")

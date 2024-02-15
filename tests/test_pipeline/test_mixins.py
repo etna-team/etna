@@ -18,8 +18,8 @@ from etna.pipeline.mixins import ModelPipelineParamsToTuneMixin
 from etna.pipeline.mixins import ModelPipelinePredictMixin
 from etna.pipeline.mixins import SaveModelPipelineMixin
 from etna.transforms import AddConstTransform
-from etna.transforms import DateFlagsTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import FourierTransform
 
 
 def make_mixin(model=None, transforms=(), mock_recreate_ts=True, mock_determine_prediction_size=True):
@@ -36,26 +36,32 @@ def make_mixin(model=None, transforms=(), mock_recreate_ts=True, mock_determine_
     return mixin
 
 
-@pytest.mark.parametrize("context_size", [0, 3])
+# TODO: исправить
 @pytest.mark.parametrize(
-    "start_timestamp, end_timestamp",
+    "ts_name, start_timestamp, end_timestamp, context_size, expected_start_timestamp",
     [
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
-        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+        ("example_reg_tsds", pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), 0, pd.Timestamp("2020-01-01")),
+        ("example_reg_tsds", pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10"), 0, pd.Timestamp("2020-01-05")),
+        ("example_reg_tsds", pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), 3, pd.Timestamp("2020-01-01")),
+        ("example_reg_tsds", pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10"), 3, pd.Timestamp("2020-01-02")),
+        ("example_reg_tsds_int_timestamp", 10, 10, 0, 10),
+        ("example_reg_tsds_int_timestamp", 15, 20, 0, 15),
+        ("example_reg_tsds_int_timestamp", 10, 10, 3, 10),
+        ("example_reg_tsds_int_timestamp", 15, 20, 3, 12),
     ],
 )
 @pytest.mark.parametrize(
     "transforms",
     [
-        [DateFlagsTransform()],
+        [FourierTransform(period=7, order=1)],
         [FilterFeaturesTransform(exclude=["regressor_exog_weekend"])],
-        [DateFlagsTransform(), FilterFeaturesTransform(exclude=["regressor_exog_weekend"])],
+        [FourierTransform(period=7, order=1), FilterFeaturesTransform(exclude=["regressor_exog_weekend"])],
     ],
 )
-def test_predict_mixin_create_ts(context_size, start_timestamp, end_timestamp, transforms, example_reg_tsds):
-    ts = example_reg_tsds
+def test_predict_mixin_create_ts(
+    ts_name, context_size, start_timestamp, end_timestamp, expected_start_timestamp, transforms, request
+):
+    ts = request.getfixturevalue(ts_name)
     model = MagicMock()
     model.context_size = context_size
     mixin = make_mixin(transforms=transforms, model=model, mock_recreate_ts=False)
@@ -63,27 +69,31 @@ def test_predict_mixin_create_ts(context_size, start_timestamp, end_timestamp, t
     ts.fit_transform(transforms)
     created_ts = mixin._create_ts(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
-    expected_start_timestamp = max(example_reg_tsds.index[0], start_timestamp - pd.Timedelta(days=model.context_size))
+    # expected_start_timestamp = max(example_reg_tsds.index[0], start_timestamp - pd.Timedelta(days=model.context_size))
     assert created_ts.index[0] == expected_start_timestamp
     assert created_ts.index[-1] == end_timestamp
     assert created_ts.regressors == ts.regressors
-    expected_df = ts.df[expected_start_timestamp:end_timestamp]
+    expected_df = ts.df.loc[expected_start_timestamp:end_timestamp]
     pd.testing.assert_frame_equal(created_ts.df, expected_df, check_categorical=False)
 
 
 @pytest.mark.parametrize(
-    "start_timestamp, end_timestamp, expected_prediction_size",
+    "ts_name, start_timestamp, end_timestamp, expected_prediction_size",
     [
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), 1),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02"), 2),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10"), 10),
-        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10"), 6),
+        ("example_tsds", pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), 1),
+        ("example_tsds", pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02"), 2),
+        ("example_tsds", pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10"), 10),
+        ("example_tsds", pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10"), 6),
+        ("example_tsds_int_timestamp", 10, 10, 1),
+        ("example_tsds_int_timestamp", 10, 11, 2),
+        ("example_tsds_int_timestamp", 10, 19, 10),
+        ("example_tsds_int_timestamp", 15, 20, 6),
     ],
 )
 def test_predict_mixin_determine_prediction_size(
-    start_timestamp, end_timestamp, expected_prediction_size, example_tsds
+    ts_name, start_timestamp, end_timestamp, expected_prediction_size, request
 ):
-    ts = example_tsds
+    ts = request.getfixturevalue(ts_name)
     mixin = make_mixin(mock_determine_prediction_size=False)
 
     prediction_size = mixin._determine_prediction_size(
@@ -97,9 +107,9 @@ def test_predict_mixin_determine_prediction_size(
     "start_timestamp, end_timestamp",
     [
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+        (10, 10),
+        (15, 20),
     ],
 )
 def test_predict_mixin_predict_create_ts_called(start_timestamp, end_timestamp, example_tsds):
@@ -117,9 +127,9 @@ def test_predict_mixin_predict_create_ts_called(start_timestamp, end_timestamp, 
     "start_timestamp, end_timestamp",
     [
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+        (10, 10),
+        (15, 20),
     ],
 )
 def test_predict_mixin_predict_inverse_transform_called(start_timestamp, end_timestamp, example_tsds):
@@ -137,9 +147,9 @@ def test_predict_mixin_predict_inverse_transform_called(start_timestamp, end_tim
     "start_timestamp, end_timestamp",
     [
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02")),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-10")),
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-10")),
+        (10, 10),
+        (15, 20),
     ],
 )
 def test_predict_mixin_predict_determine_prediction_size_called(start_timestamp, end_timestamp, example_tsds):

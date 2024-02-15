@@ -25,6 +25,7 @@ from typing_extensions import assert_never
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.datasets.utils import _check_timestamp_param
 from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.metrics import Metric
@@ -269,8 +270,8 @@ class AbstractPipeline(AbstractSaveable):
     def predict(
         self,
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp] = None,
-        end_timestamp: Optional[pd.Timestamp] = None,
+        start_timestamp: Union[pd.Timestamp, int, str, None] = None,
+        end_timestamp: Union[pd.Timestamp, int, str, None] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         return_components: bool = False,
@@ -279,6 +280,8 @@ class AbstractPipeline(AbstractSaveable):
 
         Currently, in situation when segments start with different timestamps
         we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
+
+        Parameters ``start_timestamp`` and ``end_timestamp`` of type ``str`` are converted into ``pd.Timestamp``.
 
         Parameters
         ----------
@@ -305,6 +308,10 @@ class AbstractPipeline(AbstractSaveable):
 
         Raises
         ------
+        ValueError:
+            Value of ``start_timestamp`` doesn't match the type of timestamp in ``ts``.
+        ValueError:
+            Value of ``end_timestamp`` doesn't match the type of timestamp in ``ts``.
         ValueError:
             Value of ``end_timestamp`` is less than ``start_timestamp``.
         ValueError:
@@ -553,9 +560,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     @staticmethod
     def _make_predict_timestamps(
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp] = None,
-        end_timestamp: Optional[pd.Timestamp] = None,
-    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        start_timestamp: Union[pd.Timestamp, int, str, None],
+        end_timestamp: Union[pd.Timestamp, int, str, None],
+    ) -> Union[Tuple[pd.Timestamp, pd.Timestamp], Tuple[int, int]]:
+        start_timestamp = _check_timestamp_param(param=start_timestamp, param_name="start_timestamp", freq=ts.freq)
+        end_timestamp = _check_timestamp_param(param=end_timestamp, param_name="end_timestamp", freq=ts.freq)
+
         min_timestamp = ts.describe()["start_timestamp"].max()
         max_timestamp = ts.index[-1]
 
@@ -569,7 +579,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         if end_timestamp > max_timestamp:
             raise ValueError("Value of end_timestamp is more than ending of dataset!")
 
-        if start_timestamp > end_timestamp:
+        if start_timestamp > end_timestamp:  # type: ignore
             raise ValueError("Value of end_timestamp is less than start_timestamp!")
 
         return start_timestamp, end_timestamp
@@ -578,8 +588,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp],
-        end_timestamp: Optional[pd.Timestamp],
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,
@@ -589,8 +599,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     def predict(
         self,
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp] = None,
-        end_timestamp: Optional[pd.Timestamp] = None,
+        start_timestamp: Union[pd.Timestamp, int, str, None] = None,
+        end_timestamp: Union[pd.Timestamp, int, str, None] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         return_components: bool = False,
@@ -599,6 +609,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         Currently, in situation when segments start with different timestamps
         we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
+
+        Parameters ``start_timestamp`` and ``end_timestamp`` of type ``str`` are converted into ``pd.Timestamp``.
 
         Parameters
         ----------
@@ -625,6 +637,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         Raises
         ------
+        ValueError:
+            Value of ``start_timestamp`` doesn't match the type of timestamp in ``ts``.
+        ValueError:
+            Value of ``end_timestamp`` doesn't match the type of timestamp in ``ts``.
         ValueError:
             Value of ``end_timestamp`` is less than ``start_timestamp``.
         ValueError:
@@ -721,10 +737,15 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             min_train, max_train = dataset_timestamps[min_train_idx], dataset_timestamps[max_train_idx]
             min_test, max_test = dataset_timestamps[min_test_idx], dataset_timestamps[max_test_idx]
 
+            if ts.freq is None:
+                target_timestamps = np.arange(min_test, max_test + 1).tolist()
+            else:
+                target_timestamps = list(pd.date_range(start=min_test, end=max_test, freq=ts.freq))
+
             mask = FoldMask(
                 first_train_timestamp=min_train,
                 last_train_timestamp=max_train,
-                target_timestamps=list(pd.date_range(start=min_test, end=max_test, freq=ts.freq)),
+                target_timestamps=target_timestamps,
             )
             masks.append(mask)
 
