@@ -36,7 +36,6 @@ def make_mixin(model=None, transforms=(), mock_recreate_ts=True, mock_determine_
     return mixin
 
 
-# TODO: исправить
 @pytest.mark.parametrize(
     "ts_name, start_timestamp, end_timestamp, context_size, expected_start_timestamp",
     [
@@ -69,7 +68,6 @@ def test_predict_mixin_create_ts(
     ts.fit_transform(transforms)
     created_ts = mixin._create_ts(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
-    # expected_start_timestamp = max(example_reg_tsds.index[0], start_timestamp - pd.Timedelta(days=model.context_size))
     assert created_ts.index[0] == expected_start_timestamp
     assert created_ts.index[-1] == end_timestamp
     assert created_ts.regressors == ts.regressors
