@@ -22,8 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add dataset integrity check using hash for internal datasets ([#151](https://github.com/etna-team/etna/pull/151))
 - Create page about internal datasets in documentation ([#175](https://github.com/etna-team/etna/pull/175))
 - Add usage example of internal datasets in `101-get_started.ipynb` and `305-classification.ipynb` tutorials ([#202](https://github.com/etna-team/etna/pull/202))
-- Add days_count functionality to the method `Holiday_transform`([#239](https://github.com/etna-team/etna/issues/239))
-
+- Add new `mode="days_count"` to `HolidayTransform`([#239](https://github.com/etna-team/etna/issues/239))
 - Add size method to `TSDataset` class ([#238](https://github.com/etna-team/etna/pull/238))
 
 ### Changed

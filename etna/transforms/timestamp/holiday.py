@@ -138,8 +138,6 @@ class HolidayTransform(IrreversibleTransform):
         :
             pd.DataFrame with added holidays
         """
-        if self.freq == "":
-            raise ValueError("You should specify frequency in your dataset")
         numbers_part = "".join(itertools.takewhile(str.isdigit, self.freq))
         letters_part = "".join(itertools.dropwhile(str.isdigit, self.freq))
         numbers_part = "1" if numbers_part == "" else numbers_part
