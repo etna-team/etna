@@ -82,7 +82,7 @@ def get_segment_density_outliers_indices(
     start_idxs = np.maximum(0, idxs - window_size)
     end_idxs = np.maximum(0, np.minimum(idxs, len(series) - window_size)) + 1
 
-    deltas: np.ndarray = end_idxs - start_idxs
+    max_shifts: np.ndarray = end_idxs - start_idxs
 
     if isinstance(distance_func, str):
         dist_func = DistanceFunction(distance_func).get_callable()
@@ -96,23 +96,27 @@ def get_segment_density_outliers_indices(
             return [int(distance_func(elem, y) < distance_threshold) for elem in islice(x, start, stop)]
 
     outliers_indices = []
-    for idx, item, start_idx, delta in zip(idxs, series, start_idxs, deltas):
+    for idx, item, start_idx, max_shift in zip(idxs, series, start_idxs, max_shifts):
+        # compute which neighbours are close to the element in the given windows
         closeness = _closeness_func(
             x=series,
             start=start_idx,
-            stop=start_idx + window_size + delta - 1,
+            stop=start_idx + window_size + max_shift - 1,
             y=item,
         )
 
+        # compute number of close neighbours before index
         num_close = np.cumsum(closeness)
 
         outlier = True
-        for d in range(delta):
-            est_neighbors = num_close[-delta + d] - num_close[d]
-            if (start_idx + d) != idx:
-                est_neighbors += closeness[d] - 1
+        for shift in range(max_shift):
+            # number of neighbours in particular window
+            num_in_window = num_close[-max_shift + shift] - num_close[shift]
+            if (start_idx + shift) != idx:
+                # subtract current element if it is not on the window border
+                num_in_window += closeness[shift] - 1
 
-            if est_neighbors >= n_neighbors:
+            if num_in_window >= n_neighbors:
                 outlier = False
                 break
 
