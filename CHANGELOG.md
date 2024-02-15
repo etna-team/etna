@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `FoldMask` to work with integer timestamp, in `validate_on_dataset` method add validation on presence of `FoldMask` parameters in `ts.index`, add tests for `FoldMask` ([#226](https://github.com/etna-team/etna/pull/226))
 - Fix `FourierTransform` on integer index, add inference tests ([#230](https://github.com/etna-team/etna/pull/230))
 - Update outliers transforms to handle integer timestamp ([#229](https://github.com/etna-team/etna/pull/229))
+- Update pipelines to handle integer timestamp ([#241](https://github.com/etna-team/etna/pull/241))
 
 ### Fixed
 - 
