@@ -16,6 +16,7 @@ from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
+from tests.test_pipeline.utils import assert_pipeline_predicts
 
 
 @pytest.fixture
@@ -113,13 +114,13 @@ def test_fit_saving_ts(direct_ensemble_pipeline, simple_ts_train, save_ts):
         assert direct_ensemble_pipeline.ts is None
 
 
-def test_forecast(direct_ensemble_pipeline, simple_ts_train, simple_ts_forecast):
+def test_forecast_values(direct_ensemble_pipeline, simple_ts_train, simple_ts_forecast):
     direct_ensemble_pipeline.fit(simple_ts_train)
     forecast = direct_ensemble_pipeline.forecast()
     pd.testing.assert_frame_equal(forecast.to_pandas(), simple_ts_forecast.to_pandas())
 
 
-def test_predict(direct_ensemble_pipeline, simple_ts_train):
+def test_predict_values(direct_ensemble_pipeline, simple_ts_train):
     smallest_pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=1)
     direct_ensemble_pipeline.fit(simple_ts_train)
     smallest_pipeline.fit(simple_ts_train)
@@ -141,22 +142,56 @@ def test_forecast_raise_error_if_no_ts(direct_ensemble_pipeline, example_tsds):
     assert_pipeline_forecast_raise_error_if_no_ts(pipeline=direct_ensemble_pipeline, ts=example_tsds)
 
 
-def test_forecasts_without_self_ts(direct_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_without_self_ts(
-        pipeline=direct_ensemble_pipeline, ts=example_tsds, horizon=direct_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "direct_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "direct_ensemble_pipeline"),
+    ],
+)
+def test_forecasts_without_self_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_without_self_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
 
 
-def test_forecast_given_ts(direct_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts(
-        pipeline=direct_ensemble_pipeline, ts=example_tsds, horizon=direct_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "direct_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "direct_ensemble_pipeline"),
+    ],
+)
+def test_forecast_given_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
 
 
-def test_forecast_given_ts_with_prediction_interval(direct_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
-        pipeline=direct_ensemble_pipeline, ts=example_tsds, horizon=direct_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "direct_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "direct_ensemble_pipeline"),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "direct_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "direct_ensemble_pipeline"),
+    ],
+)
+def test_predict(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_predicts(pipeline=ensemble, ts=ts, start_idx=20, end_idx=30)
 
 
 def test_forecast_with_return_components_fails(example_tsds, direct_ensemble_pipeline):

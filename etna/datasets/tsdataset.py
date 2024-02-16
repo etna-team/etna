@@ -585,8 +585,8 @@ class TSDataset:
         n_segments: int = 10,
         column: str = "target",
         segments: Optional[Sequence[str]] = None,
-        start: Optional[Union[pd.Timestamp, int, str]] = None,
-        end: Optional[Union[pd.Timestamp, int, str]] = None,
+        start: Union[pd.Timestamp, int, str, None] = None,
+        end: Union[pd.Timestamp, int, str, None] = None,
         seed: int = 1,
         figsize: Tuple[int, int] = (10, 5),
     ):
@@ -930,10 +930,10 @@ class TSDataset:
 
     def _find_all_borders(
         self,
-        train_start: Optional[Union[pd.Timestamp, int, str]],
-        train_end: Optional[Union[pd.Timestamp, int, str]],
-        test_start: Optional[Union[pd.Timestamp, int, str]],
-        test_end: Optional[Union[pd.Timestamp, int, str]],
+        train_start: Union[pd.Timestamp, int, str, None],
+        train_end: Union[pd.Timestamp, int, str, None],
+        test_start: Union[pd.Timestamp, int, str, None],
+        test_end: Union[pd.Timestamp, int, str, None],
         test_size: Optional[int],
     ) -> Tuple[Union[pd.Timestamp, int], Union[pd.Timestamp, int], Union[pd.Timestamp, int], Union[pd.Timestamp, int]]:
         """Find borders for train_test_split if some values wasn't specified."""
@@ -1005,10 +1005,10 @@ class TSDataset:
 
     def train_test_split(
         self,
-        train_start: Optional[Union[pd.Timestamp, int, str]] = None,
-        train_end: Optional[Union[pd.Timestamp, int, str]] = None,
-        test_start: Optional[Union[pd.Timestamp, int, str]] = None,
-        test_end: Optional[Union[pd.Timestamp, int, str]] = None,
+        train_start: Union[pd.Timestamp, int, str, None] = None,
+        train_end: Union[pd.Timestamp, int, str, None] = None,
+        test_start: Union[pd.Timestamp, int, str, None] = None,
+        test_end: Union[pd.Timestamp, int, str, None] = None,
         test_size: Optional[int] = None,
     ) -> Tuple["TSDataset", "TSDataset"]:
         """Split given df with train-test timestamp indices or size of test set.

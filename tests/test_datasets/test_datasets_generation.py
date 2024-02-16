@@ -103,18 +103,18 @@ def test_generate_from_patterns_df_start_time(start_time, expected_start_time, f
 
 
 @pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
-@pytest.mark.parametrize("start_time", ["2020-01-01", pd.Timestamp("2020-01-01")])
+@pytest.mark.parametrize("start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, "D")])
 @pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
-def test_generate_method_timestamp_start_time_fail(generate_method, start_time, periods, n_segments):
+def test_generate_method_timestamp_start_time_fail(generate_method, start_time, freq, periods, n_segments):
     with pytest.raises(ValueError, match="Parameter start_time has incorrect type"):
-        _ = generate_method(periods=periods, n_segments=n_segments, freq=None, start_time=start_time)
+        _ = generate_method(periods=periods, n_segments=n_segments, freq=freq, start_time=start_time)
 
 
-@pytest.mark.parametrize("start_time", ["2020-01-01", pd.Timestamp("2020-01-01")])
+@pytest.mark.parametrize("start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, "D")])
 @pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
-def test_generate_from_patterns_df_start_time_fail(start_time, periods, patterns):
+def test_generate_from_patterns_df_start_time_fail(start_time, freq, periods, patterns):
     with pytest.raises(ValueError, match="Parameter start_time has incorrect type"):
-        _ = generate_from_patterns_df(periods=periods, patterns=patterns, freq=None, start_time=start_time)
+        _ = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=start_time)
 
 
 def test_generate_ar_df_values():

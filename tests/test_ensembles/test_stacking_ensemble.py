@@ -19,6 +19,7 @@ from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
+from tests.test_pipeline.utils import assert_pipeline_predicts
 
 HORIZON = 7
 
@@ -377,22 +378,56 @@ def test_forecast_raise_error_if_no_ts(stacking_ensemble_pipeline, example_tsds)
     assert_pipeline_forecast_raise_error_if_no_ts(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
 
 
-def test_forecasts_without_self_ts(stacking_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_without_self_ts(
-        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecasts_without_self_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_without_self_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
 
 
-def test_forecast_given_ts(stacking_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts(
-        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecast_given_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
 
 
-def test_forecast_given_ts_with_prediction_interval(stacking_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
-        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_predict(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_predicts(pipeline=ensemble, ts=ts, start_idx=20, end_idx=30)
 
 
 def test_forecast_with_return_components_fails(example_tsds, naive_ensemble):

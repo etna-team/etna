@@ -36,6 +36,7 @@ from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
 from etna.transforms import LogTransform
 from etna.transforms import ReversibleTransform
@@ -45,6 +46,7 @@ from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
+from tests.test_pipeline.utils import assert_pipeline_predicts
 from tests.utils import DummyMetric
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
@@ -523,11 +525,12 @@ def test_get_historical_forecasts_columns(ts_fixture, catboost_pipeline, request
 
 
 @pytest.mark.parametrize(
-    "n_folds, horizon, expected_timestamps",
+    "ts_name, n_folds, horizon, expected_timestamp_indices",
     [
-        (2, 3, [-6, -5, -4, -3, -2, -1]),
-        (2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+        ("example_tsdf", 2, 3, [-6, -5, -4, -3, -2, -1]),
+        ("example_tsdf", 2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
         (
+            "example_tsdf",
             [
                 FoldMask(
                     first_train_timestamp=pd.Timestamp("2020-01-01"),
@@ -543,23 +546,42 @@ def test_get_historical_forecasts_columns(ts_fixture, catboost_pipeline, request
             5,
             [-8, -3],
         ),
+        (
+            "example_tsdf_int_timestamp",
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=740,
+                    target_timestamps=[744],
+                ),
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=745,
+                    target_timestamps=[749],
+                ),
+            ],
+            5,
+            [-11, -6],
+        ),
     ],
 )
-def test_backtest_forecasts_timestamps(n_folds, horizon, expected_timestamps, example_tsdf):
+def test_backtest_forecasts_timestamps(ts_name, n_folds, horizon, expected_timestamp_indices, request):
     """Check that Pipeline.backtest returns forecasts with expected timestamps."""
+    ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
-    _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds)
-    timestamp = example_tsdf.index
+    _, forecast, _ = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)
+    timestamp = ts.index
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
-    "n_folds, horizon, expected_timestamps",
+    "ts_name, n_folds, horizon, expected_timestamp_indices",
     [
-        (2, 3, [-6, -5, -4, -3, -2, -1]),
-        (2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
+        ("example_tsdf", 2, 3, [-6, -5, -4, -3, -2, -1]),
+        ("example_tsdf", 2, 5, [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1]),
         (
+            "example_tsdf",
             [
                 FoldMask(
                     first_train_timestamp=pd.Timestamp("2020-01-01"),
@@ -575,49 +597,69 @@ def test_backtest_forecasts_timestamps(n_folds, horizon, expected_timestamps, ex
             5,
             [-8, -3],
         ),
+        (
+            "example_tsdf_int_timestamp",
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=740,
+                    target_timestamps=[744],
+                ),
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=745,
+                    target_timestamps=[749],
+                ),
+            ],
+            5,
+            [-11, -6],
+        ),
     ],
 )
-def test_get_historical_forecasts_timestamps(n_folds, horizon, expected_timestamps, example_tsdf):
+def test_get_historical_forecasts_timestamps(ts_name, n_folds, horizon, expected_timestamp_indices, request):
     """Check that Pipeline.get_historical_forecasts returns forecasts with expected timestamps."""
+    ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
-    forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds)
-    timestamp = example_tsdf.index
+    forecast = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
+    timestamp = ts.index
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
-    "n_folds, horizon, stride, expected_timestamps",
+    "n_folds, horizon, stride, expected_timestamp_indices",
     [
         (2, 3, 3, [-6, -5, -4, -3, -2, -1]),
         (2, 3, 1, [-4, -3, -2, -3, -2, -1]),
         (2, 3, 5, [-8, -7, -6, -3, -2, -1]),
     ],
 )
-def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, expected_timestamps, example_tsdf):
+def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, expected_timestamp_indices, example_tsdf):
     """Check that Pipeline.backtest with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)
     timestamp = example_tsdf.index
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
-    "n_folds, horizon, stride, expected_timestamps",
+    "n_folds, horizon, stride, expected_timestamp_indices",
     [
         (2, 3, 3, [-6, -5, -4, -3, -2, -1]),
         (2, 3, 1, [-4, -3, -2, -3, -2, -1]),
         (2, 3, 5, [-8, -7, -6, -3, -2, -1]),
     ],
 )
-def test_get_historical_forecasts_timestamps_with_stride(n_folds, horizon, stride, expected_timestamps, example_tsdf):
+def test_get_historical_forecasts_timestamps_with_stride(
+    n_folds, horizon, stride, expected_timestamp_indices, example_tsdf
+):
     """Check that Pipeline.get_historical_forecasts with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds, stride=stride)
     timestamp = example_tsdf.index
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamps])
+    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
@@ -642,47 +684,180 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
 
 
 @pytest.mark.parametrize(
-    "mode, n_folds, refit, horizon, stride, expected_train_starts, expected_train_ends, expected_test_starts, expected_test_ends",
+    "ts_name, mode, n_folds, refit, horizon, stride, expected_train_start_indices, expected_train_end_indices, expected_test_start_indices, expected_test_end_indices",
     [
-        ("expand", 3, True, 7, None, [0, 0, 0], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
-        ("expand", 3, True, 7, 1, [0, 0, 0], [-10, -9, -8], [-9, -8, -7], [-3, -2, -1]),
-        ("expand", 3, True, 7, 10, [0, 0, 0], [-28, -18, -8], [-27, -17, -7], [-21, -11, -1]),
-        ("expand", 3, False, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
-        ("expand", 3, False, 7, 1, [0, 0, 0], [-10, -10, -10], [-9, -8, -7], [-3, -2, -1]),
-        ("expand", 3, False, 7, 10, [0, 0, 0], [-28, -28, -28], [-27, -17, -7], [-21, -11, -1]),
-        ("expand", 1, 1, 7, None, [0], [-8], [-7], [-1]),
-        ("expand", 1, 2, 7, None, [0], [-8], [-7], [-1]),
-        ("expand", 3, 1, 7, None, [0, 0, 0], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
-        ("expand", 3, 2, 7, None, [0, 0, 0], [-22, -22, -8], [-21, -14, -7], [-15, -8, -1]),
-        ("expand", 3, 3, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
-        ("expand", 3, 4, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
-        ("expand", 4, 1, 7, None, [0, 0, 0, 0], [-29, -22, -15, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("expand", 4, 2, 7, None, [0, 0, 0, 0], [-29, -29, -15, -15], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("expand", 4, 2, 7, 1, [0, 0, 0, 0], [-11, -11, -9, -9], [-10, -9, -8, -7], [-4, -3, -2, -1]),
-        ("expand", 4, 2, 7, 10, [0, 0, 0, 0], [-38, -38, -18, -18], [-37, -27, -17, -7], [-31, -21, -11, -1]),
-        ("expand", 4, 3, 7, None, [0, 0, 0, 0], [-29, -29, -29, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("expand", 4, 4, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("expand", 4, 5, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("constant", 3, True, 7, None, [0, 7, 14], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
-        ("constant", 3, True, 7, 1, [0, 1, 2], [-10, -9, -8], [-9, -8, -7], [-3, -2, -1]),
-        ("constant", 3, True, 7, 10, [0, 10, 20], [-28, -18, -8], [-27, -17, -7], [-21, -11, -1]),
-        ("constant", 3, False, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
-        ("constant", 3, False, 7, 1, [0, 0, 0], [-10, -10, -10], [-9, -8, -7], [-3, -2, -1]),
-        ("constant", 3, False, 7, 10, [0, 0, 0], [-28, -28, -28], [-27, -17, -7], [-21, -11, -1]),
-        ("constant", 1, 1, 7, None, [0], [-8], [-7], [-1]),
-        ("constant", 1, 2, 7, None, [0], [-8], [-7], [-1]),
-        ("constant", 3, 1, 7, None, [0, 7, 14], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
-        ("constant", 3, 2, 7, None, [0, 0, 14], [-22, -22, -8], [-21, -14, -7], [-15, -8, -1]),
-        ("constant", 3, 3, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
-        ("constant", 3, 4, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
-        ("constant", 4, 1, 7, None, [0, 7, 14, 21], [-29, -22, -15, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("constant", 4, 2, 7, None, [0, 0, 14, 14], [-29, -29, -15, -15], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("constant", 4, 2, 7, 1, [0, 0, 2, 2], [-11, -11, -9, -9], [-10, -9, -8, -7], [-4, -3, -2, -1]),
-        ("constant", 4, 2, 7, 10, [0, 0, 20, 20], [-38, -38, -18, -18], [-37, -27, -17, -7], [-31, -21, -11, -1]),
-        ("constant", 4, 3, 7, None, [0, 0, 0, 21], [-29, -29, -29, -8], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("constant", 4, 4, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
-        ("constant", 4, 5, 7, None, [0, 0, 0, 0], [-29, -29, -29, -29], [-28, -21, -14, -7], [-22, -15, -8, -1]),
+        ("example_tsdf", "expand", 3, True, 7, None, [0, 0, 0], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "expand", 3, True, 7, 1, [0, 0, 0], [-10, -9, -8], [-9, -8, -7], [-3, -2, -1]),
+        ("example_tsdf", "expand", 3, True, 7, 10, [0, 0, 0], [-28, -18, -8], [-27, -17, -7], [-21, -11, -1]),
+        ("example_tsdf", "expand", 3, False, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "expand", 3, False, 7, 1, [0, 0, 0], [-10, -10, -10], [-9, -8, -7], [-3, -2, -1]),
+        ("example_tsdf", "expand", 3, False, 7, 10, [0, 0, 0], [-28, -28, -28], [-27, -17, -7], [-21, -11, -1]),
+        ("example_tsdf", "expand", 1, 1, 7, None, [0], [-8], [-7], [-1]),
+        ("example_tsdf", "expand", 1, 2, 7, None, [0], [-8], [-7], [-1]),
+        ("example_tsdf", "expand", 3, 1, 7, None, [0, 0, 0], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "expand", 3, 2, 7, None, [0, 0, 0], [-22, -22, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "expand", 3, 3, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "expand", 3, 4, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
         (
+            "example_tsdf",
+            "expand",
+            4,
+            1,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -22, -15, -8],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        (
+            "example_tsdf",
+            "expand",
+            4,
+            2,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -15, -15],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        ("example_tsdf", "expand", 4, 2, 7, 1, [0, 0, 0, 0], [-11, -11, -9, -9], [-10, -9, -8, -7], [-4, -3, -2, -1]),
+        (
+            "example_tsdf",
+            "expand",
+            4,
+            2,
+            7,
+            10,
+            [0, 0, 0, 0],
+            [-38, -38, -18, -18],
+            [-37, -27, -17, -7],
+            [-31, -21, -11, -1],
+        ),
+        (
+            "example_tsdf",
+            "expand",
+            4,
+            3,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -29, -8],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        (
+            "example_tsdf",
+            "expand",
+            4,
+            4,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -29, -29],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        (
+            "example_tsdf",
+            "expand",
+            4,
+            5,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -29, -29],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        ("example_tsdf", "constant", 3, True, 7, None, [0, 7, 14], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "constant", 3, True, 7, 1, [0, 1, 2], [-10, -9, -8], [-9, -8, -7], [-3, -2, -1]),
+        ("example_tsdf", "constant", 3, True, 7, 10, [0, 10, 20], [-28, -18, -8], [-27, -17, -7], [-21, -11, -1]),
+        ("example_tsdf", "constant", 3, False, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "constant", 3, False, 7, 1, [0, 0, 0], [-10, -10, -10], [-9, -8, -7], [-3, -2, -1]),
+        ("example_tsdf", "constant", 3, False, 7, 10, [0, 0, 0], [-28, -28, -28], [-27, -17, -7], [-21, -11, -1]),
+        ("example_tsdf", "constant", 1, 1, 7, None, [0], [-8], [-7], [-1]),
+        ("example_tsdf", "constant", 1, 2, 7, None, [0], [-8], [-7], [-1]),
+        ("example_tsdf", "constant", 3, 1, 7, None, [0, 7, 14], [-22, -15, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "constant", 3, 2, 7, None, [0, 0, 14], [-22, -22, -8], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "constant", 3, 3, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        ("example_tsdf", "constant", 3, 4, 7, None, [0, 0, 0], [-22, -22, -22], [-21, -14, -7], [-15, -8, -1]),
+        (
+            "example_tsdf",
+            "constant",
+            4,
+            1,
+            7,
+            None,
+            [0, 7, 14, 21],
+            [-29, -22, -15, -8],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        (
+            "example_tsdf",
+            "constant",
+            4,
+            2,
+            7,
+            None,
+            [0, 0, 14, 14],
+            [-29, -29, -15, -15],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        ("example_tsdf", "constant", 4, 2, 7, 1, [0, 0, 2, 2], [-11, -11, -9, -9], [-10, -9, -8, -7], [-4, -3, -2, -1]),
+        (
+            "example_tsdf",
+            "constant",
+            4,
+            2,
+            7,
+            10,
+            [0, 0, 20, 20],
+            [-38, -38, -18, -18],
+            [-37, -27, -17, -7],
+            [-31, -21, -11, -1],
+        ),
+        (
+            "example_tsdf",
+            "constant",
+            4,
+            3,
+            7,
+            None,
+            [0, 0, 0, 21],
+            [-29, -29, -29, -8],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        (
+            "example_tsdf",
+            "constant",
+            4,
+            4,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -29, -29],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        (
+            "example_tsdf",
+            "constant",
+            4,
+            5,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -29, -29],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
+        (
+            "example_tsdf",
             None,
             [
                 FoldMask(
@@ -705,6 +880,30 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
             [-8, -1],
         ),
         (
+            "example_tsdf_int_timestamp",
+            None,
+            [
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=740,
+                    target_timestamps=[744],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=747,
+                    target_timestamps=[751],
+                ),
+            ],
+            True,
+            7,
+            None,
+            [0, 0],
+            [-15, -8],
+            [-14, -7],
+            [-8, -1],
+        ),
+        (
+            "example_tsdf",
             None,
             [
                 FoldMask(
@@ -727,6 +926,30 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
             [-8, -1],
         ),
         (
+            "example_tsdf_int_timestamp",
+            None,
+            [
+                FoldMask(
+                    first_train_timestamp=11,
+                    last_train_timestamp=740,
+                    target_timestamps=[744],
+                ),
+                FoldMask(
+                    first_train_timestamp=18,
+                    last_train_timestamp=747,
+                    target_timestamps=[751],
+                ),
+            ],
+            True,
+            7,
+            None,
+            [1, 8],
+            [-15, -8],
+            [-14, -7],
+            [-8, -1],
+        ),
+        (
+            "example_tsdf",
             None,
             [
                 FoldMask(
@@ -758,31 +981,66 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
             [-28, -21, -14, -7],
             [-22, -15, -8, -1],
         ),
+        (
+            "example_tsdf_int_timestamp",
+            None,
+            [
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=726,
+                    target_timestamps=[730],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=733,
+                    target_timestamps=[737],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=740,
+                    target_timestamps=[744],
+                ),
+                FoldMask(
+                    first_train_timestamp=None,
+                    last_train_timestamp=747,
+                    target_timestamps=[751],
+                ),
+            ],
+            2,
+            7,
+            None,
+            [0, 0, 0, 0],
+            [-29, -29, -15, -15],
+            [-28, -21, -14, -7],
+            [-22, -15, -8, -1],
+        ),
     ],
 )
 def test_backtest_fold_info_timestamps(
+    ts_name,
     mode,
     n_folds,
     refit,
     horizon,
     stride,
-    expected_train_starts,
-    expected_train_ends,
-    expected_test_starts,
-    expected_test_ends,
-    example_tsdf,
+    expected_train_start_indices,
+    expected_train_end_indices,
+    expected_test_start_indices,
+    expected_test_end_indices,
+    request,
 ):
     """Check that Pipeline.backtest returns info dataframe with correct timestamps."""
+    ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     _, _, info_df = pipeline.backtest(
-        ts=example_tsdf, metrics=DEFAULT_METRICS, mode=mode, n_folds=n_folds, refit=refit, stride=stride
+        ts=ts, metrics=DEFAULT_METRICS, mode=mode, n_folds=n_folds, refit=refit, stride=stride
     )
-    timestamp = example_tsdf.index
+    timestamp = ts.index
 
-    np.testing.assert_array_equal(info_df["train_start_time"], timestamp[expected_train_starts])
-    np.testing.assert_array_equal(info_df["train_end_time"], timestamp[expected_train_ends])
-    np.testing.assert_array_equal(info_df["test_start_time"], timestamp[expected_test_starts])
-    np.testing.assert_array_equal(info_df["test_end_time"], timestamp[expected_test_ends])
+    np.testing.assert_array_equal(info_df["train_start_time"], timestamp[expected_train_start_indices])
+    np.testing.assert_array_equal(info_df["train_end_time"], timestamp[expected_train_end_indices])
+    np.testing.assert_array_equal(info_df["test_start_time"], timestamp[expected_test_start_indices])
+    np.testing.assert_array_equal(info_df["test_end_time"], timestamp[expected_test_end_indices])
 
 
 def test_backtest_refit_success(catboost_pipeline: Pipeline, big_example_tsdf: TSDataset):
@@ -841,9 +1099,10 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
 
 
 @pytest.mark.parametrize(
-    "n_folds, horizon, stride, mode, expected_masks",
+    "ts_name, n_folds, horizon, stride, mode, expected_masks",
     (
         (
+            "example_tsds",
             2,
             3,
             3,
@@ -862,6 +1121,26 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
             ],
         ),
         (
+            "example_tsds_int_timestamp",
+            2,
+            3,
+            3,
+            CrossValidationMode.expand,
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=103,
+                    target_timestamps=[104, 105, 106],
+                ),
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=106,
+                    target_timestamps=[107, 108, 109],
+                ),
+            ],
+        ),
+        (
+            "example_tsds",
             2,
             3,
             1,
@@ -880,6 +1159,26 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
             ],
         ),
         (
+            "example_tsds_int_timestamp",
+            2,
+            3,
+            1,
+            CrossValidationMode.expand,
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=105,
+                    target_timestamps=[106, 107, 108],
+                ),
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=106,
+                    target_timestamps=[107, 108, 109],
+                ),
+            ],
+        ),
+        (
+            "example_tsds",
             2,
             3,
             5,
@@ -898,6 +1197,26 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
             ],
         ),
         (
+            "example_tsds_int_timestamp",
+            2,
+            3,
+            5,
+            CrossValidationMode.expand,
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=101,
+                    target_timestamps=[102, 103, 104],
+                ),
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=106,
+                    target_timestamps=[107, 108, 109],
+                ),
+            ],
+        ),
+        (
+            "example_tsds",
             2,
             3,
             3,
@@ -916,6 +1235,26 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
             ],
         ),
         (
+            "example_tsds_int_timestamp",
+            2,
+            3,
+            3,
+            CrossValidationMode.constant,
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=103,
+                    target_timestamps=[104, 105, 106],
+                ),
+                FoldMask(
+                    first_train_timestamp=13,
+                    last_train_timestamp=106,
+                    target_timestamps=[107, 108, 109],
+                ),
+            ],
+        ),
+        (
+            "example_tsds",
             2,
             3,
             1,
@@ -934,6 +1273,26 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
             ],
         ),
         (
+            "example_tsds_int_timestamp",
+            2,
+            3,
+            1,
+            CrossValidationMode.constant,
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=105,
+                    target_timestamps=[106, 107, 108],
+                ),
+                FoldMask(
+                    first_train_timestamp=11,
+                    last_train_timestamp=106,
+                    target_timestamps=[107, 108, 109],
+                ),
+            ],
+        ),
+        (
+            "example_tsds",
             2,
             3,
             5,
@@ -951,12 +1310,30 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
                 ),
             ],
         ),
+        (
+            "example_tsds_int_timestamp",
+            2,
+            3,
+            5,
+            CrossValidationMode.constant,
+            [
+                FoldMask(
+                    first_train_timestamp=10,
+                    last_train_timestamp=101,
+                    target_timestamps=[102, 103, 104],
+                ),
+                FoldMask(
+                    first_train_timestamp=15,
+                    last_train_timestamp=106,
+                    target_timestamps=[107, 108, 109],
+                ),
+            ],
+        ),
     ),
 )
-def test_generate_masks_from_n_folds(example_tsds: TSDataset, n_folds, horizon, stride, mode, expected_masks):
-    masks = Pipeline._generate_masks_from_n_folds(
-        ts=example_tsds, n_folds=n_folds, horizon=horizon, stride=stride, mode=mode
-    )
+def test_generate_masks_from_n_folds(ts_name, n_folds, horizon, stride, mode, expected_masks, request):
+    ts = request.getfixturevalue(ts_name)
+    masks = Pipeline._generate_masks_from_n_folds(ts=ts, n_folds=n_folds, horizon=horizon, stride=stride, mode=mode)
     for mask, expected_mask in zip(masks, expected_masks):
         assert mask.first_train_timestamp == expected_mask.first_train_timestamp
         assert mask.last_train_timestamp == expected_mask.last_train_timestamp
@@ -964,39 +1341,182 @@ def test_generate_masks_from_n_folds(example_tsds: TSDataset, n_folds, horizon, 
 
 
 @pytest.mark.parametrize(
-    "mask", (FoldMask("2020-01-01", "2020-01-02", ["2020-01-03"]), FoldMask("2020-01-03", "2020-01-05", ["2020-01-06"]))
+    "ts_name, horizon, mask, expected_train_start, expected_test_start, expected_test_end",
+    [
+        (
+            "simple_ts",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-03"),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[16]),
+            10,
+            16,
+            16,
+        ),
+        (
+            "simple_ts",
+            3,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-05"),
+        ),
+        (
+            "simple_ts_starting_with_nans_one_segment",
+            3,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-05"),
+        ),
+        (
+            "simple_ts_starting_with_nans_all_segments",
+            3,
+            FoldMask(first_train_timestamp=None, last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-05"),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            3,
+            FoldMask(first_train_timestamp=None, last_train_timestamp=15, target_timestamps=[16]),
+            10,
+            16,
+            18,
+        ),
+        (
+            "simple_ts",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]
+            ),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-03"),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=10, last_train_timestamp=15, target_timestamps=[16]),
+            10,
+            16,
+            16,
+        ),
+        (
+            "simple_ts",
+            3,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]
+            ),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-05"),
+        ),
+        (
+            "simple_ts_starting_with_nans_one_segment",
+            3,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]
+            ),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-05"),
+        ),
+        (
+            "simple_ts_starting_with_nans_all_segments",
+            3,
+            FoldMask(
+                first_train_timestamp="2020-01-01", last_train_timestamp="2020-01-02", target_timestamps=["2020-01-03"]
+            ),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-05"),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            3,
+            FoldMask(first_train_timestamp=10, last_train_timestamp=15, target_timestamps=[16]),
+            10,
+            16,
+            18,
+        ),
+        (
+            "simple_ts",
+            1,
+            FoldMask(
+                first_train_timestamp="2020-01-03", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-06"),
+            pd.Timestamp("2020-01-06"),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            1,
+            FoldMask(first_train_timestamp=13, last_train_timestamp=15, target_timestamps=[16]),
+            13,
+            16,
+            16,
+        ),
+        (
+            "simple_ts",
+            3,
+            FoldMask(
+                first_train_timestamp="2020-01-03", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-06"),
+            pd.Timestamp("2020-01-08"),
+        ),
+        (
+            "simple_ts_starting_with_nans_one_segment",
+            3,
+            FoldMask(
+                first_train_timestamp="2020-01-03", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-06"),
+            pd.Timestamp("2020-01-08"),
+        ),
+        (
+            "simple_ts_starting_with_nans_all_segments",
+            3,
+            FoldMask(
+                first_train_timestamp="2020-01-03", last_train_timestamp="2020-01-05", target_timestamps=["2020-01-06"]
+            ),
+            pd.Timestamp("2020-01-03"),
+            pd.Timestamp("2020-01-06"),
+            pd.Timestamp("2020-01-08"),
+        ),
+        (
+            "example_tsds_int_timestamp",
+            3,
+            FoldMask(first_train_timestamp=13, last_train_timestamp=15, target_timestamps=[16]),
+            13,
+            16,
+            18,
+        ),
+    ],
 )
-@pytest.mark.parametrize(
-    "ts_name", ["simple_ts", "simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
-)
-def test_generate_folds_datasets(ts_name, mask, request):
+def test_generate_folds_datasets(
+    ts_name, horizon, mask, expected_train_start, expected_test_start, expected_test_end, request
+):
     """Check _generate_folds_datasets for correct work."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=7))
     mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode=CrossValidationMode.expand, stride=-1)[0]
-    train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
-    assert train.index.min() == np.datetime64(mask.first_train_timestamp)
-    assert train.index.max() == np.datetime64(mask.last_train_timestamp)
-    assert test.index.min() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(1, "D")
-    assert test.index.max() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(4, "D")
-
-
-@pytest.mark.parametrize(
-    "mask", (FoldMask(None, "2020-01-02", ["2020-01-03"]), FoldMask(None, "2020-01-05", ["2020-01-06"]))
-)
-@pytest.mark.parametrize(
-    "ts_name", ["simple_ts", "simple_ts_starting_with_nans_one_segment", "simple_ts_starting_with_nans_all_segments"]
-)
-def test_generate_folds_datasets_without_first_date(ts_name, mask, request):
-    """Check _generate_folds_datasets for correct work without first date."""
-    ts = request.getfixturevalue(ts_name)
-    pipeline = Pipeline(model=NaiveModel(lag=7))
-    mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode=CrossValidationMode.expand, stride=-1)[0]
-    train, test = list(pipeline._generate_folds_datasets(ts, [mask], 4))[0]
-    assert train.index.min() == np.datetime64(ts.index.min())
-    assert train.index.max() == np.datetime64(mask.last_train_timestamp)
-    assert test.index.min() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(1, "D")
-    assert test.index.max() == np.datetime64(mask.last_train_timestamp) + np.timedelta64(4, "D")
+    train, test = list(pipeline._generate_folds_datasets(ts=ts, masks=[mask], horizon=horizon))[0]
+    assert train.index.min() == expected_train_start
+    assert train.index.max() == mask.last_train_timestamp
+    assert test.index.min() == expected_test_start
+    assert test.index.max() == expected_test_end
 
 
 @pytest.mark.parametrize(
@@ -1220,44 +1740,6 @@ def test_pipeline_with_deepmodel(example_tsds):
     _ = pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
 
 
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (
-            CatBoostMultiSegmentModel(iterations=100),
-            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
-        ),
-        (
-            LinearPerSegmentModel(),
-            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
-        ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
-    ],
-)
-def test_predict_format(model, transforms, example_tsds):
-    ts = example_tsds
-    pipeline = Pipeline(model=model, transforms=transforms, horizon=7)
-    pipeline.fit(ts)
-
-    start_idx = 50
-    end_idx = 70
-    start_timestamp = ts.index[start_idx]
-    end_timestamp = ts.index[end_idx]
-    num_points = end_idx - start_idx + 1
-
-    # create a separate TSDataset with slice of original timestamps
-    predict_ts = deepcopy(ts)
-    predict_ts.df = predict_ts.df.iloc[5 : end_idx + 5]
-
-    result_ts = pipeline.predict(ts=predict_ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
-    result_df = result_ts.to_pandas(flatten=True)
-
-    assert not np.any(result_df["target"].isna())
-    assert len(result_df) == len(example_tsds.segments) * num_points
-
-
 def test_predict_values(example_tsds):
     original_ts = deepcopy(example_tsds)
 
@@ -1304,69 +1786,150 @@ def test_forecast_raise_error_if_no_ts(example_tsds):
 
 
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "example_tsds",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
         (
+            "example_tsds",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecasts_without_self_ts(model, transforms, example_tsds):
+def test_forecasts_without_self_ts(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=ts, horizon=horizon)
 
 
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "example_tsds",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
         (
+            "example_tsds",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecast_given_ts(model, transforms, example_tsds):
+def test_forecast_given_ts(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=ts, horizon=horizon)
 
 
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "example_tsds",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
         (
+            "example_tsds",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecast_given_ts_with_prediction_interval(model, transforms, example_tsds):
+def test_forecast_given_ts_with_prediction_interval(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 3
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=ts, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, model, transforms",
+    [
+        (
+            "example_tsds",
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds",
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
+    ],
+)
+def test_predict(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=7)
+    assert_pipeline_predicts(pipeline=pipeline, ts=ts, start_idx=50, end_idx=70)
 
 
 @pytest.mark.parametrize(

@@ -417,40 +417,100 @@ def test_fold_mask_validate_on_dataset_fail_not_enough_horizon(ts_name, fold_mas
 
 
 @pytest.mark.parametrize(
-    "ts_name, expected_start_timestamp, expected_end_timestamp",
+    "ts_name, start_timestamp, end_timestamp, expected_start_timestamp, expected_end_timestamp",
     [
-        ("example_tsds", pd.Timestamp("2020-01-01"), pd.Timestamp("2020-04-09")),
-        ("ts_with_different_series_length", pd.Timestamp("2020-01-01 4:00"), pd.Timestamp("2020-02-01")),
+        ("example_tsds", None, None, pd.Timestamp("2020-01-01"), pd.Timestamp("2020-04-09")),
+        ("example_tsds", pd.Timestamp("2020-01-05"), None, pd.Timestamp("2020-01-05"), pd.Timestamp("2020-04-09")),
+        ("example_tsds", "2020-01-05", None, pd.Timestamp("2020-01-05"), pd.Timestamp("2020-04-09")),
+        ("example_tsds", None, pd.Timestamp("2020-04-05"), pd.Timestamp("2020-01-01"), pd.Timestamp("2020-04-05")),
+        ("example_tsds", None, "2020-04-05", pd.Timestamp("2020-01-01"), pd.Timestamp("2020-04-05")),
+        (
+            "example_tsds",
+            pd.Timestamp("2020-01-05"),
+            pd.Timestamp("2020-04-05"),
+            pd.Timestamp("2020-01-05"),
+            pd.Timestamp("2020-04-05"),
+        ),
+        ("example_tsds", "2020-01-05", "2020-04-05", pd.Timestamp("2020-01-05"), pd.Timestamp("2020-04-05")),
+        (
+            "example_tsds",
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-04-09"),
+            pd.Timestamp("2020-01-01"),
+            pd.Timestamp("2020-04-09"),
+        ),
+        ("ts_with_different_series_length", None, None, pd.Timestamp("2020-01-01 4:00"), pd.Timestamp("2020-02-01")),
+        ("example_tsds_int_timestamp", None, None, 10, 109),
+        ("example_tsds_int_timestamp", 15, None, 15, 109),
+        ("example_tsds_int_timestamp", None, 100, 10, 100),
+        ("example_tsds_int_timestamp", 15, 100, 15, 100),
     ],
 )
-def test_make_predict_timestamps_calculate_values(ts_name, expected_start_timestamp, expected_end_timestamp, request):
+def test_make_predict_timestamps_ok(
+    ts_name, start_timestamp, end_timestamp, expected_start_timestamp, expected_end_timestamp, request
+):
     ts = request.getfixturevalue(ts_name)
 
-    start_timestamp, end_timestamp = BasePipeline._make_predict_timestamps(ts=ts)
+    start_timestamp, end_timestamp = BasePipeline._make_predict_timestamps(
+        ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp
+    )
 
     assert start_timestamp == expected_start_timestamp
     assert end_timestamp == expected_end_timestamp
 
 
-def test_make_predict_timestamps_fail_early_start(example_tsds):
-    start_timestamp = example_tsds.index[0] - pd.DateOffset(days=5)
+@pytest.mark.parametrize(
+    "ts_name, start_timestamp",
+    [("example_tsds", 10), ("example_tsds_int_timestamp", pd.Timestamp("2020-01-01"))],
+)
+def test_make_predict_timestamps_fail_wrong_start_timestamp_type(ts_name, start_timestamp, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match="Parameter start_timestamp has incorrect type"):
+        _ = BasePipeline._make_predict_timestamps(ts=ts, start_timestamp=start_timestamp, end_timestamp=None)
+
+
+@pytest.mark.parametrize(
+    "ts_name, end_timestamp",
+    [("example_tsds", 10), ("example_tsds_int_timestamp", pd.Timestamp("2020-01-01"))],
+)
+def test_make_predict_timestamps_fail_wrong_start_timestamp_type(ts_name, end_timestamp, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match="Parameter end_timestamp has incorrect type"):
+        _ = BasePipeline._make_predict_timestamps(ts=ts, start_timestamp=None, end_timestamp=end_timestamp)
+
+
+@pytest.mark.parametrize(
+    "ts_name, start_timestamp",
+    [("example_tsds", pd.Timestamp("2019-01-01")), ("example_tsds", "2019-01-01"), ("example_tsds_int_timestamp", 8)],
+)
+def test_make_predict_timestamps_fail_early_start(ts_name, start_timestamp, request):
+    ts = request.getfixturevalue(ts_name)
     with pytest.raises(ValueError, match="Value of start_timestamp is less than beginning of some segments"):
-        _ = BasePipeline._make_predict_timestamps(ts=example_tsds, start_timestamp=start_timestamp)
+        _ = BasePipeline._make_predict_timestamps(ts=ts, start_timestamp=start_timestamp, end_timestamp=None)
 
 
-def test_make_predict_timestamps_fail_late_end(example_tsds):
-    end_timestamp = example_tsds.index[-1] + pd.DateOffset(days=5)
+@pytest.mark.parametrize(
+    "ts_name, end_timestamp",
+    [("example_tsds", pd.Timestamp("2021-01-01")), ("example_tsds", "2021-01-01"), ("example_tsds_int_timestamp", 120)],
+)
+def test_make_predict_timestamps_fail_late_end(ts_name, end_timestamp, request):
+    ts = request.getfixturevalue(ts_name)
     with pytest.raises(ValueError, match="Value of end_timestamp is more than ending of dataset"):
-        _ = BasePipeline._make_predict_timestamps(ts=example_tsds, end_timestamp=end_timestamp)
+        _ = BasePipeline._make_predict_timestamps(ts=ts, start_timestamp=None, end_timestamp=end_timestamp)
 
 
-def test_make_predict_timestamps_fail_start_later_than_end(example_tsds):
-    start_timestamp = example_tsds.index[2]
-    end_timestamp = example_tsds.index[0]
+@pytest.mark.parametrize(
+    "ts_name, start_timestamp, end_timestamp",
+    [
+        ("example_tsds", pd.Timestamp("2020-01-10"), pd.Timestamp("2020-01-09")),
+        ("example_tsds", "2020-01-10", "2020-01-09"),
+        ("example_tsds_int_timestamp", 20, 19),
+    ],
+)
+def test_make_predict_timestamps_fail_start_later_than_end(ts_name, start_timestamp, end_timestamp, request):
+    ts = request.getfixturevalue(ts_name)
     with pytest.raises(ValueError, match="Value of end_timestamp is less than start_timestamp"):
-        _ = BasePipeline._make_predict_timestamps(
-            ts=example_tsds, start_timestamp=start_timestamp, end_timestamp=end_timestamp
-        )
+        _ = BasePipeline._make_predict_timestamps(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
 
 class DummyPipeline(BasePipeline):
@@ -480,9 +540,15 @@ class DummyPipeline(BasePipeline):
     [
         (None, None),
         (pd.Timestamp("2020-01-02"), None),
+        ("2020-01-02", None),
+        (10, None),
         (None, pd.Timestamp("2020-02-01")),
+        (None, "2020-02-01"),
+        (None, 10),
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-02-01")),
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-02-03")),
+        ("2020-01-02", "2020-02-01"),
+        (12, 100),
     ],
 )
 def test_predict_calls_make_timestamps(start_timestamp, end_timestamp, example_tsds):

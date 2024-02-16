@@ -4,6 +4,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -148,8 +149,8 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,
