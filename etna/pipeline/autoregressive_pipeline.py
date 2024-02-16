@@ -175,22 +175,3 @@ class AutoRegressivePipeline(
             prediction_ts.add_target_components(target_components_df=target_components_df)
 
         return prediction_ts
-
-    # TODO: зачем это надо? Мб удалить?
-    def _predict(
-        self,
-        ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
-        prediction_interval: bool,
-        quantiles: Sequence[float],
-        return_components: bool = False,
-    ) -> TSDataset:
-        return super()._predict(
-            ts=ts,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
-            prediction_interval=prediction_interval,
-            quantiles=quantiles,
-            return_components=return_components,
-        )
