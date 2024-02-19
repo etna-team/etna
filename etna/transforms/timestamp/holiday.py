@@ -12,31 +12,31 @@ from etna.datasets import TSDataset
 from etna.transforms.base import IrreversibleTransform
 
 
-def compare_frequency(freq: str):
+def bigger_than_day(freq):
     """Compare frequency with day."""
-    new_freq = freq
-    secs = 0
-    seconds_in_day = 8640
-    while new_freq != "":
-        numbers_part = "".join(itertools.takewhile(str.isdigit, new_freq))
-        new_freq = new_freq[len(numbers_part) :]
-        numbers_part = "1" if numbers_part == "" else numbers_part
-        letters_part = ""
-        for char in new_freq:
-            if char.isupper():
-                letters_part += char
-            else:
-                break
-        new_freq = new_freq[len(letters_part) + 1 :]
-        if letters_part == "S":
-            secs += int(numbers_part)
-        elif letters_part == "MIN":
-            secs += int(numbers_part) * 60
-        elif letters_part == "H":
-            secs = int(numbers_part) * 360
-        else:
-            return False
-    return secs <= seconds_in_day
+    dt = "2000-01-01"
+    dates_day = pd.date_range(start=dt, periods=2, freq="D")
+    dates_freq = pd.date_range(start=dt, periods=2, freq=freq)
+    return dates_freq[-1] > dates_day[-1]
+
+
+def define_period(literal, date, numbers):
+    """Define start_date and end_date of period using dataset frequency."""
+    if literal == "W":
+        start_date = date - timedelta(days=date.weekday())
+        end_date = start_date + pd.DateOffset(weeks=int(numbers))
+    elif literal == "M":
+        start_date = date.replace(day=1)
+        end_date = start_date + pd.DateOffset(months=int(numbers))
+    elif literal == "Q":
+        start_date = date.replace(day=1)
+        end_date = start_date + pd.DateOffset(months=3 * int(numbers))
+    elif literal in ["Y", "A"]:
+        start_date = date.replace(month=1, day=1)
+        end_date = start_date + pd.DateOffset(years=int(numbers))
+    else:
+        raise ValueError("Days_count mode supports only W, M, Q, Y frequency.")
+    return start_date, end_date
 
 
 class HolidayTransformMode(str, Enum):
@@ -141,9 +141,7 @@ class HolidayTransform(IrreversibleTransform):
         numbers_part = "".join(itertools.takewhile(str.isdigit, self.freq))
         letters_part = "".join(itertools.dropwhile(str.isdigit, self.freq))
         numbers_part = "1" if numbers_part == "" else numbers_part
-        if (
-            self.freq != "D" and compare_frequency(self.freq) is False
-        ) and self._mode is not HolidayTransformMode.days_count:
+        if bigger_than_day(self.freq) and self._mode is not HolidayTransformMode.days_count:
             raise ValueError("In default mode frequency of data should be no more than daily.")
 
         cols = df.columns.get_level_values("segment").unique()
@@ -152,20 +150,7 @@ class HolidayTransform(IrreversibleTransform):
         if self._mode is HolidayTransformMode.days_count:
             encoded_matrix = np.empty(0)
             for date in df.index:
-                if letters_part == "W":
-                    start_date = date - timedelta(days=date.weekday())
-                    new_date = start_date + pd.DateOffset(weeks=int(numbers_part))
-                elif letters_part in ["M", "MS"]:
-                    start_date = date.replace(day=1)
-                    new_date = start_date + pd.DateOffset(months=int(numbers_part))
-                elif letters_part in ["Q", "QS"]:
-                    start_date = date.replace(day=1)
-                    new_date = start_date + pd.DateOffset(months=3 * int(numbers_part))
-                elif letters_part in ["Y", "YS"]:
-                    start_date = date.replace(month=1, day=1)
-                    new_date = start_date + pd.DateOffset(years=int(numbers_part))
-                else:
-                    raise ValueError("days_count mode don't support frequency less than Weekly")
+                start_date, new_date = define_period(letters_part[0], date, numbers_part)
                 date_range = pd.date_range(start=start_date, end=(new_date - timedelta(days=1)), freq="d")
                 count_holidays = sum(1 for d in date_range if d in self.holidays)
                 holidays_freq = count_holidays / date_range.size

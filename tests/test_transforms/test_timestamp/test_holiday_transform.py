@@ -241,7 +241,7 @@ def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_ts_day_15m
 def test_holidays_days_count_mode_failed(two_segments_simple_ts_daily: TSDataset):
     ts = two_segments_simple_ts_daily
     holidays_finder = HolidayTransform(out_column="holiday", mode="days_count")
-    with pytest.raises(ValueError, match="days_count mode don't support frequency less than Weekly"):
+    with pytest.raises(ValueError, match="Days_count mode supports only W, M, Q, Y frequency."):
         ts = holidays_finder.fit_transform(ts)
 
 
