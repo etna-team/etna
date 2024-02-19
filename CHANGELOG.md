@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add dataset integrity check using hash for internal datasets ([#151](https://github.com/etna-team/etna/pull/151))
 - Create page about internal datasets in documentation ([#175](https://github.com/etna-team/etna/pull/175))
 - Add usage example of internal datasets in `101-get_started.ipynb` and `305-classification.ipynb` tutorials ([#202](https://github.com/etna-team/etna/pull/202))
--
+- Add size method to `TSDataset` class ([#238](https://github.com/etna-team/etna/pull/238))
 
 ### Changed
 - Add `relevance_aggregation_mode` and `redundancy_aggregation_mode` into `MRMRFeatureSelectionTransform.params_to_tune` ([#212](https://github.com/etna-team/etna/pull/212))
