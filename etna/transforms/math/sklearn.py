@@ -226,9 +226,7 @@ class SklearnTransform(ReversibleTransform):
         return df
 
     def _preprocess_macro(self, df: pd.DataFrame) -> np.ndarray:
-        segments = sorted(set(df.columns.get_level_values("segment")))
-        x = df.loc[:, pd.IndexSlice[segments, self.in_column]]
-        x = TSDataset.to_flatten(x)[self.in_column].values
+        x = TSDataset.to_flatten(df, features=self.in_column)[self.in_column].values
         return x
 
     def _postprocess_macro(self, df: pd.DataFrame, transformed: np.ndarray) -> np.ndarray:
