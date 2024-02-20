@@ -445,7 +445,11 @@ def timestamp_range(
     periods:
         length of the index
     freq:
-        TODOO
+        frequency of timestamps, possible values:
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
 
     Returns
     -------
