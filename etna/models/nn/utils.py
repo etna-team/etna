@@ -15,6 +15,7 @@ from etna import SETTINGS
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
 from etna.datasets.utils import determine_num_steps
+from etna.datasets.utils import timestamp_range
 from etna.loggers import tslogger
 from etna.models.base import log_decorator
 
@@ -275,11 +276,7 @@ class PytorchForecastingMixin:
 
     def _is_prediction_with_gap(self, ts: TSDataset, horizon: int) -> bool:
         first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
-        if pd.api.types.is_integer_dtype(ts.index.dtype):
-            first_timestamp_after_train = self._last_train_timestamp + 1
-        else:
-            first_timestamp_after_train = pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]
-
+        first_timestamp_after_train = timestamp_range(start=self._last_train_timestamp, periods=2, freq=self._freq)[-1]
         return first_prediction_timestamp > first_timestamp_after_train
 
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:

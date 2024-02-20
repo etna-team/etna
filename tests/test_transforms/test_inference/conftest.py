@@ -169,21 +169,21 @@ def ts_to_resample() -> TSDataset:
 def ts_to_resample_int_timestamp() -> TSDataset:
     df_1 = pd.DataFrame(
         {
-            "timestamp": np.arange(120),
+            "timestamp": np.arange(24, 144),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df_2 = pd.DataFrame(
         {
-            "timestamp": np.arange(120),
+            "timestamp": np.arange(24, 144),
             "segment": "segment_2",
             "target": ([1] + 23 * [0]) * 5,
         }
     )
     df_3 = pd.DataFrame(
         {
-            "timestamp": np.arange(120),
+            "timestamp": np.arange(24, 144),
             "segment": "segment_3",
             "target": ([4] + 23 * [0]) * 5,
         }
@@ -192,21 +192,21 @@ def ts_to_resample_int_timestamp() -> TSDataset:
 
     df_exog_1 = pd.DataFrame(
         {
-            "timestamp": np.arange(0, 192, 24),
+            "timestamp": np.arange(24, 216, 24),
             "segment": "segment_1",
             "regressor_exog": 2,
         }
     )
     df_exog_2 = pd.DataFrame(
         {
-            "timestamp": np.arange(0, 192, 24),
+            "timestamp": np.arange(24, 216, 24),
             "segment": "segment_2",
             "regressor_exog": 40,
         }
     )
     df_exog_3 = pd.DataFrame(
         {
-            "timestamp": np.arange(0, 192, 24),
+            "timestamp": np.arange(24, 216, 24),
             "segment": "segment_3",
             "regressor_exog": 40,
         }

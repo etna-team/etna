@@ -116,7 +116,7 @@ def plot_time_series_with_change_points(
     Raises
     ------
     ValueError:
-        Datetime ``start`` or ``end`` is used for data with integer timestamp.
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
     """
     start, end = _get_borders_ts(ts, start, end)
 
@@ -206,7 +206,7 @@ def plot_change_points_interactive(
     Raises
     ------
     ValueError:
-        Datetime ``start`` or ``end`` is used for data with integer timestamp.
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
 
     Examples
     --------
@@ -343,7 +343,7 @@ def stl_plot(
     df = ts.to_pandas()
     for i, segment in enumerate(segments):
         segment_df = df.loc[:, pd.IndexSlice[segment, :]][segment]
-        segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+        segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()]
         decompose_result = STL(endog=segment_df[in_column], period=period, **stl_kwargs).fit()
 
         # start plotting

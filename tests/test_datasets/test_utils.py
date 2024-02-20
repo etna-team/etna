@@ -15,6 +15,7 @@ from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import inverse_transform_target_components
 from etna.datasets.utils import match_target_components
 from etna.datasets.utils import set_columns_wide
+from etna.datasets.utils import timestamp_range
 
 
 @pytest.fixture
@@ -458,3 +459,58 @@ def test_determine_freq_fail_cant_determine(timestamps):
 def test_determine_freq_fail_int_gaps(timestamps):
     with pytest.raises(ValueError, match="Integer timestamp isn't ordered and doesn't contain all the values"):
         _ = determine_freq(timestamps=timestamps)
+
+
+@pytest.mark.parametrize(
+    "start, end, periods, freq, expected_range",
+    [
+        ("2020-01-01", "2020-01-10", None, "D", pd.date_range(start="2020-01-01", end="2020-01-10", freq="D")),
+        ("2020-01-01", None, 10, "D", pd.date_range(start="2020-01-01", periods=10, freq="D")),
+        (None, "2020-01-10", 10, "D", pd.date_range(end="2020-01-10", periods=10, freq="D")),
+        ("2020-01-01", None, 10, "MS", pd.date_range(start="2020-01-01", periods=10, freq="MS")),
+        (10, 19, None, None, np.arange(10, 20)),
+        (10, None, 10, None, np.arange(10, 20)),
+        (None, 19, 10, None, np.arange(10, 20)),
+    ],
+)
+def test_timestamp_range(start, end, periods, freq, expected_range):
+    result = timestamp_range(start=start, end=end, periods=periods, freq=freq)
+    np.testing.assert_array_equal(result, expected_range)
+
+
+@pytest.mark.parametrize(
+    "start, end, periods, freq",
+    [
+        ("2020-01-01", "2020-01-10", None, None),
+        ("2020-01-01", None, 10, None),
+        (None, "2020-01-10", 10, None),
+        ("2020-01-01", 20, None, "D"),
+        (10, "2020-01-10", None, "D"),
+        (10, 20, None, "D"),
+        (10, None, 10, "D"),
+        (None, 20, 10, "D"),
+    ],
+)
+def test_timestamp_range_fail_type(start, end, periods, freq):
+    with pytest.raises(ValueError, match="Parameter .* has incorrect type"):
+        _ = timestamp_range(start=start, end=end, periods=periods, freq=freq)
+
+
+@pytest.mark.parametrize(
+    "start, end, periods, freq",
+    [
+        ("2020-01-01", "2020-01-10", 10, "D"),
+        ("2020-01-01", None, None, "D"),
+        (None, "2020-01-10", None, "D"),
+        (None, None, 10, "D"),
+        (None, None, None, "D"),
+        (10, 19, 10, None),
+        (10, None, None, None),
+        (None, 19, None, None),
+        (None, None, 10, None),
+        (None, None, None, None),
+    ],
+)
+def test_timestamp_range_fail_num_parameters(start, end, periods, freq):
+    with pytest.raises(ValueError, match="Of the three parameters: .* must be specified"):
+        _ = timestamp_range(start=start, end=end, periods=periods, freq=freq)

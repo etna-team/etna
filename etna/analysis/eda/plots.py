@@ -215,7 +215,7 @@ def plot_periodogram(
         _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
-            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()]
             if segment_df.isna().any():
                 raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
@@ -233,7 +233,7 @@ def plot_periodogram(
         lengths_segments = []
         for segment in segments:
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
-            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()]
             if segment_df.isna().any():
                 raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
             lengths_segments.append(len(segment_df))
@@ -244,7 +244,7 @@ def plot_periodogram(
         spectrums_segments = []
         for segment in segments:
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
-            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
+            segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
             frequencies_segments.append(frequencies)
             spectrums_segments.append(spectrum)
@@ -314,7 +314,7 @@ def plot_holidays(
     Raises
     ------
     ValueError:
-        Datetime ``start`` or ``end`` is used for data with integer timestamp.
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
     ValueError:
         If ``holidays`` nor ``pd.DataFrame`` or ``str``.
     ValueError:
@@ -341,7 +341,7 @@ def plot_holidays(
 
     for i, segment in enumerate(segments):
         segment_df = df.loc[start:end, pd.IndexSlice[segment, "target"]]  # type: ignore
-        segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+        segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()]
 
         # plot target on segment
         target_plot = ax[i].plot(segment_df.index, segment_df)
@@ -713,7 +713,7 @@ def plot_imputation(
     Raises
     ------
     ValueError:
-        Datetime ``start`` or ``end`` is used for data with integer timestamp.
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
     """
     start, end = _get_borders_ts(ts, start, end)
 

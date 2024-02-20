@@ -17,6 +17,7 @@ from etna.transforms.math import DifferencingTransform
 from etna.transforms.math.differencing import _SingleDifferencingTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import convert_ts_to_int_timestamp
 from tests.utils import select_segments_subset
 
 GeneralDifferencingTransform = Union[_SingleDifferencingTransform, DifferencingTransform]
@@ -64,6 +65,11 @@ def ts_nans(df_nans) -> TSDataset:
 
 
 @pytest.fixture
+def ts_nans_int_timestamp(ts_nans) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=ts_nans, shift=10)
+
+
+@pytest.fixture
 def ts_nans_with_regressors(df_nans, df_regressors) -> TSDataset:
     """Create TSDataset with regressors and nans at the beginning of one segment."""
     ts = TSDataset(df=df_nans, df_exog=df_regressors, freq="D")
@@ -100,6 +106,11 @@ def ts_nans_with_noise(df_nans, random_seed) -> TSDataset:
     )
     ts = TSDataset(df=df_nans, freq="D")
     return ts
+
+
+@pytest.fixture
+def ts_nans_with_noise_int_timestamp(ts_nans_with_noise) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=ts_nans_with_noise, shift=10)
 
 
 def check_interface_transform_autogenerate_column_non_regressor(transform: GeneralDifferencingTransform, ts: TSDataset):
@@ -459,6 +470,7 @@ def test_general_inverse_transform_fail_not_all_test(transform, ts_nans):
         transform.inverse_transform(ts_nans)
 
 
+@pytest.mark.parametrize("ts_name", ["ts_nans", "ts_nans_int_timestamp"])
 @pytest.mark.parametrize(
     "transform",
     [
@@ -466,9 +478,9 @@ def test_general_inverse_transform_fail_not_all_test(transform, ts_nans):
         DifferencingTransform(in_column="target", period=1, order=1, inplace=True),
     ],
 )
-def test_general_inverse_transform_fail_test_not_right_after_train(transform, ts_nans):
+def test_general_inverse_transform_fail_test_not_right_after_train(ts_name, transform, request):
     """Test that differencing transform fails to make inverse_transform on not adjacent test data."""
-    ts = ts_nans
+    ts = request.getfixturevalue(ts_name)
     ts_train, ts_test = ts.train_test_split(test_size=10)
     ts_train.fit_transform(transforms=[transform])
     future_ts = ts_train.make_future(10, transforms=[transform])
@@ -570,19 +582,23 @@ def test_full_inverse_transform_inplace_test_quantiles(period, order, ts_nans_wi
     check_inverse_transform_inplace_test_quantiles(transform, ts_nans_with_noise)
 
 
+@pytest.mark.parametrize("ts_name", ["ts_nans_with_noise", "ts_nans_with_noise_int_timestamp"])
 @pytest.mark.parametrize("period", [1, 7])
-def test_single_backtest_sanity(period, ts_nans_with_noise):
+def test_single_backtest_sanity(ts_name, period, request):
     """Test that _SingleDifferencingTransform correctly works in backtest."""
+    ts = request.getfixturevalue(ts_name)
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=True)
-    check_backtest_sanity(transform, ts_nans_with_noise)
+    check_backtest_sanity(transform, ts)
 
 
+@pytest.mark.parametrize("ts_name", ["ts_nans_with_noise", "ts_nans_with_noise_int_timestamp"])
 @pytest.mark.parametrize("period", [1, 7])
 @pytest.mark.parametrize("order", [1, 2])
-def test_full_backtest_sanity(period, order, ts_nans_with_noise):
+def test_full_backtest_sanity(ts_name, period, order, request):
     """Test that DifferencingTransform correctly works in backtest."""
+    ts = request.getfixturevalue(ts_name)
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=True)
-    check_backtest_sanity(transform, ts_nans_with_noise)
+    check_backtest_sanity(transform, ts)
 
 
 @pytest.mark.parametrize("inplace", [False, True])

@@ -426,3 +426,57 @@ def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
             raise ValueError("Can't determine frequency of a given dataframe")
 
         return freq
+
+
+def timestamp_range(
+    start: Union[pd.Timestamp, int, str, None] = None,
+    end: Union[pd.Timestamp, int, str, None] = None,
+    periods: Optional[int] = None,
+    freq: Optional[str] = None,
+) -> pd.Index:
+    """Create index with timestamps.
+
+    Parameters
+    ----------
+    start:
+        start of index
+    end:
+        end of index
+    periods:
+        length of the index
+    freq:
+        TODOO
+
+    Returns
+    -------
+    :
+        Created index
+
+    Raises
+    ------
+    ValueError:
+        Incorrect type of ``start`` or ``end`` is used according to ``freq``
+    ValueError:
+        Of the three parameters: start, end, periods, exactly two must be specified
+    """
+    start = _check_timestamp_param(param=start, param_name="start", freq=freq)
+    end = _check_timestamp_param(param=end, param_name="end", freq=freq)
+
+    num_set = 0
+    if start is not None:
+        num_set += 1
+    if end is not None:
+        num_set += 1
+    if periods is not None:
+        num_set += 1
+    if num_set != 2:
+        raise ValueError("Of the three parameters: start, end, periods, exactly two must be specified!")
+
+    if freq is None:
+        if start is None:
+            start = end - periods + 1  # type: ignore
+        if periods is None:
+            periods = end - start + 1  # type: ignore
+        return pd.Index(np.arange(start, start + periods))
+    else:
+        return pd.date_range(start=start, end=end, periods=periods, freq=freq)

@@ -33,6 +33,11 @@ def test_select_observations(timestamps, freq, start, end, periods, df_without_t
 @pytest.mark.parametrize(
     "timestamps, freq, start, end, periods",
     [
+        (pd.to_datetime(pd.Series(["2020-02-01", "2020-02-03"])), "D", None, None, None),
+        (pd.to_datetime(pd.Series(["2020-02-01", "2020-02-03"])), "D", "2020-02-01", None, None),
+        (pd.to_datetime(pd.Series(["2020-02-01", "2020-02-03"])), "D", None, "2020-02-05", None),
+        (pd.to_datetime(pd.Series(["2020-02-01", "2020-02-03"])), "D", None, None, 5),
+        (pd.to_datetime(pd.Series(["2020-02-01", "2020-02-03"])), "D", "2020-02-01", "2020-02-05", 5),
         (pd.Series([6, 7]), None, None, None, None),
         (pd.Series([6, 7]), None, 5, None, None),
         (pd.Series([6, 7]), None, None, 9, None),
