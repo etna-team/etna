@@ -1,4 +1,5 @@
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -161,7 +162,7 @@ class GatedResidualNetwork(nn.Module):
 class VariableSelectionNetwork(nn.Module):
     """Variable Selection Network."""
 
-    def __init__(self, input_size: int, features: Tuple[str], pass_context: bool = False, dropout: float = 0.1):
+    def __init__(self, input_size: int, features: List[str], pass_context: bool = False, dropout: float = 0.1):
         """Init Variable Selection Network.
 
         Parameters
@@ -195,7 +196,7 @@ class VariableSelectionNetwork(nn.Module):
             input_size=self.input_size * self.num_features,
             output_size=self.num_features,
             dropout=self.dropout,
-            pass_context=self.context,
+            pass_context=self.pass_context,
         )
         self.softmax = nn.Softmax(dim=2)
 
@@ -248,36 +249,30 @@ class VariableSelectionNetwork(nn.Module):
 class StaticCovariateEncoder(nn.Module):
     """Static Covariate Encoder."""
 
-    def __init__(self, input_size: int, output_size: int, output_flatten_size: int, dropout: float = 0.1):
+    def __init__(self, input_size: int, dropout: float = 0.1):
         """Init Static Covariate Encoder.
 
         Parameters
         ----------
         input_size:
             input size of the feature representation
-        output_size:
-            output size of the feature representation
-        output_flatten_size:
-            output size of the VariableSelectionNetwork context vector
         dropout:
             dropout rate
         """
         super().__init__()
         self.input_size = input_size
-        self.output_size = output_size
-        self.output_flatten_size = output_flatten_size
         self.dropout = dropout
         self.grn_s = GatedResidualNetwork(  # for VariableSelectionNetwork
-            input_size=self.input_size, output_size=self.output_flatten_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
         )
         self.grn_c = GatedResidualNetwork(  # for LSTM
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
         )
         self.grn_h = GatedResidualNetwork(  # for LSTM
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
         )
         self.grn_e = GatedResidualNetwork(  # for GRN
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
         )
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -302,40 +297,45 @@ class StaticCovariateEncoder(nn.Module):
 class TemporalFusionDecoder(nn.Module):
     """Temporal Fusion Decoder."""
 
-    def __init__(self, input_size: int, output_size: int, decoder_length: int, n_heads: int, dropout: float = 0.1):
+    def __init__(
+        self, input_size: int, decoder_length: int, n_heads: int, pass_context: bool = False, dropout: float = 0.1
+    ):
         """Init Temporal Fusion Decoder.
 
         Parameters
         ----------
         input_size:
             input size of the feature representation
-        output_size:
-            output size of the feature representation
         decoder_length:
             number of prediction timestamps
         n_heads:
             number of heads in multi-head attention
+        pass_context:
+            whether to pass context vector through the block
         dropout:
             dropout rate
         """
         super().__init__()
         self.input_size = input_size
-        self.output_size = output_size
         self.decoder_length = decoder_length
         self.n_heads = n_heads
+        self.pass_context = pass_context
         self.dropout = dropout
         self.grn1 = GatedResidualNetwork(
-            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=True
+            input_size=self.input_size,
+            output_size=self.input_size,
+            dropout=self.dropout,
+            pass_context=self.pass_context,
         )
         self.attention = nn.MultiheadAttention(
             embed_dim=self.input_size, num_heads=self.n_heads, dropout=self.dropout, batch_first=True
         )
         self.gate_norm = GateAddNorm(input_size=self.input_size, output_size=self.input_size, dropout=self.dropout)
         self.grn2 = GatedResidualNetwork(
-            input_size=self.input_size, output_size=self.output_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
         )
 
-    def forward(self, x: torch.Tensor, context: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, context: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Forward pass.
 
         Parameters
