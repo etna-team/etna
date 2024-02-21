@@ -20,7 +20,7 @@ def bigger_than_day(freq):
     return dates_freq[-1] > dates_day[-1]
 
 
-def define_period(literal, date, numbers):
+def define_period(literal, date, numbers, freq):
     """Define start_date and end_date of period using dataset frequency."""
     if literal == "W":
         start_date = date - timedelta(days=date.weekday())
@@ -35,7 +35,9 @@ def define_period(literal, date, numbers):
         start_date = date.replace(month=1, day=1)
         end_date = start_date + pd.DateOffset(years=int(numbers))
     else:
-        raise ValueError("Days_count mode supports only W, M, Q, Y frequency.")
+        raise ValueError(
+            f"Days_count mode works only with weekly, monthly, quarterly or yearly data. You have freq={freq}"
+        )
     return start_date, end_date
 
 
@@ -137,21 +139,25 @@ class HolidayTransform(IrreversibleTransform):
         -------
         :
             pd.DataFrame with added holidays
+        Raises
+        ------
+        ValueError:
+            If the frequency is greater than daily and this is a binary or categorical mode or if the frequency is less than daily and this is days_count mode.
         """
-        numbers_part = "".join(itertools.takewhile(str.isdigit, self.freq))
-        letters_part = "".join(itertools.dropwhile(str.isdigit, self.freq))
-        numbers_part = "1" if numbers_part == "" else numbers_part
         if bigger_than_day(self.freq) and self._mode is not HolidayTransformMode.days_count:
-            raise ValueError("In default mode frequency of data should be no more than daily.")
+            raise ValueError("For binary and category modes frequency of data should be no more than daily.")
 
         cols = df.columns.get_level_values("segment").unique()
         out_column = self._get_column_name()
 
         if self._mode is HolidayTransformMode.days_count:
+            numbers_part = "".join(itertools.takewhile(str.isdigit, self.freq))
+            letters_part = "".join(itertools.dropwhile(str.isdigit, self.freq))
+            numbers_part = "1" if numbers_part == "" else numbers_part
             encoded_matrix = np.empty(0)
-            for date in df.index:
-                start_date, new_date = define_period(letters_part[0], date, numbers_part)
-                date_range = pd.date_range(start=start_date, end=(new_date - timedelta(days=1)), freq="d")
+            for dt in df.index:
+                start_date, end_date = define_period(letters_part[0], dt, numbers_part, self.freq)
+                date_range = pd.date_range(start=start_date, end=(end_date - timedelta(days=1)), freq="d")
                 count_holidays = sum(1 for d in date_range if d in self.holidays)
                 holidays_freq = count_holidays / date_range.size
                 encoded_matrix = np.append(encoded_matrix, holidays_freq)
