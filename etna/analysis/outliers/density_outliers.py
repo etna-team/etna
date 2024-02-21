@@ -178,7 +178,7 @@ def get_anomalies_density(
         #   May be error or warning should be raised in this case
         series = series_df.dropna()
 
-        if series_std:
+        if series_std > 0:
             outliers_idxs = get_segment_density_outliers_indices(
                 series=series.values,
                 window_size=window_size,
