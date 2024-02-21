@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `FourierTransform` on integer index, add inference tests ([#230](https://github.com/etna-team/etna/pull/230))
 - Update outliers transforms to handle integer timestamp ([#229](https://github.com/etna-team/etna/pull/229))
 - Update pipelines to handle integer timestamp ([#241](https://github.com/etna-team/etna/pull/241))
+- Update CLI to handle integer timestamp ([#246](https://github.com/etna-team/etna/pull/246))
 
 ### Fixed
 - 
