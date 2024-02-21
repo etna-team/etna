@@ -62,7 +62,9 @@ def filter_forecast(forecast_ts: TSDataset, forecast_params: Dict[str, Any]) -> 
 def forecast(
     config_path: Path = typer.Argument(..., help="path to yaml config with desired pipeline"),
     target_path: Path = typer.Argument(..., help="path to csv with data to forecast"),
-    freq: str = typer.Argument(..., help="frequency of timestamp in files in pandas format"),
+    freq: str = typer.Argument(
+        ..., help="frequency of timestamp in files in pandas format or 'None' for integer timestamps"
+    ),
     output_path: Path = typer.Argument(..., help="where to save forecast"),
     exog_path: Optional[Path] = typer.Argument(None, help="path to csv with exog data"),
     forecast_config_path: Optional[Path] = typer.Argument(None, help="path to yaml config with forecast params"),
@@ -115,18 +117,25 @@ def forecast(
         forecast_params_config = {}
     forecast_params: Dict[str, Any] = hydra_slayer.get_from_params(**forecast_params_config)
 
-    df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
+    if freq == "None":
+        freq_init = None
+        parse_dates = None
+    else:
+        freq_init = freq
+        parse_dates = ["timestamp"]
+
+    df_timeseries = pd.read_csv(target_path, parse_dates=parse_dates)
 
     df_timeseries = TSDataset.to_dataset(df_timeseries)
 
     df_exog = None
     k_f: Union[Literal["all"], Sequence[Any]] = ()
     if exog_path:
-        df_exog = pd.read_csv(exog_path, parse_dates=["timestamp"])
+        df_exog = pd.read_csv(exog_path, parse_dates=parse_dates)
         df_exog = TSDataset.to_dataset(df_exog)
         k_f = "all" if not known_future else known_future
 
-    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
+    tsdataset = TSDataset(df=df_timeseries, freq=freq_init, df_exog=df_exog, known_future=k_f)
 
     update_horizon(pipeline_configs=pipeline_configs, forecast_params=forecast_params, tsdataset=tsdataset)
 

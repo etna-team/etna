@@ -64,8 +64,36 @@ def base_forecast_with_folds_estimation_omegaconf_path():
     tmp.close()
 
 
+def test_forecast(base_pipeline_yaml_path, base_timeseries_path):
+    tmp_output = NamedTemporaryFile("w")
+    tmp_output_path = Path(tmp_output.name)
+    run(["etna", "forecast", str(base_pipeline_yaml_path), str(base_timeseries_path), "D", str(tmp_output_path)])
+    df_output = pd.read_csv(tmp_output_path)
+    assert len(df_output) == 2 * 4
+
+
 @pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
-def test_dummy_run_with_exog(pipeline_path_name, base_timeseries_path, base_timeseries_exog_path, request):
+def test_forecast_with_int_timestamp(pipeline_path_name, base_timeseries_int_timestamp_path, request):
+    tmp_output = NamedTemporaryFile("w")
+    tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
+    run(
+        [
+            "etna",
+            "forecast",
+            str(pipeline_path),
+            str(base_timeseries_int_timestamp_path),
+            "None",
+            str(tmp_output_path),
+        ]
+    )
+    df_output = pd.read_csv(tmp_output_path)
+    assert len(df_output) == 2 * 4
+    assert df_output["timestamp"].dtype == "int"  # int timestamp in forecast
+
+
+@pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
+def test_forecast_with_exog(pipeline_path_name, base_timeseries_path, base_timeseries_exog_path, request):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
     pipeline_path = request.getfixturevalue(pipeline_path_name)
@@ -84,7 +112,7 @@ def test_dummy_run_with_exog(pipeline_path_name, base_timeseries_path, base_time
     assert len(df_output) == 2 * 4
 
 
-def test_omegaconf_run_with_exog(base_pipeline_omegaconf_path, base_timeseries_path, base_timeseries_exog_path):
+def test_forecast_omegaconf_with_exog(base_pipeline_omegaconf_path, base_timeseries_path, base_timeseries_exog_path):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
     run(
@@ -102,16 +130,8 @@ def test_omegaconf_run_with_exog(base_pipeline_omegaconf_path, base_timeseries_p
     assert len(df_output) == 2 * 4
 
 
-def test_dummy_run(base_pipeline_yaml_path, base_timeseries_path):
-    tmp_output = NamedTemporaryFile("w")
-    tmp_output_path = Path(tmp_output.name)
-    run(["etna", "forecast", str(base_pipeline_yaml_path), str(base_timeseries_path), "D", str(tmp_output_path)])
-    df_output = pd.read_csv(tmp_output_path)
-    assert len(df_output) == 2 * 4
-
-
 @pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
-def test_run_with_predictive_intervals(
+def test_forecast_with_predictive_intervals(
     pipeline_path_name, base_timeseries_path, base_timeseries_exog_path, base_forecast_omegaconf_path, request
 ):
     tmp_output = NamedTemporaryFile("w")
@@ -243,7 +263,7 @@ def test_update_horizon(pipeline_path_name, forecast_params, example_tsds, expec
     "pipeline_path_name",
     ("base_pipeline_with_context_size_yaml_path", "base_ensemble_yaml_path"),
 )
-def test_forecast_start_timestamp(
+def test_forecast_with_start_timestamp(
     pipeline_path_name,
     base_timeseries_path,
     base_timeseries_exog_path,
@@ -274,7 +294,7 @@ def test_forecast_start_timestamp(
 
 
 @pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_with_context_size_yaml_path", "base_ensemble_yaml_path"))
-def test_forecast_estimate_n_folds(
+def test_forecast_with_estimate_n_folds(
     pipeline_path_name,
     base_forecast_with_folds_estimation_omegaconf_path,
     base_timeseries_path,

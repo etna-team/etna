@@ -184,6 +184,16 @@ def base_timeseries_path():
 
 
 @pytest.fixture
+def base_timeseries_int_timestamp_path():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=2, freq=None)
+    tmp = NamedTemporaryFile("w")
+    df.to_csv(tmp, index=False)
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
 def base_timeseries_exog_path():
     df_regressors = pd.DataFrame(
         {

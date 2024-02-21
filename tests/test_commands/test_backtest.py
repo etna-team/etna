@@ -68,7 +68,7 @@ def backtest_with_stride_yaml_path():
 
 
 @pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
-def test_dummy_run(pipeline_path_name, base_backtest_yaml_path, base_timeseries_path, request):
+def test_backtest(pipeline_path_name, base_backtest_yaml_path, base_timeseries_path, request):
     tmp_output = TemporaryDirectory()
     tmp_output_path = Path(tmp_output.name)
     pipeline_path = request.getfixturevalue(pipeline_path_name)
@@ -88,7 +88,29 @@ def test_dummy_run(pipeline_path_name, base_backtest_yaml_path, base_timeseries_
 
 
 @pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
-def test_dummy_run_with_exog(
+def test_backtest_with_int_timestamp(
+    pipeline_path_name, base_backtest_yaml_path, base_timeseries_int_timestamp_path, request
+):
+    tmp_output = TemporaryDirectory()
+    tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
+    run(
+        [
+            "etna",
+            "backtest",
+            str(pipeline_path),
+            str(base_backtest_yaml_path),
+            str(base_timeseries_int_timestamp_path),
+            "None",
+            str(tmp_output_path),
+        ]
+    )
+    for file_name in ["metrics.csv", "forecast.csv", "info.csv"]:
+        assert Path.exists(tmp_output_path / file_name)
+
+
+@pytest.mark.parametrize("pipeline_path_name", ("base_pipeline_yaml_path", "base_ensemble_yaml_path"))
+def test_backtest_with_exog(
     pipeline_path_name, base_backtest_yaml_path, base_timeseries_path, base_timeseries_exog_path, request
 ):
     tmp_output = TemporaryDirectory()
