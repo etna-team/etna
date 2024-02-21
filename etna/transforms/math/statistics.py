@@ -198,7 +198,9 @@ class MeanTransform(WindowStatisticsTransform):
         result: pd.DataFrame
             dataframe with results
         """
-        window = self.window if self.window != -1 else len(df)
+        window = self.window
+        if self.window == -1:
+            window = (len(df) - 1) // self.seasonality + 1
         self._alpha_range = np.array([self.alpha**i for i in range(window)])
         self._alpha_range = np.expand_dims(self._alpha_range, axis=0)  # (1, window)
         return super()._transform(df)
