@@ -1536,6 +1536,9 @@ class TestInverseTransformFutureWithTarget:
             ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1969,6 +1972,9 @@ class TestInverseTransformFutureWithoutTarget:
             ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",

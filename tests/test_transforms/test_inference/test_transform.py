@@ -1395,6 +1395,9 @@ class TestTransformFutureWithTarget:
             ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1792,6 +1795,9 @@ class TestTransformFutureWithoutTarget:
             ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {"create": {"res"}}),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",

@@ -30,7 +30,7 @@ def regular_ts(random_seed) -> TSDataset:
 
 @pytest.fixture
 def regular_ts_one_month(random_seed) -> TSDataset:
-    periods = 5
+    periods = 100
     df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
     df_1["segment"] = "segment_1"
     df_1["target"] = np.random.uniform(10, 20, size=periods)
@@ -52,7 +52,7 @@ def regular_ts_one_month(random_seed) -> TSDataset:
 
 @pytest.fixture
 def regular_ts_start_month(random_seed) -> TSDataset:
-    periods = 5
+    periods = 100
     df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="MS")})
     df_1["segment"] = "segment_1"
     df_1["target"] = np.random.uniform(10, 20, size=periods)
@@ -74,7 +74,7 @@ def regular_ts_start_month(random_seed) -> TSDataset:
 
 @pytest.fixture
 def regular_ts_few_months(random_seed) -> TSDataset:
-    periods = 5
+    periods = 100
     df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="2M")})
     df_1["segment"] = "segment_1"
     df_1["target"] = np.random.uniform(10, 20, size=periods)
