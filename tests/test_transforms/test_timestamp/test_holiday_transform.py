@@ -5,6 +5,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.datasets import generate_const_df
 from etna.transforms.timestamp import HolidayTransform
+from etna.transforms.timestamp.holiday import define_period
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
 
 
@@ -28,7 +29,7 @@ def simple_constant_df_daily():
 
 @pytest.fixture()
 def simple_constant_df_day_15_min():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-01", end="2020-01-15", freq="1D 15MIN")})
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-12-11", freq="1D 15MIN")})
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
@@ -287,6 +288,7 @@ def test_holidays_min(iso_code: str, answer: np.array, two_segments_simple_ts_mi
 )
 def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_ts_day_15min: TSDataset):
     ts = two_segments_simple_ts_day_15min
+    ts.df.index = index
     holidays_finder = HolidayTransform(out_column="holiday")
     with pytest.raises(
         ValueError, match="For binary and category modes frequency of data should be no more than daily."
@@ -334,3 +336,13 @@ def test_bigger_than_day_q_jan(two_segments_q_jan: TSDataset):
     ts = result.fit_transform(ts)
     assert ts.freq == "Q-JAN"
     assert ts.index[0] == pd.Timestamp("2020-01-31 22:15:00")
+
+
+def test_define_period_check_w_mon():
+    assert (define_period("W", pd.Timestamp("2000-01-01"), 2, "W-MON"))[0] == pd.Timestamp("1999-12-27 00:00:00")
+    assert (define_period("W", pd.Timestamp("2000-01-01"), 2, "W-MON"))[1] == pd.Timestamp("2000-01-10 00:00:00")
+
+
+def test_define_period_check_ms():
+    assert (define_period("M", pd.Timestamp("2000-01-01"), 2, "MS"))[0] == pd.Timestamp("2000-01-01 00:00:00")
+    assert (define_period("M", pd.Timestamp("2000-01-01"), 2, "MS"))[1] == pd.Timestamp("2000-03-01 00:00:00")
