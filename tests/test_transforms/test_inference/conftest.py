@@ -30,7 +30,7 @@ def regular_ts(random_seed) -> TSDataset:
 
 @pytest.fixture
 def regular_ts_one_month(random_seed) -> TSDataset:
-    periods = 100
+    periods = 5
     df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
     df_1["segment"] = "segment_1"
     df_1["target"] = np.random.uniform(10, 20, size=periods)
@@ -52,16 +52,16 @@ def regular_ts_one_month(random_seed) -> TSDataset:
 
 @pytest.fixture
 def regular_ts_start_month(random_seed) -> TSDataset:
-    periods = 20
-    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
+    periods = 5
+    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="MS")})
     df_1["segment"] = "segment_1"
     df_1["target"] = np.random.uniform(10, 20, size=periods)
 
-    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
+    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="MS")})
     df_2["segment"] = "segment_2"
     df_2["target"] = np.random.uniform(-15, 5, size=periods)
 
-    df_3 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
+    df_3 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="MS")})
     df_3["segment"] = "segment_3"
     df_3["target"] = np.random.uniform(-5, 5, size=periods)
 
@@ -74,7 +74,7 @@ def regular_ts_start_month(random_seed) -> TSDataset:
 
 @pytest.fixture
 def regular_ts_few_months(random_seed) -> TSDataset:
-    periods = 15
+    periods = 5
     df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="2M")})
     df_1["segment"] = "segment_1"
     df_1["target"] = np.random.uniform(10, 20, size=periods)

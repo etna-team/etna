@@ -27,6 +27,14 @@ def simple_constant_df_daily():
 
 
 @pytest.fixture()
+def simple_constant_df_day_15_min():
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-01", end="2020-01-15", freq="1D 15MIN")})
+    df["target"] = 42
+    df.set_index("timestamp", inplace=True)
+    return df
+
+
+@pytest.fixture()
 def two_segments_simple_ts_daily(simple_constant_df_daily: pd.DataFrame):
     df_1 = simple_constant_df_daily.reset_index()
     df_2 = simple_constant_df_daily.reset_index()
@@ -42,9 +50,9 @@ def two_segments_simple_ts_daily(simple_constant_df_daily: pd.DataFrame):
 
 
 @pytest.fixture()
-def two_segments_simple_ts_day_15min(simple_constant_df_daily: pd.DataFrame):
-    df_1 = simple_constant_df_daily.reset_index()
-    df_2 = simple_constant_df_daily.reset_index()
+def two_segments_simple_ts_day_15min(simple_constant_df_day_15_min: pd.DataFrame):
+    df_1 = simple_constant_df_day_15_min.reset_index()
+    df_2 = simple_constant_df_day_15_min.reset_index()
     df_1 = df_1[3:]
 
     df_1["segment"] = "segment_1"
@@ -62,6 +70,67 @@ def simple_constant_df_hour():
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
+
+
+@pytest.fixture()
+def simple_week_mon_df():
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-05-12", freq="W-MON")})
+    df["target"] = 7
+    df.set_index("timestamp", inplace=True)
+    return df
+
+
+@pytest.fixture()
+def simple_q_jan_df_():
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-01-10", freq="Q-JAN")})
+    df["target"] = 90
+    df.set_index("timestamp", inplace=True)
+    return df
+
+
+@pytest.fixture()
+def two_segments_w_mon(simple_week_mon_df: pd.DataFrame):
+    df_1 = simple_week_mon_df.reset_index()
+    df_2 = simple_week_mon_df.reset_index()
+    df_1 = df_1[3:]
+
+    df_1["segment"] = "segment_1"
+    df_2["segment"] = "segment_2"
+
+    classic_df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df, freq="W-MON")
+    return ts
+
+
+@pytest.fixture()
+def two_segments_q_jan(simple_q_jan_df_: pd.DataFrame):
+    df_1 = simple_q_jan_df_.reset_index()
+    df_2 = simple_q_jan_df_.reset_index()
+    df_1 = df_1[3:]
+
+    df_1["segment"] = "segment_1"
+    df_2["segment"] = "segment_2"
+
+    classic_df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df, freq="Q-JAN")
+    return ts
+
+
+@pytest.fixture()
+def two_segments_simple_ts_hour(simple_constant_df_hour: pd.DataFrame):
+    df_1 = simple_constant_df_hour.reset_index()
+    df_2 = simple_constant_df_hour.reset_index()
+    df_1 = df_1[3:]
+
+    df_1["segment"] = "segment_1"
+    df_2["segment"] = "segment_2"
+
+    classic_df = pd.concat([df_1, df_2], ignore_index=True)
+    df = TSDataset.to_dataset(classic_df)
+    ts = TSDataset(df, freq="H")
+    return ts
 
 
 @pytest.fixture()
@@ -249,3 +318,13 @@ def test_save_load(example_tsds):
 def test_params_to_tune():
     transform = HolidayTransform()
     assert len(transform.params_to_tune()) == 0
+
+
+def test_bigger_than_day_w_mon(two_segments_w_mon: TSDataset):
+    ts = two_segments_w_mon
+    result = HolidayTransform(out_column="holiday", mode="days_count")
+
+
+def test_bigger_than_day_q_jan(two_segments_q_jan: TSDataset):
+    ts = two_segments_q_jan
+    result = HolidayTransform(out_column="holiday", mode="days_count")
