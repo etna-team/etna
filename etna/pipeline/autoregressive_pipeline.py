@@ -2,11 +2,11 @@ import warnings
 from typing import Sequence
 from typing import cast
 
-import numpy as np
 import pandas as pd
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import timestamp_range
 from etna.models.base import ContextIgnorantModelType
 from etna.models.base import ContextRequiredModelType
 from etna.models.base import ModelType
@@ -109,12 +109,11 @@ class AutoRegressivePipeline(
         """Create dataframe to fill with forecasts."""
         prediction_df = ts.to_pandas(features=["target"])
         last_timestamp = prediction_df.index[-1]
-        if ts.freq is None:
-            future_dates = pd.Index(np.arange(last_timestamp, last_timestamp + self.horizon + 1))[1:]
-        else:
-            future_dates = pd.date_range(start=last_timestamp, periods=self.horizon + 1, freq=ts.freq, closed="right")
-        prediction_df = prediction_df.reindex(prediction_df.index.append(future_dates))
-        prediction_df.index.name = "timestamp"
+        to_add_index = timestamp_range(start=last_timestamp, periods=self.horizon + 1, freq=ts.freq)[1:]
+        new_index = prediction_df.index.append(to_add_index)
+        index_name = prediction_df.index.name
+        prediction_df = prediction_df.reindex(new_index)
+        prediction_df.index.name = index_name
         return prediction_df
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:

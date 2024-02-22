@@ -26,6 +26,7 @@ from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
 from etna.datasets.utils import _check_timestamp_param
+from etna.datasets.utils import timestamp_range
 from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.metrics import Metric
@@ -309,9 +310,7 @@ class AbstractPipeline(AbstractSaveable):
         Raises
         ------
         ValueError:
-            Value of ``start_timestamp`` doesn't match the type of timestamp in ``ts``.
-        ValueError:
-            Value of ``end_timestamp`` doesn't match the type of timestamp in ``ts``.
+            Incorrect type of ``start_timestamp`` or ``end_timestamp`` is used according to ``ts.freq``
         ValueError:
             Value of ``end_timestamp`` is less than ``start_timestamp``.
         ValueError:
@@ -637,10 +636,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         Raises
         ------
-        ValueError:
-            Value of ``start_timestamp`` doesn't match the type of timestamp in ``ts``.
-        ValueError:
-            Value of ``end_timestamp`` doesn't match the type of timestamp in ``ts``.
+        ValueError
+            Incorrect type of ``start_timestamp`` or ``end_timestamp`` is used according to ``ts.freq``
         ValueError:
             Value of ``end_timestamp`` is less than ``start_timestamp``.
         ValueError:
@@ -736,12 +733,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
             min_train, max_train = dataset_timestamps[min_train_idx], dataset_timestamps[max_train_idx]
             min_test, max_test = dataset_timestamps[min_test_idx], dataset_timestamps[max_test_idx]
-
-            if ts.freq is None:
-                target_timestamps = np.arange(min_test, max_test + 1).tolist()
-            else:
-                target_timestamps = list(pd.date_range(start=min_test, end=max_test, freq=ts.freq))
-
+            target_timestamps = timestamp_range(start=min_test, end=max_test, freq=ts.freq).tolist()
             mask = FoldMask(
                 first_train_timestamp=min_train,
                 last_train_timestamp=max_train,

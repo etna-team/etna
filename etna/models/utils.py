@@ -1,12 +1,11 @@
 from typing import Optional
 from typing import Union
-from typing import cast
 
-import numpy as np
 import pandas as pd
 
 from etna.datasets.utils import determine_freq  # noqa: F401
 from etna.datasets.utils import determine_num_steps  # noqa: F401
+from etna.datasets.utils import timestamp_range
 
 
 def select_observations(
@@ -50,22 +49,7 @@ def select_observations(
     ValueError:
         Of the three parameters: start, end, periods, exactly two must be specified
     """
-    if freq is None:
-        start = cast(int, start)
-        end = cast(int, end)
-        two_nans = (
-            (start is None and end is None) or (start is None and periods is None) or (end is None and periods is None)
-        )
-        zero_nans = (start is not None) and (end is not None) and (periods is not None)
-        if two_nans or zero_nans:
-            raise ValueError("Of the three parameters: start, end, periods, exactly two must be specified")
-        elif start is None:
-            start = end - periods + 1
-        elif end is None:
-            end = start + periods - 1
-        df["timestamp"] = np.arange(start, end + 1)
-    else:
-        df["timestamp"] = pd.date_range(start=start, end=end, periods=periods, freq=freq)
+    df["timestamp"] = timestamp_range(start=start, end=end, periods=periods, freq=freq)
 
     if not (set(timestamps) <= set(df["timestamp"])):
         raise ValueError("Some timestamps do not lie inside the timeline of the provided dataframe.")

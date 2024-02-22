@@ -51,7 +51,7 @@ def plot_anomalies(
     Raises
     ------
     ValueError:
-        Datetime ``start`` or ``end`` is used for integer-indexed timestamp.
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
     """
     start, end = _get_borders_ts(ts, start, end)
 
@@ -115,7 +115,7 @@ def plot_anomalies_interactive(
     Raises
     ------
     ValueError:
-        Datetime ``start`` or ``end`` is used for data with integer timestamp.
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
 
     Examples
     --------
