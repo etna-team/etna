@@ -82,7 +82,7 @@ def simple_week_mon_df():
 
 @pytest.fixture()
 def simple_q_jan_df_():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-01-10", freq="Q-JAN")})
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2021-01-10", freq="Q-JAN")})
     df["target"] = 90
     df.set_index("timestamp", inplace=True)
     return df
@@ -323,8 +323,14 @@ def test_params_to_tune():
 def test_bigger_than_day_w_mon(two_segments_w_mon: TSDataset):
     ts = two_segments_w_mon
     result = HolidayTransform(out_column="holiday", mode="days_count")
+    ts = result.fit_transform(ts)
+    assert ts.freq == "W-MON"
+    assert ts.index[0] == pd.Timestamp("2020-01-13 22:15:00")
 
 
 def test_bigger_than_day_q_jan(two_segments_q_jan: TSDataset):
     ts = two_segments_q_jan
     result = HolidayTransform(out_column="holiday", mode="days_count")
+    ts = result.fit_transform(ts)
+    assert ts.freq == "Q-JAN"
+    assert ts.index[0] == pd.Timestamp("2020-01-31 22:15:00")
