@@ -60,7 +60,8 @@ class HolidayTransform(IrreversibleTransform):
     HolidayTransform generates series that indicates holidays in given dataset.
 
     In ``binary`` mode shows the presence of holiday in that day. In ``category`` mode shows the name of the holiday
-    with value "NO_HOLIDAY" reserved for days without holidays. In the ``days_count mode``, calculate frequency of holidays.
+    with value "NO_HOLIDAY" reserved for days without holidays. In the ``days_count mode``, calculate frequency of
+    holidays.
     """
 
     _no_holiday_name: str = "NO_HOLIDAY"
@@ -74,9 +75,10 @@ class HolidayTransform(IrreversibleTransform):
         iso_code:
             internationally recognised codes, designated to country for which we want to find the holidays.
         mode:
-            ``binary`` to indicate holidays, ``category`` to specify which holiday do we have at each day, ``days_count``to determine the proportion of holidays in a given period of time.
+            `binary` to indicate holidays, `category` to specify which holiday do we have at each day,
+            `days_count` to determine the proportion of holidays in a given period of time.
         out_column:
-            name of added column. Use `self.__repr__()` if not given.
+            name of added column. Use ``self.__repr__()`` if not given.
         """
         super().__init__(required_features=["target"])
         self.iso_code = iso_code
@@ -143,9 +145,9 @@ class HolidayTransform(IrreversibleTransform):
         Raises
         ------
         ValueError:
-            If the frequency is greater than daily and this is a ``binary`` or ``categorical`` mode
+            if the frequency is greater than daily and this is a ``binary`` or ``categorical`` mode
         ValueError:
-            if the frequency is less than daily and this is ``days_count`` mode.
+            if the frequency is less than daily and this is ``days_count`` mode
         """
         if bigger_than_day(self.freq) and self._mode is not HolidayTransformMode.days_count:
             raise ValueError("For binary and category modes frequency of data should be no more than daily.")
