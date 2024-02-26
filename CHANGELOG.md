@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Add `relevance_aggregation_mode` and `redundancy_aggregation_mode` into `MRMRFeatureSelectionTransform.params_to_tune` ([#212](https://github.com/etna-team/etna/pull/212))
 - Optimized `DensityOutliersTransform` and removed `_save_original_values` from outlier transforms ([#231](https://github.com/etna-team/etna/pull/231))
+- Update python to 3.10 in CI ([#251](https://github.com/etna-team/etna/pull/251))
 
 ### Fixed
 - Fix `traffic_2008` ([128](https://github.com/etna-team/etna/pull/128))
