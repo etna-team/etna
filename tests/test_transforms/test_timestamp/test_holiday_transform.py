@@ -83,7 +83,7 @@ def simple_week_mon_df():
 
 @pytest.fixture()
 def simple_q_jan_df_():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2021-01-10", freq="Q-JAN")})
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2021-01-10", freq="Q")})
     df["target"] = 90
     df.set_index("timestamp", inplace=True)
     return df
@@ -105,7 +105,7 @@ def two_segments_w_mon(simple_week_mon_df: pd.DataFrame):
 
 
 @pytest.fixture()
-def two_segments_q_jan(simple_q_jan_df_: pd.DataFrame):
+def two_segments_q_feb(simple_q_jan_df_: pd.DataFrame):
     df_1 = simple_q_jan_df_.reset_index()
     df_2 = simple_q_jan_df_.reset_index()
     df_1 = df_1[3:]
@@ -115,7 +115,7 @@ def two_segments_q_jan(simple_q_jan_df_: pd.DataFrame):
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df, freq="Q-JAN")
+    ts = TSDataset(df, freq="Q")
     return ts
 
 
@@ -322,27 +322,34 @@ def test_params_to_tune():
     assert len(transform.params_to_tune()) == 0
 
 
-def test_bigger_than_day_w_mon(two_segments_w_mon: TSDataset):
-    ts = two_segments_w_mon
-    result = HolidayTransform(out_column="holiday", mode="days_count")
-    ts = result.fit_transform(ts)
-    assert ts.freq == "W-MON"
-    assert ts.index[0] == pd.Timestamp("2020-01-13 22:15:00")
+@pytest.mark.parametrize(
+    "freq, expected_result",
+    (
+        ("Q-JAN", [pd.Timestamp("1999-11-01 00:00:00"), pd.Timestamp("2000-01-31")]),
+        ("M", [pd.Timestamp("2000-01-01 00:00:00"), pd.Timestamp("2000-01-31 00:00:00")]),
+        ("W-MON", [pd.Timestamp("2000-01-25 00:00:00"), pd.Timestamp("2000-01-31 00:00:00")]),
+    ),
+)
+def test_define_period_check_end(freq, expected_result):
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-31"), freq))[
+        0
+    ] == expected_result[0]
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-31"), freq))[
+        1
+    ] == expected_result[1]
 
 
-def test_bigger_than_day_q_jan(two_segments_q_jan: TSDataset):
-    ts = two_segments_q_jan
-    result = HolidayTransform(out_column="holiday", mode="days_count")
-    ts = result.fit_transform(ts)
-    assert ts.freq == "Q-JAN"
-    assert ts.index[0] == pd.Timestamp("2020-01-31 22:15:00")
-
-
-def test_define_period_check_w_mon():
-    assert (define_period("W", pd.Timestamp("2000-01-01"), 2, "W-MON"))[0] == pd.Timestamp("1999-12-27 00:00:00")
-    assert (define_period("W", pd.Timestamp("2000-01-01"), 2, "W-MON"))[1] == pd.Timestamp("2000-01-10 00:00:00")
-
-
-def test_define_period_check_ms():
-    assert (define_period("M", pd.Timestamp("2000-01-01"), 2, "MS"))[0] == pd.Timestamp("2000-01-01 00:00:00")
-    assert (define_period("M", pd.Timestamp("2000-01-01"), 2, "MS"))[1] == pd.Timestamp("2000-03-01 00:00:00")
+@pytest.mark.parametrize(
+    "freq, expected_result",
+    (
+        ("QS", [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-03-31")]),
+        ("MS", [pd.Timestamp("2000-01-01 00:00:00"), pd.Timestamp("2000-01-31 00:00:00")]),
+    ),
+)
+def test_define_period_check_start(freq, expected_result):
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-01"), freq))[
+        0
+    ] == expected_result[0]
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-01"), freq))[
+        1
+    ] == expected_result[1]

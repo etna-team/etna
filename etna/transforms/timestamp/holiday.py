@@ -1,5 +1,3 @@
-import itertools
-from datetime import timedelta
 from enum import Enum
 from typing import List
 from typing import Optional
@@ -7,12 +5,19 @@ from typing import Optional
 import holidays
 import numpy as np
 import pandas as pd
+from pandas.tseries.offsets import MonthBegin
+from pandas.tseries.offsets import MonthEnd
+from pandas.tseries.offsets import QuarterBegin
+from pandas.tseries.offsets import QuarterEnd
+from pandas.tseries.offsets import Week
+from pandas.tseries.offsets import YearBegin
+from pandas.tseries.offsets import YearEnd
 
 from etna.datasets import TSDataset
 from etna.transforms.base import IrreversibleTransform
 
 
-def bigger_than_day(freq):
+def bigger_than_day(freq: str):
     """Compare frequency with day."""
     dt = "2000-01-01"
     dates_day = pd.date_range(start=dt, periods=2, freq="D")
@@ -20,20 +25,14 @@ def bigger_than_day(freq):
     return dates_freq[-1] > dates_day[-1]
 
 
-def define_period(literal, dt, numbers, freq):
+def define_period(offset: pd.tseries.offsets.BaseOffset, dt: pd.Timestamp, freq: str):
     """Define start_date and end_date of period using dataset frequency."""
-    if literal == "W":
-        start_date = dt - timedelta(days=dt.weekday())
-        end_date = start_date + pd.DateOffset(weeks=int(numbers))
-    elif literal == "M":
-        start_date = dt.replace(day=1)
-        end_date = start_date + pd.DateOffset(months=int(numbers))
-    elif literal == "Q":
-        start_date = dt.replace(day=1)
-        end_date = start_date + pd.DateOffset(months=3 * int(numbers))
-    elif literal in ["Y", "A"]:
-        start_date = dt.replace(month=1, day=1)
-        end_date = start_date + pd.DateOffset(years=int(numbers))
+    if isinstance(offset, (Week, MonthEnd, QuarterEnd, YearEnd)):
+        start_date = dt - offset + pd.Timedelta(days=1)
+        end_date = dt
+    elif isinstance(offset, (MonthBegin, QuarterBegin, YearBegin)):
+        start_date = dt
+        end_date = dt + offset - pd.Timedelta(days=1)
     else:
         raise ValueError(
             f"Days_count mode works only with weekly, monthly, quarterly or yearly data. You have freq={freq}"
@@ -59,9 +58,9 @@ class HolidayTransform(IrreversibleTransform):
     """
     HolidayTransform generates series that indicates holidays in given dataset.
 
-    In ``binary`` mode shows the presence of holiday in that day. In ``category`` mode shows the name of the holiday
-    with value "NO_HOLIDAY" reserved for days without holidays. In the ``days_count mode``, calculate frequency of
-    holidays.
+    - In ``binary`` mode shows the presence of holiday in that day.
+    - In ``category`` mode shows the name of the holiday with value "NO_HOLIDAY" reserved for days without holidays.
+    - In the ``days_count mode``, calculate frequency of holidays.
     """
 
     _no_holiday_name: str = "NO_HOLIDAY"
@@ -122,14 +121,13 @@ class HolidayTransform(IrreversibleTransform):
         :
             The fitted transform instance.
         """
-        df = ts.to_pandas(flatten=False, features=self.required_features)
-        self._fit(df=df)
+        super().fit(ts=ts)
         self.freq = ts.freq
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Transform data from df with HolidayTransform and generate a column of holidays flags or its titles.
+        Transform data.
         In days_count mode calculates the frequency of holidays in a given period of time
 
         Parameters
@@ -147,7 +145,7 @@ class HolidayTransform(IrreversibleTransform):
         ValueError:
             if the frequency is greater than daily and this is a ``binary`` or ``categorical`` mode
         ValueError:
-            if the frequency is less than daily and this is ``days_count`` mode
+            if the frequency is not weekly, monthly, quarterly or yearly data and this is ``days_count`` mode
         """
         if bigger_than_day(self.freq) and self._mode is not HolidayTransformMode.days_count:
             raise ValueError("For binary and category modes frequency of data should be no more than daily.")
@@ -156,13 +154,11 @@ class HolidayTransform(IrreversibleTransform):
         out_column = self._get_column_name()
 
         if self._mode is HolidayTransformMode.days_count:
-            numbers_part = "".join(itertools.takewhile(str.isdigit, self.freq))
-            letters_part = "".join(itertools.dropwhile(str.isdigit, self.freq))
-            numbers_part = "1" if numbers_part == "" else numbers_part
+            date_offset = pd.tseries.frequencies.to_offset(self.freq)
             encoded_matrix = np.empty(0)
             for dt in df.index:
-                start_date, end_date = define_period(letters_part[0], dt, numbers_part, self.freq)
-                date_range = pd.date_range(start=start_date, end=(end_date - timedelta(days=1)), freq="d")
+                start_date, end_date = define_period(date_offset, pd.Timestamp(dt), self.freq)
+                date_range = pd.date_range(start=start_date, end=end_date, freq="d")
                 count_holidays = sum(1 for d in date_range if d in self.holidays)
                 holidays_freq = count_holidays / date_range.size
                 encoded_matrix = np.append(encoded_matrix, holidays_freq)
@@ -170,8 +166,10 @@ class HolidayTransform(IrreversibleTransform):
             encoded_matrix = np.array(
                 [self.holidays[x] if x in self.holidays else self._no_holiday_name for x in df.index]
             )
-        else:
+        elif self._mode is HolidayTransformMode.binary:
             encoded_matrix = np.array([int(x in self.holidays) for x in df.index])
+        else:
+            raise AssertionError("HolidayTransform supports only ``days_count``, ``binary`` and ``categorical`` mode ")
         encoded_matrix = encoded_matrix.reshape(-1, 1).repeat(len(cols), axis=1)
         encoded_df = pd.DataFrame(
             encoded_matrix,
