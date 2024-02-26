@@ -211,6 +211,23 @@ def base_timeseries_exog_path():
 
 
 @pytest.fixture
+def base_timeseries_int_timestamp_exog_path():
+    df_regressors = pd.DataFrame(
+        {
+            "timestamp": np.arange(10, 130).tolist() * 2,
+            "regressor_1": np.arange(240),
+            "regressor_2": np.arange(240) + 5,
+            "segment": ["segment_0"] * 120 + ["segment_1"] * 120,
+        }
+    )
+    tmp = NamedTemporaryFile("w")
+    df_regressors.to_csv(tmp, index=False)
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
 def empty_ts():
     df = pd.DataFrame({"segment": [], "timestamp": [], "target": []})
     df = TSDataset.to_dataset(df=df)
