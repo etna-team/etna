@@ -31,6 +31,7 @@ from etna.analysis.forecast.utils import _validate_intersecting_segments
 from etna.analysis.forecast.utils import get_residuals
 from etna.analysis.utils import _prepare_axes
 from etna.datasets.utils import match_target_components
+from etna.datasets.utils import timestamp_range
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -304,7 +305,7 @@ def plot_backtest(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
+            end_fold_exclusive = timestamp_range(start=end_fold, periods=2, freq=ts.freq)[-1]
 
             # draw test
             backtest_df_slice_fold = segment_backtest_df.loc[start_fold:end_fold_exclusive]
@@ -430,7 +431,7 @@ def plot_backtest_interactive(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
+            end_fold_exclusive = timestamp_range(start=end_fold, periods=2, freq=ts.freq)[-1]
 
             # draw test
             backtest_df_slice_fold = segment_backtest_df.loc[start_fold:end_fold_exclusive]

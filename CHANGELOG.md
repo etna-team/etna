@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `FourierTransform` on integer index, add inference tests ([#230](https://github.com/etna-team/etna/pull/230))
 - Update outliers transforms to handle integer timestamp ([#229](https://github.com/etna-team/etna/pull/229))
 - Update pipelines to handle integer timestamp ([#241](https://github.com/etna-team/etna/pull/241))
+- Add `timestamp_range` and refactor code with it ([#244](https://github.com/etna-team/etna/pull/244))
 - Update CLI to handle integer timestamp ([#246](https://github.com/etna-team/etna/pull/246))
 
 ### Fixed
@@ -75,8 +76,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Fix `DeseasonalityTransform` fails to inverse transform short series ([#174](https://github.com/etna-team/etna/pull/174))
 - 
-- 
-- 
+- Fix indexing in `stl_plot`, `plot_periodogram`, `plot_holidays`, `plot_backtest`, `plot_backtest_interactive`, `ResampleWithDistributionTransform` ([#244](https://github.com/etna-team/etna/pull/244))
+- Fix `DifferencingTransform` to handle integer timestamp on test ([#244](https://github.com/etna-team/etna/pull/244))
 - 
 - 
 - 

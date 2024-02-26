@@ -26,6 +26,7 @@ from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import inverse_transform_target_components
+from etna.datasets.utils import timestamp_range
 from etna.loggers import tslogger
 
 if TYPE_CHECKING:
@@ -260,18 +261,11 @@ class TSDataset:
 
     @staticmethod
     def _expand_index(df: pd.DataFrame, freq: Optional[str], future_steps: int) -> pd.DataFrame:
-        if freq is None:
-            new_index = np.arange(df.index.min(), df.index.max() + future_steps + 1)
-        else:
-            with warnings.catch_warnings():
-                warnings.filterwarnings(action="ignore", message="Argument `closed` is deprecated")
-                future_dates = pd.date_range(start=df.index.max(), periods=future_steps + 1, freq=freq, closed="right")
-            new_index = df.index.append(future_dates)
-
+        to_add_index = timestamp_range(start=df.index[-1], periods=future_steps + 1, freq=freq)[1:]
+        new_index = df.index.append(to_add_index)
         index_name = df.index.name
         df = df.reindex(new_index)
         df.index.name = index_name
-
         return df
 
     def make_future(
@@ -612,7 +606,7 @@ class TSDataset:
         Raises
         ------
         ValueError:
-            Datetime ``start`` or ``end`` is used for data with integer timestamp.
+            Incorrect type of ``start`` or ``end`` is used according to ``freq``
         """
         if segments is None:
             segments = self.segments
@@ -1036,7 +1030,8 @@ class TSDataset:
         Raises
         ------
         ValueError:
-            Non-integer timestamp parameter is used for integer-indexed timestamp.
+            Incorrect type of ``train_start`` or ``train_end`` or ``test_start`` or ``test_end``
+            is used according to ``ts.freq``
 
         Examples
         --------

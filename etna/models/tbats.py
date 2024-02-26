@@ -14,6 +14,7 @@ from tbats.tbats.Model import Model
 
 from etna.datasets.utils import determine_freq
 from etna.datasets.utils import determine_num_steps
+from etna.datasets.utils import timestamp_range
 from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
@@ -82,12 +83,9 @@ class _TBATSAdapter(BaseAdapter):
         if self._fitted_model is None or self._freq is _DEFAULT_FREQ or self._last_train_timestamp is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
-        if self._freq is None:
-            train_timestamp = np.arange(self._first_train_timestamp, self._last_train_timestamp + 1)
-        else:
-            train_timestamp = pd.date_range(
-                start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._freq
-            )
+        train_timestamp = timestamp_range(
+            start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._freq
+        )
 
         if not (set(df["timestamp"]) <= set(train_timestamp)):
             raise NotImplementedError(

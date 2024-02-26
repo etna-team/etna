@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 from typing import cast
 
 import numpy as np
@@ -102,7 +103,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         self.constant_value = constant_value
         self._strategy = ImputerMode(strategy)
         self._fill_value: Optional[Dict[str, float]] = None
-        self._nan_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self._nan_timestamps: Optional[Dict[str, Union[List[pd.Timestamp], List[int]]]] = None
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""

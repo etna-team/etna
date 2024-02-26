@@ -11,6 +11,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 from typing_extensions import Literal
+from typing_extensions import assert_never
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -260,6 +261,8 @@ def _prepare_seasonal_plot_df(
     in_column: str,
     segments: List[str],
 ):
+    from etna.datasets.utils import timestamp_range
+
     # for simplicity we will rename our column to target
     df = ts.to_pandas().loc[:, pd.IndexSlice[segments, in_column]]
     df.rename(columns={in_column: "target"}, inplace=True)
@@ -281,24 +284,21 @@ def _prepare_seasonal_plot_df(
         timestamp = df.index
         num_to_add = -len(timestamp) % cycle
 
-        if freq is None:
-            # if we want to align by the first value, then we should append NaNs to timestamp
-            to_add_index = None
-            if SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.first:
-                to_add_index = np.arange(timestamp.max() + 1, timestamp.max() + 1 + num_to_add)
-            # if we want to align by the last value, then we should prepend NaNs to timestamp
-            elif SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.last:
-                to_add_index = np.arange(timestamp.min() - num_to_add, timestamp.min())
+        alignment_enum = SeasonalPlotAlignment(alignment)
+        # if we want to align by the first value, then we should append NaNs to timestamp
+        if alignment_enum is SeasonalPlotAlignment.first:
+            to_add_index = timestamp_range(start=timestamp[-1], periods=num_to_add + 1, freq=freq)[1:]
+        # if we want to align by the last value, then we should prepend NaNs to timestamp
+        elif alignment_enum is SeasonalPlotAlignment.last:
+            to_add_index = timestamp_range(end=timestamp[0], periods=num_to_add + 1, freq=freq)[:-1]
         else:
-            # if we want to align by the first value, then we should append NaNs to timestamp
-            to_add_index = None
-            if SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.first:
-                to_add_index = pd.date_range(start=timestamp.max(), periods=num_to_add + 1, closed="right", freq=freq)
-            # if we want to align by the last value, then we should prepend NaNs to timestamp
-            elif SeasonalPlotAlignment(alignment) == SeasonalPlotAlignment.last:
-                to_add_index = pd.date_range(end=timestamp.min(), periods=num_to_add + 1, closed="left", freq=freq)
+            assert_never(alignment_enum)
 
-        df = pd.concat((df, pd.DataFrame(None, index=to_add_index))).sort_index()
+        new_index = df.index.append(to_add_index)
+        index_name = df.index.name
+        df = df.reindex(new_index)
+        df.index.name = index_name
+
     elif freq is None:
         raise ValueError("Setting non-integer cycle isn't supported for data with integer timestamp!")
 

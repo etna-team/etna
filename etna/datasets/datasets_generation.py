@@ -9,20 +9,18 @@ from numpy.random import RandomState
 from statsmodels.tsa.arima_process import arma_generate_sample
 
 from etna.datasets.utils import _check_timestamp_param
+from etna.datasets.utils import timestamp_range
 
 
 def _create_timestamp(
     start_time: Optional[Union[pd.Timestamp, int, str]], freq: Optional[str], periods: int
 ) -> Sequence[Union[pd.Timestamp, int]]:
-    start_time = _check_timestamp_param(param=start_time, param_name="start_time", freq=freq)
-    if freq is None:
-        if start_time is None:
-            start_time = 0
-        return np.arange(start_time, start_time + periods)  # type: ignore
-    else:
-        if start_time is None:
-            start_time = pd.Timestamp("2000-01-01")
-        return pd.date_range(start=start_time, freq=freq, periods=periods)
+    if freq is None and start_time is None:
+        start_time = 0
+    if freq is not None and start_time is None:
+        start_time = pd.Timestamp("2000-01-01")
+    _check_timestamp_param(param=start_time, param_name="start_time", freq=freq)
+    return timestamp_range(start=start_time, periods=periods, freq=freq)
 
 
 def generate_ar_df(
@@ -57,7 +55,7 @@ def generate_ar_df(
     Raises
     ------
     ValueError:
-        Non-integer timestamp parameter is used for integer-indexed timestamp.
+        Incorrect type of ``start_time`` is used according to ``freq``
     """
     if ar_coef is None:
         ar_coef = [1]
@@ -208,7 +206,7 @@ def generate_from_patterns_df(
     Raises
     ------
     ValueError:
-        Non-integer timestamp parameter is used for integer-indexed timestamp.
+        Incorrect type of ``start_time`` is used according to ``freq``
     """
     n_segments = len(patterns)
     if add_noise:
