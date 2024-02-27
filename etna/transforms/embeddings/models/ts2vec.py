@@ -21,7 +21,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         output_dims: int = 320,
         hidden_dims: int = 64,
         depth: int = 10,
-        encoding_window: Optional[int] = None,
+        encoding_window: Optional[Union[int, Literal["multiscale"]]] = None,
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
         device: Union[Literal["cpu"], Literal["gpu"]] = "cpu",
@@ -51,6 +51,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             The number of hidden residual blocks in the encoder.
         encoding_window:
             When this param is specified, the computed representation would the max pooling over this window.
+            This can be set to 'multiscale' or an integer specifying the pooling kernel size.
             Parameter will be ignored when encoding full series with ``encode_segment`` or using :py:class:`etna.transforms.EmbeddingSegmentTransform`
         sliding_length:
             The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
@@ -74,7 +75,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         mask:
             The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
                 * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-                * 'continuous' - ??? (see the code)
+                * 'continuous' - mask random windows of timestamps
                 * 'all_true' - mask none of the timestamps
                 * 'all_false' - mask all timestamps
                 * 'mask_last' - mask last timestamp
@@ -161,7 +162,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         return embeddings
 
     def encode_window(self, df: pd.DataFrame) -> np.ndarray:
-        """Create embeddings of the series rolling window.
+        """Create embeddings of each series timestamp.
 
         Notes
         -----

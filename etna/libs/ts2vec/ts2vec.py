@@ -174,7 +174,7 @@ class TS2Vec:
 
     def _eval_with_pooling_window(self, x, mask=None, slicing=None, encoding_window=None):
         out = self.net(x.to(self.device, non_blocking=True), mask)
-        if encoding_window is not None:
+        if isinstance(encoding_window, int):
             out = F.max_pool1d(
                 out.transpose(1, 2),
                 kernel_size=encoding_window,
@@ -183,8 +183,26 @@ class TS2Vec:
             ).transpose(1, 2)
             if encoding_window % 2 == 0:
                 out = out[:, :-1]
-        if slicing is not None:
-            out = out[:, slicing]
+            if slicing is not None:
+                out = out[:, slicing]
+        elif encoding_window == 'multiscale':
+            p = 0
+            reprs = []
+            while (1 << p) + 1 < out.size(1):
+                t_out = F.max_pool1d(
+                    out.transpose(1, 2),
+                    kernel_size=(1 << (p + 1)) + 1,
+                    stride=1,
+                    padding=1 << p
+                ).transpose(1, 2)
+                if slicing is not None:
+                    t_out = t_out[:, slicing]
+                reprs.append(t_out)
+                p += 1
+            out = torch.cat(reprs, dim=-1)
+        else:
+            if slicing is not None:
+                out = out[:, slicing]
 
         return out.cpu()
 
@@ -280,12 +298,12 @@ class TS2Vec:
         return output.numpy()
 
     def encode_window(self, data, mask=None, encoding_window=None, causal=False, sliding_length=None, sliding_padding=0, batch_size=None):
-        """Compute representations using the model.
+        """Compute representations for each timestamp of series using the model.
 
         Args:
             data (numpy.ndarray): This should have a shape of (n_instance, n_timestamps, n_features). All missing data should be set to NaN.
             mask (str): The mask used by encoder can be specified with this parameter. This can be set to 'binomial', 'continuous', 'all_true', 'all_false' or 'mask_last'.
-            encoding_window (Union[int, NoneType]): When this param is specified, the computed representation would the max pooling over this window.
+            encoding_window (Union[str, int]): When this param is specified, the computed representation would the max pooling over this window. This can be set to 'multiscale' or an integer specifying the pooling kernel size.
             causal (bool): When this param is set to True, the future information would not be encoded into representation of each timestamp.
             sliding_length (Union[int, NoneType]): The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
             sliding_padding (int): This param specifies the contextual data length used for inference every sliding windows.
