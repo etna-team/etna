@@ -17,7 +17,6 @@ def build_df_exog_with_nans(freq="D"):
             "feat1": [1, 2, 3, 4, None] + [1, 2, 3, 4, 5],
             "feat2": [1, 2, 3, None, None] + [1, 2, 3, None, None],
             "feat3": [1, 2, 3, 4, 5] + [1, 2, 3, 4, 5],
-            "feat4": ["A", "B", "C", "D", None] + ["A", "B", "C", "D", "E"]
         }
     )
 
@@ -184,8 +183,8 @@ def test_transformed_names(ts_name, lag, horizon, expected, request):
 @pytest.mark.parametrize(
     "lag,horizon,expected",
     (
-        # (1, None, {"feat1_shift_1", "feat2_shift_1", "feat3_shift_1", "target"}),
-        # ("auto", 1, {"feat1_shift_1", "feat2_shift_2", "feat3", "target"}),
+        (1, None, {"feat1_shift_1", "feat2_shift_1", "feat3_shift_1", "target"}),
+        ("auto", 1, {"feat1_shift_1", "feat2_shift_2", "feat3", "target"}),
         ("auto", 2, {"feat1_shift_2", "feat2_shift_3", "feat3_shift_1", "target"}),
     ),
 )
@@ -193,7 +192,7 @@ def test_transformed_names(ts_name, lag, horizon, expected, request):
     "ts_name",
     (
         "ts_with_exogs",
-        # "ts_with_exogs_ms_freq",
+        "ts_with_exogs_ms_freq",
     ),
 )
 def test_transform_int_features(ts_name, lag, horizon, expected, request):
