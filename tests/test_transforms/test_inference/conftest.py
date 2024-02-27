@@ -55,6 +55,25 @@ def ts_with_exog(regular_ts) -> TSDataset:
 
 
 @pytest.fixture
+def ts_with_exog_to_shift(regular_ts) -> TSDataset:
+    df = regular_ts.to_pandas(flatten=True)
+    periods = 120
+    timestamp = pd.date_range("2020-01-01", periods=periods)
+    feature = timestamp.weekday.astype(float)
+    df_exog_common = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "feature_1": feature[:100].tolist() + [None] * 20,
+            "feature_2": feature[:105].tolist() + [None] * 15,
+            "feature_3": feature,
+        }
+    )
+    df_exog_wide = duplicate_data(df=df_exog_common, segments=regular_ts.segments)
+    ts = TSDataset(df=TSDataset.to_dataset(df).iloc[5:], df_exog=df_exog_wide, freq="D")
+    return ts
+
+
+@pytest.fixture
 def ts_with_external_timestamp(regular_ts) -> TSDataset:
     df = regular_ts.to_pandas(flatten=True)
     df_exog = df.copy()

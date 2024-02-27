@@ -17,6 +17,7 @@ def build_df_exog_with_nans(freq="D"):
             "feat1": [1, 2, 3, 4, None] + [1, 2, 3, 4, 5],
             "feat2": [1, 2, 3, None, None] + [1, 2, 3, None, None],
             "feat3": [1, 2, 3, 4, 5] + [1, 2, 3, 4, 5],
+            "feat4": ["A", "B", "C", "D", None] + ["A", "B", "C", "D", "E"]
         }
     )
 
@@ -62,10 +63,10 @@ def ts_with_exogs_ms_freq():
         },
     ),
 )
-def test_save_exog_last_date(df_exog_with_nans, expected):
+def test_save_exog_last_timestamp(df_exog_with_nans, expected):
     t = ExogShiftTransform(lag=1)
-    t._save_exog_last_date(df_exog=df_exog_with_nans)
-    assert t._exog_last_date == expected
+    t._save_exog_last_timestamp(df_exog=df_exog_with_nans)
+    assert t._exog_last_timestamp == expected
 
 
 def test_negative_lag():
@@ -172,6 +173,30 @@ def test_shift_no_exog(simple_tsdf, lag, expected={"target"}):
     ),
 )
 def test_transformed_names(ts_name, lag, horizon, expected, request):
+    ts = request.getfixturevalue(ts_name)
+
+    t = ExogShiftTransform(lag=lag, horizon=horizon)
+    transformed = t.fit_transform(ts=ts)
+    column_names = transformed.df.columns.get_level_values("feature")
+    assert set(column_names) == expected
+
+
+@pytest.mark.parametrize(
+    "lag,horizon,expected",
+    (
+        # (1, None, {"feat1_shift_1", "feat2_shift_1", "feat3_shift_1", "target"}),
+        # ("auto", 1, {"feat1_shift_1", "feat2_shift_2", "feat3", "target"}),
+        ("auto", 2, {"feat1_shift_2", "feat2_shift_3", "feat3_shift_1", "target"}),
+    ),
+)
+@pytest.mark.parametrize(
+    "ts_name",
+    (
+        "ts_with_exogs",
+        # "ts_with_exogs_ms_freq",
+    ),
+)
+def test_transform_int_features(ts_name, lag, horizon, expected, request):
     ts = request.getfixturevalue(ts_name)
 
     t = ExogShiftTransform(lag=lag, horizon=horizon)

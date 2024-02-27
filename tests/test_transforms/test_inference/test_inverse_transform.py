@@ -18,6 +18,7 @@ from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import EventTransform
+from etna.transforms import ExogShiftTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
@@ -211,6 +212,11 @@ class TestInverseTransformTrain:
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
                 {},
             ),
             (
@@ -597,6 +603,11 @@ class TestInverseTransformTrain:
                 {},
             ),
             (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
+            (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
                 {},
@@ -952,6 +963,10 @@ class TestInverseTransformTrainSubsetSegments:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+            ),
+            (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
                 "regular_ts",
             ),
@@ -1171,6 +1186,10 @@ class TestInverseTransformFutureSubsetSegments:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog"),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+            ),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
                 "regular_ts",
@@ -1424,6 +1443,11 @@ class TestInverseTransformTrainNewSegments:
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
                 {},
             ),
             (
@@ -1751,6 +1775,11 @@ class TestInverseTransformFutureNewSegments:
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
                 {},
             ),
             (
@@ -2244,6 +2273,11 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
+            (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
                 {},
@@ -2652,6 +2686,11 @@ class TestInverseTransformFutureWithoutTarget:
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
                 {},
             ),
             (
