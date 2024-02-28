@@ -96,6 +96,7 @@ class LagTransform(IrreversibleTransform):
         features = df.loc[:, pd.IndexSlice[:, self.in_column]]
         for lag in self.lags:
             column_name = self._get_column_name(lag)
+            # this could lead to type changes due to introduction of NaNs
             transformed_features = features.shift(lag)
             transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]])
             all_transformed_features.append(transformed_features)
@@ -169,9 +170,9 @@ class ExogShiftTransform(IrreversibleTransform):
                 feature = df_exog.loc[:, pd.IndexSlice[:, name]]
 
                 na_mask = pd.isna(feature).any(axis=1)
-                last_date = feature.index[~na_mask].max()
+                last_timestamp = feature.index[~na_mask].max()
 
-                exog_last_timestamp[name] = last_date
+                exog_last_timestamp[name] = last_timestamp
 
         self._exog_last_timestamp = exog_last_timestamp
 
@@ -287,9 +288,7 @@ class ExogShiftTransform(IrreversibleTransform):
             feature = df.loc[:, pd.IndexSlice[:, feature_name]]
 
             if shift > 0:
-                # TODO: разобраться с этим моментом и преобразованием типов
-                # shifted_feature = feature.shift(shift, freq=self._freq)
-                # shifted_feature = shifted_feature.loc[shifted_feature.index.intersection(df.index)]
+                # this could lead to type changes due to introduction of NaNs
                 shifted_feature = feature.shift(shift)
 
                 column_name = f"{feature_name}_shift_{shift}"

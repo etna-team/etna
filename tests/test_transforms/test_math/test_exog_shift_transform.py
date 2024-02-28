@@ -181,11 +181,11 @@ def test_transformed_names(ts_name, lag, horizon, expected, request):
 
 
 @pytest.mark.parametrize(
-    "lag,horizon,expected",
+    "lag,horizon,expected_types",
     (
-        (1, None, {"feat1_shift_1", "feat2_shift_1", "feat3_shift_1", "target"}),
-        ("auto", 1, {"feat1_shift_1", "feat2_shift_2", "feat3", "target"}),
-        ("auto", 2, {"feat1_shift_2", "feat2_shift_3", "feat3_shift_1", "target"}),
+        (1, None, {"feat1_shift_1": "float", "feat2_shift_1": "float", "feat3_shift_1": "float", "target": "float"}),
+        ("auto", 1, {"feat1_shift_1": "float", "feat2_shift_2": "float", "feat3": "int", "target": "float"}),
+        ("auto", 2, {"feat1_shift_2": "float", "feat2_shift_3": "float", "feat3_shift_1": "float", "target": "float"}),
     ),
 )
 @pytest.mark.parametrize(
@@ -195,13 +195,14 @@ def test_transformed_names(ts_name, lag, horizon, expected, request):
         "ts_with_exogs_ms_freq",
     ),
 )
-def test_transform_int_features(ts_name, lag, horizon, expected, request):
+def test_transform_type_changes(ts_name, lag, horizon, expected_types, request):
     ts = request.getfixturevalue(ts_name)
 
     t = ExogShiftTransform(lag=lag, horizon=horizon)
-    transformed = t.fit_transform(ts=ts)
-    column_names = transformed.df.columns.get_level_values("feature")
-    assert set(column_names) == expected
+    transformed = t.fit_transform(ts=ts).to_pandas(flatten=True)
+    dtypes = transformed.dtypes
+    for column, expected_dtype in expected_types.items():
+        assert dtypes[column] == expected_dtype
 
 
 @pytest.mark.parametrize("lag", (3, "auto"))
