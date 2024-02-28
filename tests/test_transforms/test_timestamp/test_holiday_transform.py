@@ -327,7 +327,7 @@ def test_params_to_tune():
     (
         ("Q-JAN", [pd.Timestamp("1999-11-01 00:00:00"), pd.Timestamp("2000-01-31")]),
         ("M", [pd.Timestamp("2000-01-01 00:00:00"), pd.Timestamp("2000-01-31 00:00:00")]),
-        ("W-MON", [pd.Timestamp("2000-01-25 00:00:00"), pd.Timestamp("2000-01-31 00:00:00")]),
+        ("W-MON", [pd.Timestamp("2000-01-31 00:00:00"), pd.Timestamp("2000-02-06 00:00:00")]),
     ),
 )
 def test_define_period_check_end(freq, expected_result):
