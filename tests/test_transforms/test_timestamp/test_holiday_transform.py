@@ -353,3 +353,19 @@ def test_define_period_check_start(freq, expected_result):
     assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-01"), freq))[
         1
     ] == expected_result[1]
+
+@pytest.mark.parametrize(
+    "freq, expected_result",
+    (
+        ("Y", [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+        ("YS", [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+    ),
+)
+
+def test_define_period_year(freq, expected_result):
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-03-01"), freq))[
+        0
+    ] == expected_result[0]
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-03-01"), freq))[
+        1
+    ] == expected_result[1]

@@ -31,6 +31,9 @@ def define_period(offset: pd.tseries.offsets.BaseOffset, dt: pd.Timestamp, freq:
     if isinstance(offset, Week):
         start_date = dt - pd.tseries.frequencies.to_offset("W") + pd.Timedelta(days=1)
         end_date = dt + pd.tseries.frequencies.to_offset("W")
+    elif isinstance(offset, (YearBegin, YearEnd)):
+        start_date = dt - pd.tseries.frequencies.to_offset("Y") + pd.Timedelta(days=1)
+        end_date = dt + pd.tseries.frequencies.to_offset("Y")
     elif isinstance(offset, (MonthEnd, QuarterEnd, YearEnd)):
         start_date = dt - offset + pd.Timedelta(days=1)
         end_date = dt
