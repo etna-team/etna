@@ -8,4 +8,3 @@ per-file-ignores=
     __init__.py:F401
     etna/commands/forecast_command.py:B008
     etna/commands/backtest_command.py:B008
-    etna/models/nn/tft_native/tft.py:B006

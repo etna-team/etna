@@ -354,7 +354,7 @@ class TemporalFusionDecoder(nn.Module):
 
         attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1)
 
-        x = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
+        x, _ = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
         x = self.gate_norm(x[:, -self.decoder_length :, :], residual[:, -self.decoder_length :, :])
         output = self.grn2(x)
         return output
