@@ -2,9 +2,9 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
-from etna_utils.libs.ts2vec.encoder import TSEncoder
-from etna_utils.libs.ts2vec.losses import  hierarchical_contrastive_loss
-from etna_utils.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, AveragedModel
+from etna.libs.ts2vec.encoder import TSEncoder
+from etna.libs.ts2vec.losses import  hierarchical_contrastive_loss
+from etna.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, AveragedModel
 import math
 
 
@@ -214,7 +214,7 @@ class TS2Vec:
             data (numpy.ndarray): This should have a shape of (n_instance, n_timestamps, n_features). All missing data should be set to NaN.
             mask (str): The mask used by encoder can be specified with this parameter. This can be set to 'binomial', 'continuous', 'all_true', 'all_false' or 'mask_last'.
             encoding_window (Union[str, int]): When this param is specified, the computed representation would the max pooling over this window. This can be set to 'full_series', 'multiscale' or an integer specifying the pooling kernel size.
-            causal (bool): When this param is set to True, the future informations would not be encoded into representation of each timestamp.
+            causal (bool): When this param is set to True, the future information would not be encoded into representation of each timestamp.
             sliding_length (Union[int, NoneType]): The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
             sliding_padding (int): This param specifies the contextual data length used for inference every sliding windows.
             batch_size (Union[int, NoneType]): The batch size used for inference. If not specified, this would be the same batch size as training.

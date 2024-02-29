@@ -98,7 +98,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         )
 
     def _prepare_data(self, df: pd.DataFrame) -> np.ndarray:
-        """Convert data to array with shapes (n_segments, n_timestamps, input_dims) """
+        """Convert data to array with shapes (n_segments, n_timestamps, input_dims)."""
         n_timestamps = len(df.index)
         n_segments = df.columns.get_level_values("segment").nunique()
         df = df.sort_index(axis=1)
@@ -112,15 +112,14 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         return self
 
     def encode_segment(
-            self,
-            df: pd.DataFrame,
-            mask: Union[
-                Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
-                    "mask_last"]
-            ] = "all_true",
-            sliding_length: Optional[int] = None,
-            sliding_padding: int = 0,
-        ) -> np.ndarray:
+        self,
+        df: pd.DataFrame,
+        mask: Union[
+            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
+        ] = "all_true",
+        sliding_length: Optional[int] = None,
+        sliding_padding: int = 0,
+    ) -> np.ndarray:
         """Create embeddings of the whole series.
 
         Parameters
@@ -167,15 +166,14 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         return embeddings
 
     def encode_window(
-            self,
-            df: pd.DataFrame,
-            mask: Union[
-                Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
-                    "mask_last"]
-            ] = "all_true",
-            encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
-            sliding_length: Optional[int] = None,
-            sliding_padding: int = 0,
+        self,
+        df: pd.DataFrame,
+        mask: Union[
+            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
+        ] = "all_true",
+        encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
+        sliding_length: Optional[int] = None,
+        sliding_padding: int = 0,
     ) -> np.ndarray:
         """Create embeddings of each series timestamp.
 
