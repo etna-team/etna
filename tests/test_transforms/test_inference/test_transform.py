@@ -222,8 +222,6 @@ class TestTransformTrainSubsetSegments:
             (HolidayTransform(mode="binary"), "regular_ts"),
             (HolidayTransform(mode="category"), "regular_ts"),
             (HolidayTransform(mode="days_count"), "regular_ts_one_month"),
-            (HolidayTransform(mode="days_count"), "regular_ts_start_month"),
-            (HolidayTransform(mode="days_count"), "regular_ts_few_months"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
@@ -436,8 +434,6 @@ class TestTransformFutureSubsetSegments:
             (HolidayTransform(mode="binary"), "regular_ts"),
             (HolidayTransform(mode="category"), "regular_ts"),
             (HolidayTransform(mode="days_count"), "regular_ts_one_month"),
-            (HolidayTransform(mode="days_count"), "regular_ts_start_month"),
-            (HolidayTransform(mode="days_count"), "regular_ts_few_months"),
             (SpecialDaysTransform(), "regular_ts"),
             (TimeFlagsTransform(), "regular_ts"),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
@@ -638,8 +634,6 @@ class TestTransformTrainNewSegments:
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -979,8 +973,6 @@ class TestTransformFutureNewSegments:
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1396,8 +1388,6 @@ class TestTransformFutureWithTarget:
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",
@@ -1796,8 +1786,6 @@ class TestTransformFutureWithoutTarget:
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="category"), "regular_ts", {"create": {"res"}}),
             (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_start_month", {"create": {"res"}}),
-            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_few_months", {"create": {"res"}}),
             (
                 TimeFlagsTransform(out_column="res"),
                 "regular_ts",

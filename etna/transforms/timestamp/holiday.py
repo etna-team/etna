@@ -28,9 +28,15 @@ def bigger_than_day(freq: Optional[str]):
 
 def define_period(offset: pd.tseries.offsets.BaseOffset, dt: pd.Timestamp, freq: Optional[str]):
     """Define start_date and end_date of period using dataset frequency."""
-    if isinstance(offset, Week):
+    if isinstance(offset, Week) and offset.weekday == 6:
+        start_date = dt - pd.tseries.frequencies.to_offset("W") + pd.Timedelta(days=1)
+        end_date = dt
+    elif isinstance(offset, Week):
         start_date = dt - pd.tseries.frequencies.to_offset("W") + pd.Timedelta(days=1)
         end_date = dt + pd.tseries.frequencies.to_offset("W")
+    elif isinstance(offset, YearEnd) and offset.month == 12:
+        start_date = dt - pd.tseries.frequencies.to_offset("Y") + pd.Timedelta(days=1)
+        end_date = dt
     elif isinstance(offset, (YearBegin, YearEnd)):
         start_date = dt - pd.tseries.frequencies.to_offset("Y") + pd.Timedelta(days=1)
         end_date = dt + pd.tseries.frequencies.to_offset("Y")
@@ -67,7 +73,7 @@ class HolidayTransform(IrreversibleTransform):
 
     - In ``binary`` mode shows the presence of holiday in that day.
     - In ``category`` mode shows the name of the holiday with value "NO_HOLIDAY" reserved for days without holidays.
-    - In the ``days_count mode``, calculate frequency of holidays.
+    - In the ``days_count mode``, calculate frequency of holidays if frequency is weekly, monthly, quarterly or yearly .
     """
 
     _no_holiday_name: str = "NO_HOLIDAY"
@@ -135,7 +141,6 @@ class HolidayTransform(IrreversibleTransform):
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Transform data.
-        In days_count mode calculates the frequency of holidays in a given period of time
 
         Parameters
         ----------
@@ -152,7 +157,7 @@ class HolidayTransform(IrreversibleTransform):
         ValueError:
             if the frequency is greater than daily and this is a ``binary`` or ``categorical`` mode
         ValueError:
-            if the frequency is not weekly, monthly, quarterly or yearly data and this is ``days_count`` mode
+            if the frequency is not weekly, monthly, quarterly or yearly and this is ``days_count`` mode
         """
         if self.freq is None:
             raise ValueError("Transform is not fitted")

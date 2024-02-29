@@ -82,14 +82,6 @@ def simple_week_mon_df():
 
 
 @pytest.fixture()
-def simple_q_jan_df_():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2021-01-10", freq="Q")})
-    df["target"] = 90
-    df.set_index("timestamp", inplace=True)
-    return df
-
-
-@pytest.fixture()
 def two_segments_w_mon(simple_week_mon_df: pd.DataFrame):
     df_1 = simple_week_mon_df.reset_index()
     df_2 = simple_week_mon_df.reset_index()
@@ -101,21 +93,6 @@ def two_segments_w_mon(simple_week_mon_df: pd.DataFrame):
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
     ts = TSDataset(df, freq="W-MON")
-    return ts
-
-
-@pytest.fixture()
-def two_segments_q_feb(simple_q_jan_df_: pd.DataFrame):
-    df_1 = simple_q_jan_df_.reset_index()
-    df_2 = simple_q_jan_df_.reset_index()
-    df_1 = df_1[3:]
-
-    df_1["segment"] = "segment_1"
-    df_2["segment"] = "segment_2"
-
-    classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df, freq="Q")
     return ts
 
 
@@ -279,16 +256,9 @@ def test_holidays_min(iso_code: str, answer: np.array, two_segments_simple_ts_mi
         assert np.array_equal(df[segment]["regressor_holidays"].values, answer)
 
 
-@pytest.mark.parametrize(
-    "index",
-    (
-        (pd.date_range(start="2020-11-25 22:30", end="2020-12-11", freq="1D 15MIN")),
-        (pd.date_range(start="2019-11-25", end="2021-02-25", freq="M")),
-    ),
-)
-def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_ts_day_15min: TSDataset):
-    ts = two_segments_simple_ts_day_15min
-    ts.df.index = index
+@pytest.mark.parametrize("ts_name", ("two_segments_w_mon", "two_segments_simple_ts_day_15min"))
+def test_holidays_failed(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
     holidays_finder = HolidayTransform(out_column="holiday")
     with pytest.raises(
         ValueError, match="For binary and category modes frequency of data should be no more than daily."
@@ -296,11 +266,13 @@ def test_holidays_failed(index: pd.DatetimeIndex, two_segments_simple_ts_day_15m
         ts = holidays_finder.fit_transform(ts)
 
 
-def test_holidays_days_count_mode_failed(two_segments_simple_ts_daily: TSDataset):
-    ts = two_segments_simple_ts_daily
+@pytest.mark.parametrize("ts_name", ("two_segments_simple_ts_daily", "two_segments_simple_ts_min"))
+def test_holidays_days_count_mode_failed(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
     holidays_finder = HolidayTransform(out_column="holiday", mode="days_count")
     with pytest.raises(
-        ValueError, match="Days_count mode works only with weekly, monthly, quarterly or yearly data. You have freq=D"
+        ValueError,
+        match=f"Days_count mode works only with weekly, monthly, quarterly or yearly data. You have freq={ts.freq}",
     ):
         ts = holidays_finder.fit_transform(ts)
 
@@ -323,49 +295,22 @@ def test_params_to_tune():
 
 
 @pytest.mark.parametrize(
-    "freq, expected_result",
+    "freq, timestamp, expected_result",
     (
-        ("Q-JAN", [pd.Timestamp("1999-11-01 00:00:00"), pd.Timestamp("2000-01-31")]),
-        ("M", [pd.Timestamp("2000-01-01 00:00:00"), pd.Timestamp("2000-01-31 00:00:00")]),
-        ("W-MON", [pd.Timestamp("2000-01-31 00:00:00"), pd.Timestamp("2000-02-06 00:00:00")]),
+        ("Y", pd.Timestamp("2000-12-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+        ("YS", pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+        ("A-OCT", pd.Timestamp("2000-10-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+        ("AS-OCT", pd.Timestamp("2000-10-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+        ("Q", pd.Timestamp("2000-12-31"), [pd.Timestamp("2000-10-01"), pd.Timestamp("2000-12-31")]),
+        ("QS", pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-03-31")]),
+        ("Q-NOV", pd.Timestamp("2000-11-30"), [pd.Timestamp("2000-09-01"), pd.Timestamp("2000-11-30")]),
+        ("QS-NOV", pd.Timestamp("2000-11-01"), [pd.Timestamp("2000-11-01"), pd.Timestamp("2001-01-31")]),
+        ("M", pd.Timestamp("2000-01-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-01-31")]),
+        ("MS", pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-01-31")]),
+        ("W", pd.Timestamp("2000-12-03"), [pd.Timestamp("2000-11-27"), pd.Timestamp("2000-12-03")]),
+        ("W-THU", pd.Timestamp("2000-11-30"), [pd.Timestamp("2000-11-27"), pd.Timestamp("2000-12-03")]),
     ),
 )
-def test_define_period_check_end(freq, expected_result):
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-31"), freq))[
-        0
-    ] == expected_result[0]
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-31"), freq))[
-        1
-    ] == expected_result[1]
-
-
-@pytest.mark.parametrize(
-    "freq, expected_result",
-    (
-        ("QS", [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-03-31")]),
-        ("MS", [pd.Timestamp("2000-01-01 00:00:00"), pd.Timestamp("2000-01-31 00:00:00")]),
-    ),
-)
-def test_define_period_check_start(freq, expected_result):
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-01"), freq))[
-        0
-    ] == expected_result[0]
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-01-01"), freq))[
-        1
-    ] == expected_result[1]
-
-
-@pytest.mark.parametrize(
-    "freq, expected_result",
-    (
-        ("Y", [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
-        ("YS", [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
-    ),
-)
-def test_define_period_year(freq, expected_result):
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-03-01"), freq))[
-        0
-    ] == expected_result[0]
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), pd.Timestamp("2000-03-01"), freq))[
-        1
-    ] == expected_result[1]
+def test_define_period_end(freq, timestamp, expected_result):
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), timestamp, freq))[0] == expected_result[0]
+    assert (define_period(pd.tseries.frequencies.to_offset(freq), timestamp, freq))[1] == expected_result[1]
