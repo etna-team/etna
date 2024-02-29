@@ -241,7 +241,7 @@ class ExogShiftTransform(IrreversibleTransform):
         if not self._auto:
             return self.lag  # type: ignore
 
-        if self._exog_last_timestamp is None or self._freq is _DEFAULT_FREQ:
+        if self._exog_last_timestamp is None:
             raise ValueError("Call `fit()` method before estimating exog shifts!")
 
         last_date = df.index.max()
