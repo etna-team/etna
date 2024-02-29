@@ -2,13 +2,14 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
-from etna.libs.ts2vec.encoder import TSEncoder
-from etna.libs.ts2vec.losses import hierarchical_contrastive_loss
-from etna.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, AveragedModel
+from etna_utils.libs.ts2vec.encoder import TSEncoder
+from etna_utils.libs.ts2vec.losses import  hierarchical_contrastive_loss
+from etna_utils.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, AveragedModel
+import math
 
 
 class TS2Vec:
-    """The TS2Vec model"""
+    '''The TS2Vec model'''
 
     def __init__(
             self,
@@ -161,20 +162,17 @@ class TS2Vec:
 
         return loss_log
 
-    def _eval_with_pooling_segment(self, x, mask=None, slicing=None):
+    def _eval_with_pooling(self, x, mask=None, slicing=None, encoding_window=None):
         out = self.net(x.to(self.device, non_blocking=True), mask)
-        if slicing is not None:
-            out = out[:, slicing]
-        out = F.max_pool1d(
-            out.transpose(1, 2),
-            kernel_size=out.size(1),
-        ).transpose(1, 2)
+        if encoding_window == 'full_series':
+            if slicing is not None:
+                out = out[:, slicing]
+            out = F.max_pool1d(
+                out.transpose(1, 2),
+                kernel_size=out.size(1),
+            ).transpose(1, 2)
 
-        return out.cpu()
-
-    def _eval_with_pooling_window(self, x, mask=None, slicing=None, encoding_window=None):
-        out = self.net(x.to(self.device, non_blocking=True), mask)
-        if isinstance(encoding_window, int):
+        elif isinstance(encoding_window, int):
             out = F.max_pool1d(
                 out.transpose(1, 2),
                 kernel_size=encoding_window,
@@ -185,6 +183,7 @@ class TS2Vec:
                 out = out[:, :-1]
             if slicing is not None:
                 out = out[:, slicing]
+
         elif encoding_window == 'multiscale':
             p = 0
             reprs = []
@@ -200,26 +199,29 @@ class TS2Vec:
                 reprs.append(t_out)
                 p += 1
             out = torch.cat(reprs, dim=-1)
+
         else:
             if slicing is not None:
                 out = out[:, slicing]
 
         return out.cpu()
 
-    def encode_segment(self, data, mask=None, causal=False, sliding_length=None, sliding_padding=0, batch_size=None):
-        """Compute representations for entire segment using the model.
+    def encode(self, data, mask=None, encoding_window=None, causal=False, sliding_length=None, sliding_padding=0,
+               batch_size=None):
+        ''' Compute representations using the model.
 
         Args:
             data (numpy.ndarray): This should have a shape of (n_instance, n_timestamps, n_features). All missing data should be set to NaN.
             mask (str): The mask used by encoder can be specified with this parameter. This can be set to 'binomial', 'continuous', 'all_true', 'all_false' or 'mask_last'.
-            causal (bool): When this param is set to True, the future information would not be encoded into representation of each timestamp.
+            encoding_window (Union[str, int]): When this param is specified, the computed representation would the max pooling over this window. This can be set to 'full_series', 'multiscale' or an integer specifying the pooling kernel size.
+            causal (bool): When this param is set to True, the future informations would not be encoded into representation of each timestamp.
             sliding_length (Union[int, NoneType]): The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
             sliding_padding (int): This param specifies the contextual data length used for inference every sliding windows.
             batch_size (Union[int, NoneType]): The batch size used for inference. If not specified, this would be the same batch size as training.
 
         Returns:
             repr: The representations for data.
-        """
+        '''
         assert self.net is not None, 'please train or load a net first'
         assert data.ndim == 3
         if batch_size is None:
@@ -252,99 +254,7 @@ class TS2Vec:
                         )
                         if n_samples < batch_size:
                             if calc_buffer_l + n_samples > batch_size:
-                                out = self._eval_with_pooling_segment(
-                                    torch.cat(calc_buffer, dim=0),
-                                    mask,
-                                    slicing=slice(sliding_padding, sliding_padding + sliding_length),
-                                )
-                                reprs += torch.split(out, n_samples)
-                                calc_buffer = []
-                                calc_buffer_l = 0
-                            calc_buffer.append(x_sliding)
-                            calc_buffer_l += n_samples
-                        else:
-                            out = self._eval_with_pooling_segment(
-                                x_sliding,
-                                mask,
-                                slicing=slice(sliding_padding, sliding_padding + sliding_length),
-                            )
-                            reprs.append(out)
-
-                    if n_samples < batch_size:
-                        if calc_buffer_l > 0:
-                            out = self._eval_with_pooling_segment(
-                                torch.cat(calc_buffer, dim=0),
-                                mask,
-                                slicing=slice(sliding_padding, sliding_padding + sliding_length),
-                            )
-                            reprs += torch.split(out, n_samples)
-                            calc_buffer = []
-                            calc_buffer_l = 0
-
-                    out = torch.cat(reprs, dim=1)
-                    out = F.max_pool1d(
-                        out.transpose(1, 2).contiguous(),
-                        kernel_size=out.size(1),
-                    ).squeeze(1)
-                else:
-                    out = self._eval_with_pooling_segment(x, mask)
-                    out = out.squeeze(1)
-
-                output.append(out)
-
-            output = torch.cat(output, dim=0)
-
-        self.net.train(org_training)
-        return output.numpy()
-
-    def encode_window(self, data, mask=None, encoding_window=None, causal=False, sliding_length=None, sliding_padding=0, batch_size=None):
-        """Compute representations for each timestamp of series using the model.
-
-        Args:
-            data (numpy.ndarray): This should have a shape of (n_instance, n_timestamps, n_features). All missing data should be set to NaN.
-            mask (str): The mask used by encoder can be specified with this parameter. This can be set to 'binomial', 'continuous', 'all_true', 'all_false' or 'mask_last'.
-            encoding_window (Union[str, int]): When this param is specified, the computed representation would the max pooling over this window. This can be set to 'multiscale' or an integer specifying the pooling kernel size.
-            causal (bool): When this param is set to True, the future information would not be encoded into representation of each timestamp.
-            sliding_length (Union[int, NoneType]): The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
-            sliding_padding (int): This param specifies the contextual data length used for inference every sliding windows.
-            batch_size (Union[int, NoneType]): The batch size used for inference. If not specified, this would be the same batch size as training.
-
-        Returns:
-            repr: The representations for data.
-        """
-        assert self.net is not None, 'please train or load a net first'
-        assert data.ndim == 3
-        if batch_size is None:
-            batch_size = self.batch_size
-        n_samples, ts_l, _ = data.shape
-
-        org_training = self.net.training
-        self.net.eval()
-
-        dataset = TensorDataset(torch.from_numpy(data).to(torch.float))
-        loader = DataLoader(dataset, batch_size=batch_size)
-
-        with torch.no_grad():
-            output = []
-            for batch in loader:
-                x = batch[0]
-                if sliding_length is not None:
-                    reprs = []
-                    if n_samples < batch_size:
-                        calc_buffer = []
-                        calc_buffer_l = 0
-                    for i in range(0, ts_l, sliding_length):
-                        l = i - sliding_padding
-                        r = i + sliding_length + (sliding_padding if not causal else 0)
-                        x_sliding = torch_pad_nan(
-                            x[:, max(l, 0): min(r, ts_l)],
-                            left=-l if l < 0 else 0,
-                            right=r - ts_l if r > ts_l else 0,
-                            dim=1
-                        )
-                        if n_samples < batch_size:
-                            if calc_buffer_l + n_samples > batch_size:
-                                out = self._eval_with_pooling_window(
+                                out = self._eval_with_pooling(
                                     torch.cat(calc_buffer, dim=0),
                                     mask,
                                     slicing=slice(sliding_padding, sliding_padding + sliding_length),
@@ -356,7 +266,7 @@ class TS2Vec:
                             calc_buffer.append(x_sliding)
                             calc_buffer_l += n_samples
                         else:
-                            out = self._eval_with_pooling_window(
+                            out = self._eval_with_pooling(
                                 x_sliding,
                                 mask,
                                 slicing=slice(sliding_padding, sliding_padding + sliding_length),
@@ -366,7 +276,7 @@ class TS2Vec:
 
                     if n_samples < batch_size:
                         if calc_buffer_l > 0:
-                            out = self._eval_with_pooling_window(
+                            out = self._eval_with_pooling(
                                 torch.cat(calc_buffer, dim=0),
                                 mask,
                                 slicing=slice(sliding_padding, sliding_padding + sliding_length),
@@ -377,14 +287,23 @@ class TS2Vec:
                             calc_buffer_l = 0
 
                     out = torch.cat(reprs, dim=1)
+                    if encoding_window == 'full_series':
+                        out = F.max_pool1d(
+                            out.transpose(1, 2).contiguous(),
+                            kernel_size=out.size(1),
+                        ).squeeze(1)
                 else:
-                    out = self._eval_with_pooling_window(x, mask, encoding_window=encoding_window)
+                    out = self._eval_with_pooling(x, mask, encoding_window=encoding_window)
+                    if encoding_window == 'full_series':
+                        out = out.squeeze(1)
 
                 output.append(out)
 
             output = torch.cat(output, dim=0)
 
         self.net.train(org_training)
+        if encoding_window == 'full_series':
+            return output.numpy()
         return output.numpy()[:, :ts_l, :]
 
     def save(self, fn):

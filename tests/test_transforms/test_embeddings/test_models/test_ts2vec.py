@@ -122,8 +122,10 @@ def test_prepare_data(
 def test_encode_format(simple_ts_with_exog, output_dims, expected_shape):
     df = simple_ts_with_exog.to_pandas()
     model = TS2VecEmbeddingModel(input_dims=3, output_dims=output_dims)
-    output = model.encode_window(df=df)
-    assert output.shape == expected_shape
+    segment_embeddings = model.encode_segment(df=df)
+    window_embeddings = model.encode_window(df=df)
+    assert segment_embeddings.shape == expected_shape
+    assert window_embeddings.shape == expected_shape
 
 
 def test_encode_pre_fitted(simple_ts_with_exog, tmp_path):
@@ -137,6 +139,7 @@ def test_encode_pre_fitted(simple_ts_with_exog, tmp_path):
     model_loaded = TS2VecEmbeddingModel.load(path=path)
 
     np.testing.assert_array_equal(model.encode_window(df=df), model_loaded.encode_window(df=df))
+    np.testing.assert_array_equal(model.encode_segment(df=df), model_loaded.encode_segment(df=df))
 
 
 @pytest.mark.parametrize("output_dims", [2, 3])

@@ -22,6 +22,5 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
-# with changing ts2vec encode method (divide into two methods for full series and window encoding)
 
 from etna.libs.ts2vec.ts2vec import TS2Vec

@@ -13,7 +13,10 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 
 class TS2VecEmbeddingModel(BaseEmbeddingModel):
-    """TS2Vec embedding model."""
+    """TS2Vec embedding model.
+
+    For more details read the paper (https://arxiv.org/abs/2106.10466)
+    """
 
     def __init__(
         self,
@@ -21,19 +24,12 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         output_dims: int = 320,
         hidden_dims: int = 64,
         depth: int = 10,
-        encoding_window: Optional[Union[int, Literal["multiscale"]]] = None,
-        sliding_length: Optional[int] = None,
-        sliding_padding: int = 0,
         device: Union[Literal["cpu"], Literal["gpu"]] = "cpu",
         lr: float = 0.001,
         batch_size: int = 16,
         n_epochs: Optional[int] = None,
         n_iters: Optional[int] = None,
         verbose: Optional[bool] = None,
-        causal: bool = True,
-        mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
-        ] = "all_true",
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
     ):
@@ -49,14 +45,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             The hidden dimension of the encoder.
         depth:
             The number of hidden residual blocks in the encoder.
-        encoding_window:
-            When this param is specified, the computed representation would the max pooling over this window.
-            This can be set to 'multiscale' or an integer specifying the pooling kernel size.
-            Parameter will be ignored when encoding full series with ``encode_segment`` or using :py:class:`etna.transforms.EmbeddingSegmentTransform`
-        sliding_length:
-            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
-        sliding_padding:
-            This param specifies the contextual data length used for inference every sliding windows.
         device:
             The device used for training and inference.
         lr:
@@ -70,15 +58,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             a default setting would be used that sets n_iters to 200 for a dataset with size <= 100000, 600 otherwise.
         verbose:
             Whether to print the training loss after each epoch.
-        causal:
-            When this param is set to True, the future information would not be encoded into representation of each timestamp.
-        mask:
-            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-                * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-                * 'continuous' - mask random windows of timestamps
-                * 'all_true' - mask none of the timestamps
-                * 'all_false' - mask all timestamps
-                * 'mask_last' - mask last timestamp
         max_train_length:
             The maximum allowed sequence length for training. For sequence with a length greater than ``max_train_length``,
             it would be cropped into some sequences, each of which has a length less than ``max_train_length``.
@@ -87,14 +66,13 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             this param helps to reduce the cost of time and memory.
         Notes
         -----
-        In case of long series to reduce memory consumption it is recommended to use max_train_length parameter or manually break the series into smaller subseries (see ETNA-2185).
+        In case of long series to reduce memory consumption it is recommended to use max_train_length parameter or manually break the series into smaller subseries.
         """
         super().__init__(output_dims=output_dims)
         self.input_dims = input_dims
         self.output_dims = output_dims
         self.hidden_dims = hidden_dims
         self.depth = depth
-        self.encoding_window = encoding_window
         self.max_train_length = max_train_length
         self.temporal_unit = temporal_unit
 
@@ -106,12 +84,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         self.n_epochs = n_epochs
         self.n_iters = n_iters
         self.verbose = verbose
-
-        # Encode params
-        self.mask = mask
-        self.causal = causal
-        self.sliding_length = sliding_length
-        self.sliding_padding = sliding_padding
 
         self.embedding_model = TS2Vec(
             input_dims=self.input_dims,
@@ -126,7 +98,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         )
 
     def _prepare_data(self, df: pd.DataFrame) -> np.ndarray:
-        """Prepare data for the embedding model."""
+        """Convert data to array with shapes (n_segments, n_timestamps, input_dims) """
         n_timestamps = len(df.index)
         n_segments = df.columns.get_level_values("segment").nunique()
         df = df.sort_index(axis=1)
@@ -139,21 +111,54 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         self.embedding_model.fit(train_data=x, n_epochs=self.n_epochs, n_iters=self.n_iters, verbose=self.verbose)
         return self
 
-    def encode_segment(self, df: pd.DataFrame) -> np.ndarray:
+    def encode_segment(
+            self,
+            df: pd.DataFrame,
+            mask: Union[
+                Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
+                    "mask_last"]
+            ] = "all_true",
+            sliding_length: Optional[int] = None,
+            sliding_padding: int = 0,
+        ) -> np.ndarray:
         """Create embeddings of the whole series.
+
+        Parameters
+        ----------
+        df:
+            Dataframe with data.
+        mask:
+            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+                * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+                * 'continuous' - mask random windows of timestamps
+                * 'all_true' - mask none of the timestamps
+                * 'all_false' - mask all timestamps
+                * 'mask_last' - mask last timestamp
+        sliding_length:
+            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+        sliding_padding:
+            This param specifies the contextual data length used for inference every sliding windows.
+
+        Returns
+        -------
+        :
+            array with embeddings of shape (n_timestamps, n_segments * output_dim)
 
         Notes
         -----
         Model works with the index sorted in the alphabetic order. Thus, output embeddings correspond to the segments,
         sorted in alphabetic order.
         """
+        last_timestamp = max(np.where(~df.isna().all(axis=1))[0])
+        df = df[: last_timestamp + 1]
         x = self._prepare_data(df=df)
-        embeddings = self.embedding_model.encode_segment(
+        embeddings = self.embedding_model.encode(
             data=x,
-            mask=self.mask,
-            causal=self.causal,
-            sliding_length=self.sliding_length,
-            sliding_padding=self.sliding_padding,
+            mask=mask,
+            encoding_window="full_series",
+            causal=False,
+            sliding_length=sliding_length,
+            sliding_padding=sliding_padding,
             batch_size=self.batch_size,
         )
 
@@ -161,8 +166,43 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         embeddings = np.repeat(embeddings[np.newaxis, :, :], n_timestamps, axis=0).reshape(n_timestamps, -1)
         return embeddings
 
-    def encode_window(self, df: pd.DataFrame) -> np.ndarray:
+    def encode_window(
+            self,
+            df: pd.DataFrame,
+            mask: Union[
+                Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
+                    "mask_last"]
+            ] = "all_true",
+            encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
+            sliding_length: Optional[int] = None,
+            sliding_padding: int = 0,
+    ) -> np.ndarray:
         """Create embeddings of each series timestamp.
+
+        Parameters
+        ----------
+        df:
+            Dataframe with data.
+        mask:
+            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+                * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+                * 'continuous' - mask random windows of timestamps
+                * 'all_true' - mask none of the timestamps
+                * 'all_false' - mask all timestamps
+                * 'mask_last' - mask last timestamp
+        sliding_length:
+            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+        sliding_padding:
+            The contextual data length used for inference every sliding windows.
+        encoding_window:
+            When this param is specified, the computed representation would the max pooling over this window. The possible options are:
+                * 'multiscale'
+                * integer specifying the pooling kernel size.
+
+        Returns
+        -------
+        :
+            array with embeddings of shape (n_timestamps, n_segments * output_dim)
 
         Notes
         -----
@@ -170,13 +210,13 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         sorted in alphabetic order.
         """
         x = self._prepare_data(df=df)
-        embeddings = self.embedding_model.encode_window(
+        embeddings = self.embedding_model.encode(
             data=x,
-            mask=self.mask,
-            encoding_window=self.encoding_window,
-            causal=self.causal,
-            sliding_length=self.sliding_length,
-            sliding_padding=self.sliding_padding,
+            mask=mask,
+            encoding_window=encoding_window,
+            causal=True,
+            sliding_length=sliding_length,
+            sliding_padding=sliding_padding,
             batch_size=self.batch_size,
         )
 
