@@ -67,6 +67,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update pipelines to handle integer timestamp ([#241](https://github.com/etna-team/etna/pull/241))
 - Add `timestamp_range` and refactor code with it ([#244](https://github.com/etna-team/etna/pull/244))
 - Update CLI to handle integer timestamp ([#246](https://github.com/etna-team/etna/pull/246))
+- Update `ExogShiftTransform` to handle integer timestamp ([#254](https://github.com/etna-team/etna/pull/254))
 
 ### Fixed
 - 
