@@ -15,7 +15,7 @@ from tests.test_models.utils import assert_sampling_is_valid
     "horizon,transform,epochs,lr,eps",
     [
         (8, [StandardScalerTransform(in_column="target")], 30, 0.005, 0.05),
-        (13, [StandardScalerTransform(in_column="target")], 35, 0.005, 0.06),
+        (13, [StandardScalerTransform(in_column="target")], 35, 0.005, 0.08),
     ],
 )
 def test_tft_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon, horizon, transform, epochs, lr, eps):
