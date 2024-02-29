@@ -7,6 +7,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from typing_extensions import Literal
+from etna.models import ModelType
 
 from etna.libs.ts2vec import TS2Vec
 from etna.transforms.embeddings.models import BaseEmbeddingModel
@@ -97,6 +98,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             batch_size=self.batch_size,
         )
 
+        self._is_fitted: bool = False
+
     def _prepare_data(self, df: pd.DataFrame) -> np.ndarray:
         """Convert data to array with shapes (n_segments, n_timestamps, input_dims)."""
         n_timestamps = len(df.index)
@@ -109,6 +112,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         """Fit the embedding model."""
         x = self._prepare_data(df=df)
         self.embedding_model.fit(train_data=x, n_epochs=self.n_epochs, n_iters=self.n_iters, verbose=self.verbose)
+        self._is_fitted = True
         return self
 
     def encode_segment(
@@ -230,14 +234,9 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         path:
             Path to save object to.
         """
-        embedding_model = self.embedding_model
+        self.embedding_model: ModelType
 
-        # Save the state without embedding_model
-        try:
-            delattr(self, "embedding_model")
-            super().save(path=path)
-        finally:
-            self.embedding_model = embedding_model
+        self._save(path=path, skip_attributes=["embedding_model"])
 
         # Save embedding_model
         with zipfile.ZipFile(path, "a") as archive:
@@ -246,7 +245,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
                 # save model separately
                 model_save_path = temp_dir / "model.pt"
-                embedding_model.save(fn=str(model_save_path))
+                self.embedding_model.save(fn=str(model_save_path))
                 archive.write(model_save_path, "model.zip")
 
     @classmethod

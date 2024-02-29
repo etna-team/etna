@@ -132,11 +132,15 @@ def test_encode_pre_fitted(simple_ts_with_exog, tmp_path):
     df = simple_ts_with_exog.to_pandas()
 
     model = TS2VecEmbeddingModel(input_dims=3, n_epochs=1)
+    assert model._is_fitted is False
+
     model.fit(df=df)
+    assert model._is_fitted is True
 
     path = pathlib.Path(tmp_path) / "tmp.zip"
     model.save(path=path)
     model_loaded = TS2VecEmbeddingModel.load(path=path)
+    assert model_loaded._is_fitted is True
 
     np.testing.assert_array_equal(model.encode_window(df=df), model_loaded.encode_window(df=df))
     np.testing.assert_array_equal(model.encode_segment(df=df), model_loaded.encode_segment(df=df))
