@@ -75,7 +75,7 @@ class HolidayTransform(IrreversibleTransform):
     - In ``category`` mode shows the name of the holiday with value "NO_HOLIDAY" reserved for days without holidays.
     - In the ``days_count mode``, calculate frequency of holidays
     If the frequency is weekly, then we count the proportion of holidays in the week (Monday-Sunday) that contains this day. Similar counting logic is used for monthly and annual frequencies.
-    The exception is quarters, where the periods in which holidays are considered will vary depending on the type of quarter (Q - NOV, Q-OCT). Other frequencies are not supported.
+    The exception is quarters, where the periods in which holidays are considered will vary depending on the type of quarter (Q-NOV, Q-OCT). Other frequencies are not supported.
     """
 
     _no_holiday_name: str = "NO_HOLIDAY"
