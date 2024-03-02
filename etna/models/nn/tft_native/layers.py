@@ -100,7 +100,13 @@ class GateAddNorm(nn.Module):
 class GatedResidualNetwork(nn.Module):
     """Gated Residual Network (GRN)."""
 
-    def __init__(self, input_size: int, output_size: int, dropout: float = 0.1, pass_context: bool = False):
+    def __init__(
+        self,
+        input_size: int,
+        output_size: int,
+        dropout: float = 0.1,
+        context_size: Optional[int] = None,
+    ):
         """Init GRN.
 
         Parameters
@@ -111,20 +117,20 @@ class GatedResidualNetwork(nn.Module):
             output size of the feature representation
         dropout:
             dropout rate
-        pass_context:
-            whether to pass context vector through the block
+        context_size:
+            dimension of context vector
         """
         super().__init__()
         self.input_size = input_size
         self.output_size = output_size
         self.dropout = dropout
-        self.pass_context = pass_context
+        self.context_size = context_size
 
         self.fc1 = nn.Linear(self.input_size, self.input_size)
         self.elu = nn.ELU()
 
-        if self.pass_context:
-            self.context_fc = nn.Linear(self.input_size, self.input_size, bias=False)
+        if self.context_size is not None:
+            self.context_fc = nn.Linear(self.context_size, self.input_size, bias=False)
 
         self.residual_fc = nn.Linear(self.input_size, self.output_size) if self.input_size != self.output_size else None
         self.fc2 = nn.Linear(self.input_size, self.input_size)
@@ -162,7 +168,13 @@ class GatedResidualNetwork(nn.Module):
 class VariableSelectionNetwork(nn.Module):
     """Variable Selection Network."""
 
-    def __init__(self, input_size: int, features: List[str], pass_context: bool = False, dropout: float = 0.1):
+    def __init__(
+        self,
+        input_size: int,
+        features: List[str],
+        context_size: Optional[int] = None,
+        dropout: float = 0.1,
+    ):
         """Init Variable Selection Network.
 
         Parameters
@@ -171,15 +183,15 @@ class VariableSelectionNetwork(nn.Module):
             input size of the feature representation
         features:
             features to pass through the block
-        pass_context:
-            whether to pass context vector through the block
+        context_size:
+            dimension of context vector
         dropout:
             dropout rate
         """
         super().__init__()
         self.input_size = input_size
         self.features = features
-        self.pass_context = pass_context
+        self.context_size = context_size
         self.dropout = dropout
         self.grns = nn.ModuleDict(
             {
@@ -187,7 +199,6 @@ class VariableSelectionNetwork(nn.Module):
                     input_size=self.input_size,
                     output_size=self.input_size,
                     dropout=self.dropout,
-                    pass_context=False,
                 )
                 for feature in self.features
             }
@@ -196,7 +207,7 @@ class VariableSelectionNetwork(nn.Module):
             input_size=self.input_size * self.num_features,
             output_size=self.num_features,
             dropout=self.dropout,
-            pass_context=self.pass_context,
+            context_size=self.context_size,
         )
         self.softmax = nn.Softmax(dim=2)
 
@@ -263,16 +274,16 @@ class StaticCovariateEncoder(nn.Module):
         self.input_size = input_size
         self.dropout = dropout
         self.grn_s = GatedResidualNetwork(  # for VariableSelectionNetwork
-            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout
         )
         self.grn_c = GatedResidualNetwork(  # for LSTM
-            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout
         )
         self.grn_h = GatedResidualNetwork(  # for LSTM
-            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout
         )
         self.grn_e = GatedResidualNetwork(  # for GRN
-            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
+            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout
         )
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
@@ -298,7 +309,12 @@ class TemporalFusionDecoder(nn.Module):
     """Temporal Fusion Decoder."""
 
     def __init__(
-        self, input_size: int, decoder_length: int, n_heads: int, pass_context: bool = False, dropout: float = 0.1
+        self,
+        input_size: int,
+        decoder_length: int,
+        n_heads: int,
+        context_size: Optional[int] = None,
+        dropout: float = 0.1,
     ):
         """Init Temporal Fusion Decoder.
 
@@ -310,8 +326,8 @@ class TemporalFusionDecoder(nn.Module):
             number of prediction timestamps
         n_heads:
             number of heads in multi-head attention
-        pass_context:
-            whether to pass context vector through the block
+        context_size:
+            dimension of context
         dropout:
             dropout rate
         """
@@ -319,21 +335,19 @@ class TemporalFusionDecoder(nn.Module):
         self.input_size = input_size
         self.decoder_length = decoder_length
         self.n_heads = n_heads
-        self.pass_context = pass_context
+        self.context_size = context_size
         self.dropout = dropout
         self.grn1 = GatedResidualNetwork(
             input_size=self.input_size,
             output_size=self.input_size,
             dropout=self.dropout,
-            pass_context=self.pass_context,
+            context_size=self.context_size,
         )
         self.attention = nn.MultiheadAttention(
             embed_dim=self.input_size, num_heads=self.n_heads, dropout=self.dropout, batch_first=True
         )
         self.gate_norm = GateAddNorm(input_size=self.input_size, output_size=self.input_size, dropout=self.dropout)
-        self.grn2 = GatedResidualNetwork(
-            input_size=self.input_size, output_size=self.input_size, dropout=self.dropout, pass_context=False
-        )
+        self.grn2 = GatedResidualNetwork(input_size=self.input_size, output_size=self.input_size, dropout=self.dropout)
 
     def forward(self, x: torch.Tensor, context: Optional[torch.Tensor] = None) -> torch.Tensor:
         """Forward pass.
