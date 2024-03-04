@@ -192,9 +192,43 @@ def test_context_size(encoder_length):
     assert model.context_size == encoder_length
 
 
-def test_save_load(example_tsds):
-    model = TFTNativeModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
-    assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
+@pytest.mark.parametrize(
+    "static_reals,static_categoricals,"
+    "time_varying_reals_encoder,time_varying_categoricals_encoder,"
+    "time_varying_reals_decoder,time_varying_categoricals_decoder",
+    [
+        ([], [], ["target"], [], [], []),
+        (
+            ["cont_static"],
+            ["segment"],
+            ["cont", "target"],
+            ["categ", "categ_exog", "categ_exog_new"],
+            ["cont_exog"],
+            ["categ_exog", "categ_exog_new"],
+        ),
+    ],
+)
+def test_save_load(
+    ts_different_regressors,
+    static_reals,
+    static_categoricals,
+    time_varying_reals_encoder,
+    time_varying_reals_decoder,
+    time_varying_categoricals_encoder,
+    time_varying_categoricals_decoder,
+):
+    model = TFTNativeModel(
+        encoder_length=3,
+        decoder_length=3,
+        static_reals=static_reals,
+        static_categoricals=static_categoricals,
+        time_varying_reals_encoder=time_varying_reals_encoder,
+        time_varying_reals_decoder=time_varying_reals_decoder,
+        time_varying_categoricals_encoder=time_varying_categoricals_encoder,
+        time_varying_categoricals_decoder=time_varying_categoricals_decoder,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert_model_equals_loaded_original(model=model, ts=ts_different_regressors, transforms=[], horizon=3)
 
 
 def test_params_to_tune(example_tsds):
