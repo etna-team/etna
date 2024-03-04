@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Any
 from typing import Dict
 from typing import Iterator
@@ -5,10 +6,12 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
 
 from etna import SETTINGS
+from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.distributions import FloatDistribution
@@ -57,7 +60,7 @@ class TFTNativeNet(DeepBaseNet):
         time_varying_categoricals_decoder: List[str],
         time_varying_reals_encoder: List[str],
         time_varying_reals_decoder: List[str],
-        categorical_feature_to_id: Dict[str, Dict[str, int]],
+            categorical_feature_to_id: bool,
         loss: nn.Module,
         optimizer_params: Optional[dict],
     ) -> None:
@@ -91,8 +94,6 @@ class TFTNativeNet(DeepBaseNet):
             time varying continuous features for encoder, default to `target`
         time_varying_reals_decoder:
             time varying continuous features for decoder (known for future)
-        categorical_feature_to_id:
-            dictionary where keys are feature names and values are dictionaries mapping feature values to index from 0 to number of unique feature values
         loss:
             loss function
         optimizer_params:
@@ -113,40 +114,21 @@ class TFTNativeNet(DeepBaseNet):
         self.time_varying_categoricals_decoder = time_varying_categoricals_decoder
         self.time_varying_reals_encoder = time_varying_reals_encoder
         self.time_varying_reals_decoder = time_varying_reals_decoder
-        self.categorical_feature_to_id = categorical_feature_to_id
         self.loss = loss
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
 
-        self.num_embeddings_per_feature = {
-            feature: len(self.categorical_feature_to_id[feature]) for feature in self.categorical_feature_to_id
-        }
-
-        self.static_embeddings = nn.ModuleDict(
-            {
-                feature: nn.Embedding(self.num_embeddings_per_feature[feature], self.hidden_size)
-                for feature in self.static_categoricals
-            }
-        )
         self.static_scalers = nn.ModuleDict({feature: nn.Linear(1, self.hidden_size) for feature in self.static_reals})
-        self.time_varying_embeddings_encoder = nn.ModuleDict(
-            {
-                feature: nn.Embedding(self.num_embeddings_per_feature[feature], self.hidden_size)
-                for feature in self.time_varying_categoricals_encoder
-            }
-        )
-        self.time_varying_embeddings_decoder = nn.ModuleDict(
-            {
-                feature: nn.Embedding(self.num_embeddings_per_feature[feature], self.hidden_size)
-                for feature in self.time_varying_categoricals_decoder
-            }
-        )
-
         self.time_varying_scalers_encoder = nn.ModuleDict(
             {feature: nn.Linear(1, self.hidden_size) for feature in self.time_varying_reals_encoder}
         )
         self.time_varying_scalers_decoder = nn.ModuleDict(
             {feature: nn.Linear(1, self.hidden_size) for feature in self.time_varying_reals_decoder}
         )
+        self.categorical_feature_to_id: Optional[int] = None
+        self.num_embeddings_per_feature: Optional[int] = None
+        self.static_embeddings: Optional[nn.Embedding] = None
+        self.time_varying_embeddings_encoder: Optional[nn.Embedding] = None
+        self.time_varying_embeddings_decoder: Optional[nn.Embedding] = None
 
         self.static_variable_selection: Optional[VariableSelectionNetwork] = None
         if self.num_static > 0:
@@ -402,11 +384,13 @@ class TFTNativeNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
+        segment = df["segment"].values[0]
         for feature in self.categorical_feature_to_id:
             df[feature] = df[feature].map(self.categorical_feature_to_id[feature])
 
         def _make(
             df: pd.DataFrame,
+            segment: str,
             start_idx: int,
             encoder_length: int,
             decoder_length: int,
@@ -428,7 +412,7 @@ class TFTNativeNet(DeepBaseNet):
             if total_sample_length + start_idx > total_length:
                 return None
 
-            sample["segment"] = df["segment"].values[0]
+            sample["segment"] = segment
             sample["decoder_target"] = df[["target"]].values[
                 start_idx + encoder_length : start_idx + total_sample_length
             ]  # (decoder_length, 1)
@@ -465,6 +449,7 @@ class TFTNativeNet(DeepBaseNet):
         while True:
             batch = _make(
                 df=df,
+                segment=segment,
                 start_idx=start_idx,
                 encoder_length=encoder_length,
                 decoder_length=decoder_length,
@@ -504,7 +489,6 @@ class TFTNativeModel(DeepBaseModel):
         time_varying_categoricals_decoder: Optional[List[str]] = None,
         time_varying_reals_encoder: Optional[List[str]] = None,
         time_varying_reals_decoder: Optional[List[str]] = None,
-        categorical_feature_to_id: Optional[Dict[str, Dict[str, int]]] = None,
         loss: Optional["torch.nn.Module"] = None,
         train_batch_size: int = 16,
         test_batch_size: int = 16,
@@ -545,8 +529,6 @@ class TFTNativeModel(DeepBaseModel):
             time varying continuous features for encoder, default to `target`
         time_varying_reals_decoder:
             time varying continuous features for decoder (known for future)
-        categorical_feature_to_id:
-            dictionary where keys are feature names and values are dictionaries mapping feature values to index from 0 to number of unique feature values
         loss:
             loss function
         train_batch_size:
@@ -590,7 +572,7 @@ class TFTNativeModel(DeepBaseModel):
             time_varying_reals_encoder if time_varying_reals_encoder is not None else ["target"]
         )
         self.time_varying_reals_decoder = time_varying_reals_decoder if time_varying_reals_decoder is not None else []
-        self.categorical_feature_to_id = categorical_feature_to_id if categorical_feature_to_id is not None else {}
+        # self.categorical_feature_to_id = None
         self.optimizer_params = optimizer_params
         self.loss = nn.MSELoss() if loss is None else loss
         super().__init__(
@@ -608,7 +590,7 @@ class TFTNativeModel(DeepBaseModel):
                 time_varying_categoricals_decoder=self.time_varying_categoricals_decoder,
                 time_varying_reals_encoder=self.time_varying_reals_encoder,
                 time_varying_reals_decoder=self.time_varying_reals_decoder,
-                categorical_feature_to_id=self.categorical_feature_to_id,
+                categorical_feature_to_id=None,
                 optimizer_params=self.optimizer_params,
                 loss=self.loss,
             ),
@@ -622,6 +604,98 @@ class TFTNativeModel(DeepBaseModel):
             trainer_params=trainer_params,
             split_params=split_params,
         )
+
+    def _init_embedding_layers(self):
+        self.net.num_embeddings_per_feature = {
+            feature: len(self.net.categorical_feature_to_id[feature]) for feature in self.net.categorical_feature_to_id
+        }
+
+        self.net.static_embeddings = nn.ModuleDict(
+            {
+                feature: nn.Embedding(self.net.num_embeddings_per_feature[feature], self.net.hidden_size)
+                for feature in self.net.static_categoricals
+            }
+        )
+        self.net.time_varying_embeddings_encoder = nn.ModuleDict(
+            {
+                feature: nn.Embedding(self.net.num_embeddings_per_feature[feature], self.net.hidden_size)
+                for feature in self.net.time_varying_categoricals_encoder
+            }
+        )
+        self.net.time_varying_embeddings_decoder = nn.ModuleDict(
+            {
+                feature: nn.Embedding(self.net.num_embeddings_per_feature[feature], self.net.hidden_size)
+                for feature in self.net.time_varying_categoricals_decoder
+            }
+        )
+        return self
+
+    def fit(self, ts: TSDataset) -> "TFTNativeModel":
+        """Fit model.
+
+        Parameters
+        ----------
+        ts:
+            TSDataset with features
+
+        Returns
+        -------
+        :
+            Model after fit
+        """
+        categorical_features = (
+            self.static_categoricals + self.time_varying_categoricals_encoder + self.time_varying_categoricals_decoder
+        )
+        categorical_feature_to_id = {}
+        for feature in categorical_features:
+            if feature != "segment":
+                unique_values = np.unique(ts.df.loc[:, pd.IndexSlice[:, feature]])
+            else:
+                unique_values = ts.segments
+            value_to_id = {value: index for index, value in enumerate(unique_values)}
+            value_to_id[np.NaN] = len(value_to_id)
+            categorical_feature_to_id[feature] = value_to_id
+        self.net.categorical_feature_to_id = categorical_feature_to_id
+        self._init_embedding_layers()
+        self.net.hparams.update({"categorical_feature_to_id": categorical_feature_to_id})
+        super().fit(ts)
+        return self
+
+    def forecast(self, ts: "TSDataset", prediction_size: int, return_components: bool = False) -> "TSDataset":
+        """Make predictions.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with features and expected decoder length for context
+        prediction_size:
+            Number of last timestamps to leave after making prediction.
+            Previous timestamps will be used as a context.
+        return_components:
+            If True additionally returns forecast components
+
+        Returns
+        -------
+        :
+            Dataset with predictions
+        """
+        categorical_features = list(self.net.categorical_feature_to_id)
+        long_df = ts.to_pandas(flatten=True)
+        for feature in categorical_features:
+            long_df[feature] = long_df[feature].where(
+                long_df[feature].isin(self.net.categorical_feature_to_id[feature].keys())
+            )
+        # long_df[categorical_features] = long_df[categorical_features].fillna("Unknown")
+        wide_df = TSDataset.to_dataset(long_df)
+
+        ts_copy = deepcopy(ts)
+        ts_copy.update_columns_from_pandas(wide_df)
+
+        future_ts = super().forecast(ts=ts_copy, prediction_size=prediction_size, return_components=return_components)
+        future_ts.df.loc[:, pd.IndexSlice[:, categorical_features]] = ts.df.loc[
+            future_ts.index, pd.IndexSlice[:, categorical_features]
+        ]
+        return future_ts
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
