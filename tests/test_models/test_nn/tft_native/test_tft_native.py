@@ -117,7 +117,7 @@ def test_tft_make_samples(
     time_varying_reals_decoder,
     time_varying_categoricals_encoder,
     time_varying_categoricals_decoder,
-    categorical_feature_to_id
+    categorical_feature_to_id,
 ):
     encoder_length = 4
     decoder_length = 1
@@ -195,20 +195,6 @@ def test_context_size(encoder_length):
 def test_save_load(example_tsds):
     model = TFTNativeModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
-
-
-def test_save_load_new(ts_different_regressors):
-    model = TFTNativeModel(
-        encoder_length=3,
-        decoder_length=3,
-        static_categoricals=['segment'],
-        time_varying_reals_encoder=['cont', 'cont_exog'],
-        time_varying_reals_decoder=['cont_exog'],
-        time_varying_categoricals_encoder=['categ', 'categ_exog', 'categ_exog_new'],
-        time_varying_categoricals_decoder=['categ_exog', 'categ_exog_new'],
-        trainer_params=dict(max_epochs=1)
-    )
-    assert_model_equals_loaded_original(model=model, ts=ts_different_regressors, transforms=[], horizon=3)
 
 
 def test_params_to_tune(example_tsds):

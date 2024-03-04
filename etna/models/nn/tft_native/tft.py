@@ -60,7 +60,6 @@ class TFTNativeNet(DeepBaseNet):
         time_varying_categoricals_decoder: List[str],
         time_varying_reals_encoder: List[str],
         time_varying_reals_decoder: List[str],
-            categorical_feature_to_id: bool,
         loss: nn.Module,
         optimizer_params: Optional[dict],
     ) -> None:
@@ -124,11 +123,11 @@ class TFTNativeNet(DeepBaseNet):
         self.time_varying_scalers_decoder = nn.ModuleDict(
             {feature: nn.Linear(1, self.hidden_size) for feature in self.time_varying_reals_decoder}
         )
-        self.categorical_feature_to_id: Optional[int] = None
-        self.num_embeddings_per_feature: Optional[int] = None
-        self.static_embeddings: Optional[nn.Embedding] = None
-        self.time_varying_embeddings_encoder: Optional[nn.Embedding] = None
-        self.time_varying_embeddings_decoder: Optional[nn.Embedding] = None
+        self.categorical_feature_to_id: Optional[dict] = None
+        self.num_embeddings_per_feature: Optional[dict] = None
+        self.static_embeddings: Optional[nn.ModuleDict] = None
+        self.time_varying_embeddings_encoder: Optional[nn.ModuleDict] = None
+        self.time_varying_embeddings_decoder: Optional[nn.ModuleDict] = None
 
         self.static_variable_selection: Optional[VariableSelectionNetwork] = None
         if self.num_static > 0:
@@ -572,7 +571,6 @@ class TFTNativeModel(DeepBaseModel):
             time_varying_reals_encoder if time_varying_reals_encoder is not None else ["target"]
         )
         self.time_varying_reals_decoder = time_varying_reals_decoder if time_varying_reals_decoder is not None else []
-        # self.categorical_feature_to_id = None
         self.optimizer_params = optimizer_params
         self.loss = nn.MSELoss() if loss is None else loss
         super().__init__(
@@ -590,7 +588,6 @@ class TFTNativeModel(DeepBaseModel):
                 time_varying_categoricals_decoder=self.time_varying_categoricals_decoder,
                 time_varying_reals_encoder=self.time_varying_reals_encoder,
                 time_varying_reals_decoder=self.time_varying_reals_decoder,
-                categorical_feature_to_id=None,
                 optimizer_params=self.optimizer_params,
                 loss=self.loss,
             ),
@@ -605,7 +602,7 @@ class TFTNativeModel(DeepBaseModel):
             split_params=split_params,
         )
 
-    def _init_embedding_layers(self):
+    def _init_embedding_layers(self) -> "TFTNativeModel":
         self.net.num_embeddings_per_feature = {
             feature: len(self.net.categorical_feature_to_id[feature]) for feature in self.net.categorical_feature_to_id
         }
