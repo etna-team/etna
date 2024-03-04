@@ -73,10 +73,12 @@ class HolidayTransform(IrreversibleTransform):
 
     - In ``binary`` mode shows the presence of holiday in that day.
     - In ``category`` mode shows the name of the holiday with value "NO_HOLIDAY" reserved for days without holidays.
-    - In the ``days_count mode``, calculate frequency of holidays.
-        - If the frequency is weekly, then we count the proportion of holidays in the week (Monday-Sunday) that contains this day. Similar counting logic is used for monthly and yearly frequencies.
-        - The exception is quarters, where the periods in which holidays are considered will vary depending on the type of quarter (Q-NOV, Q-OCT).
-        - For example, if it is Q-NOV we will count the number of holidays in the quarter from September to November, and if it is Q-OCT holidays will be counted from August to October.
+    - In ``days_count`` mode shows the frequency of holidays in a given period.
+
+        - If the frequency is weekly, then we count the proportion of holidays in a week (Monday-Sunday) that contains this day.
+        - If the frequency is monthly, then we count the proportion of holidays in a month that contains this day.
+        - If the frequency is yearly, then we count the proportion of holidays in a year that contains this day.
+        - If the frequency is quarterly the periods in which holidays are considered will vary depending on the type of quarter (Q-NOV, Q-OCT). For example, if it is Q-NOV we count the number of holidays in the quarter from September to November, and if it is Q-OCT holidays are counted from August to October.
         - Other frequencies are not supported.
     """
 
