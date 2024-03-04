@@ -196,8 +196,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             The contextual data length used for inference every sliding windows.
         encoding_window:
             When this param is specified, the computed representation would the max pooling over this window. The possible options are:
-                * 'multiscale'
-                * integer specifying the pooling kernel size.
+            * 'multiscale'
+            * integer specifying the pooling kernel size.
 
         Returns
         -------
