@@ -7,7 +7,6 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from typing_extensions import Literal
-from etna.models import ModelType
 
 from etna.libs.ts2vec import TS2Vec
 from etna.transforms.embeddings.models import BaseEmbeddingModel
@@ -16,7 +15,8 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 class TS2VecEmbeddingModel(BaseEmbeddingModel):
     """TS2Vec embedding model.
 
-    For more details read the paper (https://arxiv.org/abs/2106.10466)
+    For more details read the
+    `paper <https://arxiv.org/abs/2106.10466>`_.
     """
 
     def __init__(
@@ -132,11 +132,11 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             Dataframe with data.
         mask:
             The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-                * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-                * 'continuous' - mask random windows of timestamps
-                * 'all_true' - mask none of the timestamps
-                * 'all_false' - mask all timestamps
-                * 'mask_last' - mask last timestamp
+            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            * 'continuous' - mask random windows of timestamps
+            * 'all_true' - mask none of the timestamps
+            * 'all_false' - mask all timestamps
+            * 'mask_last' - mask last timestamp
         sliding_length:
             The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
@@ -155,7 +155,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         last_timestamp = max(np.where(~df.isna().all(axis=1))[0])
         df = df[: last_timestamp + 1]
         x = self._prepare_data(df=df)
-        embeddings = self.embedding_model.encode(
+        embeddings = self.embedding_model.encode(  # (n_segments, output_dim)
             data=x,
             mask=mask,
             encoding_window="full_series",
@@ -165,8 +165,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             batch_size=self.batch_size,
         )
 
-        n_timestamps = len(df.index)
-        embeddings = np.repeat(embeddings[np.newaxis, :, :], n_timestamps, axis=0).reshape(n_timestamps, -1)
         return embeddings
 
     def encode_window(
@@ -187,11 +185,11 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             Dataframe with data.
         mask:
             The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-                * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-                * 'continuous' - mask random windows of timestamps
-                * 'all_true' - mask none of the timestamps
-                * 'all_false' - mask all timestamps
-                * 'mask_last' - mask last timestamp
+            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            * 'continuous' - mask random windows of timestamps
+            * 'all_true' - mask none of the timestamps
+            * 'all_false' - mask all timestamps
+            * 'mask_last' - mask last timestamp
         sliding_length:
             The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
@@ -204,7 +202,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         Returns
         -------
         :
-            array with embeddings of shape (n_timestamps, n_segments * output_dim)
+            array with embeddings of shape (n_timestamps, n_segments, output_dim)
 
         Notes
         -----
@@ -212,7 +210,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         sorted in alphabetic order.
         """
         x = self._prepare_data(df=df)
-        embeddings = self.embedding_model.encode(
+        embeddings = self.embedding_model.encode(  # (n_segments, n_timestamps, output_dim)
             data=x,
             mask=mask,
             encoding_window=encoding_window,
@@ -222,8 +220,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             batch_size=self.batch_size,
         )
 
-        n_timestamps = len(df.index)
-        embeddings = embeddings.transpose(1, 0, 2).reshape(n_timestamps, -1)
+        embeddings = embeddings.transpose(1, 0, 2)  # (n_timestamps, n_segments, output_dim)
         return embeddings
 
     def save(self, path: pathlib.Path):
@@ -234,8 +231,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         path:
             Path to save object to.
         """
-        self.embedding_model: ModelType
-
         self._save(path=path, skip_attributes=["embedding_model"])
 
         # Save embedding_model

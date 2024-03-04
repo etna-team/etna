@@ -2,7 +2,6 @@ import pathlib
 
 import numpy as np
 import pytest
-from utils import cut_nan_timestamps
 
 from etna.transforms.embeddings.models import TS2VecEmbeddingModel
 
@@ -118,14 +117,16 @@ def test_prepare_data(
     np.testing.assert_array_equal(obtained_data, expected_data)
 
 
-@pytest.mark.parametrize("output_dims, expected_shape", [(2, (10, 10)), (3, (10, 15))])
-def test_encode_format(simple_ts_with_exog, output_dims, expected_shape):
+@pytest.mark.parametrize(
+    "output_dims, segment_shape_expected, window_shape_expected", [(2, (5, 2), (10, 5, 2)), (3, (5, 3), (10, 5, 3))]
+)
+def test_encode_format(simple_ts_with_exog, output_dims, segment_shape_expected, window_shape_expected):
     df = simple_ts_with_exog.to_pandas()
     model = TS2VecEmbeddingModel(input_dims=3, output_dims=output_dims)
     segment_embeddings = model.encode_segment(df=df)
     window_embeddings = model.encode_window(df=df)
-    assert segment_embeddings.shape == expected_shape
-    assert window_embeddings.shape == expected_shape
+    assert segment_embeddings.shape == segment_shape_expected
+    assert window_embeddings.shape == window_shape_expected
 
 
 def test_encode_pre_fitted(simple_ts_with_exog, tmp_path):
@@ -144,13 +145,3 @@ def test_encode_pre_fitted(simple_ts_with_exog, tmp_path):
 
     np.testing.assert_array_equal(model.encode_window(df=df), model_loaded.encode_window(df=df))
     np.testing.assert_array_equal(model.encode_segment(df=df), model_loaded.encode_segment(df=df))
-
-
-@pytest.mark.parametrize("output_dims", [2, 3])
-def test_full_series_equal_values(simple_ts_with_exog, output_dims):
-    df = simple_ts_with_exog.to_pandas()
-    model = TS2VecEmbeddingModel(input_dims=3, output_dims=output_dims)
-    df = cut_nan_timestamps(df)
-    output = model.encode_segment(df=df)
-    for i in range(output.shape[1]):
-        assert len(np.unique(output[:, i])) == 1
