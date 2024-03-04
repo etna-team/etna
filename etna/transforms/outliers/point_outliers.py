@@ -8,7 +8,6 @@ import pandas as pd
 from typing_extensions import Literal
 
 from etna import SETTINGS
-from etna.analysis import absolute_difference_distance
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
@@ -62,7 +61,9 @@ class MedianOutliersTransform(OutliersTransform):
         :
             dict of outliers in format {segment: [outliers_timestamps]}
         """
-        return get_anomalies_median(ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha)
+        return get_anomalies_median(
+            ts=ts, in_column=self.in_column, window_size=self.window_size, alpha=self.alpha, index_only=False
+        )
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
@@ -95,7 +96,7 @@ class DensityOutliersTransform(OutliersTransform):
         window_size: int = 15,
         distance_coef: float = 3,
         n_neighbors: int = 3,
-        distance_func: Callable[[float, float], float] = absolute_difference_distance,
+        distance_func: Union[Literal["absolute_difference"], Callable[[float, float], float]] = "absolute_difference",
     ):
         """Create instance of DensityOutliersTransform.
 
@@ -110,7 +111,8 @@ class DensityOutliersTransform(OutliersTransform):
         n_neighbors:
             min number of close neighbors of point not to be outlier
         distance_func:
-            distance function
+            distance function. If a string is specified, a corresponding vectorized implementation will be used.
+            Custom callable will be used as a scalar function, which will result in worse performance.
         """
         self.window_size = window_size
         self.distance_coef = distance_coef
@@ -138,6 +140,7 @@ class DensityOutliersTransform(OutliersTransform):
             distance_coef=self.distance_coef,
             n_neighbors=self.n_neighbors,
             distance_func=self.distance_func,
+            index_only=False,
         )
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
@@ -218,6 +221,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             model=self._model_type,
             interval_width=self.interval_width,
             in_column=self.in_column,
+            index_only=False,
             **self.model_kwargs,
         )
 

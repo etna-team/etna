@@ -57,7 +57,7 @@ def plot_anomalies(
 
     for i, segment in enumerate(segments):
         segment_df = ts[start:end, segment, :][segment]  # type: ignore
-        anomaly = anomaly_dict[segment]
+        anomaly = anomaly_dict.get(segment, [])
 
         ax[i].set_title(segment)
         ax[i].plot(segment_df.index.values, segment_df[in_column].values)
@@ -144,7 +144,7 @@ def plot_anomalies_interactive(
     def update(**kwargs):
         key = "_".join([str(val) for val in kwargs.values()])
         if key not in cache:
-            anomalies = method(ts, **kwargs)[segment]
+            anomalies = method(ts, **kwargs).get(segment, [])
             anomalies = [i for i in sorted(anomalies) if i in df.index]
             cache[key] = anomalies
         else:

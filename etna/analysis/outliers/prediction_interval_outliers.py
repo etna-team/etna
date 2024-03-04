@@ -66,8 +66,9 @@ def get_anomalies_prediction_interval(
     model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
     interval_width: float = 0.95,
     in_column: str = "target",
+    index_only: bool = True,
     **model_params,
-) -> Dict[str, List[pd.Timestamp]]:
+) -> Dict[str, Union[List[pd.Timestamp], pd.Series]]:
     """
     Get point outliers in time series using prediction intervals (estimation model-based method).
 
@@ -87,6 +88,8 @@ def get_anomalies_prediction_interval(
         * If it is set to "target", then all data will be used for prediction.
 
         * Otherwise, only column data will be used.
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------
@@ -115,5 +118,14 @@ def get_anomalies_prediction_interval(
         anomalies_mask = (actual_segment_slice["target"] > predicted_segment_slice[f"target_{upper_p:.4g}"]) | (
             actual_segment_slice["target"] < predicted_segment_slice[f"target_{lower_p:.4g}"]
         )
-        outliers_per_segment[segment] = list(predicted_segment_slice[anomalies_mask].index.values)
+
+        if anomalies_mask.sum() >= 1:
+            store_values = actual_segment_slice[anomalies_mask]
+            if index_only:
+                store_values = list(store_values.index.values)
+            else:
+                store_values = pd.Series(store_values["target"], index=store_values.index)
+
+            outliers_per_segment[segment] = store_values
+
     return outliers_per_segment
