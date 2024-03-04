@@ -145,7 +145,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         Returns
         -------
         :
-            array with embeddings of shape (n_timestamps, n_segments * output_dim)
+            array with embeddings of shape (n_segments, output_dim)
 
         Notes
         -----
