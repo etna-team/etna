@@ -158,7 +158,7 @@ class TFTNativeNet(DeepBaseNet):
             )
 
         self.static_variable_selection: Optional[VariableSelectionNetwork] = None
-        if self.num_static > 0:
+        if self._num_static > 0:
             self.static_variable_selection = VariableSelectionNetwork(
                 input_size=self.hidden_size,
                 features=static_reals + static_categoricals,
@@ -167,21 +167,21 @@ class TFTNativeNet(DeepBaseNet):
         self.encoder_variable_selection = VariableSelectionNetwork(
             input_size=self.hidden_size,
             features=self.time_varying_reals_encoder + self.time_varying_categoricals_encoder,
-            context_size=self.hidden_size if self.num_static > 0 else None,
+            context_size=self.hidden_size if self._num_static > 0 else None,
             dropout=self.dropout,
         )
 
         self.decoder_variable_selection: Optional[VariableSelectionNetwork] = None
-        if self.num_decoder_features > 0:
+        if self._num_decoder_features > 0:
             self.decoder_variable_selection = VariableSelectionNetwork(
                 input_size=self.hidden_size,
                 features=self.time_varying_reals_decoder + self.time_varying_categoricals_decoder,
-                context_size=self.hidden_size if self.num_static > 0 else None,
+                context_size=self.hidden_size if self._num_static > 0 else None,
                 dropout=self.dropout,
             )
 
         self.static_covariate_encoder: Optional[StaticCovariateEncoder] = None
-        if self.num_static > 0:
+        if self._num_static > 0:
             self.static_covariate_encoder = StaticCovariateEncoder(
                 input_size=hidden_size,
                 dropout=self.dropout,
@@ -208,7 +208,7 @@ class TFTNativeNet(DeepBaseNet):
             input_size=self.hidden_size,
             decoder_length=self.decoder_length,
             n_heads=self.n_heads,
-            context_size=self.hidden_size if self.num_static > 0 else None,
+            context_size=self.hidden_size if self._num_static > 0 else None,
             dropout=self.dropout,
         )
 
@@ -217,18 +217,7 @@ class TFTNativeNet(DeepBaseNet):
         self.output_fc = nn.Linear(self.hidden_size, 1)
 
     @property
-    def num_timestamps(self) -> int:
-        """Get number of timestamps both in encoder and decoder.
-
-        Returns
-        -------
-        :
-            number of timestamps.
-        """
-        return self.encoder_length + self.decoder_length
-
-    @property
-    def num_static(self) -> int:
+    def _num_static(self) -> int:
         """Get number of static features.
 
         Returns
@@ -239,18 +228,7 @@ class TFTNativeNet(DeepBaseNet):
         return len(self.static_reals + self.static_categoricals)
 
     @property
-    def num_encoder_features(self) -> int:
-        """Get number of features in encoder.
-
-        Returns
-        -------
-        :
-            number of features in encoder.
-        """
-        return len(self.time_varying_reals_encoder + self.time_varying_categoricals_encoder)
-
-    @property
-    def num_decoder_features(self) -> int:
+    def _num_decoder_features(self) -> int:
         """Get number of features in decoder.
 
         Returns
@@ -331,7 +309,7 @@ class TFTNativeNet(DeepBaseNet):
         # Pass encoder data through variable selection
         encoder_features = batch["time_varying_reals_encoder"].copy()
         encoder_features.update(batch["time_varying_categoricals_encoder"])
-        if self.num_static > 0:
+        if self._num_static > 0:
             encoder_output = self.encoder_variable_selection(
                 x=encoder_features, context=c_s.expand(batch_size, self.encoder_length, self.hidden_size)
             )  # (batch_size, encoder_length, hidden_size)
@@ -343,7 +321,7 @@ class TFTNativeNet(DeepBaseNet):
             # Pass decoder data through variable selection
             decoder_features = batch["time_varying_reals_decoder"].copy()
             decoder_features.update(batch["time_varying_categoricals_decoder"])
-            if self.num_static > 0:
+            if self._num_static > 0:
                 decoder_output = self.decoder_variable_selection(
                     x=decoder_features, context=c_s.expand(batch_size, self.decoder_length, self.hidden_size)
                 )  # (batch_size, decoder_length, hidden_size)
@@ -356,7 +334,7 @@ class TFTNativeNet(DeepBaseNet):
         residual = torch.cat((encoder_output, decoder_output), dim=1)
 
         # Pass encoder and decoder data through LSTM
-        if self.num_static > 0:
+        if self._num_static > 0:
             c_c = c_c.permute(1, 0, 2).expand(self.num_layers, batch_size, self.hidden_size)
             c_h = c_h.permute(1, 0, 2).expand(self.num_layers, batch_size, self.hidden_size)
             encoder_output, (c_h, c_c) = self.lstm_encoder(
@@ -375,7 +353,7 @@ class TFTNativeNet(DeepBaseNet):
         residual = features
 
         # Pass common data through temporal fusion block
-        if self.num_static > 0:
+        if self._num_static > 0:
             features = self.temporal_fusion_decoder(
                 x=features, context=c_e.expand(features.size())
             )  # (batch_size, num_timestamps, hidden_size)
