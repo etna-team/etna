@@ -54,14 +54,14 @@ def ts_different_regressors():
     df = generate_ar_df(start_time="2001-01-01", n_segments=1, periods=7)
     df_exog = generate_ar_df(start_time="2001-01-01", n_segments=1, periods=10)
     df_exog.drop(columns=["target"], inplace=True)
-    df_exog["cont"] = [1, 2, 3, 4, 5, 6, 7, np.NaN, np.NaN, np.NaN]
-    df_exog["cont_static"] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    df_exog["cont_exog"] = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
-    df_exog["categ"] = ["a", "d", "a", "d", "a", "a", "a", np.NaN, np.NaN, np.NaN]
-    df_exog["categ_exog"] = ["b", "b", "e", "b", "b", "b", "b", "b", "e", "b"]
-    df_exog["categ_exog_new"] = ["b", "b", "b", "b", "b", "b", "b", "c", "b", "c"]
+    df_exog["reals_exog"] = [1, 2, 3, 4, 5, 6, 7, np.NaN, np.NaN, np.NaN]
+    df_exog["reals_static"] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    df_exog["reals_regr"] = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+    df_exog["categ_exog"] = ["a", "d", "a", "d", "a", "a", "a", np.NaN, np.NaN, np.NaN]
+    df_exog["categ_regr"] = ["b", "b", "e", "b", "b", "b", "b", "b", "e", "b"]
+    df_exog["categ_regr_new"] = ["b", "b", "b", "b", "b", "b", "b", "c", "b", "c"]
 
-    df_exog["categ"] = df_exog["categ"].fillna("Unknown")
+    df_exog["categ_exog"] = df_exog["categ_exog"].fillna("Unknown")
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
 
@@ -69,7 +69,7 @@ def ts_different_regressors():
         df=df,
         freq="D",
         df_exog=df_exog,
-        known_future=["cont_static", "cont_exog", "categ_exog", "categ_exog_new"],
+        known_future=["reals_static", "reals_regr", "categ_regr", "categ_regr_new"],
     )
     return ts
 
@@ -77,9 +77,9 @@ def ts_different_regressors():
 @pytest.fixture()
 def ts_different_regressors_encoded(ts_different_regressors):
     seg = SegmentEncoderTransform()
-    label1 = LabelEncoderTransform(in_column="categ", out_column="categ_label", strategy="none")
-    label2 = LabelEncoderTransform(in_column="categ_exog", out_column="categ_exog_label", strategy="none")
-    label3 = LabelEncoderTransform(in_column="categ_exog_new", out_column="categ_exog_new_label", strategy="none")
+    label1 = LabelEncoderTransform(in_column="categ_exog", out_column="categ_exog_label", strategy="none")
+    label2 = LabelEncoderTransform(in_column="categ_regr", out_column="categ_regr_label", strategy="none")
+    label3 = LabelEncoderTransform(in_column="categ_regr_new", out_column="categ_regr_new_label", strategy="none")
 
     seg.fit_transform(ts_different_regressors)
     label1.fit_transform(ts_different_regressors)

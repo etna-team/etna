@@ -462,7 +462,7 @@ class TFTNativeModel(DeepBaseModel):
     """TFT model. For more details read the `paper <https://arxiv.org/abs/1912.09363>`_.
 
     Model needs label encoded inputs, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
-    Feature values that were not seen during `fit` should be set to NaN for expected behaviour
+    Feature values that were not seen during `fit` should be set to NaN for expected behaviour with `strategy="none"`
 
     Note
     ----
