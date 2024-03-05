@@ -5,7 +5,6 @@ from typing import Optional
 from typing import Union
 
 import numpy as np
-import pandas as pd
 from typing_extensions import Literal
 
 from etna.libs.ts2vec import TS2Vec
@@ -100,24 +99,21 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
         self._is_fitted: bool = False
 
-    def _prepare_data(self, df: pd.DataFrame) -> np.ndarray:
-        """Convert data to array with shapes (n_segments, n_timestamps, input_dims)."""
-        n_timestamps = len(df.index)
-        n_segments = df.columns.get_level_values("segment").nunique()
-        df = df.sort_index(axis=1)
-        x = df.values.reshape((n_timestamps, n_segments, self.input_dims)).transpose(1, 0, 2)
-        return x
+    def fit(self, x: np.ndarray) -> "TS2VecEmbeddingModel":
+        """Fit TS2Vec embedding model.
 
-    def fit(self, df: pd.DataFrame) -> "TS2VecEmbeddingModel":
-        """Fit the embedding model."""
-        x = self._prepare_data(df=df)
+        Parameters
+        ----------
+        x:
+            data with shapes (n_segments, n_timestamps, input_dims).
+        """
         self.embedding_model.fit(train_data=x, n_epochs=self.n_epochs, n_iters=self.n_iters, verbose=self.verbose)
         self._is_fitted = True
         return self
 
     def encode_segment(
         self,
-        df: pd.DataFrame,
+        x: np.ndarray,
         mask: Union[
             Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
         ] = "all_true",
@@ -128,33 +124,25 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
         Parameters
         ----------
-        df:
-            Dataframe with data.
+        x:
+            data with shapes (n_segments, n_timestamps, input_dims).
         mask:
-            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+            the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
             * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
             * 'continuous' - mask random windows of timestamps
             * 'all_true' - mask none of the timestamps
             * 'all_false' - mask all timestamps
             * 'mask_last' - mask last timestamp
         sliding_length:
-            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+            the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
-            This param specifies the contextual data length used for inference every sliding windows.
+            contextual data length used for inference every sliding windows.
 
         Returns
         -------
         :
             array with embeddings of shape (n_segments, output_dim)
-
-        Notes
-        -----
-        Model works with the index sorted in the alphabetic order. Thus, output embeddings correspond to the segments,
-        sorted in alphabetic order.
         """
-        last_timestamp = max(np.where(~df.isna().all(axis=1))[0])
-        df = df[: last_timestamp + 1]
-        x = self._prepare_data(df=df)
         embeddings = self.embedding_model.encode(  # (n_segments, output_dim)
             data=x,
             mask=mask,
@@ -169,7 +157,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
     def encode_window(
         self,
-        df: pd.DataFrame,
+        x: np.ndarray,
         mask: Union[
             Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
         ] = "all_true",
@@ -181,21 +169,21 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
         Parameters
         ----------
-        df:
-            Dataframe with data.
+        x:
+            data with shapes (n_segments, n_timestamps, input_dims).
         mask:
-            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+            the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
             * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
             * 'continuous' - mask random windows of timestamps
             * 'all_true' - mask none of the timestamps
             * 'all_false' - mask all timestamps
             * 'mask_last' - mask last timestamp
         sliding_length:
-            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+            the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
-            The contextual data length used for inference every sliding windows.
+            the contextual data length used for inference every sliding windows.
         encoding_window:
-            When this param is specified, the computed representation would the max pooling over this window. The possible options are:
+            when this param is specified, the computed representation would the max pooling over this window. The possible options are:
             * 'multiscale'
             * integer specifying the pooling kernel size.
 
@@ -203,13 +191,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         -------
         :
             array with embeddings of shape (n_timestamps, n_segments, output_dim)
-
-        Notes
-        -----
-        Model works with the index sorted in the alphabetic order. Thus, output embeddings correspond to the segments,
-        sorted in alphabetic order.
         """
-        x = self._prepare_data(df=df)
         embeddings = self.embedding_model.encode(  # (n_segments, n_timestamps, output_dim)
             data=x,
             mask=mask,

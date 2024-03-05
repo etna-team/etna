@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -32,3 +33,13 @@ def simple_ts_with_exog() -> TSDataset:
 
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
     return ts
+
+
+@pytest.fixture
+def simple_ts_with_exog_numpy(simple_ts_with_exog) -> np.ndarray:
+    n_features = 3
+    df = simple_ts_with_exog.to_pandas()
+    n_timestamps = len(df.index)
+    n_segments = df.columns.get_level_values("segment").nunique()
+    x = df.values.reshape((n_timestamps, n_segments, n_features)).transpose(1, 0, 2)
+    return x
