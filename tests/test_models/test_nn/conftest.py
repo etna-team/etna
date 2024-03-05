@@ -6,6 +6,8 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
+from etna.transforms import LabelEncoderTransform
+from etna.transforms import SegmentEncoderTransform
 
 
 @pytest.fixture()
@@ -59,6 +61,7 @@ def ts_different_regressors():
     df_exog["categ_exog"] = ["b", "b", "e", "b", "b", "b", "b", "b", "e", "b"]
     df_exog["categ_exog_new"] = ["b", "b", "b", "b", "b", "b", "b", "c", "b", "c"]
 
+    df_exog["categ"] = df_exog["categ"].fillna("Unknown")
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
 
@@ -69,3 +72,18 @@ def ts_different_regressors():
         known_future=["cont_static", "cont_exog", "categ_exog", "categ_exog_new"],
     )
     return ts
+
+
+@pytest.fixture()
+def ts_different_regressors_encoded(ts_different_regressors):
+    seg = SegmentEncoderTransform()
+    label1 = LabelEncoderTransform(in_column="categ", out_column="categ_label", strategy="none")
+    label2 = LabelEncoderTransform(in_column="categ_exog", out_column="categ_exog_label", strategy="none")
+    label3 = LabelEncoderTransform(in_column="categ_exog_new", out_column="categ_exog_new_label", strategy="none")
+
+    seg.fit_transform(ts_different_regressors)
+    label1.fit_transform(ts_different_regressors)
+    label2.fit_transform(ts_different_regressors)
+    label3.fit_transform(ts_different_regressors)
+
+    return ts_different_regressors

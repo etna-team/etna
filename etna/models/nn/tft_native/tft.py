@@ -120,7 +120,7 @@ class TFTNativeNet(DeepBaseNet):
         self.static_scalers = nn.ModuleDict({feature: nn.Linear(1, self.hidden_size) for feature in self.static_reals})
         self.static_embeddings = nn.ModuleDict(
             {
-                feature: nn.Embedding(self.num_embeddings[feature], self.hidden_size)
+                feature: nn.Embedding(self.num_embeddings[feature] + 1, self.hidden_size)
                 for feature in self.static_categoricals
             }
         )
@@ -130,7 +130,7 @@ class TFTNativeNet(DeepBaseNet):
         )
         self.time_varying_embeddings_encoder = nn.ModuleDict(
             {
-                feature: nn.Embedding(self.num_embeddings[feature], self.hidden_size)
+                feature: nn.Embedding(self.num_embeddings[feature] + 1, self.hidden_size)
                 for feature in self.time_varying_categoricals_encoder
             }
         )
@@ -140,7 +140,7 @@ class TFTNativeNet(DeepBaseNet):
         )
         self.time_varying_embeddings_decoder = nn.ModuleDict(
             {
-                feature: nn.Embedding(self.num_embeddings[feature], self.hidden_size)
+                feature: nn.Embedding(self.num_embeddings[feature] + 1, self.hidden_size)
                 for feature in self.time_varying_categoricals_decoder
             }
         )
@@ -246,17 +246,17 @@ class TFTNativeNet(DeepBaseNet):
             )  # (batch_size, 1, hidden_size)
         for feature in self.static_categoricals:
             x["static_categoricals"][feature] = self.static_embeddings[feature](
-                x["static_categoricals"][feature].squeeze(2)
+                x["static_categoricals"][feature].int().squeeze(2)
             )  # (batch_size, 1, hidden_size)
 
         # Apply transformation to time varying data
         for feature in self.time_varying_categoricals_encoder:
             x["time_varying_categoricals_encoder"][feature] = self.time_varying_embeddings_encoder[feature](
-                x["time_varying_categoricals_encoder"][feature].squeeze(2)
+                x["time_varying_categoricals_encoder"][feature].int().squeeze(2)
             )  # (batch_size, encoder_length, hidden_size)
         for feature in self.time_varying_categoricals_decoder:
             x["time_varying_categoricals_decoder"][feature] = self.time_varying_embeddings_decoder[feature](
-                x["time_varying_categoricals_decoder"][feature].squeeze(2)
+                x["time_varying_categoricals_decoder"][feature].int().squeeze(2)
             )  # (batch_size, decoder_length, hidden_size)
 
         for feature in self.time_varying_reals_encoder:
@@ -378,6 +378,8 @@ class TFTNativeNet(DeepBaseNet):
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
         segment = df["segment"].values[0]
+        for feature in self.num_embeddings:
+            df[feature] = df[feature].astype(float).fillna(self.num_embeddings[feature])
 
         def _make(
             df: pd.DataFrame,
@@ -459,7 +461,8 @@ class TFTNativeNet(DeepBaseNet):
 class TFTNativeModel(DeepBaseModel):
     """TFT model. For more details read the `paper <https://arxiv.org/abs/1912.09363>`_.
 
-    Model needs label encoded inputs, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`
+    Model needs label encoded inputs, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
+    Feature values that were not seen during `fit` should be set to NaN for expected behaviour
 
     Note
     ----

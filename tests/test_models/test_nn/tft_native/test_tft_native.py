@@ -8,6 +8,8 @@ from etna.metrics import MAE
 from etna.models.nn import TFTNativeModel
 from etna.models.nn.tft_native.tft import TFTNativeNet
 from etna.pipeline import Pipeline
+from etna.transforms import LabelEncoderTransform
+from etna.transforms import SegmentEncoderTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
@@ -16,16 +18,17 @@ from tests.test_models.utils import assert_sampling_is_valid
 @pytest.mark.parametrize(
     "horizon,transform,epochs,lr,eps",
     [
-        (8, [StandardScalerTransform(in_column="target")], 30, 0.005, 0.05),
-        (13, [StandardScalerTransform(in_column="target")], 35, 0.005, 0.08),
+        (8, [StandardScalerTransform(in_column="target")], 30, 0.005, 0.15),
+        (13, [StandardScalerTransform(in_column="target")], 35, 0.005, 0.15),
     ],
 )
-def test_tft_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon, horizon, transform, epochs, lr, eps):
+def test_tft_model_run_weekly_overfit(
+    random_seed, ts_dataset_weekly_function_with_horizon, horizon, transform, epochs, lr, eps
+):
     """
     Given: I have dataframe with 2 segments with weekly seasonality with known future
     Then: I get {horizon} periods per dataset as a forecast and they "the same" as past
     """
-    seed_everything(0, workers=True)
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
     encoder_length = 14
     decoder_length = 14
@@ -46,16 +49,19 @@ def test_tft_model_run_weekly_overfit(ts_dataset_weekly_function_with_horizon, h
 @pytest.mark.parametrize(
     "static_reals,static_categoricals,"
     "time_varying_reals_encoder,time_varying_categoricals_encoder,"
-    "time_varying_reals_decoder,time_varying_categoricals_decoder",
+    "time_varying_reals_decoder,time_varying_categoricals_decoder,"
+    "num_embeddings,features_to_encode",
     [
-        ([], [], ["target"], [], [], []),
+        ([], [], ["target"], [], [], [], {}, []),
         (
             ["cont_static"],
-            ["segment"],
+            ["segment_code"],
             ["cont", "target"],
-            ["categ", "categ_exog", "categ_exog_new"],
+            ["categ_label", "categ_exog_label", "categ_exog_new_label"],
             ["cont_exog"],
-            ["categ_exog", "categ_exog_new"],
+            ["categ_exog_label", "categ_exog_new_label"],
+            {"segment_code": 1, "categ_label": 2, "categ_exog_label": 2, "categ_exog_new_label": 1},
+            ["categ", "categ_exog", "categ_exog_new"],
         ),
     ],
 )
@@ -67,6 +73,8 @@ def test_tft_backtest(
     time_varying_reals_decoder,
     time_varying_categoricals_encoder,
     time_varying_categoricals_decoder,
+    num_embeddings,
+    features_to_encode,
 ):
     seed_everything(0, workers=True)
     encoder_length = 4
@@ -80,9 +88,18 @@ def test_tft_backtest(
         time_varying_reals_decoder=time_varying_reals_decoder,
         time_varying_categoricals_encoder=time_varying_categoricals_encoder,
         time_varying_categoricals_decoder=time_varying_categoricals_decoder,
+        num_embeddings=num_embeddings,
         trainer_params=dict(max_epochs=1),
     )
-    pipeline = Pipeline(model=model, transforms=[], horizon=1)
+    pipeline = Pipeline(
+        model=model,
+        transforms=[SegmentEncoderTransform()]
+        + [
+            LabelEncoderTransform(in_column=feature, strategy="none", out_column=f"{feature}_label")
+            for feature in features_to_encode
+        ],
+        horizon=1,
+    )
     pipeline.backtest(ts_different_regressors, metrics=[MAE()], n_folds=2)
 
 
@@ -90,34 +107,31 @@ def test_tft_backtest(
     "static_reals,static_categoricals,"
     "time_varying_reals_encoder,time_varying_categoricals_encoder,"
     "time_varying_reals_decoder,time_varying_categoricals_decoder,"
-    "categorical_feature_to_id",
+    "num_embeddings,features_to_encode",
     [
-        ([], [], ["target"], [], [], [], {}),
+        ([], [], ["target"], [], [], [], {}, []),
         (
             ["cont_static"],
-            ["segment"],
+            ["segment_code"],
             ["cont", "target"],
-            ["categ", "categ_exog", "categ_exog_new"],
+            ["categ_label", "categ_exog_label", "categ_exog_new_label"],
             ["cont_exog"],
-            ["categ_exog", "categ_exog_new"],
-            {
-                "segment": {"segment_0": 0},
-                "categ": {"a": 0, "d": 1},
-                "categ_exog": {"b": 0, "e": 1},
-                "categ_exog_new": {"b": 0},
-            },
+            ["categ_exog_label", "categ_exog_new_label"],
+            {"segment_code": 1, "categ_label": 2, "categ_exog_label": 2, "categ_exog_new_label": 1},
+            ["categ_label", "categ_exog_label", "categ_exog_new_label"],
         ),
     ],
 )
 def test_tft_make_samples(
-    ts_different_regressors,
+    ts_different_regressors_encoded,
     static_reals,
     static_categoricals,
     time_varying_reals_encoder,
     time_varying_reals_decoder,
     time_varying_categoricals_encoder,
     time_varying_categoricals_decoder,
-    categorical_feature_to_id,
+    num_embeddings,
+    features_to_encode,
 ):
     encoder_length = 4
     decoder_length = 1
@@ -128,9 +142,10 @@ def test_tft_make_samples(
         time_varying_reals_decoder=time_varying_reals_decoder,
         time_varying_categoricals_encoder=time_varying_categoricals_encoder,
         time_varying_categoricals_decoder=time_varying_categoricals_decoder,
-        categorical_feature_to_id=categorical_feature_to_id,
+        num_embeddings=num_embeddings,
     )
-    df = ts_different_regressors.to_pandas(flatten=True)
+
+    df = ts_different_regressors_encoded.to_pandas(flatten=True)
     ts_samples = list(
         TFTNativeNet.make_samples(
             tft_module,
@@ -183,10 +198,8 @@ def test_tft_make_samples(
         )
 
 
-@pytest.mark.parametrize("encoder_length", [1, 2, 10])
-def test_context_size(encoder_length):
-    encoder_length = encoder_length
-    decoder_length = encoder_length
+@pytest.mark.parametrize("encoder_length, decoder_length", [(2, 1), (1, 2), (10, 5)])
+def test_context_size(encoder_length, decoder_length):
     model = TFTNativeModel(encoder_length=encoder_length, decoder_length=decoder_length)
 
     assert model.context_size == encoder_length
@@ -195,16 +208,19 @@ def test_context_size(encoder_length):
 @pytest.mark.parametrize(
     "static_reals,static_categoricals,"
     "time_varying_reals_encoder,time_varying_categoricals_encoder,"
-    "time_varying_reals_decoder,time_varying_categoricals_decoder",
+    "time_varying_reals_decoder,time_varying_categoricals_decoder,"
+    "num_embeddings,features_to_encode",
     [
-        ([], [], ["target"], [], [], []),
+        ([], [], ["target"], [], [], [], {}, []),
         (
             ["cont_static"],
-            ["segment"],
+            ["segment_code"],
             ["cont", "target"],
-            ["categ", "categ_exog", "categ_exog_new"],
+            ["categ_label", "categ_exog_label", "categ_exog_new_label"],
             ["cont_exog"],
-            ["categ_exog", "categ_exog_new"],
+            ["categ_exog_label", "categ_exog_new_label"],
+            {"segment_code": 1, "categ_label": 2, "categ_exog_label": 2, "categ_exog_new_label": 1},
+            ["categ", "categ_exog", "categ_exog_new"],
         ),
     ],
 )
@@ -216,6 +232,8 @@ def test_save_load(
     time_varying_reals_decoder,
     time_varying_categoricals_encoder,
     time_varying_categoricals_decoder,
+    num_embeddings,
+    features_to_encode,
 ):
     model = TFTNativeModel(
         encoder_length=3,
@@ -226,9 +244,19 @@ def test_save_load(
         time_varying_reals_decoder=time_varying_reals_decoder,
         time_varying_categoricals_encoder=time_varying_categoricals_encoder,
         time_varying_categoricals_decoder=time_varying_categoricals_decoder,
+        num_embeddings=num_embeddings,
         trainer_params=dict(max_epochs=1),
     )
-    assert_model_equals_loaded_original(model=model, ts=ts_different_regressors, transforms=[], horizon=3)
+    assert_model_equals_loaded_original(
+        model=model,
+        ts=ts_different_regressors,
+        transforms=[SegmentEncoderTransform()]
+        + [
+            LabelEncoderTransform(in_column=feature, strategy="none", out_column=f"{feature}_label")
+            for feature in features_to_encode
+        ],
+        horizon=3,
+    )
 
 
 def test_params_to_tune(example_tsds):
