@@ -26,7 +26,7 @@ class BinaryOperator(str, Enum):
     ge = ">="
     gt = ">"
 
-    def _missing_(value):
+    def _missing_(self):
         raise ValueError("Incorrect operand")
 
     def perform(self, df: pd.DataFrame, left_operand: str, right_operand: str, out_column: str) -> pd.DataFrame:
