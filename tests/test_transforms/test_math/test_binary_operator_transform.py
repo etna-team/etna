@@ -13,7 +13,9 @@ ops = {
     "-": operator.sub,
     "*": operator.mul,
     "/": operator.truediv,
+    "/=": operator.floordiv,
     "%": operator.mod,
+    "**": operator.pow,
     "==": operator.eq,
     ">=": operator.ge,
     "<=": operator.le,
@@ -28,8 +30,8 @@ def simple_ts_(random_seed) -> TSDataset:
     periods = 100
     df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
     df["segment"] = "segment"
-    df["feature"] = np.random.uniform(-5, 0, size=periods)
-    df["target"] = np.random.uniform(-10, 0, size=periods)
+    df["feature"] = np.random.uniform(10, 0, size=periods)
+    df["target"] = np.random.uniform(20, 0, size=periods)
     df = TSDataset.to_dataset(df)
 
     ts = TSDataset(df, freq="D")
@@ -43,7 +45,9 @@ def simple_ts_(random_seed) -> TSDataset:
         "-",
         "*",
         "/",
+        "/=",
         "%",
+        "**",
         "==",
         ">=",
         "<=",
@@ -70,7 +74,9 @@ def test_simple_change_target(simple_ts_: TSDataset, operand):
         "-",
         "*",
         "/",
+        "/=",
         "%",
+        "**",
         "==",
         ">=",
         "<=",
@@ -113,7 +119,9 @@ def test_inverse(simple_ts_, operand):
 @pytest.mark.parametrize(
     "operand",
     [
+        "/=",
         "%",
+        "**",
         "==",
         ">=",
         "<=",

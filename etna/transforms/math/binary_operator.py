@@ -8,14 +8,14 @@ from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
 
 
-class MathOperator(str, Enum):
+class BinaryOperator(str, Enum):
     """Enum for mathematical operators from pandas."""
 
     add = "+"
     sub = "-"
     mul = "*"
     div = "/"
-    floordiv = "//"
+    floordiv = "/="
     mod = "%"
     pow = "**"
 
@@ -25,6 +25,9 @@ class MathOperator(str, Enum):
     lt = "<"
     ge = ">="
     gt = ">"
+
+    def _missing_(value):
+        raise ValueError("Incorrect operand")
 
     def perform(self, df: pd.DataFrame, left_operand: str, right_operand: str, out_column: str) -> pd.DataFrame:
         """Perform mathematical operation on passed dataframe."""
@@ -57,7 +60,9 @@ class BinaryOperationTransform(ReversibleTransform):
         super().__init__(required_features=[left_operand, right_operand])
         self.left_operand = left_operand
         self.right_operand = right_operand
-        self.operator = MathOperator(operator)
+        if self.left_operand == self.right_operand:
+            raise ValueError("It's better to use LambdaTransform, when you perform operation only with one column")
+        self.operator = BinaryOperator(operator)
         self.out_column = (
             out_column if out_column is not None else self.left_operand + self.operator + self.right_operand
         )
@@ -67,7 +72,7 @@ class BinaryOperationTransform(ReversibleTransform):
         inverse_operation = inverse_logic[operator] if operator in inverse_logic.values() else None
         self.inverse_operator = None
         if inverse_operation is not None:
-            self.inverse_operator = MathOperator(inverse_operation)
+            self.inverse_operator = BinaryOperator(inverse_operation)
 
     def fit(self, ts: TSDataset) -> "BinaryOperationTransform":
         """Fit the transform."""
@@ -105,6 +110,24 @@ class BinaryOperationTransform(ReversibleTransform):
         return df
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Perform reverse operation on passed dataframe.
+
+        Parameters
+        ----------
+        df:
+            dataframe with data to transform.
+
+        Returns
+        -------
+        : pd.Dataframe
+            transformed dataframe
+        Raises
+        ------
+        ValueError:
+            if out_column is not left_column or right_column
+        ValueError:
+            If initial operation is not '+', '-', '*' or '/'
+        """
         if not self.inplace_flag or self.inverse_operator is None:
             raise ValueError(
                 "We only support logic for inverse transform if out_column is left_column or right_column and it is '+', '-', '*', '/' operation"
