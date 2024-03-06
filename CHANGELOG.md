@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add usage example of internal datasets in `101-get_started.ipynb` and `305-classification.ipynb` tutorials ([#202](https://github.com/etna-team/etna/pull/202))
 - Add size method to `TSDataset` class ([#238](https://github.com/etna-team/etna/pull/238))
 - Add the `index_only` parameter to outlier analysis functions for return type control ([#231](https://github.com/etna-team/etna/pull/231))
+- Add `TS2VecEmbeddingModel` model ([#253](https://github.com/etna-team/etna/pull/253))
 
 ### Changed
 - Add `relevance_aggregation_mode` and `redundancy_aggregation_mode` into `MRMRFeatureSelectionTransform.params_to_tune` ([#212](https://github.com/etna-team/etna/pull/212))
