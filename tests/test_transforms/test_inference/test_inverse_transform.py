@@ -56,6 +56,7 @@ from etna.transforms import TimeSeriesImputerTransform
 from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
+from etna.transforms.math.binary_operator import BinaryOperationTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
@@ -147,6 +148,8 @@ class TestInverseTransformTrainSubsetSegments:
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
+            (BinaryOperationTransform(left_column="weekday", right_column="positive", operator="+",
+                                      out_column="positive"), "ts_with_exog"),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),

@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.transforms.math import binary_operator
 
 ops = {
@@ -25,96 +26,209 @@ ops = {
 
 
 @pytest.fixture
-def simple_ts_(random_seed) -> TSDataset:
+def ts_one_segment(random_seed) -> TSDataset:
     """Generate dataset with non-positive target."""
-    periods = 100
-    df = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
-    df["segment"] = "segment"
-    df["feature"] = np.random.uniform(10, 0, size=periods)
-    df["target"] = np.random.uniform(20, 0, size=periods)
+    df = generate_ar_df(start_time='2020-01-01', periods=100, freq="D", n_segments=1)
+    df["feature"] = np.random.uniform(10, 0, size=100)
+    df["target"] = np.random.uniform(10, 0, size=100)
     df = TSDataset.to_dataset(df)
+    ts = TSDataset(df, freq="D")
+    return ts
 
+@pytest.fixture
+def ts_two_segments(random_seed) -> TSDataset:
+    """Generate dataset with non-positive target."""
+    df = generate_ar_df(start_time='2020-01-01', periods=100, freq="D", n_segments=2)
+    df["feature"] = np.random.uniform(10, 0, size=200)
+    df["target"] = np.random.uniform(10, 0, size=200)
+    df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
 
 
 @pytest.mark.parametrize(
-    "operand",
+    "operand, left_column, right_column, out_column",
     [
-        "+",
-        "-",
-        "*",
-        "/",
-        "/=",
-        "%",
-        "**",
-        "==",
-        ">=",
-        "<=",
-        ">",
-        "<",
+        ("+", "feature", "target", "target"),
+        ("-", "feature", "target", "target"),
+        ("*", "feature", "target", "target"),
+        ("/", "feature", "target", "target"),
+        ("/=", "feature", "target", "target"),
+        ("%", "feature", "target", "target"),
+        ("**", "feature", "target", "target"),
+        ("==", "feature", "target", "target"),
+        (">=", "feature", "target", "target"),
+        ("<=", "feature", "target", "target"),
+        (">", "feature", "target", "target"),
+        ("<", "feature", "target", "target"),
+        ("+", "target", "feature", "target"),
+        ("-", "target", "feature", "target"),
+        ("*", "target", "feature", "target"),
+        ("/", "target", "feature", "target"),
+        ("/=", "target", "feature", "target"),
+        ("%", "target", "feature", "target"),
+        ("**", "target", "feature", "target"),
+        ("==", "target", "feature", "target"),
+        (">=", "target", "feature", "target"),
+        ("<=", "target", "feature", "target"),
+        (">", "target", "feature", "target"),
+        ("<", "target", "feature", "target"),
+        ("+", "feature", "target", "new_col"),
+        ("-", "feature", "target", "new_col"),
+        ("*", "feature", "target", "new_col"),
+        ("/", "feature", "target", "new_col"),
+        ("/=", "feature", "target", "new_col"),
+        ("%", "feature", "target", "new_col"),
+        ("**", "feature", "target", "new_col"),
+        ("==", "feature", "target", "new_col"),
+        (">=", "feature", "target", "new_col"),
+        ("<=", "feature", "target", "new_col"),
+        (">", "feature", "target", "new_col"),
+        ("<", "feature", "target", "new_col"),
+        ("+", "target", "feature", "new_col"),
+        ("-", "target", "feature", "new_col"),
+        ("*", "target", "feature", "new_col"),
+        ("/", "target", "feature", "new_col"),
+        ("/=", "target", "feature", "new_col"),
+        ("%", "target", "feature", "new_col"),
+        ("**", "target", "feature", "new_col"),
+        ("==", "target", "feature", "new_col"),
+        (">=", "target", "feature", "new_col"),
+        ("<=", "target", "feature", "new_col"),
+        (">", "target", "feature", "new_col"),
+        ("<", "target", "feature", "new_col"),
     ],
 )
-def test_simple_change_target(simple_ts_: TSDataset, operand):
-    target_vals = simple_ts_.df["segment"]["target"].values
-    feature_vals = simple_ts_.df["segment"]["feature"].values
-    checker_vals = ops[operand](feature_vals, target_vals)
+def test_simple_one_segment(ts_one_segment: TSDataset, operand, left_column, right_column, out_column):
+    left_vals = ts_one_segment.df["segment_0"][left_column].values
+    right_vals = ts_one_segment.df["segment_0"][right_column].values
+    checker_vals = ops[operand](left_vals, right_vals)
     transformer = binary_operator.BinaryOperationTransform(
-        left_operand="feature", right_operand="target", operator=operand, out_column="target"
+        left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
-    new_ts = transformer.fit_transform(ts=simple_ts_)
-    new_ts_vals = new_ts.df["segment"]["target"].to_numpy()
+    new_ts = transformer.fit_transform(ts=ts_one_segment)
+    new_ts_vals = new_ts.df["segment_0"][out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals, checker_vals)
+
+@pytest.mark.parametrize(
+    "operand, left_column, right_column, out_column",
+    [
+        ("+", "feature", "target", "target"),
+        ("-", "feature", "target", "target"),
+        ("*", "feature", "target", "target"),
+        ("/", "feature", "target", "target"),
+        ("/=", "feature", "target", "target"),
+        ("%", "feature", "target", "target"),
+        ("**", "feature", "target", "target"),
+        ("==", "feature", "target", "target"),
+        (">=", "feature", "target", "target"),
+        ("<=", "feature", "target", "target"),
+        (">", "feature", "target", "target"),
+        ("<", "feature", "target", "target"),
+        ("+", "target", "feature", "target"),
+        ("-", "target", "feature", "target"),
+        ("*", "target", "feature", "target"),
+        ("/", "target", "feature", "target"),
+        ("/=", "target", "feature", "target"),
+        ("%", "target", "feature", "target"),
+        ("**", "target", "feature", "target"),
+        ("==", "target", "feature", "target"),
+        (">=", "target", "feature", "target"),
+        ("<=", "target", "feature", "target"),
+        (">", "target", "feature", "target"),
+        ("<", "target", "feature", "target"),
+        ("+", "feature", "target", "new_col"),
+        ("-", "feature", "target", "new_col"),
+        ("*", "feature", "target", "new_col"),
+        ("/", "feature", "target", "new_col"),
+        ("/=", "feature", "target", "new_col"),
+        ("%", "feature", "target", "new_col"),
+        ("**", "feature", "target", "new_col"),
+        ("==", "feature", "target", "new_col"),
+        (">=", "feature", "target", "new_col"),
+        ("<=", "feature", "target", "new_col"),
+        (">", "feature", "target", "new_col"),
+        ("<", "feature", "target", "new_col"),
+        ("+", "target", "feature", "new_col"),
+        ("-", "target", "feature", "new_col"),
+        ("*", "target", "feature", "new_col"),
+        ("/", "target", "feature", "new_col"),
+        ("/=", "target", "feature", "new_col"),
+        ("%", "target", "feature", "new_col"),
+        ("**", "target", "feature", "new_col"),
+        ("==", "target", "feature", "new_col"),
+        (">=", "target", "feature", "new_col"),
+        ("<=", "target", "feature", "new_col"),
+        (">", "target", "feature", "new_col"),
+        ("<", "target", "feature", "new_col"),
+    ],
+)
+def test_simple_two_segments(ts_two_segments: TSDataset, operand, left_column, right_column, out_column):
+    left_vals1 = ts_two_segments.df["segment_0"][left_column].values
+    right_vals1 = ts_two_segments.df["segment_0"][right_column].values
+    left_vals2 = ts_two_segments.df["segment_1"][left_column].values
+    right_vals2 = ts_two_segments.df["segment_1"][right_column].values
+    checker_vals1 = ops[operand](left_vals1, right_vals1)
+    checker_vals2 = ops[operand](left_vals2, right_vals2)
+    transformer = binary_operator.BinaryOperationTransform(
+        left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
+    )
+    new_ts = transformer.fit_transform(ts=ts_two_segments)
+    new_ts_vals1 = new_ts.df["segment_0"][out_column].to_numpy()
+    new_ts_vals2 = new_ts.df["segment_1"][out_column].to_numpy()
+    numpy.testing.assert_array_almost_equal(new_ts_vals1, checker_vals1)
+    numpy.testing.assert_array_almost_equal(new_ts_vals2, checker_vals2)
 
 
 @pytest.mark.parametrize(
-    "operand",
+    "operand, left_column, right_column, out_column",
     [
-        "+",
-        "-",
-        "*",
-        "/",
-        "/=",
-        "%",
-        "**",
-        "==",
-        ">=",
-        "<=",
-        ">",
-        "<",
+        ("+", "feature", "target", "target"),
+        ("-", "feature", "target", "target"),
+        ("*", "feature", "target", "target"),
+        ("/", "feature", "target", "target"),
+        ("+", "target", "feature", "target"),
+        ("-", "target", "feature", "target"),
+        ("*", "target", "feature", "target"),
+        ("/", "target", "feature", "target"),
     ],
 )
-def test_simple_add_column(simple_ts_, operand):
-    target_vals = simple_ts_.df["segment"]["target"].values
-    feature_vals = simple_ts_.df["segment"]["feature"].values
-    checker_vals = ops[operand](feature_vals, target_vals)
+def test_inverse_one_segment(ts_one_segment, operand, left_column, right_column, out_column):
+    target_vals = ts_one_segment.df["segment_0"][out_column].values
     transformer = binary_operator.BinaryOperationTransform(
-        left_operand="feature", right_operand="target", operator=operand, out_column="new_col"
+        left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
-    new_ts = transformer.fit_transform(ts=simple_ts_)
-    new_ts_vals = new_ts.df["segment"]["new_col"].to_numpy()
-    numpy.testing.assert_array_almost_equal(new_ts_vals, checker_vals)
-
-
-@pytest.mark.parametrize(
-    "operand",
-    [
-        "+",
-        "-",
-        "*",
-        "/",
-    ],
-)
-def test_inverse(simple_ts_, operand):
-    target_vals = simple_ts_.df["segment"]["target"].values
-    transformer = binary_operator.BinaryOperationTransform(
-        left_operand="feature", right_operand="target", operator=operand, out_column="target"
-    )
-    new_ts = transformer.fit_transform(ts=simple_ts_)
+    new_ts = transformer.fit_transform(ts=ts_one_segment)
     new_ts = transformer.inverse_transform(ts=new_ts)
-    new_ts_vals = new_ts.df["segment"]["target"].to_numpy()
+    new_ts_vals = new_ts.df["segment_0"][out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals, target_vals)
 
+@pytest.mark.parametrize(
+    "operand, left_column, right_column, out_column",
+    [
+        ("+", "feature", "target", "target"),
+        ("-", "feature", "target", "target"),
+        ("*", "feature", "target", "target"),
+        ("/", "feature", "target", "target"),
+        ("+", "target", "feature", "target"),
+        ("-", "target", "feature", "target"),
+        ("*", "target", "feature", "target"),
+        ("/", "target", "feature", "target"),
+    ],
+)
+def test_inverse_two_segments(ts_two_segments, operand, left_column, right_column, out_column):
+    target_vals1 = ts_two_segments.df["segment_0"][out_column].values
+    target_vals2 = ts_two_segments.df["segment_1"][out_column].values
+    transformer = binary_operator.BinaryOperationTransform(
+        left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
+    )
+    new_ts = transformer.fit_transform(ts=ts_two_segments)
+    new_ts = transformer.inverse_transform(ts=new_ts)
+    new_ts_vals1 = new_ts.df["segment_0"][out_column].to_numpy()
+    new_ts_vals2 = new_ts.df["segment_1"][out_column].to_numpy()
+    numpy.testing.assert_array_almost_equal(new_ts_vals1, target_vals1)
+    numpy.testing.assert_array_almost_equal(new_ts_vals2, target_vals2)
+
 
 @pytest.mark.parametrize(
     "operand",
@@ -129,12 +243,11 @@ def test_inverse(simple_ts_, operand):
         "<",
     ],
 )
-def test_inverse_failed(simple_ts_, operand):
-    target_vals = simple_ts_.df["segment"]["target"].values
+def test_inverse_failed(ts_one_segment, operand):
     transformer = binary_operator.BinaryOperationTransform(
-        left_operand="feature", right_operand="target", operator=operand, out_column="target"
+        left_column="feature", right_column="target", operator=operand, out_column="target"
     )
     with pytest.raises(
         ValueError,
     ):
-        new_ts = transformer.inverse_transform(ts=simple_ts_)
+        _ = transformer.inverse_transform(ts=ts_one_segment)
