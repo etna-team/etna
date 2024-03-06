@@ -570,7 +570,7 @@ def apply_alignment(
     return result
 
 
-def make_timestamp_df(
+def make_timestamp_df_from_alignment(
     alignment: Union[Dict[str, pd.Timestamp], Dict[str, int]],
     start: Optional[int] = None,
     end: Optional[int] = None,

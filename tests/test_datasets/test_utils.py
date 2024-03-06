@@ -15,7 +15,7 @@ from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import infer_alignment
 from etna.datasets.utils import inverse_transform_target_components
-from etna.datasets.utils import make_timestamp_df
+from etna.datasets.utils import make_timestamp_df_from_alignment
 from etna.datasets.utils import match_target_components
 from etna.datasets.utils import set_columns_wide
 from etna.datasets.utils import timestamp_range
@@ -678,9 +678,14 @@ def test_apply_alignment_format(df_name, alignment, original_timestamp_name, exp
             "df_aligned_datetime",
             {"segment_0": pd.Timestamp("2020-01-05"), "segment_1": pd.Timestamp("2020-01-10")},
         ),
+        (
+            "df_misaligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-07")},
+        ),
         ("df_aligned_int", {"segment_0": 19, "segment_1": 19}),
         ("df_aligned_int", {"segment_0": 19, "segment_1": 14}),
         ("df_aligned_int", {"segment_0": 14, "segment_1": 19}),
+        ("df_misaligned_int", {"segment_0": 19, "segment_1": 16}),
     ],
 )
 def test_apply_alignment_doesnt_change_original(df_name, alignment, request):
@@ -710,9 +715,15 @@ def test_apply_alignment_doesnt_change_original(df_name, alignment, request):
             {"segment_0": pd.Timestamp("2020-01-05"), "segment_1": pd.Timestamp("2020-01-10")},
             list(range(-4, 6)) + list(range(-9, 1)),
         ),
+        (
+            "df_misaligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-07")},
+            list(range(-9, 1)) + list(range(-6, 1)),
+        ),
         ("df_aligned_int", {"segment_0": 19, "segment_1": 19}, list(range(-9, 1)) + list(range(-9, 1))),
         ("df_aligned_int", {"segment_0": 19, "segment_1": 14}, list(range(-9, 1)) + list(range(-4, 6))),
         ("df_aligned_int", {"segment_0": 14, "segment_1": 19}, list(range(-4, 6)) + list(range(-9, 1))),
+        ("df_misaligned_int", {"segment_0": 19, "segment_1": 16}, list(range(-9, 1)) + list(range(-6, 1))),
     ],
 )
 def test_apply_alignment_new_timestamps(df_name, alignment, expected_timestamps, request):
@@ -805,8 +816,10 @@ def test_apply_alignment_new_timestamps(df_name, alignment, expected_timestamps,
         ),
     ],
 )
-def test_make_timestamp_df_format(alignment, start, end, periods, freq, timestamp_name, expected_timestamp):
-    df = make_timestamp_df(
+def test_make_timestamp_df_from_alignment_format(
+    alignment, start, end, periods, freq, timestamp_name, expected_timestamp
+):
+    df = make_timestamp_df_from_alignment(
         alignment=alignment, start=start, end=end, periods=periods, freq=freq, timestamp_name=timestamp_name
     )
 
