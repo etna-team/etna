@@ -26,7 +26,7 @@ if SETTINGS.torch_required:
     import torch
     from pytorch_lightning import LightningModule
     from pytorch_lightning import Trainer
-    from torch.utils.data import DataLoader
+    from torch.utils.data import DataLoader, RandomSampler
     from torch.utils.data import Dataset
     from torch.utils.data import random_split
 else:
@@ -593,15 +593,17 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
                 ],
                 generator=self.split_params.get("generator"),
             )
+            sampler = RandomSampler(train_dataset, num_samples=500000)
             train_dataloader = DataLoader(
-                train_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
+                train_dataset, batch_size=self.train_batch_size, shuffle=True, sampler=sampler, **self.train_dataloader_params
             )
             val_dataloader: Optional[DataLoader] = DataLoader(
                 val_dataset, batch_size=self.test_batch_size, shuffle=False, **self.val_dataloader_params
             )
         else:
+            sampler = RandomSampler(torch_dataset, num_samples=500000)
             train_dataloader = DataLoader(
-                torch_dataset, batch_size=self.train_batch_size, shuffle=True, **self.train_dataloader_params
+                torch_dataset, batch_size=self.train_batch_size, shuffle=True, sampler=sampler, **self.train_dataloader_params
             )
             val_dataloader = None
 
