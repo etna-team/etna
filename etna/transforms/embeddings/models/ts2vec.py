@@ -26,6 +26,12 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         output_dims: int = 320,
         hidden_dims: int = 64,
         depth: int = 10,
+        encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
+        sliding_length: Optional[int] = None,
+        sliding_padding: int = 0,
+        mask: Union[
+            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
+        ] = "all_true",
         device: Union[Literal["cpu"], Literal["gpu"]] = "cpu",
         lr: float = 0.001,
         batch_size: int = 16,
@@ -47,6 +53,22 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             The hidden dimension of the encoder.
         depth:
             The number of hidden residual blocks in the encoder.
+        encoding_window:
+            When this param is specified, the computed representation would the max pooling over this window. The possible options are:
+            * 'multiscale'
+            * integer specifying the pooling kernel size.
+            This param will be ignored when encoding full series
+        sliding_length:
+            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+        sliding_padding:
+            This param specifies the contextual data length used for inference every sliding windows.
+        mask:
+            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            * 'continuous' - mask random windows of timestamps
+            * 'all_true' - mask none of the timestamps
+            * 'all_false' - mask all timestamps
+            * 'mask_last' - mask last timestamp
         device:
             The device used for training and inference.
         lr:
@@ -87,6 +109,12 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         self.n_iters = n_iters
         self.verbose = verbose
 
+        # Encode params
+        self.mask = mask
+        self.encoding_window = encoding_window
+        self.sliding_length = sliding_length
+        self.sliding_padding = sliding_padding
+
         self.embedding_model = TS2Vec(
             input_dims=self.input_dims,
             output_dims=self.output_dims,
@@ -101,14 +129,22 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
         self._is_fitted: bool = False
 
+    def _prepare_data(self, x: np.ndarray) -> np.ndarray:
+        """Reshape data into (n_segments, n_timestamps, input_dims)."""
+        n_timestamps = x.shape[0]
+        n_segments = x.shape[1] // self.input_dims
+        x = x.reshape((n_timestamps, n_segments, self.input_dims)).transpose(1, 0, 2)
+        return x
+
     def fit(self, x: np.ndarray) -> "TS2VecEmbeddingModel":
         """Fit TS2Vec embedding model.
 
         Parameters
         ----------
         x:
-            data with shapes (n_segments, n_timestamps, input_dims).
+            data with shapes (n_timestamps, n_segments * input_dims).
         """
+        x = self._prepare_data(x)  # (n_segments, n_timestamps, input_dims)
         self.embedding_model.fit(train_data=x, n_epochs=self.n_epochs, n_iters=self.n_iters, verbose=self.verbose)
         self._is_fitted = True
         return self
@@ -116,42 +152,27 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def encode_segment(
         self,
         x: np.ndarray,
-        mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
-        ] = "all_true",
-        sliding_length: Optional[int] = None,
-        sliding_padding: int = 0,
     ) -> np.ndarray:
         """Create embeddings of the whole series.
 
         Parameters
         ----------
         x:
-            data with shapes (n_segments, n_timestamps, input_dims).
-        mask:
-            the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-            * 'continuous' - mask random windows of timestamps
-            * 'all_true' - mask none of the timestamps
-            * 'all_false' - mask all timestamps
-            * 'mask_last' - mask last timestamp
-        sliding_length:
-            the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
-        sliding_padding:
-            contextual data length used for inference every sliding windows.
+            data with shapes (n_timestamps, n_segments * input_dims).
 
         Returns
         -------
         :
             array with embeddings of shape (n_segments, output_dim)
         """
+        x = self._prepare_data(x)  # (n_segments, n_timestamps, input_dims)
         embeddings = self.embedding_model.encode(  # (n_segments, output_dim)
             data=x,
-            mask=mask,
+            mask=self.mask,
             encoding_window="full_series",
             causal=False,
-            sliding_length=sliding_length,
-            sliding_padding=sliding_padding,
+            sliding_length=self.sliding_length,
+            sliding_padding=self.sliding_padding,
             batch_size=self.batch_size,
         )
 
@@ -160,51 +181,31 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def encode_window(
         self,
         x: np.ndarray,
-        mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
-        ] = "all_true",
-        encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
-        sliding_length: Optional[int] = None,
-        sliding_padding: int = 0,
     ) -> np.ndarray:
         """Create embeddings of each series timestamp.
 
         Parameters
         ----------
         x:
-            data with shapes (n_segments, n_timestamps, input_dims).
-        mask:
-            the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-            * 'continuous' - mask random windows of timestamps
-            * 'all_true' - mask none of the timestamps
-            * 'all_false' - mask all timestamps
-            * 'mask_last' - mask last timestamp
-        sliding_length:
-            the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
-        sliding_padding:
-            the contextual data length used for inference every sliding windows.
-        encoding_window:
-            when this param is specified, the computed representation would the max pooling over this window. The possible options are:
-            * 'multiscale'
-            * integer specifying the pooling kernel size.
+            data with shapes (n_timestamps, n_segments * input_dims).
 
         Returns
         -------
         :
-            array with embeddings of shape (n_timestamps, n_segments, output_dim)
+            array with embeddings of shape (n_timestamps, n_segments * output_dim)
         """
+        n_timestamps = x.shape[0]
+        x = self._prepare_data(x)  # (n_segments, n_timestamps, input_dims)
         embeddings = self.embedding_model.encode(  # (n_segments, n_timestamps, output_dim)
             data=x,
-            mask=mask,
-            encoding_window=encoding_window,
+            mask=self.mask,
+            encoding_window=self.encoding_window,
             causal=True,
-            sliding_length=sliding_length,
-            sliding_padding=sliding_padding,
+            sliding_length=self.sliding_length,
+            sliding_padding=self.sliding_padding,
             batch_size=self.batch_size,
         )
-
-        embeddings = embeddings.transpose(1, 0, 2)  # (n_timestamps, n_segments, output_dim)
+        embeddings = embeddings.transpose(1, 0, 2).reshape(n_timestamps, -1)  # (n_timestamps, n_segments * output_dim)
         return embeddings
 
     def save(self, path: pathlib.Path):
