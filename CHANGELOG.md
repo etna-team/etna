@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Add `infer_alignment`, `apply_alignment`, `make_timestamp_df` into `etna.dataset.utils` ([#256](https://github.com/etna-team/etna/pull/256))
 - 
 - 
 - 

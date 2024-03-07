@@ -1,10 +1,12 @@
 import re
 from enum import Enum
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -484,3 +486,147 @@ def timestamp_range(
         return pd.Index(np.arange(start, start + periods))
     else:
         return pd.date_range(start=start, end=end, periods=periods, freq=freq)
+
+
+def infer_alignment(df: pd.DataFrame) -> Union[Dict[str, pd.Timestamp], Dict[str, int]]:
+    """Inference alignment of a given dataframe.
+
+    Alignment tells us which timestamps for each segment should be considered to have the same integer timestamp after
+    alignment transformation.
+
+    For long dataframe the alignment is determined by the last timestamp for each segment.
+    Last timestamp is taken without checking is 'target' value missing or not.
+
+    Parameters
+    ----------
+    df:
+        Dataframe in a long format.
+
+    Returns
+    -------
+    :
+        Dictionary with mapping segment -> timestamp.
+    """
+    return df.groupby(by=["segment"]).agg({"timestamp": "max"})["timestamp"].to_dict()
+
+
+def apply_alignment(
+    df: pd.DataFrame,
+    alignment: Union[Dict[str, pd.Timestamp], Dict[str, int]],
+    original_timestamp_name: Optional[str] = None,
+):
+    """Apply given alignment to a dataframe.
+
+    Applying alignment creates a new dataframe in which we have a new 'timestamp' column
+    with sequential integer timestamps.
+
+    For each segment we sort timestamps and assign them sequential integer values (with step 1)
+    in a way that timestamp in ``alignment`` gets value 0.
+
+    Parameters
+    ----------
+    df:
+        Dataframe in a long format.
+    alignment:
+        Alignment to apply.
+    original_timestamp_name:
+        Name for a column to save the original timestamps. If ``None`` original timestamps won't be saved.
+
+    Returns
+    -------
+    :
+        Aligned dataframe in a long format.
+
+    Raises
+    ------
+    ValueError:
+        There is a segment in ``df`` which isn't present in ``alignment``.
+    ValueError:
+        There is a segment which doesn't have a timestamp that is present in ``alignment``.
+    """
+    df_list = []
+    for segment in df["segment"].unique():
+        if segment not in alignment:
+            raise ValueError(f"The segment '{segment}' isn't present in alignment!")
+
+        cur_df = df[df["segment"] == segment].sort_values(by="timestamp")
+        reference_timestamp = alignment[segment]
+
+        if reference_timestamp not in cur_df["timestamp"].values:
+            raise ValueError(
+                f"The segment '{segment}' doesn't contain timestamp '{reference_timestamp}' from alignment!"
+            )
+
+        reference_timestamp_index = pd.Index(cur_df["timestamp"]).get_loc(reference_timestamp)
+        new_timestamp = np.arange(len(cur_df)) - reference_timestamp_index
+
+        if original_timestamp_name is not None:
+            cur_df.rename(columns={"timestamp": original_timestamp_name}, inplace=True)
+
+        cur_df["timestamp"] = new_timestamp
+        df_list.append(cur_df)
+
+    result = pd.concat(df_list)
+    return result
+
+
+def make_timestamp_df_from_alignment(
+    alignment: Union[Dict[str, pd.Timestamp], Dict[str, int]],
+    start: Optional[int] = None,
+    end: Optional[int] = None,
+    periods: Optional[int] = None,
+    freq: Optional[str] = None,
+    timestamp_name: str = "external_timestamp",
+):
+    """Create a dataframe with timestamp according to a given alignment.
+
+    This utility could be used after alignment of ``df`` to create ``df_exog`` with external timestamps
+    extended into the future.
+
+    For each segment we take ``start``, ``end``, ``periods`` and create sequential integer timestamps.
+    After that we map this sequential integer timestamps into external timestamps according to ``alignment`` in a way
+    that 0 translates into ``alignment[segment]`` timestamp and any other values are calculated based on ``freq``.
+
+    Parameters
+    ----------
+    alignment:
+        Alignment to use.
+    start:
+        Start timestamp to generate sequential integer timestamps.
+    end:
+        End timestamp to generate sequential integer timestamps.
+    periods:
+        Number of periods to generate sequential integer timestamps.
+    freq:
+        Frequency of timestamps to generate, possible values:
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
+
+    timestamp_name:
+        Name of created timestamp column.
+
+    Returns
+    -------
+    :
+        Dataframe with a created timestamp in a long format.
+    """
+    df_list = []
+    timestamp = timestamp_range(start=start, end=end, periods=periods, freq=None)
+    start = timestamp[0]
+    start = cast(int, start)
+    for segment, reference_timestamp in alignment.items():
+        if start < 0:
+            external_start_timestamp = timestamp_range(end=reference_timestamp, periods=-start + 1, freq=freq)[0]
+        else:
+            external_start_timestamp = timestamp_range(start=reference_timestamp, periods=start + 1, freq=freq)[-1]
+
+        external_timestamp = timestamp_range(start=external_start_timestamp, periods=len(timestamp), freq=freq)
+        cur_df = pd.DataFrame(
+            {"segment": [segment] * len(timestamp), "timestamp": timestamp, timestamp_name: external_timestamp}
+        )
+        df_list.append(cur_df)
+
+    result = pd.concat(df_list)
+    return result
