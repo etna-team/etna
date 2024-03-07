@@ -9,11 +9,14 @@ from etna.datasets import duplicate_data
 from etna.datasets import generate_ar_df
 from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import determine_freq
 from etna.datasets.utils import determine_num_steps
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import get_target_with_quantiles
+from etna.datasets.utils import infer_alignment
 from etna.datasets.utils import inverse_transform_target_components
+from etna.datasets.utils import make_timestamp_df_from_alignment
 from etna.datasets.utils import match_target_components
 from etna.datasets.utils import set_columns_wide
 from etna.datasets.utils import timestamp_range
@@ -515,6 +518,314 @@ def test_timestamp_range_fail_type(start, end, periods, freq):
 def test_timestamp_range_fail_num_parameters(start, end, periods, freq):
     with pytest.raises(ValueError, match="Of the three parameters: .* must be specified"):
         _ = timestamp_range(start=start, end=end, periods=periods, freq=freq)
+
+
+@pytest.fixture
+def df_aligned_datetime() -> pd.DataFrame:
+    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
+    return df
+
+
+@pytest.fixture
+def df_aligned_int() -> pd.DataFrame:
+    df = generate_ar_df(start_time=10, periods=10, n_segments=2, freq=None)
+    return df
+
+
+@pytest.fixture
+def df_misaligned_datetime() -> pd.DataFrame:
+    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
+    df = df.iloc[:-3]
+    return df
+
+
+@pytest.fixture
+def df_misaligned_int() -> pd.DataFrame:
+    df = generate_ar_df(start_time=10, periods=10, n_segments=2, freq=None)
+    df = df.iloc[:-3]
+    return df
+
+
+@pytest.fixture
+def df_misaligned_datetime_with_missing_values() -> pd.DataFrame:
+    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
+    df.loc[df.index[-3:], "target"] = np.NaN
+    return df
+
+
+@pytest.fixture
+def df_misaligned_int_with_missing_values() -> pd.DataFrame:
+    df = generate_ar_df(start_time=10, periods=10, n_segments=2, freq=None)
+    df.loc[df.index[-3:], "target"] = np.NaN
+    return df
+
+
+@pytest.fixture
+def df_aligned_datetime_with_additional_columns() -> pd.DataFrame:
+    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
+    df["feature_1"] = df["timestamp"].dt.weekday
+    return df
+
+
+@pytest.mark.parametrize(
+    "df_name, expected_alignment",
+    [
+        ("df_aligned_datetime", {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")}),
+        ("df_aligned_int", {"segment_0": 19, "segment_1": 19}),
+        ("df_misaligned_datetime", {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-07")}),
+        ("df_misaligned_int", {"segment_0": 19, "segment_1": 16}),
+        (
+            "df_misaligned_datetime_with_missing_values",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
+        ),
+        ("df_misaligned_int_with_missing_values", {"segment_0": 19, "segment_1": 19}),
+    ],
+)
+def test_infer_alignment(df_name, expected_alignment, request):
+    df = request.getfixturevalue(df_name)
+    alignment = infer_alignment(df)
+    assert alignment == expected_alignment
+
+
+@pytest.mark.parametrize(
+    "df_name, alignment",
+    [
+        ("df_aligned_datetime", {}),
+        ("df_aligned_datetime", {"segment_0": pd.Timestamp("2020-01-10")}),
+        ("df_aligned_datetime", {"segment_1": pd.Timestamp("2020-01-10")}),
+    ],
+)
+def test_apply_alignment_fail_no_segment(df_name, alignment, request):
+    df = request.getfixturevalue(df_name)
+    with pytest.raises(ValueError, match="The segment .* isn't present in alignment"):
+        _ = apply_alignment(df=df, alignment=alignment)
+
+
+@pytest.mark.parametrize(
+    "df_name, alignment",
+    [
+        ("df_aligned_datetime", {"segment_0": pd.Timestamp("2020-01-20"), "segment_1": pd.Timestamp("2020-01-10")}),
+        ("df_aligned_datetime", {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-20")}),
+    ],
+)
+def test_apply_alignment_fail_no_timestamp(df_name, alignment, request):
+    df = request.getfixturevalue(df_name)
+    with pytest.raises(ValueError, match="The segment .* doesn't contain timestamp .* from alignment"):
+        _ = apply_alignment(df=df, alignment=alignment)
+
+
+@pytest.mark.parametrize(
+    "df_name, alignment, original_timestamp_name, expected_columns",
+    [
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
+            None,
+            {"timestamp", "segment", "target"},
+        ),
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-05")},
+            None,
+            {"timestamp", "segment", "target"},
+        ),
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
+            "original_timestamp",
+            {"timestamp", "segment", "target", "original_timestamp"},
+        ),
+        (
+            "df_aligned_datetime_with_additional_columns",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
+            None,
+            {"timestamp", "segment", "target", "feature_1"},
+        ),
+        (
+            "df_aligned_datetime_with_additional_columns",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
+            "original_timestamp",
+            {"timestamp", "segment", "target", "feature_1", "original_timestamp"},
+        ),
+        ("df_aligned_int", {"segment_0": 19, "segment_1": 19}, None, {"timestamp", "segment", "target"}),
+        (
+            "df_aligned_int",
+            {"segment_0": 19, "segment_1": 19},
+            "original_timestamp",
+            {"timestamp", "segment", "target", "original_timestamp"},
+        ),
+    ],
+)
+def test_apply_alignment_format(df_name, alignment, original_timestamp_name, expected_columns, request):
+    df = request.getfixturevalue(df_name)
+    result_df = apply_alignment(df=df, alignment=alignment, original_timestamp_name=original_timestamp_name)
+
+    assert len(result_df) == len(df)
+    assert set(result_df.columns) == expected_columns
+
+
+@pytest.mark.parametrize(
+    "df_name, alignment",
+    [
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
+        ),
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-05")},
+        ),
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-05"), "segment_1": pd.Timestamp("2020-01-10")},
+        ),
+        (
+            "df_misaligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-07")},
+        ),
+        ("df_aligned_int", {"segment_0": 19, "segment_1": 19}),
+        ("df_aligned_int", {"segment_0": 19, "segment_1": 14}),
+        ("df_aligned_int", {"segment_0": 14, "segment_1": 19}),
+        ("df_misaligned_int", {"segment_0": 19, "segment_1": 16}),
+    ],
+)
+def test_apply_alignment_doesnt_change_original(df_name, alignment, request):
+    df = request.getfixturevalue(df_name)
+    result_df = apply_alignment(df=df[::-1], alignment=alignment, original_timestamp_name="original_timestamp")
+
+    check_df = result_df.drop(columns=["timestamp"])
+    check_df = check_df.rename(columns={"original_timestamp": "timestamp"})
+    pd.testing.assert_frame_equal(check_df.loc[df.index], df)
+
+
+@pytest.mark.parametrize(
+    "df_name, alignment, expected_timestamps",
+    [
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
+            list(range(-9, 1)) + list(range(-9, 1)),
+        ),
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-05")},
+            list(range(-9, 1)) + list(range(-4, 6)),
+        ),
+        (
+            "df_aligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-05"), "segment_1": pd.Timestamp("2020-01-10")},
+            list(range(-4, 6)) + list(range(-9, 1)),
+        ),
+        (
+            "df_misaligned_datetime",
+            {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-07")},
+            list(range(-9, 1)) + list(range(-6, 1)),
+        ),
+        ("df_aligned_int", {"segment_0": 19, "segment_1": 19}, list(range(-9, 1)) + list(range(-9, 1))),
+        ("df_aligned_int", {"segment_0": 19, "segment_1": 14}, list(range(-9, 1)) + list(range(-4, 6))),
+        ("df_aligned_int", {"segment_0": 14, "segment_1": 19}, list(range(-4, 6)) + list(range(-9, 1))),
+        ("df_misaligned_int", {"segment_0": 19, "segment_1": 16}, list(range(-9, 1)) + list(range(-6, 1))),
+    ],
+)
+def test_apply_alignment_new_timestamps(df_name, alignment, expected_timestamps, request):
+    df = request.getfixturevalue(df_name)
+    result_df = apply_alignment(df=df, alignment=alignment)
+
+    np.testing.assert_array_equal(result_df["timestamp"], expected_timestamps)
+
+
+@pytest.mark.parametrize(
+    "alignment, start, end, periods, freq, timestamp_name, expected_timestamp",
+    [
+        (
+            {"segment_0": pd.Timestamp("2020-01-01")},
+            0,
+            9,
+            None,
+            "D",
+            "external_timestamp",
+            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+        ),
+        (
+            {"segment_0": pd.Timestamp("2020-01-01")},
+            2,
+            11,
+            None,
+            "D",
+            "external_timestamp",
+            timestamp_range(start="2020-01-03", periods=10, freq="D"),
+        ),
+        (
+            {"segment_0": pd.Timestamp("2020-01-01")},
+            -2,
+            7,
+            None,
+            "D",
+            "external_timestamp",
+            timestamp_range(start="2019-12-30", periods=10, freq="D"),
+        ),
+        (
+            {"segment_0": pd.Timestamp("2020-01-01")},
+            0,
+            None,
+            10,
+            "D",
+            "external_timestamp",
+            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+        ),
+        (
+            {"segment_0": pd.Timestamp("2020-01-01")},
+            None,
+            9,
+            10,
+            "D",
+            "external_timestamp",
+            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+        ),
+        (
+            {"segment_0": pd.Timestamp("2020-01-01"), "segment_1": pd.Timestamp("2020-01-03")},
+            0,
+            9,
+            None,
+            "D",
+            "external_timestamp",
+            pd.concat(
+                [
+                    timestamp_range(start="2020-01-01", periods=10, freq="D").to_series(),
+                    timestamp_range(start="2020-01-03", periods=10, freq="D").to_series(),
+                ]
+            ),
+        ),
+        ({"segment_0": 10}, 0, 9, None, None, "external_timestamp", timestamp_range(start=10, periods=10, freq=None)),
+        ({"segment_0": 10}, 2, 11, None, None, "external_timestamp", timestamp_range(start=12, periods=10, freq=None)),
+        ({"segment_0": 10}, -2, 7, None, None, "external_timestamp", timestamp_range(start=8, periods=10, freq=None)),
+        ({"segment_0": 10}, 0, None, 10, None, "external_timestamp", timestamp_range(start=10, periods=10, freq=None)),
+        ({"segment_0": 10}, None, 9, 10, None, "external_timestamp", timestamp_range(start=10, periods=10, freq=None)),
+        (
+            {"segment_0": 10, "segment_1": 12},
+            0,
+            9,
+            None,
+            None,
+            "external_timestamp",
+            pd.concat(
+                [
+                    timestamp_range(start=10, periods=10, freq=None).to_series(),
+                    timestamp_range(start=12, periods=10, freq=None).to_series(),
+                ]
+            ),
+        ),
+    ],
+)
+def test_make_timestamp_df_from_alignment_format(
+    alignment, start, end, periods, freq, timestamp_name, expected_timestamp
+):
+    df = make_timestamp_df_from_alignment(
+        alignment=alignment, start=start, end=end, periods=periods, freq=freq, timestamp_name=timestamp_name
+    )
+
+    assert set(df.columns) == {"timestamp", "segment", timestamp_name}
+    np.testing.assert_array_equal(df[timestamp_name], expected_timestamp)
 
 
 @pytest.fixture
