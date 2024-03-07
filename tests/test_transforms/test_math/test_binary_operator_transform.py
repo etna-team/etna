@@ -2,7 +2,6 @@ import operator
 
 import numpy as np
 import numpy.testing
-import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
@@ -28,17 +27,18 @@ ops = {
 @pytest.fixture
 def ts_one_segment(random_seed) -> TSDataset:
     """Generate dataset with non-positive target."""
-    df = generate_ar_df(start_time='2020-01-01', periods=100, freq="D", n_segments=1)
+    df = generate_ar_df(start_time="2020-01-01", periods=100, freq="D", n_segments=1)
     df["feature"] = np.random.uniform(10, 0, size=100)
     df["target"] = np.random.uniform(10, 0, size=100)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
     return ts
 
+
 @pytest.fixture
 def ts_two_segments(random_seed) -> TSDataset:
     """Generate dataset with non-positive target."""
-    df = generate_ar_df(start_time='2020-01-01', periods=100, freq="D", n_segments=2)
+    df = generate_ar_df(start_time="2020-01-01", periods=100, freq="D", n_segments=2)
     df["feature"] = np.random.uniform(10, 0, size=200)
     df["target"] = np.random.uniform(10, 0, size=200)
     df = TSDataset.to_dataset(df)
@@ -109,6 +109,7 @@ def test_simple_one_segment(ts_one_segment: TSDataset, operand, left_column, rig
     new_ts = transformer.fit_transform(ts=ts_one_segment)
     new_ts_vals = new_ts.df["segment_0"][out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals, checker_vals)
+
 
 @pytest.mark.parametrize(
     "operand, left_column, right_column, out_column",
@@ -202,6 +203,7 @@ def test_inverse_one_segment(ts_one_segment, operand, left_column, right_column,
     new_ts = transformer.inverse_transform(ts=new_ts)
     new_ts_vals = new_ts.df["segment_0"][out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals, target_vals)
+
 
 @pytest.mark.parametrize(
     "operand, left_column, right_column, out_column",

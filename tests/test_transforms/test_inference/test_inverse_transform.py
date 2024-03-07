@@ -56,8 +56,8 @@ from etna.transforms import TimeSeriesImputerTransform
 from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
-from etna.transforms.math.binary_operator import BinaryOperationTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
+from etna.transforms.math.binary_operator import BinaryOperationTransform
 from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
@@ -148,8 +148,12 @@ class TestInverseTransformTrainSubsetSegments:
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
-            (BinaryOperationTransform(left_column="weekday", right_column="positive", operator="+",
-                                      out_column="positive"), "ts_with_exog"),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+            ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
@@ -348,6 +352,12 @@ class TestInverseTransformFutureSubsetSegments:
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog"),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                ),
+                "ts_with_exog",
+            ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
@@ -1340,6 +1350,13 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",

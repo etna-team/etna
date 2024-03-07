@@ -26,6 +26,7 @@ class BinaryOperator(str, Enum):
     ge = ">="
     gt = ">"
 
+    @classmethod
     def _missing_(cls, value):
         raise ValueError(f"Incorrect operand, literal {value} is unsupported")
 
@@ -58,38 +59,36 @@ class BinaryOperationTransform(ReversibleTransform):
             If out_column is left_column or right_column, apply changes to the existing column out_column, else create new column.
         """
         inverse_logic = {"+": "-", "-": "+", "*": "/", "/": "*"}
-        super().__init__(required_features=[left_column, right_column])
+        super().__init__(required_features=[left_column, right_column, operator])
         self.inplace_flag = (left_column == out_column) | (right_column == out_column)
-        self.left_operand = left_column if (not self.inplace_flag or left_column != right_column) else right_column
-        self.right_operand = right_column if (self.left_operand == left_column) else left_column
-        if self.left_operand == self.right_operand:
+        self.left_column = left_column if (not self.inplace_flag or left_column != right_column) else right_column
+        self.right_column = right_column if (self.left_column == left_column) else left_column
+        if self.left_column == self.right_column:
             raise ValueError("You should use LambdaTransform, when you perform operation only with one column")
         self.operator = BinaryOperator(operator)
-        self.out_column = (
-            out_column if out_column is not None else self.left_operand + self.operator + self.right_operand
-        )
+        self.out_column = out_column if out_column is not None else self.left_column + self.operator + self.right_column
 
         self._out_column_regressor: Optional[bool] = None
         self.inverse_operator = BinaryOperator(inverse_logic[operator]) if operator in inverse_logic.values() else None
 
     def fit(self, ts: TSDataset) -> "BinaryOperationTransform":
         """Fit the transform."""
-        self._out_column_regressor = self.left_operand in ts.regressors and self.right_operand in ts.regressors
+        self._out_column_regressor = self.left_column in ts.regressors and self.right_column in ts.regressors
         super().fit(ts)
         return self
 
     def _fit(self, df: pd.DataFrame) -> "BinaryOperationTransform":
         """Fit preprocess method, does nothing in ``BinaryOperationTransform`` case.
 
-                Parameters
-                ----------
-                df:
-                    dataframe with data.
+        Parameters
+        ----------
+        df:
+            dataframe with data.
 
-                Returns
-                -------
-                result: ``BinaryOperationTransform``
-                """
+        Returns
+        -------
+        result: ``BinaryOperationTransform``
+        """
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -107,8 +106,8 @@ class BinaryOperationTransform(ReversibleTransform):
         """
         result = self.operator.perform(
             df=df,
-            left_operand=self.left_operand,
-            right_operand=self.right_operand,
+            left_operand=self.left_column,
+            right_operand=self.right_column,
             out_column=self.out_column,
         )
         if self.inplace_flag:
@@ -141,7 +140,7 @@ class BinaryOperationTransform(ReversibleTransform):
                 "We only support logic for inverse transform if out_column is left_column or right_column and it is '+', '-', '*', '/' operation"
             )
         df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
-            df=df, left_operand=self.out_column, right_operand=self.left_operand, out_column=self.out_column
+            df=df, left_operand=self.out_column, right_operand=self.left_column, out_column=self.out_column
         )
         return df
 
