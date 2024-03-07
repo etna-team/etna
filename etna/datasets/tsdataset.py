@@ -1646,8 +1646,8 @@ class TSDataset:
         df = self.to_pandas(flatten=True)
         if dropna:
             df = df.dropna()  # TODO: Fix this
-
+        from tqdm import tqdm
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
-        ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
+        ts_samples = [samples for df_segment in tqdm(ts_segments) for samples in make_samples(df_segment)]
 
         return _TorchDataset(ts_samples=ts_samples)
