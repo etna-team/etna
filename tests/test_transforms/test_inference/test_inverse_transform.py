@@ -9,6 +9,7 @@ from sklearn.tree import DecisionTreeRegressor
 from etna.analysis import StatisticsRelevanceTable
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
+from etna.transforms import BinaryOperationTransform
 from etna.transforms import BoxCoxTransform
 from etna.transforms import ChangePointsLevelTransform
 from etna.transforms import ChangePointsSegmentationTransform
@@ -57,7 +58,6 @@ from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
-from etna.transforms.math.binary_operator import BinaryOperationTransform
 from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
