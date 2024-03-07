@@ -26,6 +26,7 @@ from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
 from etna.datasets.utils import inverse_transform_target_components
 from etna.loggers import tslogger
+from tqdm import tqdm
 
 if TYPE_CHECKING:
     from etna.transforms.base import Transform
@@ -1646,7 +1647,7 @@ class TSDataset:
         df = self.to_pandas(flatten=True)
         if dropna:
             df = df.dropna()  # TODO: Fix this
-        from tqdm import tqdm
+
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
         ts_samples = [samples for df_segment in tqdm(ts_segments) for samples in make_samples(df_segment)]
 
