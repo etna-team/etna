@@ -158,8 +158,7 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
     >>> is_friday_13 = (timestamp.weekday == 4) & (timestamp.day == 13)
     >>> df_exog_raw = pd.DataFrame({"timestamp": timestamp, "is_friday_13": is_friday_13})
     >>> df_exog = duplicate_data(df_exog_raw, segments=["segment_0", "segment_1"], format="wide")
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df=df_ts_format, df_exog=df_exog, freq="D", known_future="all")
+    >>> ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future="all")
     >>> ts.head()
     segment       segment_0           segment_1
     feature    is_friday_13 target is_friday_13 target

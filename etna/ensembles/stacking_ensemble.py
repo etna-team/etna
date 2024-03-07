@@ -38,8 +38,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     >>> import pandas as pd
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> df = generate_ar_df(periods=100, start_time="2021-06-01", ar_coef=[0.8], n_segments=3)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> ma_pipeline = Pipeline(model=MovingAverageModel(window=5), transforms=[], horizon=7)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=7)
     >>> ensemble = StackingEnsemble(pipelines=[ma_pipeline, naive_pipeline])

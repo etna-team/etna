@@ -34,8 +34,7 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     >>> from etna.models import ProphetModel
     >>> from etna.pipeline import Pipeline
     >>> df = generate_ar_df(periods=30, start_time="2021-06-01", ar_coef=[1.2], n_segments=3)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> prophet_pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=3)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=5)
     >>> ensemble = DirectEnsemble(pipelines=[prophet_pipeline, naive_pipeline])

@@ -373,14 +373,13 @@ class ProphetModel(
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import ProphetModel
-    >>> classic_df = generate_periodic_df(
+    >>> df = generate_periodic_df(
     ...     periods=100,
     ...     start_time="2020-01-01",
     ...     n_segments=4,
     ...     period=7,
     ...     sigma=3
     ... )
-    >>> df = TSDataset.to_dataset(df=classic_df)
     >>> ts = TSDataset(df, freq="D")
     >>> future = ts.make_future(7)
     >>> model = ProphetModel(growth="flat")
