@@ -2,6 +2,7 @@ from contextlib import suppress
 from copy import deepcopy
 from typing import List
 from typing import Tuple
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,7 @@ from pandas.testing import assert_frame_equal
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import DataFrameFormat
 from etna.transforms import AddConstTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import TimeSeriesImputerTransform
@@ -461,8 +463,38 @@ def test_create_segment_conversion_during_init(df_segments_int):
     columns_frame["segment"] = columns_frame["segment"].astype(int)
     df_exog_wide.columns = pd.MultiIndex.from_frame(columns_frame)
 
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+    with pytest.warns(UserWarning, match="Segment values doesn't have string type"):
+        ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+
     assert np.all(ts.columns.get_level_values("segment") == ["1", "1", "2", "2"])
+
+
+def test_create_from_long_format_with_exog():
+    freq = "D"
+    df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+    ts_long = TSDataset(df=df, df_exog=df_exog, freq=freq)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts_wide = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=freq)
+
+    pd.testing.assert_index_equal(ts_long.index, ts_wide.index)
+    pd.testing.assert_frame_equal(ts_long.to_pandas(), ts_wide.to_pandas())
+
+
+@patch("etna.datasets.utils.DataFrameFormat.determine")
+def test_create_from_long_format_with_exog_calls_determine(determine_mock):
+    determine_mock.side_effect = [DataFrameFormat.long, DataFrameFormat.long]
+
+    freq = "D"
+    df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+    _ = TSDataset(df=df, df_exog=df_exog, freq=freq)
+
+    assert determine_mock.call_count == 2
 
 
 def test_check_endings_error():

@@ -21,10 +21,102 @@ else:
 
 
 class DataFrameFormat(str, Enum):
-    """Enum for different types of result."""
+    """Enum for different kinds of ``pd.DataFrame`` which can be used.
 
+    This dataframe stores:
+
+    - Timestamps;
+    - Segments;
+    - Features. In this context, 'target' is also a feature.
+
+    Currently, there are formats:
+
+    - Wide
+
+      - Has index named 'timestamp' to store timestamps.
+      - Columns has two levels with names 'segment', 'feature'.
+        Each column stores values for a given feature in a given segment.
+      - List of columns isn't empty.
+      - There are all combinations for (segment, feature) in the columns.
+
+    - Long
+
+      - Has column 'timestamp' to store timestamps.
+      - Has column 'segment' to store segments.
+      - Has at least one more column except for 'timestamp' and 'segment'.
+
+    Currently, we don't check the types of columns to save compatibility, but it is expected that:
+
+    - Timestamps have type ``int`` or ``pd.Timestamp``. If it isn't, :py:class:`~etna.datasets.tsdataset.TSDataset`
+      makes conversion for you.
+    - Segments have type ``str``. If it isn't, :py:class:`~etna.datasets.tsdataset.TSDataset` makes conversion for you.
+    """
+
+    #: Wide format.
     wide = "wide"
+
+    #: Long format.
     long = "long"
+
+    @classmethod
+    def determine(cls, df: pd.DataFrame) -> "DataFrameFormat":
+        """Determine format of the given dataframe.
+
+        Parameters
+        ----------
+        df:
+            Dataframe to infer format.
+
+        Returns
+        -------
+        :
+            Format of the given dataframe.
+
+        Raises
+        ------
+        ValueError:
+            Given long dataframe doesn't have required column 'timestamp'
+        ValueError:
+            Given long dataframe doesn't have required column 'segment'
+        ValueError:
+            Given long dataframe doesn't have any columns except for 'timestamp` and 'segment'
+        ValueError:
+            Given wide dataframe doesn't have index name 'timestamp'
+        ValueError:
+            Given wide dataframe doesn't have levels of columns ['segment', 'feature']
+        ValueError:
+            Given wide dataframe doesn't have any features
+        ValueError:
+            Given wide dataframe doesn't have all combinations of pairs (segment, feature)
+        """
+        is_multiindex = isinstance(df.columns, pd.MultiIndex)
+
+        if not is_multiindex:
+            if "timestamp" not in df.columns:
+                raise ValueError("Given long dataframe doesn't have required column 'timestamp'!")
+            if "segment" not in df.columns:
+                raise ValueError("Given long dataframe doesn't have required column 'segment'!")
+            if set(df.columns) == {"timestamp", "segment"}:
+                raise ValueError("Given long dataframe doesn't have any columns except for 'timestamp` and 'segment'!")
+            return DataFrameFormat.long
+        else:
+            if df.index.name != "timestamp":
+                raise ValueError("Given wide dataframe doesn't have index name 'timestamp'!")
+
+            expected_level_names = ["segment", "feature"]
+            if df.columns.names != expected_level_names:
+                raise ValueError("Given wide dataframe doesn't have levels of columns ['segment', 'feature']!")
+
+            if len(df.columns) == 0:
+                raise ValueError("Given wide dataframe doesn't have any features!")
+
+            segments = df.columns.get_level_values("segment").unique()
+            features = df.columns.get_level_values("feature").unique()
+            expected_columns = pd.MultiIndex.from_product([segments, features], names=["segment", "feature"])
+            if not df.columns.equals(expected_columns):
+                raise ValueError("Given wide dataframe doesn't have all combinations of pairs (segment, feature)!")
+
+            return DataFrameFormat.wide
 
 
 def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = DataFrameFormat.wide) -> pd.DataFrame:

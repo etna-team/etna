@@ -22,6 +22,7 @@ from typing_extensions import Literal
 
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
+from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
@@ -119,7 +120,8 @@ class TSDataset:
         Parameters
         ----------
         df:
-            dataframe with timeseries
+            dataframe with timeseries in a wide or long format: :py:class:`~etna.datasets.utils.DataFrameFormat`;
+            it is expected that ``df`` has feature target
         freq:
             frequency of timestamp in df, possible values:
 
@@ -129,7 +131,7 @@ class TSDataset:
             - None for integer timestamp
 
         df_exog:
-            dataframe with exogenous data;
+            dataframe with exogenous data in a wide of long format: :py:class:`~etna.datasets.utils.DataFrameFormat`
         known_future:
             columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
@@ -141,20 +143,22 @@ class TSDataset:
         self.raw_df = self._prepare_df(df=df.copy(deep=True), freq=freq)
         self.df = self.raw_df.copy(deep=True)
 
-        self.known_future = self._check_known_future(known_future, df_exog)
-        self._regressors = copy(self.known_future)
-
         self.hierarchical_structure = hierarchical_structure
         self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
         self.current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
-            self.df_exog = self._cast_segment_to_str(df=df_exog.copy(deep=True))
-            if freq is not None:
-                self._cast_index_to_datetime(self.df_exog, freq)
+            self.df_exog = self._prepare_df_exog(df_exog=df_exog.copy(deep=True), freq=freq)
+
+            self.known_future = self._check_known_future(known_future, self.df_exog)
+            self._regressors = copy(self.known_future)
+
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(df=self.df)
+        else:
+            self.known_future = self._check_known_future(known_future, df_exog)
+            self._regressors = copy(self.known_future)
 
         self._target_components_names: Tuple[str, ...] = tuple()
         self._prediction_intervals_names: Tuple[str, ...] = tuple()
@@ -195,7 +199,13 @@ class TSDataset:
     @staticmethod
     def _cast_segment_to_str(df: pd.DataFrame) -> pd.DataFrame:
         columns_frame = df.columns.to_frame()
-        columns_frame["segment"] = columns_frame["segment"].astype(str)
+        dtype = columns_frame["segment"].dtype
+        if not pd.api.types.is_object_dtype(dtype):
+            warnings.warn(
+                f"Segment values doesn't have string type, given type is {dtype}. "
+                f"Segments will be converted to string."
+            )
+            columns_frame["segment"] = columns_frame["segment"].astype(str)
         df.columns = pd.MultiIndex.from_frame(columns_frame)
         return df
 
@@ -210,12 +220,16 @@ class TSDataset:
 
     @classmethod
     def _prepare_df(cls, df: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
+        df_format = DataFrameFormat.determine(df)
+        if df_format is DataFrameFormat.long:
+            df = cls.to_dataset(df)
+
         # cast segment to str type
         cls._cast_segment_to_str(df)
 
         # handle freq
         if freq is None:
-            if df.index.dtype != "int":
+            if not pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("You set wrong freq. Data contains datetime index, not integer.")
 
             new_index = np.arange(df.index.min(), df.index.max() + 1)
@@ -239,6 +253,18 @@ class TSDataset:
             df = df.asfreq(freq)
 
         return df
+
+    @classmethod
+    def _prepare_df_exog(cls, df_exog: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
+        df_format = DataFrameFormat.determine(df_exog)
+        if df_format is DataFrameFormat.long:
+            df_exog = cls.to_dataset(df_exog)
+
+        df_exog = cls._cast_segment_to_str(df=df_exog.copy(deep=True))
+        if freq is not None:
+            cls._cast_index_to_datetime(df_exog, freq)
+
+        return df_exog
 
     def __repr__(self):
         return self.df.__repr__()
