@@ -882,7 +882,7 @@ def example_wide_df_not_sorted(example_wide_df_exog) -> pd.DataFrame:
 
 
 @pytest.fixture
-def example_wide_df_wrong_index_name(example_wide_df) -> pd.DataFrame:
+def example_wide_df_no_index_name(example_wide_df) -> pd.DataFrame:
     example_wide_df.index.name = None
     return example_wide_df
 
@@ -913,6 +913,7 @@ def example_wide_df_exog_not_full(example_wide_df_exog) -> pd.DataFrame:
         ("example_wide_df", DataFrameFormat.wide),
         ("example_wide_df_exog", DataFrameFormat.wide),
         ("example_wide_df_not_sorted", DataFrameFormat.wide),
+        ("example_wide_df_no_index_name", DataFrameFormat.wide),
     ],
 )
 def test_determine_format_ok(df_name, expected_format, request):
@@ -930,7 +931,6 @@ def test_determine_format_ok(df_name, expected_format, request):
             "example_long_df_no_features",
             "Given long dataframe doesn't have any columns except for 'timestamp` and 'segment'",
         ),
-        ("example_wide_df_wrong_index_name", "Given wide dataframe doesn't have index name 'timestamp'"),
         (
             "example_wide_df_wrong_level_names",
             "Given wide dataframe doesn't have levels of columns \['segment', 'feature'\]",

@@ -842,7 +842,7 @@ class TSDataset:
         """
         df_copy = df.copy(deep=True)
 
-        if df_copy["timestamp"].dtype != "int":
+        if not pd.api.types.is_integer_dtype(df_copy["timestamp"]):
             df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
 
         df_copy["segment"] = df_copy["segment"].astype(str)

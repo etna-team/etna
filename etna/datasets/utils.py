@@ -35,7 +35,7 @@ class DataFrameFormat(str, Enum):
 
     - Wide
 
-      - Has index named 'timestamp' to store timestamps.
+      - Has index to store timestamps.
       - Columns has two levels with names 'segment', 'feature'.
         Each column stores values for a given feature in a given segment.
       - List of columns isn't empty.
@@ -83,8 +83,6 @@ class DataFrameFormat(str, Enum):
         ValueError:
             Given long dataframe doesn't have any columns except for 'timestamp` and 'segment'
         ValueError:
-            Given wide dataframe doesn't have index name 'timestamp'
-        ValueError:
             Given wide dataframe doesn't have levels of columns ['segment', 'feature']
         ValueError:
             Given wide dataframe doesn't have any features
@@ -103,9 +101,6 @@ class DataFrameFormat(str, Enum):
                 raise ValueError("Given long dataframe doesn't have any columns except for 'timestamp` and 'segment'!")
             return DataFrameFormat.long
         else:
-            if df.index.name != "timestamp":
-                raise ValueError("Given wide dataframe doesn't have index name 'timestamp'!")
-
             expected_level_names = ["segment", "feature"]
             if columns.names != expected_level_names:
                 raise ValueError("Given wide dataframe doesn't have levels of columns ['segment', 'feature']!")

@@ -46,7 +46,9 @@ class _OneSegmentResampleWithDistributionTransform(OneSegmentTransform):
         in_column_index = df[self.in_column].dropna().index
 
         fail_datetime_timestamp = (
-            in_column_index.dtype != "int" and len(in_column_index) >= 3 and not pd.infer_freq(in_column_index)
+            not pd.api.types.is_integer_dtype(in_column_index)
+            and len(in_column_index) >= 3
+            and not pd.infer_freq(in_column_index)
         )
         if len(in_column_index) <= 1 or fail_datetime_timestamp:
             raise ValueError(
