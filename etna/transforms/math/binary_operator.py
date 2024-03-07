@@ -61,8 +61,8 @@ class BinaryOperationTransform(ReversibleTransform):
         inverse_logic = {"+": "-", "-": "+", "*": "/", "/": "*"}
         super().__init__(required_features=[left_column, right_column, operator])
         self.inplace_flag = (left_column == out_column) | (right_column == out_column)
-        self.left_column = left_column if (not self.inplace_flag or left_column != right_column) else right_column
-        self.right_column = right_column if (self.left_column == left_column) else left_column
+        self.left_column = left_column
+        self.right_column = right_column
         if self.left_column == self.right_column:
             raise ValueError("You should use LambdaTransform, when you perform operation only with one column")
         self.operator = BinaryOperator(operator)
@@ -139,9 +139,21 @@ class BinaryOperationTransform(ReversibleTransform):
             raise ValueError(
                 "We only support logic for inverse transform if out_column is left_column or right_column and it is '+', '-', '*', '/' operation"
             )
-        df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
-            df=df, left_operand=self.out_column, right_operand=self.left_column, out_column=self.out_column
-        )
+        proper_column = self.left_column if (self.left_column != self.out_column) else self.right_column
+        if self.operator in ["+", "*"]:
+            df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
+                df=df, left_operand=self.out_column, right_operand=proper_column, out_column=self.out_column
+            )
+        else:
+            if self.right_column == self.out_column:
+                if self.operator == "-":
+                    df.loc[:, pd.IndexSlice[:, self.out_column]] = -df.loc[:, pd.IndexSlice[:, self.out_column]]
+                else:
+                    df.loc[:, pd.IndexSlice[:, self.out_column]] = 1 / df.loc[:, pd.IndexSlice[:, self.out_column]]
+            df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
+                df=df, left_operand=self.out_column, right_operand=proper_column, out_column=self.out_column
+            )
+
         return df
 
     def get_regressors_info(self) -> List[str]:

@@ -1,4 +1,5 @@
 import operator
+from copy import deepcopy
 
 import numpy as np
 import numpy.testing
@@ -100,9 +101,9 @@ def ts_two_segments(random_seed) -> TSDataset:
     ],
 )
 def test_simple_one_segment(ts_one_segment: TSDataset, operand, left_column, right_column, out_column):
-    left_vals = ts_one_segment.df["segment_0"][left_column].values
-    right_vals = ts_one_segment.df["segment_0"][right_column].values
-    checker_vals = ops[operand](left_vals, right_vals)
+    left_vals = deepcopy(ts_one_segment.df["segment_0"][left_column].values)
+    right_vals = deepcopy(ts_one_segment.df["segment_0"][right_column].values)
+    checker_vals = deepcopy(ops[operand](left_vals, right_vals))
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
@@ -165,10 +166,10 @@ def test_simple_one_segment(ts_one_segment: TSDataset, operand, left_column, rig
     ],
 )
 def test_simple_two_segments(ts_two_segments: TSDataset, operand, left_column, right_column, out_column):
-    left_vals1 = ts_two_segments.df["segment_0"][left_column].values
-    right_vals1 = ts_two_segments.df["segment_0"][right_column].values
-    left_vals2 = ts_two_segments.df["segment_1"][left_column].values
-    right_vals2 = ts_two_segments.df["segment_1"][right_column].values
+    left_vals1 = deepcopy(ts_two_segments.df["segment_0"][left_column].values)
+    right_vals1 = deepcopy(ts_two_segments.df["segment_0"][right_column].values)
+    left_vals2 = deepcopy(ts_two_segments.df["segment_1"][left_column].values)
+    right_vals2 = deepcopy(ts_two_segments.df["segment_1"][right_column].values)
     checker_vals1 = ops[operand](left_vals1, right_vals1)
     checker_vals2 = ops[operand](left_vals2, right_vals2)
     transformer = binary_operator.BinaryOperationTransform(
@@ -195,7 +196,7 @@ def test_simple_two_segments(ts_two_segments: TSDataset, operand, left_column, r
     ],
 )
 def test_inverse_one_segment(ts_one_segment, operand, left_column, right_column, out_column):
-    target_vals = ts_one_segment.df["segment_0"][out_column].values
+    target_vals = deepcopy(ts_one_segment.df["segment_0"][out_column].values)
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
@@ -219,8 +220,8 @@ def test_inverse_one_segment(ts_one_segment, operand, left_column, right_column,
     ],
 )
 def test_inverse_two_segments(ts_two_segments, operand, left_column, right_column, out_column):
-    target_vals1 = ts_two_segments.df["segment_0"][out_column].values
-    target_vals2 = ts_two_segments.df["segment_1"][out_column].values
+    target_vals1 = deepcopy(ts_two_segments.df["segment_0"][out_column].values)
+    target_vals2 = deepcopy(ts_two_segments.df["segment_1"][out_column].values)
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
