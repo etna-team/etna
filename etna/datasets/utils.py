@@ -91,14 +91,15 @@ class DataFrameFormat(str, Enum):
         ValueError:
             Given wide dataframe doesn't have all combinations of pairs (segment, feature)
         """
-        is_multiindex = isinstance(df.columns, pd.MultiIndex)
+        columns = df.columns
+        is_multiindex = isinstance(columns, pd.MultiIndex)
 
         if not is_multiindex:
-            if "timestamp" not in df.columns:
+            if "timestamp" not in columns:
                 raise ValueError("Given long dataframe doesn't have required column 'timestamp'!")
-            if "segment" not in df.columns:
+            if "segment" not in columns:
                 raise ValueError("Given long dataframe doesn't have required column 'segment'!")
-            if set(df.columns) == {"timestamp", "segment"}:
+            if set(columns) == {"timestamp", "segment"}:
                 raise ValueError("Given long dataframe doesn't have any columns except for 'timestamp` and 'segment'!")
             return DataFrameFormat.long
         else:
@@ -106,16 +107,18 @@ class DataFrameFormat(str, Enum):
                 raise ValueError("Given wide dataframe doesn't have index name 'timestamp'!")
 
             expected_level_names = ["segment", "feature"]
-            if df.columns.names != expected_level_names:
+            if columns.names != expected_level_names:
                 raise ValueError("Given wide dataframe doesn't have levels of columns ['segment', 'feature']!")
 
-            if len(df.columns) == 0:
+            if len(columns) == 0:
                 raise ValueError("Given wide dataframe doesn't have any features!")
 
-            segments = df.columns.get_level_values("segment").unique()
-            features = df.columns.get_level_values("feature").unique()
-            expected_columns = pd.MultiIndex.from_product([segments, features], names=["segment", "feature"])
-            if not df.columns.equals(expected_columns):
+            segments = columns.get_level_values("segment").unique()
+            features = columns.get_level_values("feature").unique()
+            expected_columns = pd.MultiIndex.from_product(
+                [segments, features], names=["segment", "feature"]
+            ).sort_values()
+            if not columns.sort_values().equals(expected_columns):
                 raise ValueError("Given wide dataframe doesn't have all combinations of pairs (segment, feature)!")
 
             return DataFrameFormat.wide
