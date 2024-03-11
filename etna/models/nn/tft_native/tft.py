@@ -380,7 +380,6 @@ class TFTNativeNet(DeepBaseNet):
         segment = df["segment"].values[0]
         for feature in self.num_embeddings:
             df[feature] = df[feature].astype(float).fillna(self.num_embeddings[feature])
-        print(segment)
         def _make(
             df: pd.DataFrame,
             segment: str,
@@ -450,7 +449,7 @@ class TFTNativeNet(DeepBaseNet):
             if batch is None:
                 break
             yield batch
-            start_idx += 10
+            start_idx += 7
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
         """Optimizer configuration."""
