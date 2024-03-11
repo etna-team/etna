@@ -5,6 +5,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
 
@@ -380,8 +381,13 @@ class TFTNativeNet(DeepBaseNet):
         segment = df["segment"].values[0]
         for feature in self.num_embeddings:
             df[feature] = df[feature].astype(float).fillna(self.num_embeddings[feature])
+        column_to_index = {column: index for index, column in enumerate(df.columns)}
+        values = df.values.T
+
         def _make(
-            df: pd.DataFrame,
+            # df: pd.DataFrame,
+            values: np.array,
+            column_to_index: dict,
             segment: str,
             start_idx: int,
             encoder_length: int,
@@ -398,49 +404,81 @@ class TFTNativeNet(DeepBaseNet):
                 "time_varying_reals_encoder": dict(),
                 "time_varying_reals_decoder": dict(),
             }
-            total_length = len(df)
+            # total_length = len(df)
+            total_length = values.shape[1]
             total_sample_length = encoder_length + decoder_length
 
             if total_sample_length + start_idx > total_length:
                 return None
 
             sample["segment"] = segment
-            sample["decoder_target"] = df[["target"]].values[
+            # sample["decoder_target"] = df[["target"]].values[
+            #     start_idx + encoder_length : start_idx + total_sample_length
+            # ]  # (decoder_length, 1)
+            #
+            # for feature in self.static_reals:
+            #     sample["static_reals"][feature] = df[[feature]].values[:1]  # (1, 1)
+            #
+            # for feature in self.static_categoricals:
+            #     sample["static_categoricals"][feature] = df[[feature]].values[:1]  # (1, 1)
+            #
+            # for feature in self.time_varying_categoricals_encoder:
+            #     sample["time_varying_categoricals_encoder"][feature] = df[[feature]].values[
+            #         start_idx : start_idx + encoder_length
+            #     ]  # (encoder_length, 1)
+            #
+            # for feature in self.time_varying_categoricals_decoder:
+            #     sample["time_varying_categoricals_decoder"][feature] = df[[feature]].values[
+            #         start_idx + encoder_length : start_idx + total_sample_length
+            #     ]  # (decoder_length, 1)
+            #
+            # for feature in self.time_varying_reals_encoder:
+            #     sample["time_varying_reals_encoder"][feature] = df[[feature]].values[
+            #         start_idx : start_idx + encoder_length
+            #     ]  # (encoder_length, 1)
+            #
+            # for feature in self.time_varying_reals_decoder:
+            #     sample["time_varying_reals_decoder"][feature] = df[[feature]].values[
+            #         start_idx + encoder_length : start_idx + total_sample_length
+            #     ]  # (decoder_length, 1)
+
+            sample["decoder_target"] = values[column_to_index['target']][
                 start_idx + encoder_length : start_idx + total_sample_length
-            ]  # (decoder_length, 1)
+            ].reshape(-1, 1).astype(float)  # (decoder_length, 1)
 
             for feature in self.static_reals:
-                sample["static_reals"][feature] = df[[feature]].values[:1]  # (1, 1)
+                sample["static_reals"][feature] = values[column_to_index[feature]][:1].reshape(-1, 1).astype(float)  # (1, 1)
 
             for feature in self.static_categoricals:
-                sample["static_categoricals"][feature] = df[[feature]].values[:1]  # (1, 1)
+                sample["static_categoricals"][feature] = values[column_to_index[feature]][:1].reshape(-1, 1).astype(float)  # (1, 1)
 
             for feature in self.time_varying_categoricals_encoder:
-                sample["time_varying_categoricals_encoder"][feature] = df[[feature]].values[
+                sample["time_varying_categoricals_encoder"][feature] = values[column_to_index[feature]][
                     start_idx : start_idx + encoder_length
-                ]  # (encoder_length, 1)
+                ].reshape(-1, 1).astype(float)  # (encoder_length, 1)
 
             for feature in self.time_varying_categoricals_decoder:
-                sample["time_varying_categoricals_decoder"][feature] = df[[feature]].values[
+                sample["time_varying_categoricals_decoder"][feature] = values[column_to_index[feature]][
                     start_idx + encoder_length : start_idx + total_sample_length
-                ]  # (decoder_length, 1)
+                ].reshape(-1, 1).astype(float)  # (decoder_length, 1)
 
             for feature in self.time_varying_reals_encoder:
-                sample["time_varying_reals_encoder"][feature] = df[[feature]].values[
+                sample["time_varying_reals_encoder"][feature] = values[column_to_index[feature]][
                     start_idx : start_idx + encoder_length
-                ]  # (encoder_length, 1)
+                ].reshape(-1, 1).astype(float)  # (encoder_length, 1)
 
             for feature in self.time_varying_reals_decoder:
-                sample["time_varying_reals_decoder"][feature] = df[[feature]].values[
+                sample["time_varying_reals_decoder"][feature] = values[column_to_index[feature]][
                     start_idx + encoder_length : start_idx + total_sample_length
-                ]  # (decoder_length, 1)
-
+                ].reshape(-1, 1).astype(float)  # (decoder_length, 1)
             return sample
 
         start_idx = 0
         while True:
             batch = _make(
-                df=df,
+                # df=df,
+                values=values,
+                column_to_index=column_to_index,
                 segment=segment,
                 start_idx=start_idx,
                 encoder_length=encoder_length,
