@@ -1650,5 +1650,5 @@ class TSDataset:
 
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
         ts_samples = [samples for df_segment in tqdm(ts_segments) for samples in make_samples(df_segment)]
-
+        print("len:", len(ts_samples))
         return _TorchDataset(ts_samples=ts_samples)

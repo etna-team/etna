@@ -487,7 +487,7 @@ class TFTNativeNet(DeepBaseNet):
             if batch is None:
                 break
             yield batch
-            start_idx += 7
+            start_idx += 1
 
     def configure_optimizers(self) -> "torch.optim.Optimizer":
         """Optimizer configuration."""
