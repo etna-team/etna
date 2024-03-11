@@ -239,7 +239,7 @@ class VariableSelectionNetwork(nn.Module):
         """
         output = torch.zeros(
             list(x.values())[0].size() + torch.Size([len(x)])
-        )  # (batch_size, num_timestamps, input_size, num_features)
+        ).to('cuda:0')  # (batch_size, num_timestamps, input_size, num_features)
         for i, (feature, embedding) in enumerate(x.items()):
             output[:, :, :, i] = self.grns[feature](embedding)
 
@@ -252,7 +252,7 @@ class VariableSelectionNetwork(nn.Module):
         feature_weights = self.softmax(flatten_grn_output).unsqueeze(
             dim=-2
         )  # (batch_size, num_timestamps, 1, num_features)
-
+        print(output, feature_weights)
         output = (output * feature_weights).sum(dim=-1)  # (batch_size, num_timestamps, input_size)
         return output
 
