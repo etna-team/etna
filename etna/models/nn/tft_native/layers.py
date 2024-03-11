@@ -258,7 +258,7 @@ class VariableSelectionNetwork(nn.Module):
         feature_weights = self.softmax(flatten_grn_output).unsqueeze(
             dim=-2
         )  # (batch_size, num_timestamps, 1, num_features)
-        print(output[0], output.device, feature_weights.device)
+        print(output[0].device, output.device, feature_weights.device)
         output = (output * feature_weights).sum(dim=-1)  # (batch_size, num_timestamps, input_size)
         return output
 
