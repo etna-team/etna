@@ -369,10 +369,14 @@ class TemporalFusionDecoder(nn.Module):
         :
             output batch of data with shapes (batch_size, decoder_length, output_size)
         """
+        print("MULTIHEAD")
+        print(x.device)
         x = self.grn1(x, context)
+        print(x.device)
         residual = x
 
         attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1).to(DEVICE)
+        print(attn_mask.device)
 
         x, _ = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
         x = self.gate_norm(x[:, -self.decoder_length :, :], residual[:, -self.decoder_length :, :])
