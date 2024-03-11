@@ -324,8 +324,8 @@ class TFTNativeNet(DeepBaseNet):
 
         # Pass encoder and decoder data through LSTM
         if self._num_static > 0:
-            c_c = c_c.permute(1, 0, 2).expand(self.num_layers, batch_size, self.hidden_size)
-            c_h = c_h.permute(1, 0, 2).expand(self.num_layers, batch_size, self.hidden_size)
+            c_c = c_c.permute(1, 0, 2).expand(self.num_layers, batch_size, self.hidden_size).contiguous()
+            c_h = c_h.permute(1, 0, 2).expand(self.num_layers, batch_size, self.hidden_size).contiguous()
             encoder_output, (c_h, c_c) = self.lstm_encoder(
                 encoder_output, (c_h, c_c)
             )  # (batch_size, encoder_length, hidden_size)
