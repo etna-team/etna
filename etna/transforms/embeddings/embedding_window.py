@@ -11,10 +11,10 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 
 class EmbeddingWindowTransform(IrreversibleTransform):
-    """Create the embedding features for each timestamp of series out of embedding models."""
+    """Create the embedding features for each timestamp using embedding model."""
 
-    def __init__(self, in_columns: List[str], embedding_model: BaseEmbeddingModel, out_column: str = "emb"):
-        """Init EmbeddingSegmentTransform.
+    def __init__(self, in_columns: List[str], embedding_model: BaseEmbeddingModel, out_column: str = "embedding_window"):
+        """Init EmbeddingWindowTransform.
 
         Parameters
         ----------

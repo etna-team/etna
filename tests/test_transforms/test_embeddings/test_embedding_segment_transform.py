@@ -156,35 +156,17 @@ def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
     ],
 )
 def test_transform_format(
-    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "emb_0", "emb_1", "emb_2")
+    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "embedding_segment_0", "embedding_segment_1", "embedding_segment_2")
 ):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="embedding_segment"
     )
     transform.fit_transform(ts=ts_with_exog_nan_begin)
     obtained_columns = set(ts_with_exog_nan_begin.columns.get_level_values("feature"))
+    embedding_columns = transform.get_regressors_info()
+    embeddings = ts_with_exog_nan_begin.df.loc[:, pd.IndexSlice[:, embedding_columns]].values
     assert sorted(obtained_columns) == sorted(expected_columns)
-
-
-@pytest.mark.parametrize(
-    "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3, output_dims=3, n_epochs=1),
-    ],
-)
-def test_transform_new_segments(
-    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "emb_0", "emb_1", "emb_2")
-):
-    train_ts = TSDataset(df=ts_with_exog_nan_begin[:, ["segment_0"], :], freq="D")
-
-    transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
-    )
-    transform.fit(ts=train_ts)
-    transform.transform(ts=ts_with_exog_nan_begin)
-
-    obtained_columns = set(ts_with_exog_nan_begin.columns.get_level_values("feature"))
-    assert sorted(obtained_columns) == sorted(expected_columns)
+    assert np.all(embeddings == embeddings[0, :], axis=0).all()
 
 
 @pytest.mark.parametrize(

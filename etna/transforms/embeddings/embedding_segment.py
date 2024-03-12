@@ -12,9 +12,9 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 
 class EmbeddingSegmentTransform(IrreversibleTransform):
-    """Create the embedding features for the whole series out of embedding models."""
+    """Create the constant embedding features using embedding model."""
 
-    def __init__(self, in_columns: List[str], embedding_model: BaseEmbeddingModel, out_column: str = "emb"):
+    def __init__(self, in_columns: List[str], embedding_model: BaseEmbeddingModel, out_column: str = "embedding_segment"):
         """Init EmbeddingSegmentTransform.
 
         Parameters

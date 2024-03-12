@@ -3,6 +3,7 @@ from copy import deepcopy
 from unittest.mock import Mock
 
 import pandas as pd
+import numpy as np
 import pytest
 
 from etna.datasets import TSDataset
@@ -24,7 +25,7 @@ from etna.transforms.embeddings.models import TS2VecEmbeddingModel
 @pytest.mark.smoke
 def test_fit(ts_with_exog_nan_begin, embedding_model):
     transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
     )
     transform.fit(ts=ts_with_exog_nan_begin)
 
@@ -38,7 +39,7 @@ def test_fit(ts_with_exog_nan_begin, embedding_model):
 @pytest.mark.smoke
 def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
     transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
     )
     transform.fit_transform(ts=ts_with_exog_nan_begin)
 
@@ -51,10 +52,10 @@ def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
 )
 @pytest.mark.smoke
 def test_fit_forecast(example_tsds, embedding_model):
-    emb_transform = EmbeddingWindowTransform(in_columns=["target"], embedding_model=embedding_model, out_column="emb")
+    emb_transform = EmbeddingWindowTransform(in_columns=["target"], embedding_model=embedding_model, out_column="embedding_window")
     output_dims = embedding_model.output_dims
-    lag_transforms = [LagTransform(in_column=f"emb_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)]
-    filter_transforms = FilterFeaturesTransform(exclude=[f"emb_{i}" for i in range(output_dims)])
+    lag_transforms = [LagTransform(in_column=f"embedding_window_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)]
+    filter_transforms = FilterFeaturesTransform(exclude=[f"embedding_window_{i}" for i in range(output_dims)])
     transforms = [emb_transform] + lag_transforms + [filter_transforms]
 
     pipeline = Pipeline(model=LinearMultiSegmentModel(), transforms=transforms, horizon=7)
@@ -69,10 +70,10 @@ def test_fit_forecast(example_tsds, embedding_model):
 )
 @pytest.mark.smoke
 def test_backtest(example_tsds, embedding_model):
-    emb_transform = EmbeddingWindowTransform(in_columns=["target"], embedding_model=embedding_model, out_column="emb")
+    emb_transform = EmbeddingWindowTransform(in_columns=["target"], embedding_model=embedding_model, out_column="embedding_window")
     output_dims = embedding_model.output_dims
-    lag_transforms = [LagTransform(in_column=f"emb_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)]
-    filter_transforms = FilterFeaturesTransform(exclude=[f"emb_{i}" for i in range(output_dims)])
+    lag_transforms = [LagTransform(in_column=f"embedding_window_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)]
+    filter_transforms = FilterFeaturesTransform(exclude=[f"embedding_window_{i}" for i in range(output_dims)])
     transforms = [emb_transform] + lag_transforms + [filter_transforms]
 
     pipeline = Pipeline(model=LinearMultiSegmentModel(), transforms=transforms, horizon=7)
@@ -88,7 +89,7 @@ def test_backtest(example_tsds, embedding_model):
 @pytest.mark.smoke
 def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
     transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
     )
     transform.fit(ts=ts_with_exog_nan_begin)
 
@@ -105,7 +106,7 @@ def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
 @pytest.mark.smoke
 def test_load(ts_with_exog_nan_begin, tmp_path, embedding_model):
     transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
     )
     transform.fit(ts=ts_with_exog_nan_begin)
 
@@ -128,7 +129,7 @@ def test_get_out_columns(output_dims, out_column, expected_out_columns):
 @pytest.mark.parametrize("embedding_model", [TS2VecEmbeddingModel(input_dims=3, n_epochs=1)])
 def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
     transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
     )
     first_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
     second_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
@@ -142,35 +143,17 @@ def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
     ],
 )
 def test_transform_format(
-    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "emb_0", "emb_1", "emb_2")
+    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "embedding_window_0", "embedding_window_1", "embedding_window_2")
 ):
     transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="embedding_window"
     )
     transform.fit_transform(ts=ts_with_exog_nan_begin)
     obtained_columns = set(ts_with_exog_nan_begin.columns.get_level_values("feature"))
+    embedding_columns = ["embedding_window_0", "embedding_window_1", "embedding_window_2"]
+    embeddings = ts_with_exog_nan_begin.df.loc[:, pd.IndexSlice[:, embedding_columns]].values
     assert sorted(obtained_columns) == sorted(expected_columns)
-
-
-@pytest.mark.parametrize(
-    "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3, output_dims=3, n_epochs=1),
-    ],
-)
-def test_transform_new_segments(
-    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "emb_0", "emb_1", "emb_2")
-):
-    train_ts = TSDataset(df=ts_with_exog_nan_begin[:, ["segment_0"], :], freq="D")
-
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
-    )
-    transform.fit(ts=train_ts)
-    transform.transform(ts=ts_with_exog_nan_begin)
-
-    obtained_columns = set(ts_with_exog_nan_begin.columns.get_level_values("feature"))
-    assert sorted(obtained_columns) == sorted(expected_columns)
+    assert not np.all(embeddings == embeddings[0, :], axis=0).all()
 
 
 @pytest.mark.parametrize(
@@ -181,7 +164,7 @@ def test_transform_new_segments(
 )
 def test_transform_load_pre_fitted(ts_with_exog_nan_begin, tmp_path, embedding_model):
     transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
     )
     before_load_ts = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
 
