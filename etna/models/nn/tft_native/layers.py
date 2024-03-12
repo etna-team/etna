@@ -239,14 +239,13 @@ class VariableSelectionNetwork(nn.Module):
         :
             output batch of data with shapes (batch_size, num_timestamps, output_size)
         """
-        print(DEVICE)
+        print(x)
         output = torch.zeros(
             list(x.values())[0].size() + torch.Size([len(x)])
         )  # (batch_size, num_timestamps, input_size, num_features)
         print(list(x.values())[0].device, output.device)
         for i, (feature, embedding) in enumerate(x.items()):
             output[:, :, :, i] = self.grns[feature](embedding)
-        output = output.to(DEVICE)
         flatten_input = torch.cat(
             [x[feature] for feature in self.features], dim=-1
         )  # (batch_size, num_timestamps, input_size * num_features)
@@ -259,6 +258,7 @@ class VariableSelectionNetwork(nn.Module):
             dim=-2
         )  # (batch_size, num_timestamps, 1, num_features)
         print(output[0].device, output.device, feature_weights.device)
+        output = output.to(feature_weights.device)
         output = (output * feature_weights).sum(dim=-1)  # (batch_size, num_timestamps, input_size)
         return output
 
@@ -375,7 +375,7 @@ class TemporalFusionDecoder(nn.Module):
         print(x.device)
         residual = x
 
-        attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1).to(DEVICE)
+        attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1).to(x.device)
         print(attn_mask.device)
 
         x, _ = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
