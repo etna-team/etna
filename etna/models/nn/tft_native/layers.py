@@ -253,6 +253,7 @@ class VariableSelectionNetwork(nn.Module):
             dim=-2
         )  # (batch_size, num_timestamps, 1, num_features)
 
+        output = output.to(feature_weights.device)
         output = (output * feature_weights).sum(dim=-1)  # (batch_size, num_timestamps, input_size)
         return output
 
@@ -366,7 +367,7 @@ class TemporalFusionDecoder(nn.Module):
         x = self.grn1(x, context)
         residual = x
 
-        attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1)
+        attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1).to(x.device)
 
         x, _ = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
         x = self.gate_norm(x[:, -self.decoder_length :, :], residual[:, -self.decoder_length :, :])
