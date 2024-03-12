@@ -28,10 +28,24 @@ class BinaryOperator(str, Enum):
 
     @classmethod
     def _missing_(cls, value):
-        raise ValueError(f"Incorrect operand, literal {value} is unsupported")
+        raise ValueError(f"Supported operands: {', '.join([repr(m.value) for m in cls])}.")
 
     def perform(self, df: pd.DataFrame, left_operand: str, right_operand: str, out_column: str) -> pd.DataFrame:
-        """Perform binary operation on passed dataframe."""
+        """Perform binary operation on passed dataframe.
+        - If during the operation a division by zero of a positive number occurs, writes +inf to this cell of the column, if negative - -inf.
+        - In the case of raising a negative number to a non-integer power, writes nan to this cell of the column.
+
+        Parameters
+        ----------
+        df:
+            Source Dataframe
+        left_operand:
+            Name of the left column
+        right_operand:
+            Name of the right column
+        out_column:
+            Resulting column name, which contains the result of the operation operand(left, right)
+        """
         pandas_operator = getattr(pd.DataFrame, self.name)
         df_left = df.loc[:, pd.IndexSlice[:, left_operand]].rename(columns={left_operand: out_column}, level="feature")
         df_right = df.loc[:, pd.IndexSlice[:, right_operand]].rename(
@@ -59,7 +73,7 @@ class BinaryOperationTransform(ReversibleTransform):
             If out_column is left_column or right_column, apply changes to the existing column out_column, else create new column.
         """
         inverse_logic = {"+": "-", "-": "+", "*": "/", "/": "*"}
-        super().__init__(required_features=[left_column, right_column, operator])
+        super().__init__(required_features=[left_column, right_column])
         self.inplace_flag = (left_column == out_column) | (right_column == out_column)
         self.left_column = left_column
         self.right_column = right_column
@@ -68,12 +82,12 @@ class BinaryOperationTransform(ReversibleTransform):
         self.operator = BinaryOperator(operator)
         self.out_column = out_column if out_column is not None else self.left_column + self.operator + self.right_column
 
-        self._out_column_regressor: Optional[bool] = None
-        self.inverse_operator = BinaryOperator(inverse_logic[operator]) if operator in inverse_logic.values() else None
+        self._in_column_regressor: Optional[bool] = None
+        self.inverse_operator = BinaryOperator(inverse_logic[operator]) if operator in inverse_logic else None
 
     def fit(self, ts: TSDataset) -> "BinaryOperationTransform":
         """Fit the transform."""
-        self._out_column_regressor = self.left_column in ts.regressors and self.right_column in ts.regressors
+        self._in_column_regressor = self.left_column in ts.regressors and self.right_column in ts.regressors
         super().fit(ts)
         return self
 
@@ -118,6 +132,7 @@ class BinaryOperationTransform(ReversibleTransform):
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Perform reverse operation on passed dataframe.
+        If
 
         Parameters
         ----------
@@ -136,9 +151,9 @@ class BinaryOperationTransform(ReversibleTransform):
             If initial operation is not '+', '-', '*' or '/'
         """
         if not self.inplace_flag or self.inverse_operator is None:
-            raise ValueError(
-                "We only support logic for inverse transform if out_column is left_column or right_column and it is '+', '-', '*', '/' operation"
-            )
+            raise ValueError("We only support inverse transform if out_column is left_column or right_column")
+        if self.inverse_operator is None:
+            raise ValueError("We only support inverse transform if the original operation is is '+', '-', '*', '/'")
         proper_column = self.left_column if (self.left_column != self.out_column) else self.right_column
         if self.operator in ["+", "*"]:
             df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
@@ -158,9 +173,9 @@ class BinaryOperationTransform(ReversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
-        if self._out_column_regressor is None:
+        if self._in_column_regressor is None:
             raise ValueError("Transform is not fitted!")
-        return [self.out_column] if self._out_column_regressor else []
+        return [self.out_column] if self._in_column_regressor else []
 
 
 all = ["BinaryOperationTransform"]
