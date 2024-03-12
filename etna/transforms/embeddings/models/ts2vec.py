@@ -116,11 +116,12 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def encode_segment(
         self,
         x: np.ndarray,
+        mask: Union[
+            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
+                "mask_last"]
+        ] = "all_true",
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
-        mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
-        ] = "all_true",
     ) -> np.ndarray:
         """Create embeddings of the whole series.
 
@@ -128,10 +129,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         ----------
         x:
             data with shapes (n_segments, n_timestamps, input_dims).
-        sliding_length:
-            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
-        sliding_padding:
-            This param specifies the contextual data length used for inference every sliding windows.
         mask:
             The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
             * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
@@ -139,6 +136,10 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             * 'all_true' - mask none of the timestamps
             * 'all_false' - mask all timestamps
             * 'mask_last' - mask last timestamp
+        sliding_length:
+            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+        sliding_padding:
+            This param specifies the contextual data length used for inference every sliding windows.
 
         Returns
         -------
@@ -160,19 +161,28 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def encode_window(
         self,
         x: np.ndarray,
+        mask: Union[
+            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
+                "mask_last"]
+        ] = "all_true",
         encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
-        mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
-        ] = "all_true",
+
     ) -> np.ndarray:
         """Create embeddings of each series timestamp.
 
         Parameters
         ----------
         x:
-            data with shapes (n_timestamps, n_segments * input_dims).
+            data with shapes (n_segments, n_timestamps, input_dims).
+        mask:
+            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            * 'continuous' - mask random windows of timestamps
+            * 'all_true' - mask none of the timestamps
+            * 'all_false' - mask all timestamps
+            * 'mask_last' - mask last timestamp
         encoding_window:
             When this param is specified, the computed representation would the max pooling over this window. The possible options are:
             * 'multiscale'
@@ -182,13 +192,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
             This param specifies the contextual data length used for inference every sliding windows.
-        mask:
-            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-            * 'continuous' - mask random windows of timestamps
-            * 'all_true' - mask none of the timestamps
-            * 'all_false' - mask all timestamps
-            * 'mask_last' - mask last timestamp
         Returns
         -------
         :
