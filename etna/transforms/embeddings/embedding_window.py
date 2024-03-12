@@ -6,8 +6,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from etna.core import load
 from etna.transforms.base import IrreversibleTransform

@@ -117,8 +117,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         self,
         x: np.ndarray,
         mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
-                "mask_last"]
+            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
         ] = "all_true",
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
@@ -130,16 +129,16 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         x:
             data with shapes (n_segments, n_timestamps, input_dims).
         mask:
-            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+            the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
             * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
             * 'continuous' - mask random windows of timestamps
             * 'all_true' - mask none of the timestamps
             * 'all_false' - mask all timestamps
             * 'mask_last' - mask last timestamp
         sliding_length:
-            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+            the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
-            This param specifies the contextual data length used for inference every sliding windows.
+            contextual data length used for inference every sliding windows.
 
         Returns
         -------
@@ -162,13 +161,11 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         self,
         x: np.ndarray,
         mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal[
-                "mask_last"]
+            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
         ] = "all_true",
-        encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
-
+        encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
     ) -> np.ndarray:
         """Create embeddings of each series timestamp.
 
@@ -177,21 +174,21 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         x:
             data with shapes (n_segments, n_timestamps, input_dims).
         mask:
-            The mask used by encoder on the test phase can be specified with this parameter. The possible options are:
+            the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
             * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
             * 'continuous' - mask random windows of timestamps
             * 'all_true' - mask none of the timestamps
             * 'all_false' - mask all timestamps
             * 'mask_last' - mask last timestamp
+        sliding_length:
+            the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
+        sliding_padding:
+            this param specifies the contextual data length used for inference every sliding windows.
         encoding_window:
-            When this param is specified, the computed representation would the max pooling over this window. The possible options are:
+            when this param is specified, the computed representation would the max pooling over this window. The possible options are:
             * 'multiscale'
             * integer specifying the pooling kernel size.
             This param will be ignored when encoding full series
-        sliding_length:
-            The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
-        sliding_padding:
-            This param specifies the contextual data length used for inference every sliding windows.
         Returns
         -------
         :
