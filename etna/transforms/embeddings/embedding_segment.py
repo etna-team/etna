@@ -1,7 +1,10 @@
 import pathlib
 import tempfile
 import zipfile
+from typing import Any
+from typing import Dict
 from typing import List
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -14,7 +17,13 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 class EmbeddingSegmentTransform(IrreversibleTransform):
     """Create the constant embedding features using embedding model."""
 
-    def __init__(self, in_columns: List[str], embedding_model: BaseEmbeddingModel, out_column: str = "embedding_segment"):
+    def __init__(
+        self,
+        in_columns: List[str],
+        embedding_model: BaseEmbeddingModel,
+        encoding_params: Optional[Dict[str, Any]] = None,
+        out_column: str = "embedding_segment",
+    ):
         """Init EmbeddingSegmentTransform.
 
         Parameters
@@ -23,23 +32,28 @@ class EmbeddingSegmentTransform(IrreversibleTransform):
             Columns to use for creating embeddings
         embedding_model:
             Model to create the embeddings
+        encoding_params:
+            params used during encoding. Params for corresponding models can be found at :ref:`embedding section <embeddings>`.
         out_column:
             Prefix for output columns, the output columns format is '{out_column}_{i}'
         """
         super().__init__(required_features=in_columns)
         self.in_columns = in_columns
         self.embedding_model = embedding_model
+        self.encoding_params = encoding_params if encoding_params is not None else {}
         self.out_column = out_column
 
     def _get_out_columns(self) -> List[str]:
         """Create the output columns names."""
         return [f"{self.out_column}_{i}" for i in range(self.embedding_model.output_dims)]
 
-    @staticmethod
-    def _prepare_data(df: pd.DataFrame) -> np.ndarray:
-        """Cut last all-nans timestamp."""
+    def _prepare_data(self, df: pd.DataFrame) -> np.ndarray:
+        """Reshape data into (n_segments, n_timestamps, input_dims)."""
         last_timestamp = max(np.where(~df.isna().all(axis=1))[0])
-        x = df[: last_timestamp + 1].values
+        df = df[: last_timestamp + 1]
+        n_timestamps = len(df.index)
+        n_segments = df.columns.get_level_values("segment").nunique()
+        x = df.values.reshape((n_timestamps, n_segments, len(self.in_columns))).transpose(1, 0, 2)
         return x
 
     def _fit(self, df: pd.DataFrame):
@@ -52,7 +66,7 @@ class EmbeddingSegmentTransform(IrreversibleTransform):
         segments = df.columns.get_level_values("segment").unique()
         n_timestamps = len(df.index)
         x = self._prepare_data(df)
-        embeddings = self.embedding_model.encode_segment(x)  # (n_segments, output_dim)
+        embeddings = self.embedding_model.encode_segment(x=x, **self.encoding_params)  # (n_segments, output_dim)
         embeddings = np.repeat(embeddings[np.newaxis, :, :], n_timestamps, axis=0).reshape(
             n_timestamps, -1
         )  # (n_timestamps, n_segments * output_dim)

@@ -1,2 +1,3 @@
 from etna.transforms.embeddings.embedding_segment import EmbeddingSegmentTransform
 from etna.transforms.embeddings.embedding_window import EmbeddingWindowTransform
+from etna.transforms.embeddings.models import TS2VecEmbeddingModel

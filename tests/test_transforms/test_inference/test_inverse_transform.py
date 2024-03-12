@@ -17,6 +17,8 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EmbeddingSegmentTransform
+from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import EventTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import FourierTransform
@@ -56,9 +58,8 @@ from etna.transforms import TimeSeriesImputerTransform
 from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
-from etna.transforms import EmbeddingSegmentTransform, EmbeddingWindowTransform
-from etna.transforms.embeddings.models import TS2VecEmbeddingModel
 from etna.transforms.decomposition import RupturesChangePointsModel
+from etna.transforms.embeddings.models import TS2VecEmbeddingModel
 from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
@@ -125,18 +126,17 @@ class TestInverseTransformTrainSubsetSegments:
             ),
             # embeddings
             (
-                    EmbeddingSegmentTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1)
-                    ),
-                    "regular_ts",
+                EmbeddingSegmentTransform(
+                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1)
+                ),
+                "regular_ts",
             ),
             (
-                    EmbeddingWindowTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1)
-                    ),
-                    "regular_ts",
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1, batch_size=1),
+                ),
+                "regular_ts",
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
@@ -338,18 +338,16 @@ class TestInverseTransformFutureSubsetSegments:
             ),
             # embeddings
             (
-                    EmbeddingSegmentTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1)
-                    ),
-                    "regular_ts",
+                EmbeddingSegmentTransform(
+                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1)
+                ),
+                "regular_ts",
             ),
             (
-                    EmbeddingWindowTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1)
-                    ),
-                    "regular_ts",
+                EmbeddingWindowTransform(
+                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1)
+                ),
+                "regular_ts",
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
@@ -541,20 +539,20 @@ class TestInverseTransformTrainNewSegments:
         [
             # embeddings
             (
-                    EmbeddingSegmentTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             (
-                    EmbeddingWindowTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
@@ -883,20 +881,20 @@ class TestInverseTransformFutureNewSegments:
         [
             # embeddings
             (
-                    EmbeddingSegmentTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             (
-                    EmbeddingWindowTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
@@ -1327,20 +1325,20 @@ class TestInverseTransformFutureWithTarget:
             ),
             # embeddings
             (
-                    EmbeddingSegmentTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             (
-                    EmbeddingWindowTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
@@ -1755,20 +1753,20 @@ class TestInverseTransformFutureWithoutTarget:
             ),
             # embeddings
             (
-                    EmbeddingSegmentTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             (
-                    EmbeddingWindowTransform(
-                        in_columns=["target"],
-                        embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
-                    ),
-                    "regular_ts",
-                    {}
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, n_epochs=1),
+                ),
+                "regular_ts",
+                {},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),

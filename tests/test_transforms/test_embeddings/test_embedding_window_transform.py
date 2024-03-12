@@ -2,11 +2,10 @@ import pathlib
 from copy import deepcopy
 from unittest.mock import Mock
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pytest
 
-from etna.datasets import TSDataset
 from etna.metrics import SMAPE
 from etna.models import LinearMultiSegmentModel
 from etna.pipeline import Pipeline
@@ -24,9 +23,7 @@ from etna.transforms.embeddings.models import TS2VecEmbeddingModel
 )
 @pytest.mark.smoke
 def test_fit(ts_with_exog_nan_begin, embedding_model):
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
-    )
+    transform = EmbeddingWindowTransform(in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model)
     transform.fit(ts=ts_with_exog_nan_begin)
 
 
@@ -38,9 +35,7 @@ def test_fit(ts_with_exog_nan_begin, embedding_model):
 )
 @pytest.mark.smoke
 def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
-    )
+    transform = EmbeddingWindowTransform(in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model)
     transform.fit_transform(ts=ts_with_exog_nan_begin)
 
 
@@ -52,9 +47,13 @@ def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
 )
 @pytest.mark.smoke
 def test_fit_forecast(example_tsds, embedding_model):
-    emb_transform = EmbeddingWindowTransform(in_columns=["target"], embedding_model=embedding_model, out_column="embedding_window")
+    emb_transform = EmbeddingWindowTransform(
+        in_columns=["target"], embedding_model=embedding_model, out_column="embedding_window"
+    )
     output_dims = embedding_model.output_dims
-    lag_transforms = [LagTransform(in_column=f"embedding_window_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)]
+    lag_transforms = [
+        LagTransform(in_column=f"embedding_window_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)
+    ]
     filter_transforms = FilterFeaturesTransform(exclude=[f"embedding_window_{i}" for i in range(output_dims)])
     transforms = [emb_transform] + lag_transforms + [filter_transforms]
 
@@ -70,9 +69,13 @@ def test_fit_forecast(example_tsds, embedding_model):
 )
 @pytest.mark.smoke
 def test_backtest(example_tsds, embedding_model):
-    emb_transform = EmbeddingWindowTransform(in_columns=["target"], embedding_model=embedding_model, out_column="embedding_window")
+    emb_transform = EmbeddingWindowTransform(
+        in_columns=["target"], embedding_model=embedding_model, out_column="embedding_window"
+    )
     output_dims = embedding_model.output_dims
-    lag_transforms = [LagTransform(in_column=f"embedding_window_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)]
+    lag_transforms = [
+        LagTransform(in_column=f"embedding_window_{i}", lags=[7], out_column=f"lag_{i}") for i in range(output_dims)
+    ]
     filter_transforms = FilterFeaturesTransform(exclude=[f"embedding_window_{i}" for i in range(output_dims)])
     transforms = [emb_transform] + lag_transforms + [filter_transforms]
 
@@ -88,9 +91,7 @@ def test_backtest(example_tsds, embedding_model):
 )
 @pytest.mark.smoke
 def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
-    )
+    transform = EmbeddingWindowTransform(in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model)
     transform.fit(ts=ts_with_exog_nan_begin)
 
     path = pathlib.Path(tmp_path) / "tmp.zip"
@@ -105,9 +106,7 @@ def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
 )
 @pytest.mark.smoke
 def test_load(ts_with_exog_nan_begin, tmp_path, embedding_model):
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
-    )
+    transform = EmbeddingWindowTransform(in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model)
     transform.fit(ts=ts_with_exog_nan_begin)
 
     path = pathlib.Path(tmp_path) / "tmp.zip"
@@ -128,9 +127,7 @@ def test_get_out_columns(output_dims, out_column, expected_out_columns):
 
 @pytest.mark.parametrize("embedding_model", [TS2VecEmbeddingModel(input_dims=3, n_epochs=1)])
 def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
-    )
+    transform = EmbeddingWindowTransform(in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model)
     first_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
     second_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
     pd.testing.assert_frame_equal(first_fit_encoded.to_pandas(), second_fit_encoded.to_pandas())
@@ -143,7 +140,9 @@ def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
     ],
 )
 def test_transform_format(
-    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "embedding_window_0", "embedding_window_1", "embedding_window_2")
+    ts_with_exog_nan_begin,
+    embedding_model,
+    expected_columns=("target", "exog_1", "exog_2", "embedding_window_0", "embedding_window_1", "embedding_window_2"),
 ):
     transform = EmbeddingWindowTransform(
         in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="embedding_window"
@@ -163,9 +162,7 @@ def test_transform_format(
     ],
 )
 def test_transform_load_pre_fitted(ts_with_exog_nan_begin, tmp_path, embedding_model):
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model
-    )
+    transform = EmbeddingWindowTransform(in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model)
     before_load_ts = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
 
     path = pathlib.Path(tmp_path) / "tmp.zip"

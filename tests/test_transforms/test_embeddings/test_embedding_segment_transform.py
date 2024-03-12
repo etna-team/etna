@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etna.datasets import TSDataset
 from etna.metrics import SMAPE
 from etna.models import LinearMultiSegmentModel
 from etna.pipeline import Pipeline
@@ -156,7 +155,16 @@ def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
     ],
 )
 def test_transform_format(
-    ts_with_exog_nan_begin, embedding_model, expected_columns=("target", "exog_1", "exog_2", "embedding_segment_0", "embedding_segment_1", "embedding_segment_2")
+    ts_with_exog_nan_begin,
+    embedding_model,
+    expected_columns=(
+        "target",
+        "exog_1",
+        "exog_2",
+        "embedding_segment_0",
+        "embedding_segment_1",
+        "embedding_segment_2",
+    ),
 ):
     transform = EmbeddingSegmentTransform(
         in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="embedding_segment"
