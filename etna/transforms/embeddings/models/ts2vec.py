@@ -183,7 +183,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         sliding_length:
             the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
-            this param specifies the contextual data length used for inference every sliding windows.
+            the contextual data length used for inference every sliding windows.
         encoding_window:
             when this param is specified, the computed representation would the max pooling over this window. The possible options are:
             * 'multiscale'
