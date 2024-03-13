@@ -128,7 +128,7 @@ class TSDataset:
             - None for integer timestamp
 
         df_exog:
-            dataframe with exogenous data in a wide of long format: :py:class:`~etna.datasets.utils.DataFrameFormat`
+            dataframe with exogenous data in a wide or long format: :py:class:`~etna.datasets.utils.DataFrameFormat`
         known_future:
             columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
