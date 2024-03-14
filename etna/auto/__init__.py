@@ -18,9 +18,7 @@ Basic usage
 
    if __name__ == "__main__":
       df = pd.read_csv(CURRENT_DIR_PATH / "data" / "example_dataset.csv")
-
-      ts = TSDataset.to_dataset(df)
-      ts = TSDataset(ts, freq="D")
+      ts = TSDataset(df, freq="D")
 
       # Create Auto object for greedy search
       # All trials will be saved in sqlite database

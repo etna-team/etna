@@ -7,6 +7,7 @@ import pytest
 from etna.datasets import TSDataset
 from etna.datasets import duplicate_data
 from etna.datasets import generate_ar_df
+from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import determine_freq
@@ -825,3 +826,123 @@ def test_make_timestamp_df_from_alignment_format(
 
     assert set(df.columns) == {"timestamp", "segment", timestamp_name}
     np.testing.assert_array_equal(df[timestamp_name], expected_timestamp)
+
+
+@pytest.fixture
+def example_long_df() -> pd.DataFrame:
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    return df
+
+
+@pytest.fixture
+def example_long_df_exog() -> pd.DataFrame:
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df.rename(columns={"target": "exog_1"}, inplace=True)
+    df["exog_2"] = df["exog_1"] + 1.5
+    return df
+
+
+@pytest.fixture
+def example_long_df_no_timestamp() -> pd.DataFrame:
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df.rename(columns={"timestamp": "renamed_timestamp"}, inplace=True)
+    return df
+
+
+@pytest.fixture
+def example_long_df_no_segment() -> pd.DataFrame:
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df.rename(columns={"segment": "renamed_segment"}, inplace=True)
+    return df
+
+
+@pytest.fixture
+def example_long_df_no_features() -> pd.DataFrame:
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df.drop(columns=["target"], inplace=True)
+    return df
+
+
+@pytest.fixture
+def example_wide_df(example_long_df) -> pd.DataFrame:
+    wide_df = TSDataset.to_dataset(example_long_df)
+    return wide_df
+
+
+@pytest.fixture
+def example_wide_df_exog(example_long_df_exog) -> pd.DataFrame:
+    wide_df = TSDataset.to_dataset(example_long_df_exog)
+    return wide_df
+
+
+@pytest.fixture
+def example_wide_df_not_sorted(example_wide_df_exog) -> pd.DataFrame:
+    example_wide_df_exog = example_wide_df_exog.iloc[:, ::-1]
+    return example_wide_df_exog
+
+
+@pytest.fixture
+def example_wide_df_no_index_name(example_wide_df) -> pd.DataFrame:
+    example_wide_df.index.name = None
+    return example_wide_df
+
+
+@pytest.fixture
+def example_wide_df_wrong_level_names(example_wide_df) -> pd.DataFrame:
+    example_wide_df.columns.set_names(("name_1", "name_2"), inplace=True)
+    return example_wide_df
+
+
+@pytest.fixture
+def example_wide_df_no_features(example_long_df_no_features) -> pd.DataFrame:
+    wide_df = TSDataset.to_dataset(example_long_df_no_features)
+    return wide_df
+
+
+@pytest.fixture
+def example_wide_df_exog_not_full(example_wide_df_exog) -> pd.DataFrame:
+    wide_df = example_wide_df_exog.iloc[:, :-1]
+    return wide_df
+
+
+@pytest.mark.parametrize(
+    "df_name, expected_format",
+    [
+        ("example_long_df", DataFrameFormat.long),
+        ("example_long_df_exog", DataFrameFormat.long),
+        ("example_wide_df", DataFrameFormat.wide),
+        ("example_wide_df_exog", DataFrameFormat.wide),
+        ("example_wide_df_not_sorted", DataFrameFormat.wide),
+        ("example_wide_df_no_index_name", DataFrameFormat.wide),
+    ],
+)
+def test_determine_format_ok(df_name, expected_format, request):
+    df = request.getfixturevalue(df_name)
+    determined_format = DataFrameFormat.determine(df=df)
+    assert determined_format is expected_format
+
+
+@pytest.mark.parametrize(
+    "df_name, error_match",
+    [
+        ("example_long_df_no_timestamp", "Given long dataframe doesn't have required column 'timestamp'"),
+        ("example_long_df_no_segment", "Given long dataframe doesn't have required column 'segment'!"),
+        (
+            "example_long_df_no_features",
+            "Given long dataframe doesn't have any columns except for 'timestamp` and 'segment'",
+        ),
+        (
+            "example_wide_df_wrong_level_names",
+            "Given wide dataframe doesn't have levels of columns \['segment', 'feature'\]",
+        ),
+        ("example_wide_df_no_features", "Given wide dataframe doesn't have any features"),
+        (
+            "example_wide_df_exog_not_full",
+            "Given wide dataframe doesn't have all combinations of pairs \(segment, feature\)",
+        ),
+    ],
+)
+def test_determine_format_fail(df_name, error_match, request):
+    df = request.getfixturevalue(df_name)
+    with pytest.raises(ValueError, match=error_match):
+        _ = DataFrameFormat.determine(df=df)

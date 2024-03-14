@@ -122,8 +122,7 @@ def plot_anomalies_interactive(
     >>> from etna.datasets import TSDataset
     >>> from etna.datasets import generate_ar_df
     >>> from etna.analysis import plot_anomalies_interactive, get_anomalies_density
-    >>> classic_df = generate_ar_df(periods=1000, start_time="2021-08-01", n_segments=2)
-    >>> df = TSDataset.to_dataset(classic_df)
+    >>> df = generate_ar_df(periods=1000, start_time="2021-08-01", n_segments=2)
     >>> ts = TSDataset(df, "D")
     >>> params_bounds = {"window_size": (5, 20, 1), "distance_coef": (0.1, 3, 0.25)}
     >>> method = get_anomalies_density

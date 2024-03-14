@@ -22,6 +22,7 @@ from typing_extensions import Literal
 
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
+from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import get_level_dataframe
@@ -54,8 +55,7 @@ class TSDataset:
     --------
     >>> from etna.datasets import generate_const_df
     >>> df = generate_const_df(periods=30, start_time="2021-06-01", n_segments=2, scale=1)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> ts["2021-06-01":"2021-06-07", "segment_0", "target"]
     timestamp
     2021-06-01    1.0
@@ -74,8 +74,6 @@ class TSDataset:
     >>> df_regressors = df_regressors.pivot(index="timestamp", columns="segment").reset_index()
     >>> df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(5)]
     >>> df_regressors["segment"] = "segment_0"
-    >>> df_to_forecast = TSDataset.to_dataset(df_to_forecast)
-    >>> df_regressors = TSDataset.to_dataset(df_regressors)
     >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")
     >>> tsdataset.df.head(5)
     segment      segment_0
@@ -119,7 +117,8 @@ class TSDataset:
         Parameters
         ----------
         df:
-            dataframe with timeseries
+            dataframe with timeseries in a wide or long format: :py:class:`~etna.datasets.utils.DataFrameFormat`;
+            it is expected that ``df`` has feature target
         freq:
             frequency of timestamp in df, possible values:
 
@@ -129,7 +128,7 @@ class TSDataset:
             - None for integer timestamp
 
         df_exog:
-            dataframe with exogenous data;
+            dataframe with exogenous data in a wide or long format: :py:class:`~etna.datasets.utils.DataFrameFormat`
         known_future:
             columns in ``df_exog[known_future]`` that are regressors,
             if "all" value is given, all columns are meant to be regressors
@@ -141,20 +140,22 @@ class TSDataset:
         self.raw_df = self._prepare_df(df=df.copy(deep=True), freq=freq)
         self.df = self.raw_df.copy(deep=True)
 
-        self.known_future = self._check_known_future(known_future, df_exog)
-        self._regressors = copy(self.known_future)
-
         self.hierarchical_structure = hierarchical_structure
         self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
         self.current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
-            self.df_exog = self._cast_segment_to_str(df=df_exog.copy(deep=True))
-            if freq is not None:
-                self._cast_index_to_datetime(self.df_exog, freq)
+            self.df_exog = self._prepare_df_exog(df_exog=df_exog.copy(deep=True), freq=freq)
+
+            self.known_future = self._check_known_future(known_future, self.df_exog)
+            self._regressors = copy(self.known_future)
+
             self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
             if self.current_df_level == self.current_df_exog_level:
                 self.df = self._merge_exog(df=self.df)
+        else:
+            self.known_future = self._check_known_future(known_future, df_exog)
+            self._regressors = copy(self.known_future)
 
         self._target_components_names: Tuple[str, ...] = tuple()
         self._prediction_intervals_names: Tuple[str, ...] = tuple()
@@ -195,7 +196,13 @@ class TSDataset:
     @staticmethod
     def _cast_segment_to_str(df: pd.DataFrame) -> pd.DataFrame:
         columns_frame = df.columns.to_frame()
-        columns_frame["segment"] = columns_frame["segment"].astype(str)
+        dtype = columns_frame["segment"].dtype
+        if not pd.api.types.is_object_dtype(dtype):
+            warnings.warn(
+                f"Segment values doesn't have string type, given type is {dtype}. "
+                f"Segments will be converted to string."
+            )
+            columns_frame["segment"] = columns_frame["segment"].astype(str)
         df.columns = pd.MultiIndex.from_frame(columns_frame)
         return df
 
@@ -210,12 +217,16 @@ class TSDataset:
 
     @classmethod
     def _prepare_df(cls, df: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
+        df_format = DataFrameFormat.determine(df)
+        if df_format is DataFrameFormat.long:
+            df = cls.to_dataset(df)
+
         # cast segment to str type
         cls._cast_segment_to_str(df)
 
         # handle freq
         if freq is None:
-            if df.index.dtype != "int":
+            if not pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("You set wrong freq. Data contains datetime index, not integer.")
 
             new_index = np.arange(df.index.min(), df.index.max() + 1)
@@ -239,6 +250,18 @@ class TSDataset:
             df = df.asfreq(freq)
 
         return df
+
+    @classmethod
+    def _prepare_df_exog(cls, df_exog: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
+        df_format = DataFrameFormat.determine(df_exog)
+        if df_format is DataFrameFormat.long:
+            df_exog = cls.to_dataset(df_exog)
+
+        df_exog = cls._cast_segment_to_str(df=df_exog)
+        if freq is not None:
+            cls._cast_index_to_datetime(df_exog, freq)
+
+        return df_exog
 
     def __repr__(self):
         return self.df.__repr__()
@@ -301,10 +324,8 @@ class TSDataset:
         ...     "regressor_1": np.arange(80), "regressor_2": np.arange(80) + 5,
         ...     "segment": ["segment_0"]*40 + ["segment_1"]*40
         ... })
-        >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> df_regressors_ts_format = TSDataset.to_dataset(df_regressors)
         >>> ts = TSDataset(
-        ...     df_ts_format, "D", df_exog=df_regressors_ts_format, known_future="all"
+        ...     df, "D", df_exog=df_regressors, known_future="all"
         ... )
         >>> ts.make_future(4)
         segment      segment_0                      segment_1
@@ -519,8 +540,7 @@ class TSDataset:
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
         ... )
-        >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> ts = TSDataset(df_ts_format, "D")
+        >>> ts = TSDataset(df, "D")
         >>> ts.segments
         ['segment_0', 'segment_1']
         """
@@ -537,7 +557,6 @@ class TSDataset:
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
         ... )
-        >>> df_ts_format = TSDataset.to_dataset(df)
         >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
         >>> df_regressors_1 = pd.DataFrame(
         ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
@@ -546,9 +565,8 @@ class TSDataset:
         ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
-        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
         >>> ts = TSDataset(
-        ...     df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all"
+        ...     df, df_exog=df_exog, freq="D", known_future="all"
         ... )
         >>> ts.regressors
         ['regressor_1']
@@ -634,7 +652,7 @@ class TSDataset:
 
     @staticmethod
     def to_flatten(df: pd.DataFrame, features: Union[Literal["all"], Sequence[str]] = "all") -> pd.DataFrame:
-        """Return pandas DataFrame with flatten index.
+        """Return pandas DataFrame in a long format.
 
         The order of columns is (timestamp, segment, target,
         features in alphabetical order).
@@ -666,8 +684,8 @@ class TSDataset:
         2  2021-06-03  segment_0    1.00
         3  2021-06-04  segment_0    1.00
         4  2021-06-05  segment_0    1.00
-        >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> TSDataset.to_flatten(df_ts_format).head(5)
+        >>> df_wide = TSDataset.to_dataset(df)
+        >>> TSDataset.to_flatten(df_wide).head(5)
            timestamp    segment  target
         0 2021-06-01  segment_0    1.0
         1 2021-06-02  segment_0    1.0
@@ -711,9 +729,9 @@ class TSDataset:
         Parameters
         ----------
         flatten:
-            * If False, return pd.DataFrame with multiindex
+            * If False, return dataframe in a wide format
 
-            * If True, return with flatten index,
+            * If True, return dataframe in a long format,
               its order of columns is (timestamp, segment, target,
               features in alphabetical order).
 
@@ -739,8 +757,7 @@ class TSDataset:
         2  2021-06-03  segment_0    1.00
         3  2021-06-04  segment_0    1.00
         4  2021-06-05  segment_0    1.00
-        >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> ts = TSDataset(df_ts_format, "D")
+        >>> ts = TSDataset(df, "D")
         >>> ts.to_pandas(True).head(5)
             timestamp    segment  target
         0  2021-06-01  segment_0    1.00
@@ -769,7 +786,7 @@ class TSDataset:
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
-        """Convert pandas dataframe to ETNA Dataset format.
+        """Convert pandas dataframe to wide format.
 
         Columns "timestamp" and "segment" are required.
 
@@ -797,8 +814,8 @@ class TSDataset:
         2 2021-06-03  segment_0    1.00
         3 2021-06-04  segment_0    1.00
         4 2021-06-05  segment_0    1.00
-        >>> df_ts_format = TSDataset.to_dataset(df)
-        >>> df_ts_format.head(5)
+        >>> df_wide = TSDataset.to_dataset(df)
+        >>> df_wide.head(5)
         segment    segment_0 segment_1
         feature       target    target
         timestamp
@@ -825,7 +842,7 @@ class TSDataset:
         """
         df_copy = df.copy(deep=True)
 
-        if df_copy["timestamp"].dtype != "int":
+        if not pd.api.types.is_integer_dtype(df_copy["timestamp"]):
             df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
 
         df_copy["segment"] = df_copy["segment"].astype(str)
@@ -1038,7 +1055,6 @@ class TSDataset:
         >>> from etna.datasets import generate_ar_df
         >>> pd.options.display.float_format = '{:,.2f}'.format
         >>> df = generate_ar_df(100, start_time="2021-01-01", n_segments=3)
-        >>> df = TSDataset.to_dataset(df)
         >>> ts = TSDataset(df, "D")
         >>> train_ts, test_ts = ts.train_test_split(
         ...     train_start="2021-01-01", train_end="2021-02-01",
@@ -1281,7 +1297,7 @@ class TSDataset:
         Parameters
         ----------
         target_components_df:
-            Dataframe in etna wide format with target components
+            Dataframe in a wide format with target components
 
         Raises
         ------
@@ -1338,7 +1354,7 @@ class TSDataset:
         Parameters
         ----------
         prediction_intervals_df:
-            Dataframe in etna wide format with prediction intervals
+            Dataframe in a wide format with prediction intervals
 
         Raises
         ------
@@ -1553,7 +1569,6 @@ class TSDataset:
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
         ... )
-        >>> df_ts_format = TSDataset.to_dataset(df)
         >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
         >>> df_regressors_1 = pd.DataFrame(
         ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
@@ -1562,8 +1577,7 @@ class TSDataset:
         ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
-        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all")
+        >>> ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
         >>> ts.describe()
                   start_timestamp end_timestamp  length  num_missing  num_segments  num_exogs  num_regressors  num_known_future freq
         segments
@@ -1641,7 +1655,6 @@ class TSDataset:
         ...    periods=30, start_time="2021-06-01",
         ...    n_segments=2, scale=1
         ... )
-        >>> df_ts_format = TSDataset.to_dataset(df)
         >>> regressors_timestamp = pd.date_range(start="2021-06-01", periods=50)
         >>> df_regressors_1 = pd.DataFrame(
         ...     {"timestamp": regressors_timestamp, "regressor_1": 1, "segment": "segment_0"}
@@ -1650,8 +1663,7 @@ class TSDataset:
         ...     {"timestamp": regressors_timestamp, "regressor_1": 2, "segment": "segment_1"}
         ... )
         >>> df_exog = pd.concat([df_regressors_1, df_regressors_2], ignore_index=True)
-        >>> df_exog_ts_format = TSDataset.to_dataset(df_exog)
-        >>> ts = TSDataset(df_ts_format, df_exog=df_exog_ts_format, freq="D", known_future="all")
+        >>> ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
         >>> ts.info()
         <class 'etna.datasets.TSDataset'>
         num_segments: 2

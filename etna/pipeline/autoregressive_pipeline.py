@@ -28,14 +28,13 @@ class AutoRegressivePipeline(
     >>> from etna.datasets import TSDataset
     >>> from etna.models import LinearPerSegmentModel
     >>> from etna.transforms import LagTransform
-    >>> classic_df = generate_periodic_df(
+    >>> df = generate_periodic_df(
     ...     periods=100,
     ...     start_time="2020-01-01",
     ...     n_segments=4,
     ...     period=7,
     ...     sigma=3
     ... )
-    >>> df = TSDataset.to_dataset(df=classic_df)
     >>> ts = TSDataset(df, freq="D")
     >>> horizon = 7
     >>> transforms = [

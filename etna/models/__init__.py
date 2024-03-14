@@ -12,7 +12,7 @@ Models are used to make predictions. Let's look at the basic example of usage:
 >>> from etna.models import LinearPerSegmentModel
 >>>
 >>> df = generate_ar_df(periods=100, start_time="2021-01-01", ar_coef=[1/2], n_segments=2)
->>> ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+>>> ts = TSDataset(df, freq="D")
 >>> lag_transform = LagTransform(in_column="target", lags=[3, 4, 5])
 >>> ts.fit_transform(transforms=[lag_transform])
 >>> future_ts = ts.make_future(future_steps=3, transforms=[lag_transform])

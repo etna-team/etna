@@ -228,7 +228,7 @@ def base_timeseries_int_timestamp_exog_path():
 
 
 @pytest.fixture
-def empty_ts():
-    df = pd.DataFrame({"segment": [], "timestamp": [], "target": []})
+def small_ts():
+    df = pd.DataFrame({"segment": ["segment_0"], "timestamp": [pd.Timestamp("2020-01-01")], "target": [1]})
     df = TSDataset.to_dataset(df=df)
     return TSDataset(df=df, freq="D")
