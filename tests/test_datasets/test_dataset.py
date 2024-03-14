@@ -12,6 +12,9 @@ from pandas.testing import assert_frame_equal
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
 from etna.datasets.utils import DataFrameFormat
+from etna.datasets.utils import apply_alignment
+from etna.datasets.utils import infer_alignment
+from etna.datasets.utils import make_timestamp_df_from_alignment
 from etna.transforms import AddConstTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import TimeSeriesImputerTransform
@@ -1684,3 +1687,193 @@ def test_check_timestamp_type_warning():
 
     with pytest.warns(UserWarning, match=match):
         TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+
+
+"""TODO: что хотим проверить
+- ts.freq is None
+- ts.known_future содержит original_timestamp_name
+- ts.df_exog содержит original_timestamp_name
+- ts.df_exog получается путем join-а исходного df_exog и результата make_timestamp_df
+- ts.raw_df получается путем alignment-а
+- ts.df_exog -- коллизия имени с original_timestamp_name
+"""
+
+
+@pytest.mark.parametrize(
+    "df_name, freq, original_timestamp_name, future_steps",
+    [
+        ("df_aligned_datetime", "D", "external_timestamp", 1),
+        ("df_aligned_int", None, "external_timestamp", 1),
+        ("df_misaligned_datetime", "D", "external_timestamp", 1),
+        ("df_misaligned_int", None, "external_timestamp", 1),
+        ("df_misaligned_datetime", "D", "new_timestamp", 1),
+        ("df_misaligned_datetime", "D", "external_timestamp", 3),
+        ("df_misaligned_datetime", "D", "external_timestamp", 100),
+    ],
+)
+def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_name, future_steps, request):
+    df = request.getfixturevalue(df_name)
+    ts = TSDataset.create_from_misaligned(
+        df=df, df_exog=None, freq=freq, original_timestamp_name=original_timestamp_name, future_steps=future_steps
+    )
+
+    alignment = infer_alignment(df)
+    expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
+    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+
+    timestamp_df = make_timestamp_df_from_alignment(
+        alignment=alignment,
+        start=expected_raw_df.index[0],
+        periods=len(expected_raw_df) + future_steps,
+        freq=freq,
+        timestamp_name=original_timestamp_name,
+    )
+    expected_df_exog = TSDataset.to_dataset(timestamp_df)
+    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+
+    assert original_timestamp_name in ts.known_future
+    assert ts.freq is None
+
+
+@pytest.mark.parametrize(
+    "df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps",
+    [
+        ("df_aligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "new_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 3),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 100),
+    ],
+)
+def test_create_from_misaligned_with_exog(
+    df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps, request
+):
+    df = request.getfixturevalue(df_name)
+    df_exog = request.getfixturevalue(df_exog_name)
+    ts = TSDataset.create_from_misaligned(
+        df=df,
+        df_exog=df_exog,
+        freq=freq,
+        original_timestamp_name=original_timestamp_name,
+        future_steps=future_steps,
+        known_future=known_future,
+    )
+
+    alignment = infer_alignment(df)
+    expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
+    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+
+    expected_df_exog = TSDataset.to_dataset(apply_alignment(df=df_exog, alignment=alignment))
+    timestamp_df = make_timestamp_df_from_alignment(
+        alignment=alignment,
+        start=expected_raw_df.index[0],
+        periods=len(expected_raw_df) + future_steps,
+        freq=freq,
+        timestamp_name=original_timestamp_name,
+    )
+    expected_df_exog = expected_df_exog.join(TSDataset.to_dataset(timestamp_df), how="outer")
+    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+
+    expected_known_future = sorted(set(known_future).union([original_timestamp_name]))
+    assert ts.known_future == expected_known_future
+
+    assert ts.freq is None
+
+
+@pytest.mark.parametrize(
+    "df_name, df_exog_name, freq, original_timestamp_name, future_steps, expected_known_future",
+    [
+        (
+            "df_misaligned_datetime",
+            "df_exog_all_misaligned_datetime",
+            "D",
+            "external_timestamp",
+            1,
+            ["exog_1", "exog_2", "external_timestamp"],
+        ),
+    ],
+)
+def test_create_from_misaligned_with_exog_all(
+    df_name, df_exog_name, freq, original_timestamp_name, future_steps, expected_known_future, request
+):
+    df = request.getfixturevalue(df_name)
+    df_exog = request.getfixturevalue(df_exog_name)
+    ts = TSDataset.create_from_misaligned(
+        df=df,
+        df_exog=df_exog,
+        freq=freq,
+        original_timestamp_name=original_timestamp_name,
+        future_steps=future_steps,
+        known_future="all",
+    )
+
+    alignment = infer_alignment(df)
+    expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
+    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+
+    expected_df_exog = TSDataset.to_dataset(apply_alignment(df=df_exog, alignment=alignment))
+    timestamp_df = make_timestamp_df_from_alignment(
+        alignment=alignment,
+        start=expected_raw_df.index[0],
+        periods=len(expected_raw_df) + future_steps,
+        freq=freq,
+        timestamp_name=original_timestamp_name,
+    )
+    expected_df_exog = expected_df_exog.join(TSDataset.to_dataset(timestamp_df), how="outer")
+    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+
+    assert ts.known_future == expected_known_future
+    assert ts.freq is None
+
+
+@pytest.mark.parametrize(
+    "df_name, freq, original_timestamp_name, future_steps",
+    [
+        ("df_misaligned_datetime", "D", "external_timestamp", 0),
+        ("df_misaligned_datetime", "D", "external_timestamp", -3),
+        ("df_misaligned_int", None, "external_timestamp", 0),
+        ("df_misaligned_int", None, "external_timestamp", -3),
+    ],
+)
+def test_create_from_misaligned_fail_non_positive_future_steps(
+    df_name, freq, original_timestamp_name, future_steps, request
+):
+    df = request.getfixturevalue(df_name)
+    with pytest.raises(ValueError, match="Parameter future_steps should be positive"):
+        _ = TSDataset.create_from_misaligned(
+            df=df,
+            df_exog=None,
+            freq=freq,
+            original_timestamp_name=original_timestamp_name,
+            future_steps=future_steps,
+        )
+
+
+@pytest.mark.parametrize(
+    "df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps",
+    [
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "exog_1", 1),
+    ],
+)
+def test_create_from_misaligned_fail_name_intersection(
+    df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps, request
+):
+    df = request.getfixturevalue(df_name)
+    df_exog = request.getfixturevalue(df_exog_name)
+    with pytest.raises(
+        ValueError, match="Parameter original_timestamp_name shouldn't intersect with columns in df_exog"
+    ):
+        _ = TSDataset.create_from_misaligned(
+            df=df,
+            df_exog=df_exog,
+            freq=freq,
+            original_timestamp_name=original_timestamp_name,
+            future_steps=future_steps,
+            known_future=known_future,
+        )
