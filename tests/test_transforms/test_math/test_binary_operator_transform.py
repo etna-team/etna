@@ -310,9 +310,28 @@ def test_inverse_two_segments(ts_two_segments, operand, left_column, right_colum
         "<",
     ],
 )
-def test_inverse_failed(ts_one_segment, operand):
+def test_inverse_failed_unsupported_operator(ts_one_segment, operand):
     transformer = binary_operator.BinaryOperationTransform(
         left_column="feature", right_column="target", operator=operand, out_column="target"
+    )
+    with pytest.raises(
+        ValueError,
+    ):
+        _ = transformer.inverse_transform(ts=ts_one_segment)
+
+
+@pytest.mark.parametrize(
+    "operand, left_column, right_column, out_column",
+    [
+        ("+", "feature", "target", "new_col"),
+        ("-", "feature", "target", "new_col"),
+        ("*", "feature", "target", "new_col"),
+        ("/", "feature", "target", "new_col"),
+    ],
+)
+def test_inverse_failed_not_inplace(ts_one_segment, operand, left_column, right_column, out_column):
+    transformer = binary_operator.BinaryOperationTransform(
+        left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
     with pytest.raises(
         ValueError,

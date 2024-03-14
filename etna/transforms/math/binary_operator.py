@@ -153,7 +153,7 @@ class BinaryOperationTransform(ReversibleTransform):
         if not self.inplace_flag or self.inverse_operator is None:
             raise ValueError("We only support inverse transform if out_column is left_column or right_column")
         if self.inverse_operator is None:
-            raise ValueError("We only support inverse transform if the original operation is is '+', '-', '*', '/'")
+            raise ValueError("We only support inverse transform if the original operation is '+', '-', '*', '/'")
         proper_column = self.left_column if (self.left_column != self.out_column) else self.right_column
         if self.operator in ["+", "*"]:
             df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
@@ -175,7 +175,7 @@ class BinaryOperationTransform(ReversibleTransform):
         """Return the list with regressors created by the transform."""
         if self._in_column_regressor is None:
             raise ValueError("Transform is not fitted!")
-        return [self.out_column] if self._in_column_regressor else []
+        return [self.out_column] if self._in_column_regressor and not self.inplace_flag else []
 
 
 all = ["BinaryOperationTransform"]
