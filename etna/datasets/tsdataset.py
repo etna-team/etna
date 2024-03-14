@@ -257,7 +257,7 @@ class TSDataset:
         if df_format is DataFrameFormat.long:
             df_exog = cls.to_dataset(df_exog)
 
-        df_exog = cls._cast_segment_to_str(df=df_exog.copy(deep=True))
+        df_exog = cls._cast_segment_to_str(df=df_exog)
         if freq is not None:
             cls._cast_index_to_datetime(df_exog, freq)
 
