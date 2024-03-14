@@ -32,7 +32,8 @@ class BinaryOperator(str, Enum):
 
     def perform(self, df: pd.DataFrame, left_operand: str, right_operand: str, out_column: str) -> pd.DataFrame:
         """Perform binary operation on passed dataframe.
-        - If during the operation a division by zero of a positive number occurs, writes +inf to this cell of the column, if negative - -inf.
+
+        - If during the operation a division by zero of a positive number occurs, writes +inf to this cell of the column, if negative - -inf, if 0/0 - nan.
         - In the case of raising a negative number to a non-integer power, writes nan to this cell of the column.
 
         Parameters
@@ -45,6 +46,8 @@ class BinaryOperator(str, Enum):
             Name of the right column
         out_column:
             Resulting column name, which contains the result of the operation operand(left, right)
+        Returns:
+            Column which contains result of operation
         """
         pandas_operator = getattr(pd.DataFrame, self.name)
         df_left = df.loc[:, pd.IndexSlice[:, left_operand]].rename(columns={left_operand: out_column}, level="feature")
@@ -55,7 +58,10 @@ class BinaryOperator(str, Enum):
 
 
 class BinaryOperationTransform(ReversibleTransform):
-    """Perform binary operation on the columns of dataset."""
+    """Perform binary operation on the columns of dataset.
+
+    Inverse_transform functionality is only supported for operations +, -, * , /
+    """
 
     def __init__(self, left_column: str, right_column: str, operator: str, out_column: Optional[str] = None):
         """Create instance of BinaryOperationTransform.
@@ -67,7 +73,7 @@ class BinaryOperationTransform(ReversibleTransform):
         right_column:
             Name of the right column
         operator:
-            Operation to perform on the columns
+            Operation to perform on the columns(it must be an operation supported by BinaryOperator)
         out_column:
             Resulting column name, if don't set, name will be `left_column operator right_column`.
             If out_column is left_column or right_column, apply changes to the existing column out_column, else create new column.
@@ -150,10 +156,12 @@ class BinaryOperationTransform(ReversibleTransform):
         ValueError:
             If initial operation is not '+', '-', '*' or '/'
         """
-        if not self.inplace_flag or self.inverse_operator is None:
+        if not self.inplace_flag:
             raise ValueError("We only support inverse transform if out_column is left_column or right_column")
         if self.inverse_operator is None:
-            raise ValueError("We only support inverse transform if the original operation is '+', '-', '*', '/'")
+            raise ValueError(
+                "We only support inverse transform if the original operation is .+, .-, .*, ./"
+            )
         proper_column = self.left_column if (self.left_column != self.out_column) else self.right_column
         if self.operator in ["+", "*"]:
             df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
