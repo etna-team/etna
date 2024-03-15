@@ -159,9 +159,7 @@ class BinaryOperationTransform(ReversibleTransform):
         if not self.inplace_flag:
             raise ValueError("We only support inverse transform if out_column is left_column or right_column")
         if self.inverse_operator is None:
-            raise ValueError(
-                "We only support inverse transform if the original operation is .+, .-, .*, ./"
-            )
+            raise ValueError("We only support inverse transform if the original operation is .+, .-, .*, ./")
         proper_column = self.left_column if (self.left_column != self.out_column) else self.right_column
         if self.operator in ["+", "*"]:
             df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
