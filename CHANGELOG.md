@@ -8,6 +8,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Changed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+
+### Fixed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [2.5.0] - 2024-03-18
+### Added
 - Add `electricity` to internal datasets ([#60](https://github.com/etna-team/etna/pull/60))
 - Add `parts` argument to `load_dataset` function ([#79](https://github.com/etna-team/etna/pull/79))
 - Add `M4` to internal datasets ([#83](https://github.com/etna-team/etna/pull/83))
@@ -34,10 +96,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix `traffic_2008` ([128](https://github.com/etna-team/etna/pull/128))
 - Fix number of segments in docs, column name for tourism dataset and change default save path ([#206](https://github.com/etna-team/etna/pull/206))
-- Fix method `to_dict` for `SklearnPerSegmentModel` and `SklearnMultiSegmentModel`([#199](https://github.com/etna-team/etna/pull/199))
+- Fix method `to_dict` for `SklearnPerSegmentModel` and `SklearnMultiSegmentModel` ([#199](https://github.com/etna-team/etna/pull/199))
 - Fix method `fit` for `MRMRFeatureSelectionTransform` with `redundancy_aggregation_mode`=`median` ([#212](https://github.com/etna-team/etna/pull/212))
 - Fix method `predict_components` for `_CatBoostAdapter` working incorrectly on shuffled columns ([#227](https://github.com/etna-team/etna/pull/227))
-
 
 ## [2.4.0] - 2023-12-15
 ### Added
