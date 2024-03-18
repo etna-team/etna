@@ -15,7 +15,7 @@ class BinaryOperator(str, Enum):
     sub = "-"
     mul = "*"
     div = "/"
-    floordiv = "/="
+    floordiv = "//"
     mod = "%"
     pow = "**"
 
@@ -46,7 +46,9 @@ class BinaryOperator(str, Enum):
             Name of the right column
         out_column:
             Resulting column name, which contains the result of the operation operand(left, right)
-        Returns:
+        Returns
+        -------
+        :
             Column which contains result of operation
         """
         pandas_operator = getattr(pd.DataFrame, self.name)
@@ -73,12 +75,12 @@ class BinaryOperationTransform(ReversibleTransform):
         right_column:
             Name of the right column
         operator:
-            Operation to perform on the columns(it must be an operation supported by BinaryOperator)
+            Operation to perform on the columns, see :py:class:`~etna.transforms.math.binary_operator.BinaryOperator`
         out_column:
-            Resulting column name, if don't set, name will be `left_column operator right_column`.
-            If out_column is left_column or right_column, apply changes to the existing column out_column, else create new column.
+            - Resulting column name, if don't set, name will be `left_column operator right_column`.
+            - If out_column is left_column or right_column, apply changes to the existing column out_column, else create new column.
         """
-        inverse_logic = {"+": "-", "-": "+", "*": "/", "/": "*"}
+        self.inverse_logic = {"+": "-", "-": "+", "*": "/", "/": "*"}
         super().__init__(required_features=[left_column, right_column])
         self.inplace_flag = (left_column == out_column) | (right_column == out_column)
         self.left_column = left_column
@@ -89,7 +91,7 @@ class BinaryOperationTransform(ReversibleTransform):
         self.out_column = out_column if out_column is not None else self.left_column + self.operator + self.right_column
 
         self._in_column_regressor: Optional[bool] = None
-        self.inverse_operator = BinaryOperator(inverse_logic[operator]) if operator in inverse_logic else None
+        self.inverse_operator = BinaryOperator(self.inverse_logic[operator]) if operator in self.inverse_logic else None
 
     def fit(self, ts: TSDataset) -> "BinaryOperationTransform":
         """Fit the transform."""
@@ -107,7 +109,7 @@ class BinaryOperationTransform(ReversibleTransform):
 
         Returns
         -------
-        result: ``BinaryOperationTransform``
+            result:
         """
         return self
 
@@ -121,7 +123,7 @@ class BinaryOperationTransform(ReversibleTransform):
 
         Returns
         -------
-        : pd.Dataframe
+        :
             transformed dataframe
         """
         result = self.operator.perform(
@@ -157,13 +159,13 @@ class BinaryOperationTransform(ReversibleTransform):
             If initial operation is not '+', '-', '*' or '/'
         """
         if not self.inplace_flag:
-            raise ValueError("We only support inverse transform if out_column is left_column or right_column")
+            return df
         if self.inverse_operator is None:
             raise ValueError("We only support inverse transform if the original operation is .+, .-, .*, ./")
-        proper_column = self.left_column if (self.left_column != self.out_column) else self.right_column
+        support_column = self.left_column if (self.left_column != self.out_column) else self.right_column
         if self.operator in ["+", "*"]:
             df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
-                df=df, left_operand=self.out_column, right_operand=proper_column, out_column=self.out_column
+                df=df, left_operand=self.out_column, right_operand=support_column, out_column=self.out_column
             )
         else:
             if self.right_column == self.out_column:
@@ -172,7 +174,7 @@ class BinaryOperationTransform(ReversibleTransform):
                 else:
                     df.loc[:, pd.IndexSlice[:, self.out_column]] = 1 / df.loc[:, pd.IndexSlice[:, self.out_column]]
             df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
-                df=df, left_operand=self.out_column, right_operand=proper_column, out_column=self.out_column
+                df=df, left_operand=self.out_column, right_operand=support_column, out_column=self.out_column
             )
 
         return df
