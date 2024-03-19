@@ -1689,16 +1689,6 @@ def test_check_timestamp_type_warning():
         TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
 
 
-"""TODO: что хотим проверить
-- ts.freq is None
-- ts.known_future содержит original_timestamp_name
-- ts.df_exog содержит original_timestamp_name
-- ts.df_exog получается путем join-а исходного df_exog и результата make_timestamp_df
-- ts.raw_df получается путем alignment-а
-- ts.df_exog -- коллизия имени с original_timestamp_name
-"""
-
-
 @pytest.mark.parametrize(
     "df_name, freq, original_timestamp_name, future_steps",
     [
