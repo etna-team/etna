@@ -143,8 +143,8 @@ Functional transforms and their utilities:
 
    LambdaTransform
    AddConstTransform
-   math.BinaryOperationTransform
-   math.BinaryOperator
+   BinaryOperationTransform
+   BinaryOperator
    LogTransform
    YeoJohnsonTransform
    BoxCoxTransform

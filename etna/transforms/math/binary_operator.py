@@ -46,6 +46,7 @@ class BinaryOperator(str, Enum):
             Name of the right column
         out_column:
             Resulting column name, which contains the result of the operation operand(left, right)
+
         Returns
         -------
         :
@@ -109,7 +110,8 @@ class BinaryOperationTransform(ReversibleTransform):
 
         Returns
         -------
-            result:
+        :
+            result
         """
         return self
 
@@ -151,6 +153,7 @@ class BinaryOperationTransform(ReversibleTransform):
         -------
         : pd.Dataframe
             transformed dataframe
+
         Raises
         ------
         ValueError:
@@ -160,8 +163,10 @@ class BinaryOperationTransform(ReversibleTransform):
         """
         if not self._inplace_flag:
             return df
+
         if self.inverse_operator is None:
             raise ValueError("We only support inverse transform if the original operation is .+, .-, .*, ./")
+
         support_column = self.left_column if (self.left_column != self.out_column) else self.right_column
         if self.operator in ["+", "*"]:
             df.loc[:, pd.IndexSlice[:, self.out_column]] = self.inverse_operator.perform(
