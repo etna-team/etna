@@ -595,7 +595,16 @@ def infer_alignment(df: pd.DataFrame) -> Union[Dict[str, pd.Timestamp], Dict[str
     -------
     :
         Dictionary with mapping segment -> timestamp.
+
+    Raises
+    ------
+    ValueError:
+        Parameter ``df`` isn't in a long format.
     """
+    df_format = DataFrameFormat.determine(df=df)
+    if df_format is not DataFrameFormat.long:
+        raise ValueError("Parameter df should be in a long format!")
+
     return df.groupby(by=["segment"]).agg({"timestamp": "max"})["timestamp"].to_dict()
 
 
@@ -629,10 +638,16 @@ def apply_alignment(
     Raises
     ------
     ValueError:
+        Parameter ``df`` isn't in a long format.
+    ValueError:
         There is a segment in ``df`` which isn't present in ``alignment``.
     ValueError:
         There is a segment which doesn't have a timestamp that is present in ``alignment``.
     """
+    df_format = DataFrameFormat.determine(df=df)
+    if df_format is not DataFrameFormat.long:
+        raise ValueError("Parameter df should be in a long format!")
+
     df_list = []
     for segment in df["segment"].unique():
         if segment not in alignment:

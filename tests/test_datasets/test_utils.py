@@ -520,51 +520,18 @@ def test_timestamp_range_fail_num_parameters(start, end, periods, freq):
         _ = timestamp_range(start=start, end=end, periods=periods, freq=freq)
 
 
-@pytest.fixture
-def df_aligned_datetime() -> pd.DataFrame:
-    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
-    return df
-
-
-@pytest.fixture
-def df_aligned_int() -> pd.DataFrame:
-    df = generate_ar_df(start_time=10, periods=10, n_segments=2, freq=None)
-    return df
-
-
-@pytest.fixture
-def df_misaligned_datetime() -> pd.DataFrame:
-    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
-    df = df.iloc[:-3]
-    return df
-
-
-@pytest.fixture
-def df_misaligned_int() -> pd.DataFrame:
-    df = generate_ar_df(start_time=10, periods=10, n_segments=2, freq=None)
-    df = df.iloc[:-3]
-    return df
-
-
-@pytest.fixture
-def df_misaligned_datetime_with_missing_values() -> pd.DataFrame:
-    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
-    df.loc[df.index[-3:], "target"] = np.NaN
-    return df
-
-
-@pytest.fixture
-def df_misaligned_int_with_missing_values() -> pd.DataFrame:
-    df = generate_ar_df(start_time=10, periods=10, n_segments=2, freq=None)
-    df.loc[df.index[-3:], "target"] = np.NaN
-    return df
-
-
-@pytest.fixture
-def df_aligned_datetime_with_additional_columns() -> pd.DataFrame:
-    df = generate_ar_df(start_time="2020-01-01", periods=10, n_segments=2, freq="D")
-    df["feature_1"] = df["timestamp"].dt.weekday
-    return df
+@pytest.mark.parametrize(
+    "df_name",
+    [
+        "df_aligned_datetime",
+        "df_aligned_int",
+    ],
+)
+def test_infer_alignment_fail_wrong_format(df_name, request):
+    df = request.getfixturevalue(df_name)
+    df_wide = TSDataset.to_dataset(df)
+    with pytest.raises(ValueError, match="Parameter df should be in a long format"):
+        _ = infer_alignment(df_wide)
 
 
 @pytest.mark.parametrize(
@@ -575,16 +542,30 @@ def df_aligned_datetime_with_additional_columns() -> pd.DataFrame:
         ("df_misaligned_datetime", {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-07")}),
         ("df_misaligned_int", {"segment_0": 19, "segment_1": 16}),
         (
-            "df_misaligned_datetime_with_missing_values",
+            "df_aligned_datetime_with_missing_values",
             {"segment_0": pd.Timestamp("2020-01-10"), "segment_1": pd.Timestamp("2020-01-10")},
         ),
-        ("df_misaligned_int_with_missing_values", {"segment_0": 19, "segment_1": 19}),
+        ("df_aligned_int_with_missing_values", {"segment_0": 19, "segment_1": 19}),
     ],
 )
 def test_infer_alignment(df_name, expected_alignment, request):
     df = request.getfixturevalue(df_name)
     alignment = infer_alignment(df)
     assert alignment == expected_alignment
+
+
+@pytest.mark.parametrize(
+    "df_name",
+    [
+        "df_aligned_datetime",
+        "df_aligned_int",
+    ],
+)
+def test_apply_alignment_fail_wrong_format(df_name, request):
+    df = request.getfixturevalue(df_name)
+    df_wide = TSDataset.to_dataset(df)
+    with pytest.raises(ValueError, match="Parameter df should be in a long format"):
+        _ = apply_alignment(df=df_wide, alignment={})
 
 
 @pytest.mark.parametrize(

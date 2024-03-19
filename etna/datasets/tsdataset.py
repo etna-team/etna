@@ -25,8 +25,11 @@ from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import _TorchDataset
+from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import get_level_dataframe
+from etna.datasets.utils import infer_alignment
 from etna.datasets.utils import inverse_transform_target_components
+from etna.datasets.utils import make_timestamp_df_from_alignment
 from etna.datasets.utils import timestamp_range
 from etna.loggers import tslogger
 
@@ -118,7 +121,7 @@ class TSDataset:
         ----------
         df:
             dataframe with timeseries in a wide or long format: :py:class:`~etna.datasets.utils.DataFrameFormat`;
-            it is expected that ``df`` has feature target
+            it is expected that ``df`` has feature named "target"
         freq:
             frequency of timestamp in df, possible values:
 
@@ -161,6 +164,109 @@ class TSDataset:
         self._prediction_intervals_names: Tuple[str, ...] = tuple()
 
         self.df = self.df.sort_index(axis=1, level=("segment", "feature"))
+
+    @classmethod
+    def create_from_misaligned(
+        cls,
+        df: pd.DataFrame,
+        freq: Optional[str],
+        df_exog: Optional[pd.DataFrame] = None,
+        known_future: Union[Literal["all"], Sequence] = (),
+        future_steps: int = 1,
+        original_timestamp_name: str = "external_timestamp",
+    ) -> "TSDataset":
+        """Make TSDataset from misaligned data by realigning it according to inferred alignment in ``df``.
+
+        This method:
+        - Infers alignment using :py:func:`~etna.datasets.utils.infer_alignment`;
+        - Realigns ``df`` and ``df_exog`` using inferred alignment using :py:func:`~etna.datasets.utils.apply_alignment`;
+        - Creates exog feature with original timestamp using :py:func:`~etna.datasets.utils.make_timestamp_df_from_alignment`;
+        - Creates TSDataset from these data.
+
+        This method doesn't work with ``hierarchical_structure``, because it doesn't make much sense.
+
+        Parameters
+        ----------
+        df:
+            dataframe with timeseries in a long format: :py:class:`~etna.datasets.utils.DataFrameFormat`;
+            it is expected that ``df`` has feature named "target"
+        freq:
+            frequency of timestamp in df, possible values:
+
+            - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
+              for datetime timestamp
+
+            - None for integer timestamp
+
+        df_exog:
+            dataframe with exogenous data in a long format: :py:class:`~etna.datasets.utils.DataFrameFormat`
+        known_future:
+            columns in ``df_exog[known_future]`` that are regressors,
+            if "all" value is given, all columns are meant to be regressors
+        future_steps:
+            determines on how many steps original timestamp should be extended into the future
+            before adding into ``df_exog``; expected to be positive
+        original_timestamp_name:
+            name for original timestamp column to add it into ``df_exog``
+
+        Returns
+        -------
+        :
+            Created TSDataset.
+
+        Raises
+        ------
+        ValueError:
+            If ``future_steps`` is not positive.
+        ValueError:
+            If ``original_timestamp_name`` intersects with columns in ``df_exog``.
+        ValueError:
+            Parameter ``df`` isn't in a long format.
+        ValueError:
+            Parameter ``df_exog`` isn't in a long format if it set.
+        """
+        if future_steps <= 0:
+            raise ValueError("Parameter future_steps should be positive!")
+        if df_exog is not None and original_timestamp_name in df_exog.columns:
+            raise ValueError("Parameter original_timestamp_name shouldn't intersect with columns in df_exog!")
+
+        alignment = infer_alignment(df)
+        df_realigned = apply_alignment(df=df, alignment=alignment)
+        df_realigned = TSDataset.to_dataset(df_realigned)
+
+        timestamp_start = df_realigned.index[0]
+        periods = len(df_realigned) + future_steps
+        timestamp_df = make_timestamp_df_from_alignment(
+            alignment=alignment,
+            start=timestamp_start,
+            periods=periods,
+            freq=freq,
+            timestamp_name=original_timestamp_name,
+        )
+        timestamp_df = TSDataset.to_dataset(timestamp_df)
+
+        if df_exog is not None:
+            df_exog_realigned = apply_alignment(df=df_exog, alignment=alignment)
+            df_exog_realigned = TSDataset.to_dataset(df_exog_realigned)
+
+            df_exog_realigned = df_exog_realigned.join(timestamp_df, how="outer")
+        else:
+            df_exog_realigned = timestamp_df
+
+        known_future_realigned: Union[Literal["all"], Sequence]
+        if known_future != "all":
+            known_future_realigned = list(known_future)
+            known_future_realigned.append(original_timestamp_name)
+        else:
+            known_future_realigned = "all"
+
+        return TSDataset(
+            df=df_realigned,
+            df_exog=df_exog_realigned,
+            freq=None,
+            known_future=known_future_realigned,
+            hierarchical_structure=None,
+        )
 
     def _get_dataframe_level(self, df: pd.DataFrame) -> Optional[str]:
         """Return the level of the passed dataframe in hierarchical structure."""
