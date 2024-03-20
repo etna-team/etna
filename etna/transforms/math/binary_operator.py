@@ -11,19 +11,31 @@ from etna.transforms.base import ReversibleTransform
 class BinaryOperator(str, Enum):
     """Enum for mathematical operators from pandas."""
 
+    #: Add operation, value: "+"
     add = "+"
+    #: Subtraction operation, value: "-"
     sub = "-"
+    #: Multiplication operation, value: "*"
     mul = "*"
+    #: Division operation, value: "/"
     div = "/"
+    #: Floordivision operation, value: "//"
     floordiv = "//"
+    #: Module operation, value: "%"
     mod = "%"
+    #: Pow operation, value: "**"
     pow = "**"
-
+    #: Equal operation, value: "=="
     eq = "=="
+    #: Not operation, value: "!="
     ne = "!="
+    #: Less or equal operation, value: "<="
     le = "<="
+    #: Less operation, value: "<"
     lt = "<"
+    #: Greater or equal operation, value: ">="
     ge = ">="
+    #: Greater operation, value: ">"
     gt = ">"
 
     @classmethod
@@ -63,7 +75,39 @@ class BinaryOperator(str, Enum):
 class BinaryOperationTransform(ReversibleTransform):
     """Perform binary operation on the columns of dataset.
 
-    Inverse_transform functionality is only supported for operations +, -, * , /
+    - Inverse_transform functionality is only supported for operations +, -, * , /.
+    - If during the operation a division by zero of a positive number occurs, writes +inf to this cell of the column, if negative - -inf, if 0/0 - nan.
+    - In the case of raising a negative number to a non-integer power, writes nan to this cell of the column.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from etna.datasets import generate_ar_df
+    >>> df = generate_ar_df(start_time="2020-01-01", periods=30, freq="D", n_segments=1)
+    >>> df["feature"] = np.full(30, 10)
+    >>> df["target"] = np.full(30, 1)
+    >>> df_ts_format = TSDataset.to_dataset(df)
+    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts["2020-01-01":"2020-01-06", "segment_0", "target"]
+    timestamp    feature  target
+    2020-01-01    10.0    1.0
+    2020-01-02    10.0    1.0
+    2020-01-03    10.0    1.0
+    2020-01-04    10.0    1.0
+    2020-01-05    10.0    1.0
+    2020-01-06    10.0    1.0
+    Freq: D, Name: (segment_0, target), dtype: float64
+    >>> transformer = BinaryOperationTransform(left_column="feature", right_column="target", operator="+", out_column="target")
+    >>> new_ts = transformer.fit_transform(ts=ts)
+    >>> new_ts["2020-01-01":"2020-01-06", "segment_0", "target"]
+    timestamp    feature  target
+    2020-01-01    10.0    11.0
+    2020-01-02    10.0    11.0
+    2020-01-03    10.0    11.0
+    2020-01-04    10.0    11.0
+    2020-01-05    10.0    11.0
+    2020-01-06    10.0    11.0
+    Freq: D, Name: (segment_0, target), dtype: float64
     """
 
     def __init__(self, left_column: str, right_column: str, operator: str, out_column: Optional[str] = None):
