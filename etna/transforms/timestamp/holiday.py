@@ -195,11 +195,9 @@ class HolidayTransform(IrreversibleTransform):
                     values.append(self.holidays[t])
                 else:
                     values.append(self._no_holiday_name)
-            result = pd.Series(values).astype("category")
+            result = pd.Series(values)
         elif self._mode is HolidayTransformMode.binary:
-            result = pd.Series([int(x in self.holidays) if x is not pd.NaT else pd.NA for x in timestamps]).astype(
-                "category"
-            )
+            result = pd.Series([int(x in self.holidays) if x is not pd.NaT else pd.NA for x in timestamps])
         else:
             assert_never(self._mode)
 
@@ -239,18 +237,21 @@ class HolidayTransform(IrreversibleTransform):
             feature = self._compute_feature(timestamps=df.index).values
             cols = df.columns.get_level_values("segment").unique()
             encoded_matrix = feature.reshape(-1, 1).repeat(len(cols), axis=1)
-            encoded_df = pd.DataFrame(
+            wide_df = pd.DataFrame(
                 encoded_matrix,
                 columns=pd.MultiIndex.from_product([cols, [out_column]], names=("segment", "feature")),
                 index=df.index,
             )
-            df = df.join(encoded_df).sort_index(axis=1)
         else:
             features = TSDataset.to_flatten(df=df, features=[self.in_column])
             features[out_column] = self._compute_feature(timestamps=features[self.in_column])
             features.drop(columns=[self.in_column], inplace=True)
             wide_df = TSDataset.to_dataset(features)
-            df = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
+
+        if self._mode is HolidayTransformMode.binary or self._mode is HolidayTransformMode.category:
+            wide_df = wide_df.astype("category")
+
+        df = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
         return df
 
     def get_regressors_info(self) -> List[str]:
