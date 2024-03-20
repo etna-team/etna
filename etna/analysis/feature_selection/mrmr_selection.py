@@ -117,12 +117,12 @@ def mrmr(
                     not_selected_regressors.apply(lambda col: last_selected_regressor.corrwith(col))  # noqa: B023
                     .abs()
                     .groupby("feature")
-                    .apply(redundancy_aggregation_fn)
+                    .agg(redundancy_aggregation_fn)
                     .T.groupby("feature")
                 )
 
             redundancy_table.loc[not_selected_features, last_selected_feature] = (
-                segment_redundancy.apply(redundancy_aggregation_fn)
+                segment_redundancy.agg(redundancy_aggregation_fn)
                 .clip(atol)
                 .fillna(np.inf)
                 .loc[not_selected_features]

@@ -19,7 +19,6 @@
 
 <p align="center">
   <a href="https://t.me/etna_support"><img alt="Telegram" src="https://img.shields.io/badge/channel-telegram-blue" /></a>
-  <a href="https://github.com/etna-team/etna/discussions"><img alt="GitHub Discussions" src="https://img.shields.io/github/discussions/etna-team/etna" /></a>
   <a href="https://github.com/etna-team/etna/graphs/contributors"><img alt="Contributors" src="https://img.shields.io/github/contributors/etna-team/etna.svg" /></a>
   <a href="https://github.com/etna-team/etna/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/etna-team/etna?style=social" /></a>
 </p>
@@ -176,8 +175,8 @@ To set up a configuration for your project you should create a `.etna` file at t
 
 We have also prepared a set of tutorials for an easy introduction:
 
-| Notebook                                                                                                                     |                                                                                                                                         Interactive launch |
-|:-----------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------:|
+| Notebook                                                                                                                    |                                                                                                                                        Interactive launch |
+|:----------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------:|
 | [Get started](https://github.com/etna-team/etna/tree/master/examples/101-get_started.ipynb)                                 |                [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/101-get_started.ipynb) |
 | [Backtest](https://github.com/etna-team/etna/tree/master/examples/102-backtest.ipynb)                                       |                   [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/102-backtest.ipynb) |
 | [EDA](https://github.com/etna-team/etna/tree/master/examples/103-EDA.ipynb)                                                 |                        [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/103-EDA.ipynb) |
@@ -193,8 +192,9 @@ We have also prepared a set of tutorials for an easy introduction:
 | [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/301-custom_transform_and_model.ipynb)   | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/301-custom_transform_and_model.ipynb) |
 | [Inference: using saved pipeline on a new data](https://github.com/etna-team/etna/tree/master/examples/302-inference.ipynb) |                  [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/302-inference.ipynb) |
 | [Hierarchical time series](https://github.com/etna-team/etna/blob/master/examples/303-hierarchical_pipeline.ipynb)          |      [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/303-hierarchical_pipeline.ipynb) |
-| [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecast_interpretation.ipynb)         |    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/304-forecast_interpretation.ipynb) |
+| [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecasting_interpretation.ipynb)         |    [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/304-forecasting_interpretation.ipynb) |
 | [Classification](https://github.com/etna-team/etna/blob/master/examples/305-classification.ipynb)                           |             [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/305-classification.ipynb) |
+| [Prediction intervals](https://github.com/etna-team/etna/tree/master/examples/306-prediction_intervals.ipynb)               |       [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/etna-team/etna/master?filepath=examples/306-prediction_intervals.ipynb) |
 
 ## Documentation
 
@@ -238,8 +238,7 @@ To ask the questions or discuss the library you can join our [telegram chat](htt
 
 ### ETNA.Team
 
-[Andrey Alekseev](https://github.com/iKintosh),
-[Nikita Barinov](https://github.com/diadorer),
+Current team members:
 [Dmitriy Bunin](https://github.com/Mr-Geekman),
 [Aleksandr Chikov](https://github.com/alex-hse-repository),
 [Vladislav Denisov](https://github.com/v-v-denisov),
@@ -248,21 +247,34 @@ To ask the questions or discuss the library you can join our [telegram chat](htt
 [Artem Makhin](https://github.com/Ama16),
 [Ivan Mitskovets](https://github.com/imitskovets),
 [Albina Munirova](https://github.com/albinamunirova),
+[Ivan Nedosekov](https://github.com/GrozniyToaster),
+[Rodion Petrov](https://github.com/Noidor1)
+[Maxim Zherelo](https://github.com/brsnw250)
+[Yakov Malyshev](https://github.com/ostreech1997)
+[Egor Baturin](https://github.com/egoriyaa)
+[Alexandr Kuznetsov](https://github.com/Alexander76Kuznetsov),
+
+Former team members:
+[Andrey Alekseev](https://github.com/iKintosh),
+[Nikita Barinov](https://github.com/diadorer),
 [Julia Shenshina](https://github.com/julia-shenshina),
 [Yuriy Tarasyuk](https://github.com/DBcreator),
 [Konstantin Vedernikov](https://github.com/scanhex12),
-[Ivan Nedosekov](https://github.com/GrozniyToaster),
-[Rodion Petrov](https://github.com/Noidor1)
+[Nikolai Romantsov](https://github.com/WinstonDovlatov),
+[Sergei Zhuravlev](https://github.com/malodetz),
+[Artem Levashov](https://github.com/soft1q),
+[Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ### ETNA.Contributors
 
-[WinstonDovlatov](https://github.com/WinstonDovlatov),
+[GooseIt](https://github.com/GooseIt),
+[smetam](https://github.com/smetam),
+[aleksander43smith](https://github.com/aleksander43smith),
+[looopka](https://github.com/looopka),
 [mvakhmenin](https://github.com/mvakhmenin),
 [Carlosbogo](https://github.com/Carlosbogo),
+[GoshaLetov](https://github.com/GoshaLetov),
 [Pacman1984](https://github.com/Pacman1984),
-[looopka](https://github.com/looopka),
-[Artem Levashov](https://github.com/soft1q),
-[Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ## License
 

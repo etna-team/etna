@@ -340,8 +340,21 @@ class TestTransformTrain:
                 "ts_to_resample",
                 {"change": {"regressor_exog"}},
             ),
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {"change": {"target"}}),
             (
-                TimeSeriesImputerTransform(in_column="target"),
+                TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {"change": {"target"}}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {"change": {"target"}}),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="running_mean"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"),
                 "ts_to_fill",
                 {"change": {"target"}},
             ),
@@ -389,6 +402,12 @@ class TestTransformTrain:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {"create": {"res"}},
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
@@ -710,8 +729,21 @@ class TestTransformTrain:
                 {"change": {"target"}},
             ),
             # missing_values
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {"change": {"target"}}),
             (
-                TimeSeriesImputerTransform(in_column="target"),
+                TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {"change": {"target"}}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {"change": {"target"}}),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="running_mean"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"),
                 "ts_to_fill",
                 {"change": {"target"}},
             ),
@@ -749,6 +781,12 @@ class TestTransformTrain:
                 "ts_with_external_timestamp",
                 {"create": {"res"}},
             ),
+            # TODO: fix after discussing conceptual problems
+            # (
+            #         HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+            #         "ts_with_external_timestamp_one_month",
+            #         {"create": {"res"}},
+            # ),
             (
                 SpecialDaysTransform(in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -818,6 +856,11 @@ class TestTransformTrain:
             (
                 HolidayTransform(out_column="res", mode="category"),
                 "regular_ts",
+                "Transform can't work with integer index",
+            ),
+            (
+                HolidayTransform(out_column="res", mode="days_count"),
+                "regular_ts_one_month",
                 "Transform can't work with integer index",
             ),
             (TimeFlagsTransform(out_column="res"), "regular_ts", "Transform can't work with integer index"),
@@ -975,7 +1018,12 @@ class TestTransformTrainSubsetSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill"),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -1004,6 +1052,11 @@ class TestTransformTrainSubsetSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+            ),
+            (HolidayTransform(mode="days_count"), "regular_ts_one_month"),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
             ),
             (SpecialDaysTransform(), "regular_ts"),
             (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp"),
@@ -1210,7 +1263,12 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill"),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -1239,6 +1297,11 @@ class TestTransformFutureSubsetSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+            ),
+            (HolidayTransform(mode="days_count"), "regular_ts_one_month"),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
             ),
             (SpecialDaysTransform(), "regular_ts"),
             (
@@ -1466,6 +1529,12 @@ class TestTransformTrainNewSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {"create": {"res"}},
             ),
             (
@@ -1831,6 +1900,12 @@ class TestTransformFutureNewSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {"create": {"res"}},
             ),
             (
@@ -2229,12 +2304,13 @@ class TestTransformFutureWithTarget:
                 "ts_to_resample",
                 {"change": {"regressor_exog"}},
             ),
-            (
-                # this behaviour can be unexpected for someone
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-                {},
-            ),
+            # this behaviour can be unexpected for someone
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill", {}),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -2275,6 +2351,12 @@ class TestTransformFutureWithTarget:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {"create": {"res"}},
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),
@@ -2657,12 +2739,19 @@ class TestTransformFutureWithoutTarget:
                 "ts_to_resample",
                 {"change": {"regressor_exog"}},
             ),
-            (
-                # this behaviour can be unexpected for someone
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-                {},
-            ),
+            # (
+            #     # this behaviour can be unexpected for someone
+            #     TimeSeriesImputerTransform(in_column="target"),
+            #     "ts_to_fill",
+            #     {},
+            # ),
+            # this behaviour can be unexpected for someone
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill", {}),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -2703,6 +2792,12 @@ class TestTransformFutureWithoutTarget:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {"create": {"res"}},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {"create": {"res"}}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {"create": {"res"}},
             ),
             (SpecialDaysTransform(), "regular_ts", {"create": {"anomaly_weekdays", "anomaly_monthdays"}}),

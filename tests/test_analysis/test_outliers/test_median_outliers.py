@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.analysis.outliers import get_anomalies_median
@@ -6,9 +7,7 @@ from etna.analysis.outliers import get_anomalies_median
 
 def test_const_ts(const_ts_anomal):
     anomal = get_anomalies_median(const_ts_anomal)
-    assert {"segment_0", "segment_1"} == set(anomal.keys())
-    for seg in anomal.keys():
-        assert len(anomal[seg]) == 0
+    assert len(anomal) == 0
 
 
 @pytest.mark.parametrize(
@@ -46,3 +45,15 @@ def test_in_column(outliers_df_with_two_columns):
     for key in expected:
         assert key in outliers
         np.testing.assert_array_equal(outliers[key], expected[key])
+
+
+@pytest.mark.parametrize("index_only, value_type", ((True, list), (False, pd.Series)))
+def test_get_anomalies_median_only(outliers_df_with_two_columns, index_only, value_type):
+    result = get_anomalies_median(
+        ts=outliers_df_with_two_columns, in_column="feature", window_size=10, index_only=index_only
+    )
+
+    assert isinstance(result, dict)
+    for key, value in result.items():
+        assert isinstance(key, str)
+        assert isinstance(value, value_type)

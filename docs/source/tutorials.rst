@@ -175,3 +175,12 @@ Advanced
 
       ^^^
       How to perform time series classification
+
+   .. grid-item-card:: Prediction intervals
+      :text-align: center
+      :link: tutorials/306-prediction_intervals
+      :link-type: doc
+      :class-header: card-tutorial-advanced
+
+      ^^^
+      How to estimate prediction intervals
