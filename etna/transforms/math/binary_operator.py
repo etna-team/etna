@@ -88,26 +88,26 @@ class BinaryOperationTransform(ReversibleTransform):
     >>> df["target"] = np.full(30, 1)
     >>> df_ts_format = TSDataset.to_dataset(df)
     >>> ts = TSDataset(df_ts_format, "D")
-    >>> ts["2020-01-01":"2020-01-06", "segment_0", "target"]
+    >>> ts["2020-01-01":"2020-01-06", "segment_0", ["feature", "target"]]
     timestamp    feature  target
-    2020-01-01    10.0    1.0
-    2020-01-02    10.0    1.0
-    2020-01-03    10.0    1.0
-    2020-01-04    10.0    1.0
-    2020-01-05    10.0    1.0
-    2020-01-06    10.0    1.0
-    Freq: D, Name: (segment_0, target), dtype: float64
+    2020-01-01    10    1
+    2020-01-02    10    1
+    2020-01-03    10    1
+    2020-01-04    10    1
+    2020-01-05    10    1
+    2020-01-06    10    1
+    Freq: D, Name: (segment_0, feature, target), dtype: int64_t
     >>> transformer = BinaryOperationTransform(left_column="feature", right_column="target", operator="+", out_column="target")
     >>> new_ts = transformer.fit_transform(ts=ts)
-    >>> new_ts["2020-01-01":"2020-01-06", "segment_0", "target"]
+    >>> new_ts["2020-01-01":"2020-01-06", "segment_0", ["feature", "target"]]
     timestamp    feature  target
-    2020-01-01    10.0    11.0
-    2020-01-02    10.0    11.0
-    2020-01-03    10.0    11.0
-    2020-01-04    10.0    11.0
-    2020-01-05    10.0    11.0
-    2020-01-06    10.0    11.0
-    Freq: D, Name: (segment_0, target), dtype: float64
+    2020-01-01    10    11
+    2020-01-02    10    11
+    2020-01-03    10    11
+    2020-01-04    10    11
+    2020-01-05    10    11
+    2020-01-06    10    11
+    Freq: D, Name: (segment_0, feature, target), dtype: int64_t
     """
 
     def __init__(self, left_column: str, right_column: str, operator: str, out_column: Optional[str] = None):
