@@ -9,6 +9,7 @@ from sklearn.tree import DecisionTreeRegressor
 from etna.analysis import StatisticsRelevanceTable
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
+from etna.transforms import BinaryOperationTransform
 from etna.transforms import BoxCoxTransform
 from etna.transforms import ChangePointsLevelTransform
 from etna.transforms import ChangePointsSegmentationTransform
@@ -950,6 +951,18 @@ class TestTransformTrainSubsetSegments:
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
+            (
+                BinaryOperationTransform(
+                    left_column="weekday", right_column="positive", operator="+", out_column="positive"
+                ),
+                "ts_with_exog",
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="weekday", right_column="positive", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+            ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift"),
             (
@@ -1168,6 +1181,18 @@ class TestTransformFutureSubsetSegments:
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog"),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+            ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
                 ExogShiftTransform(lag="auto", horizon=7),
@@ -1390,6 +1415,20 @@ class TestTransformTrainNewSegments:
                 {"create": {"res"}},
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
+            (
+                BinaryOperationTransform(
+                    left_column="weekday", right_column="positive", operator="+", out_column="positive"
+                ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="weekday", right_column="positive", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {"create": {"new_col"}},
+            ),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
@@ -1715,6 +1754,20 @@ class TestTransformFutureNewSegments:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {"create": {"new_col"}},
+            ),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
@@ -2126,6 +2179,20 @@ class TestTransformFutureWithTarget:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {"create": {"new_col"}},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3"}},
@@ -2507,6 +2574,20 @@ class TestTransformFutureWithoutTarget:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                ),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {"create": {"new_col"}},
+            ),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
