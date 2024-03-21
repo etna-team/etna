@@ -14,7 +14,7 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 class TS2VecEmbeddingModel(BaseEmbeddingModel):
     """TS2Vec embedding model.
 
-     If there are NaNs in series, embeddings will not contain NaNs.
+    If there are NaNs in series, embeddings will not contain NaNs.
 
     For more details read the
     `paper <https://arxiv.org/abs/2106.10466>`_.

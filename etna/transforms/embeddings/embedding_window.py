@@ -33,7 +33,7 @@ class EmbeddingWindowTransform(IrreversibleTransform):
         embedding_model:
             Model to create the embeddings
         encoding_params:
-            params used during encoding. Params for corresponding models can be found at :ref:`embedding section <embeddings>`.
+            Parameters to use during encoding. Parameters for corresponding models can be found at :ref:`embedding section <embeddings>`.
         out_column:
             Prefix for output columns, the output columns format is '{out_column}_{i}'
         """
