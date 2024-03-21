@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- 
+- Add `BinaryOperationTransform` to transforms ([#260](https://github.com/etna-team/etna/pull/260))
 - 
 - 
 - 
