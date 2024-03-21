@@ -163,6 +163,20 @@ class TestTransformTrain:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {"create": {"new_col"}},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {"create": {"res_1", "res_2", "res_3"}},
@@ -524,6 +538,20 @@ class TestTransformTrain:
                 AddConstTransform(in_column="target", value=1, inplace=True),
                 "regular_ts",
                 {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {"create": {"new_col"}},
             ),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
@@ -953,13 +981,13 @@ class TestTransformTrainSubsetSegments:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
             (
                 BinaryOperationTransform(
-                    left_column="weekday", right_column="positive", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
             ),
             (
                 BinaryOperationTransform(
-                    left_column="weekday", right_column="positive", operator="+", out_column="new_col"
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
                 ),
                 "ts_with_exog",
             ),
@@ -1417,14 +1445,14 @@ class TestTransformTrainNewSegments:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
                 BinaryOperationTransform(
-                    left_column="weekday", right_column="positive", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
-                {"change": {"positive"}},
+                {"change": {"target"}},
             ),
             (
                 BinaryOperationTransform(
-                    left_column="weekday", right_column="positive", operator="+", out_column="new_col"
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
                 ),
                 "ts_with_exog",
                 {"create": {"new_col"}},
@@ -1756,10 +1784,10 @@ class TestTransformFutureNewSegments:
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
-                {"change": {"positive"}},
+                {"change": {"target"}},
             ),
             (
                 BinaryOperationTransform(

@@ -211,6 +211,20 @@ class TestInverseTransformTrain:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {},
@@ -618,6 +632,20 @@ class TestInverseTransformTrain:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {},
@@ -1007,7 +1035,7 @@ class TestInverseTransformTrainSubsetSegments:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
             ),
@@ -1253,7 +1281,7 @@ class TestInverseTransformFutureSubsetSegments:
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog"),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
             ),
@@ -1530,10 +1558,10 @@ class TestInverseTransformTrainNewSegments:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
-                {"change": {"positive"}},
+                {"change": {"target"}},
             ),
             (
                 BinaryOperationTransform(
@@ -1882,14 +1910,14 @@ class TestInverseTransformFutureNewSegments:
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="weekday", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
-                {"change": {"positive"}},
+                {},
             ),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="weekday", operator="+", out_column="new_col"
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
                 ),
                 "ts_with_exog",
                 {},
@@ -2397,10 +2425,10 @@ class TestInverseTransformFutureWithTarget:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="target", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
-                {"change": {"positive"}},
+                {"change": {"target"}},
             ),
             (
                 BinaryOperationTransform(
@@ -2834,14 +2862,14 @@ class TestInverseTransformFutureWithoutTarget:
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="weekday", operator="+", out_column="positive"
+                    left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
-                {"change": {"positive"}},
+                {},
             ),
             (
                 BinaryOperationTransform(
-                    left_column="positive", right_column="weekday", operator="+", out_column="new_col"
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
                 ),
                 "ts_with_exog",
                 {},

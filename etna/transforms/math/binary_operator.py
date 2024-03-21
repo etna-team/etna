@@ -86,8 +86,7 @@ class BinaryOperationTransform(ReversibleTransform):
     >>> df = generate_ar_df(start_time="2020-01-01", periods=30, freq="D", n_segments=1)
     >>> df["feature"] = np.full(30, 10)
     >>> df["target"] = np.full(30, 1)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> ts["2020-01-01":"2020-01-06", "segment_0", ["feature", "target"]]
     segment    segment_0
     feature      feature target
