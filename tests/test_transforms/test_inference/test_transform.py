@@ -1787,7 +1787,7 @@ class TestTransformFutureNewSegments:
                     left_column="positive", right_column="target", operator="+", out_column="target"
                 ),
                 "ts_with_exog",
-                {"change": {"target"}},
+                {},
             ),
             (
                 BinaryOperationTransform(
