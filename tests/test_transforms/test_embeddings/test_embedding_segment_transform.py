@@ -16,13 +16,16 @@ from etna.transforms.embeddings.models import TS2VecEmbeddingModel
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=3, n_epochs=1),
+        TS2VecEmbeddingModel(input_dims=3),
     ],
 )
 @pytest.mark.smoke
 def test_fit(ts_with_exog_nan_begin, embedding_model):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"],
+        embedding_model=embedding_model,
+        training_params={"n_epochs": 1},
+        out_column="emb",
     )
     transform.fit(ts=ts_with_exog_nan_begin)
 
@@ -30,13 +33,16 @@ def test_fit(ts_with_exog_nan_begin, embedding_model):
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=3, n_epochs=1),
+        TS2VecEmbeddingModel(input_dims=3),
     ],
 )
 @pytest.mark.smoke
 def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"],
+        embedding_model=embedding_model,
+        training_params={"n_epochs": 1},
+        out_column="emb",
     )
     transform.fit_transform(ts=ts_with_exog_nan_begin)
 
@@ -44,12 +50,14 @@ def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=1, n_epochs=1),
+        TS2VecEmbeddingModel(input_dims=1),
     ],
 )
 @pytest.mark.smoke
 def test_fit_forecast(example_tsds, embedding_model):
-    emb_transform = EmbeddingSegmentTransform(in_columns=["target"], embedding_model=embedding_model, out_column="emb")
+    emb_transform = EmbeddingSegmentTransform(
+        in_columns=["target"], embedding_model=embedding_model, training_params={"n_epochs": 1}, out_column="emb"
+    )
     transforms = [emb_transform]
 
     pipeline = Pipeline(model=LinearMultiSegmentModel(), transforms=transforms, horizon=7)
@@ -59,12 +67,14 @@ def test_fit_forecast(example_tsds, embedding_model):
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=1, n_epochs=1, output_dims=6),
+        TS2VecEmbeddingModel(input_dims=1, output_dims=6),
     ],
 )
 @pytest.mark.smoke
 def test_backtest_full_series(example_tsds, embedding_model):
-    emb_transform = EmbeddingSegmentTransform(in_columns=["target"], embedding_model=embedding_model, out_column="emb")
+    emb_transform = EmbeddingSegmentTransform(
+        in_columns=["target"], embedding_model=embedding_model, training_params={"n_epochs": 1}, out_column="emb"
+    )
     transforms = [emb_transform]
 
     pipeline = Pipeline(model=LinearMultiSegmentModel(), transforms=transforms, horizon=7)
@@ -74,12 +84,14 @@ def test_backtest_full_series(example_tsds, embedding_model):
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=1, n_epochs=1, output_dims=6),
+        TS2VecEmbeddingModel(input_dims=1, output_dims=6),
     ],
 )
 @pytest.mark.smoke
 def test_make_future(example_tsds, embedding_model):
-    emb_transform = EmbeddingSegmentTransform(in_columns=["target"], embedding_model=embedding_model, out_column="emb")
+    emb_transform = EmbeddingSegmentTransform(
+        in_columns=["target"], embedding_model=embedding_model, training_params={"n_epochs": 1}, out_column="emb"
+    )
     emb_transform.fit(example_tsds)
 
     make_future_df = example_tsds.make_future(5, transforms=[emb_transform]).df
@@ -94,14 +106,15 @@ def test_make_future(example_tsds, embedding_model):
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3, n_epochs=1),
-    ],
+    [TS2VecEmbeddingModel(input_dims=3)],
 )
 @pytest.mark.smoke
 def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"],
+        embedding_model=embedding_model,
+        training_params={"n_epochs": 1},
+        out_column="emb",
     )
     transform.fit(ts=ts_with_exog_nan_begin)
 
@@ -112,13 +125,16 @@ def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=3, n_epochs=1),
+        TS2VecEmbeddingModel(input_dims=3),
     ],
 )
 @pytest.mark.smoke
 def test_load(ts_with_exog_nan_begin, tmp_path, embedding_model):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"],
+        embedding_model=embedding_model,
+        training_params={"n_epochs": 1},
+        out_column="emb",
     )
     transform.fit(ts=ts_with_exog_nan_begin)
 
@@ -138,10 +154,13 @@ def test_get_out_columns(output_dims, out_column, expected_out_columns):
     assert sorted(expected_out_columns) == sorted(transform._get_out_columns())
 
 
-@pytest.mark.parametrize("embedding_model", [TS2VecEmbeddingModel(input_dims=3, n_epochs=1)])
+@pytest.mark.parametrize("embedding_model", [TS2VecEmbeddingModel(input_dims=3)])
 def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"],
+        embedding_model=embedding_model,
+        training_params={"n_epochs": 1},
+        out_column="emb",
     )
     first_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
     second_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
@@ -151,7 +170,7 @@ def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=3, output_dims=3, n_epochs=1),
+        TS2VecEmbeddingModel(input_dims=3, output_dims=3),
     ],
 )
 def test_transform_format(
@@ -167,7 +186,10 @@ def test_transform_format(
     ),
 ):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="embedding_segment"
+        in_columns=["target", "exog_1", "exog_2"],
+        embedding_model=embedding_model,
+        training_params={"n_epochs": 1},
+        out_column="embedding_segment",
     )
     transform.fit_transform(ts=ts_with_exog_nan_begin)
     obtained_columns = set(ts_with_exog_nan_begin.columns.get_level_values("feature"))
@@ -180,12 +202,15 @@ def test_transform_format(
 @pytest.mark.parametrize(
     "embedding_model",
     [
-        TS2VecEmbeddingModel(input_dims=3, output_dims=3, n_epochs=1),
+        TS2VecEmbeddingModel(input_dims=3, output_dims=3),
     ],
 )
 def test_transform_load_pre_fitted(ts_with_exog_nan_begin, tmp_path, embedding_model):
     transform = EmbeddingSegmentTransform(
-        in_columns=["target", "exog_1", "exog_2"], embedding_model=embedding_model, out_column="emb"
+        in_columns=["target", "exog_1", "exog_2"],
+        embedding_model=embedding_model,
+        training_params={"n_epochs": 1},
+        out_column="emb",
     )
     before_load_ts = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
 

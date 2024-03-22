@@ -22,6 +22,7 @@ class EmbeddingSegmentTransform(IrreversibleTransform):
         in_columns: List[str],
         embedding_model: BaseEmbeddingModel,
         encoding_params: Optional[Dict[str, Any]] = None,
+        training_params: Optional[Dict[str, Any]] = None,
         out_column: str = "embedding_segment",
     ):
         """Init EmbeddingSegmentTransform.
@@ -34,6 +35,8 @@ class EmbeddingSegmentTransform(IrreversibleTransform):
             Model to create the embeddings
         encoding_params:
             Parameters to use during encoding. Parameters for corresponding models can be found at :ref:`embedding section <embeddings>`.
+        training_params:
+            Parameters to use during training. Parameters for corresponding models can be found at :ref:`embedding section <embeddings>`.
         out_column:
             Prefix for output columns, the output columns format is '{out_column}_{i}'
         """
@@ -41,6 +44,7 @@ class EmbeddingSegmentTransform(IrreversibleTransform):
         self.in_columns = in_columns
         self.embedding_model = embedding_model
         self.encoding_params = encoding_params if encoding_params is not None else {}
+        self.training_params = training_params if training_params is not None else {}
         self.out_column = out_column
 
     def _get_out_columns(self) -> List[str]:
@@ -59,7 +63,7 @@ class EmbeddingSegmentTransform(IrreversibleTransform):
     def _fit(self, df: pd.DataFrame):
         """Fit transform."""
         x = self._prepare_data(df)
-        self.embedding_model.fit(x)
+        self.embedding_model.fit(x, **self.training_params)
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """Create embedding features."""

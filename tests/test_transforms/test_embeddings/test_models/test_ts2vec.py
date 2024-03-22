@@ -38,8 +38,8 @@ def ts_with_exog_nan_end_numpy(ts_with_exog_nan_end) -> np.ndarray:
 
 @pytest.mark.smoke
 def test_fit(ts_with_exog_nan_begin_numpy):
-    model = TS2VecEmbeddingModel(input_dims=3, n_epochs=1)
-    model.fit(ts_with_exog_nan_begin_numpy)
+    model = TS2VecEmbeddingModel(input_dims=3)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
 
 
 @pytest.mark.smoke
@@ -64,7 +64,7 @@ def test_save(tmp_path):
 
 @pytest.mark.smoke
 def test_load(tmp_path):
-    model = TS2VecEmbeddingModel(input_dims=3, n_epochs=1)
+    model = TS2VecEmbeddingModel(input_dims=3)
 
     path = pathlib.Path(tmp_path) / "tmp.zip"
     model.save(path=path)
@@ -83,10 +83,10 @@ def test_encode_format(ts_with_exog_nan_begin_numpy, output_dims, segment_shape_
 
 
 def test_encode_pre_fitted(ts_with_exog_nan_begin_numpy, tmp_path):
-    model = TS2VecEmbeddingModel(input_dims=3, n_epochs=1)
+    model = TS2VecEmbeddingModel(input_dims=3)
     assert model._is_fitted is False
 
-    model.fit(ts_with_exog_nan_begin_numpy)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
     assert model._is_fitted is True
 
     path = pathlib.Path(tmp_path) / "tmp.zip"
@@ -108,8 +108,8 @@ def test_encode_pre_fitted(ts_with_exog_nan_begin_numpy, tmp_path):
 )
 def test_encode_not_contains_nan(data, input_dim, request):
     data = request.getfixturevalue(data)
-    model = TS2VecEmbeddingModel(input_dims=input_dim, n_epochs=1)
-    model.fit(data)
+    model = TS2VecEmbeddingModel(input_dims=input_dim)
+    model.fit(data, n_epochs=1)
     encoded_segment = model.encode_segment(data)
     encoded_window = model.encode_window(data)
 

@@ -29,9 +29,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         device: Union[Literal["cpu"], Literal["gpu"]] = "cpu",
         lr: float = 0.001,
         batch_size: int = 16,
-        n_epochs: Optional[int] = None,
-        n_iters: Optional[int] = None,
-        verbose: Optional[bool] = None,
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
     ):
@@ -53,13 +50,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             The learning rate.
         batch_size:
             The batch size.
-        n_epochs:
-            The number of epochs. When this reaches, the training stops.
-        n_iters:
-            The number of iterations. When this reaches, the training stops. If both n_epochs and n_iters are not specified,
-            a default setting would be used that sets n_iters to 200 for a dataset with size <= 100000, 600 otherwise.
-        verbose:
-            Whether to print the training loss after each epoch.
         max_train_length:
             The maximum allowed sequence length for training. For sequence with a length greater than ``max_train_length``,
             it would be cropped into some sequences, each of which has a length less than ``max_train_length``.
@@ -82,11 +72,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         self.lr = lr
         self.batch_size = batch_size
 
-        # Train params
-        self.n_epochs = n_epochs
-        self.n_iters = n_iters
-        self.verbose = verbose
-
         self.embedding_model = TS2Vec(
             input_dims=self.input_dims,
             output_dims=self.output_dims,
@@ -101,15 +86,28 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
         self._is_fitted: bool = False
 
-    def fit(self, x: np.ndarray) -> "TS2VecEmbeddingModel":
+    def fit(
+        self,
+        x: np.ndarray,
+        n_epochs: Optional[int] = None,
+        n_iters: Optional[int] = None,
+        verbose: Optional[bool] = None,
+    ) -> "TS2VecEmbeddingModel":
         """Fit TS2Vec embedding model.
 
         Parameters
         ----------
         x:
             data with shapes (n_segments, n_timestamps, input_dims).
+        n_epochs:
+            The number of epochs. When this reaches, the training stops.
+        n_iters:
+            The number of iterations. When this reaches, the training stops. If both n_epochs and n_iters are not specified,
+            a default setting would be used that sets n_iters to 200 for a dataset with size <= 100000, 600 otherwise.
+        verbose:
+            Whether to print the training loss after each epoch.
         """
-        self.embedding_model.fit(train_data=x, n_epochs=self.n_epochs, n_iters=self.n_iters, verbose=self.verbose)
+        self.embedding_model.fit(train_data=x, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
         self._is_fitted = True
         return self
 
