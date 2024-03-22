@@ -121,14 +121,17 @@ class TestTransformTrainSubsetSegments:
             # embeddings
             (
                 EmbeddingSegmentTransform(
-                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
@@ -321,14 +324,17 @@ class TestTransformFutureSubsetSegments:
             # embeddings
             (
                 EmbeddingSegmentTransform(
-                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),

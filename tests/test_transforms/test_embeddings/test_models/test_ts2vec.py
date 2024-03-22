@@ -114,7 +114,8 @@ def test_not_freeze_fit(ts_with_exog_nan_begin_numpy, tmp_path):
             model.encode_window(ts_with_exog_nan_begin_numpy), model_loaded.encode_window(ts_with_exog_nan_begin_numpy)
         )
         np.testing.assert_array_equal(
-            model.encode_segment(ts_with_exog_nan_begin_numpy), model_loaded.encode_segment(ts_with_exog_nan_begin_numpy)
+            model.encode_segment(ts_with_exog_nan_begin_numpy),
+            model_loaded.encode_segment(ts_with_exog_nan_begin_numpy),
         )
 
 

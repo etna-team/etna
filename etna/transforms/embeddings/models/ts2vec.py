@@ -88,7 +88,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
     @property
     def is_freezed(self):
-        """Return whether to skip fit of a pretrained model"""
+        """Return whether to skip fit of a pretrained model."""
         return self.__is_freezed
 
     def freeze(self, is_freezed: bool = False):

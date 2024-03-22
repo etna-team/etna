@@ -127,14 +127,17 @@ class TestInverseTransformTrainSubsetSegments:
             # embeddings
             (
                 EmbeddingSegmentTransform(
-                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
@@ -339,13 +342,17 @@ class TestInverseTransformFutureSubsetSegments:
             # embeddings
             (
                 EmbeddingSegmentTransform(
-                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
             (
                 EmbeddingWindowTransform(
-                    in_columns=["target"], embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
@@ -541,7 +548,8 @@ class TestInverseTransformTrainNewSegments:
             (
                 EmbeddingSegmentTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -549,7 +557,8 @@ class TestInverseTransformTrainNewSegments:
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -883,7 +892,8 @@ class TestInverseTransformFutureNewSegments:
             (
                 EmbeddingSegmentTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -891,7 +901,8 @@ class TestInverseTransformFutureNewSegments:
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -1327,7 +1338,8 @@ class TestInverseTransformFutureWithTarget:
             (
                 EmbeddingSegmentTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -1335,7 +1347,8 @@ class TestInverseTransformFutureWithTarget:
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -1755,7 +1768,8 @@ class TestInverseTransformFutureWithoutTarget:
             (
                 EmbeddingSegmentTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -1763,7 +1777,8 @@ class TestInverseTransformFutureWithoutTarget:
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1), training_params={"n_epochs": 1}
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
