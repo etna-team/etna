@@ -84,7 +84,22 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             batch_size=self.batch_size,
         )
 
-        self._is_fitted: bool = False
+        self.__is_freezed: bool = False
+
+    @property
+    def is_freezed(self):
+        """Return whether to skip fit of a pretrained model"""
+        return self.__is_freezed
+
+    def freeze(self, is_freezed: bool = False):
+        """Change the state whether pretrained model can skip fit.
+
+        Parameters
+        ----------
+        is_freezed:
+            whether to skip fit of a pretrained model.
+        """
+        self.__is_freezed = is_freezed
 
     def fit(
         self,
@@ -107,8 +122,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         verbose:
             Whether to print the training loss after each epoch.
         """
-        self.embedding_model.fit(train_data=x, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
-        self._is_fitted = True
+        if not self.__is_freezed:
+            self.embedding_model.fit(train_data=x, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
         return self
 
     def encode_segment(

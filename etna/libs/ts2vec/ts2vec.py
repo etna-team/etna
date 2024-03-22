@@ -95,8 +95,10 @@ class TS2Vec:
 
         loss_log = []
 
+        cur_epoch = 0
+        cur_iter = 0
         while True:
-            if n_epochs is not None and self.n_epochs >= n_epochs:
+            if n_epochs is not None and cur_epoch >= n_epochs:
                 break
 
             cum_loss = 0
@@ -104,7 +106,7 @@ class TS2Vec:
 
             interrupted = False
             for batch in train_loader:
-                if n_iters is not None and self.n_iters >= n_iters:
+                if n_iters is not None and cur_iter >= n_iters:
                     interrupted = True
                     break
 
@@ -143,7 +145,7 @@ class TS2Vec:
                 cum_loss += loss.item()
                 n_epoch_iters += 1
 
-                self.n_iters += 1
+                cur_iter += 1
 
                 if self.after_iter_callback is not None:
                     self.after_iter_callback(self, loss.item())
@@ -154,8 +156,8 @@ class TS2Vec:
             cum_loss /= n_epoch_iters
             loss_log.append(cum_loss)
             if verbose:
-                print(f"Epoch #{self.n_epochs}: loss={cum_loss}")
-            self.n_epochs += 1
+                print(f"Epoch #{cur_epoch}: loss={cum_loss}")
+            cur_epoch += 1
 
             if self.after_epoch_callback is not None:
                 self.after_epoch_callback(self, cum_loss)

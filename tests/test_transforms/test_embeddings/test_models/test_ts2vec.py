@@ -84,16 +84,51 @@ def test_encode_format(ts_with_exog_nan_begin_numpy, output_dims, segment_shape_
 
 def test_encode_pre_fitted(ts_with_exog_nan_begin_numpy, tmp_path):
     model = TS2VecEmbeddingModel(input_dims=3)
-    assert model._is_fitted is False
-
     model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
-    assert model._is_fitted is True
-
     path = pathlib.Path(tmp_path) / "tmp.zip"
     model.save(path=path)
-    model_loaded = TS2VecEmbeddingModel.load(path=path)
-    assert model_loaded._is_fitted is True
 
+    model_loaded = TS2VecEmbeddingModel.load(path=path)
+
+    np.testing.assert_array_equal(
+        model.encode_window(ts_with_exog_nan_begin_numpy), model_loaded.encode_window(ts_with_exog_nan_begin_numpy)
+    )
+    np.testing.assert_array_equal(
+        model.encode_segment(ts_with_exog_nan_begin_numpy), model_loaded.encode_segment(ts_with_exog_nan_begin_numpy)
+    )
+
+
+def test_not_freeze_fit(ts_with_exog_nan_begin_numpy, tmp_path):
+    model = TS2VecEmbeddingModel(input_dims=3)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+    model.freeze(is_freezed=False)
+    path = pathlib.Path(tmp_path) / "tmp.zip"
+    model.save(path=path)
+
+    model_loaded = TS2VecEmbeddingModel.load(path=path)
+    model_loaded.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+
+    assert model_loaded.is_freezed is False
+    with pytest.raises(AssertionError):
+        np.testing.assert_array_equal(
+            model.encode_window(ts_with_exog_nan_begin_numpy), model_loaded.encode_window(ts_with_exog_nan_begin_numpy)
+        )
+        np.testing.assert_array_equal(
+            model.encode_segment(ts_with_exog_nan_begin_numpy), model_loaded.encode_segment(ts_with_exog_nan_begin_numpy)
+        )
+
+
+def test_freeze_fit(ts_with_exog_nan_begin_numpy, tmp_path):
+    model = TS2VecEmbeddingModel(input_dims=3)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+    model.freeze(is_freezed=True)
+    path = pathlib.Path(tmp_path) / "tmp.zip"
+    model.save(path=path)
+
+    model_loaded = TS2VecEmbeddingModel.load(path=path)
+    model_loaded.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+
+    assert model_loaded.is_freezed is True
     np.testing.assert_array_equal(
         model.encode_window(ts_with_exog_nan_begin_numpy), model_loaded.encode_window(ts_with_exog_nan_begin_numpy)
     )

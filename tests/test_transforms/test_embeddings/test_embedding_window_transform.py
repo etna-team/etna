@@ -141,18 +141,6 @@ def test_get_out_columns(output_dims, out_column, expected_out_columns):
     assert sorted(expected_out_columns) == sorted(transform._get_out_columns())
 
 
-@pytest.mark.parametrize("embedding_model", [TS2VecEmbeddingModel(input_dims=3)])
-def test_second_fit_not_update_state(ts_with_exog_nan_begin, embedding_model):
-    transform = EmbeddingWindowTransform(
-        in_columns=["target", "exog_1", "exog_2"],
-        embedding_model=embedding_model,
-        training_params={"n_epochs": 1},
-    )
-    first_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
-    second_fit_encoded = transform.fit_transform(ts=deepcopy(ts_with_exog_nan_begin))
-    pd.testing.assert_frame_equal(first_fit_encoded.to_pandas(), second_fit_encoded.to_pandas())
-
-
 @pytest.mark.parametrize(
     "embedding_model",
     [
