@@ -84,22 +84,22 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             batch_size=self.batch_size,
         )
 
-        self.__is_freezed: bool = False
+        self._is_freezed: bool = False
 
     @property
     def is_freezed(self):
-        """Return whether to skip fit of a pretrained model."""
-        return self.__is_freezed
+        """Return whether to skip training during ``fit``."""
+        return self._is_freezed
 
-    def freeze(self, is_freezed: bool = False):
-        """Change the state whether pretrained model can skip fit.
+    def freeze(self, is_freezed: bool = True):
+        """Enable or disable skipping training in ``fit``.
 
         Parameters
         ----------
         is_freezed:
-            whether to skip fit of a pretrained model.
+            whether to skip training during ``fit``.
         """
-        self.__is_freezed = is_freezed
+        self._is_freezed = is_freezed
 
     def fit(
         self,
@@ -122,7 +122,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         verbose:
             Whether to print the training loss after each epoch.
         """
-        if not self.__is_freezed:
+        if not self._is_freezed:
             self.embedding_model.fit(train_data=x, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
         return self
 
@@ -202,6 +202,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             * 'multiscale'
             * integer specifying the pooling kernel size.
             This param will be ignored when encoding full series
+
         Returns
         -------
         :
