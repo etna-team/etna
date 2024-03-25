@@ -22,7 +22,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
-# Removed skipping training loop when model is already pretrained
 
 import numpy as np
 import pickle

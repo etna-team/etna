@@ -1,11 +1,11 @@
 import pathlib
 import tempfile
 import zipfile
+from typing import Literal
 from typing import Optional
 from typing import Union
 
 import numpy as np
-from typing_extensions import Literal
 
 from etna.libs.ts2vec import TS2Vec
 from etna.transforms.embeddings.models import BaseEmbeddingModel
@@ -15,6 +15,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     """TS2Vec embedding model.
 
     If there are NaNs in series, embeddings will not contain NaNs.
+
+    Each following calling of ``fit`` method continues the learning of the same model.
 
     For more details read the
     `paper <https://arxiv.org/abs/2106.10466>`_.
@@ -26,7 +28,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         output_dims: int = 320,
         hidden_dims: int = 64,
         depth: int = 10,
-        device: Union[Literal["cpu"], Literal["gpu"]] = "cpu",
+        device: Literal["cpu", "gpu"] = "cpu",
         lr: float = 0.001,
         batch_size: int = 16,
         max_train_length: Optional[int] = None,
@@ -129,9 +131,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def encode_segment(
         self,
         x: np.ndarray,
-        mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
-        ] = "all_true",
+        mask: Literal["binomial", "continuous", "all_true", "all_false", "mask_last"] = "all_true",
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
     ) -> np.ndarray:
@@ -143,11 +143,12 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             data with shapes (n_segments, n_timestamps, input_dims).
         mask:
             the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-            * 'continuous' - mask random windows of timestamps
-            * 'all_true' - mask none of the timestamps
-            * 'all_false' - mask all timestamps
-            * 'mask_last' - mask last timestamp
+
+            - `'binomial'` - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            - `'continuous'` - mask random windows of timestamps
+            - `'all_true'` - mask none of the timestamps
+            - `'all_false'` - mask all timestamps
+            - `'mask_last'` - mask last timestamp
         sliding_length:
             the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
@@ -173,9 +174,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def encode_window(
         self,
         x: np.ndarray,
-        mask: Union[
-            Literal["binomial"], Literal["continuous"], Literal["all_true"], Literal["all_false"], Literal["mask_last"]
-        ] = "all_true",
+        mask: Literal["binomial", "continuous", "all_true", "all_false", "mask_last"] = "all_true",
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
         encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
@@ -188,19 +187,21 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             data with shapes (n_segments, n_timestamps, input_dims).
         mask:
             the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
-            * 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-            * 'continuous' - mask random windows of timestamps
-            * 'all_true' - mask none of the timestamps
-            * 'all_false' - mask all timestamps
-            * 'mask_last' - mask last timestamp
+
+            - `'binomial'` - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            - `'continuous'` - mask random windows of timestamps
+            - `'all_true'` - mask none of the timestamps
+            - `'all_false'` - mask all timestamps
+            - `'mask_last'` - mask last timestamp
         sliding_length:
             the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
             the contextual data length used for inference every sliding windows.
         encoding_window:
             when this param is specified, the computed representation would the max pooling over this window. The possible options are:
-            * 'multiscale'
-            * integer specifying the pooling kernel size.
+
+            - `'multiscale'`
+            - integer specifying the pooling kernel size.
             This param will be ignored when encoding full series
 
         Returns
