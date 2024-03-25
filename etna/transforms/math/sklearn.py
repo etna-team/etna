@@ -3,6 +3,7 @@ from copy import deepcopy
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Union
 from typing import cast
 
@@ -226,9 +227,8 @@ class SklearnTransform(ReversibleTransform):
         return df
 
     def _preprocess_macro(self, df: pd.DataFrame) -> np.ndarray:
-        segments = sorted(set(df.columns.get_level_values("segment")))
-        x = df.loc[:, pd.IndexSlice[:, self.in_column]]
-        x = pd.concat([x[segment] for segment in segments]).values
+        in_column = cast(Sequence[str], self.in_column)
+        x = TSDataset.to_flatten(df, features=in_column)[self.in_column].values
         return x
 
     def _postprocess_macro(self, df: pd.DataFrame, transformed: np.ndarray) -> np.ndarray:

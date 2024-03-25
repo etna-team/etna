@@ -1032,7 +1032,7 @@ class TSDataset:
             raise ValueError("Value of level_columns shouldn't be empty!")
 
         df_copy = df.copy(deep=True)
-        df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
+        df_copy["segment"] = df_copy[level_columns].astype("string").add(sep).sum(axis=1).str[:-1]
         if not keep_level_columns:
             df_copy.drop(columns=level_columns, inplace=True)
         df_copy = TSDataset.to_dataset(df_copy)
@@ -1832,3 +1832,22 @@ class TSDataset:
         ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
 
         return _TorchDataset(ts_samples=ts_samples)
+
+    def size(self) -> Tuple[int, int, Optional[int]]:
+        """Return size of TSDataset.
+
+        The order of sizes is (number of time series, number of segments,
+        and number of features (if their amounts are equal in each segment; otherwise, returns None)).
+
+        Returns
+        -------
+        :
+            Tuple of TSDataset sizes
+        """
+        current_number_of_features = 0
+        for segment in self.segments:
+            cur_seg_features = self.df[segment].columns.get_level_values("feature").unique()
+            if current_number_of_features != 0 and current_number_of_features != len(cur_seg_features):
+                return len(self.index), len(self.segments), None
+            current_number_of_features = len(cur_seg_features)
+        return len(self.index), len(self.segments), current_number_of_features

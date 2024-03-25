@@ -145,8 +145,10 @@ class _CatBoostAdapter(BaseAdapter):
             dataframe with prediction components
         """
         features = df.drop(columns=["timestamp", "target"])
+        self._prepare_float_category_columns(features)
+        predict_pool = Pool(features, cat_features=self._categorical)
+        prediction = self.model.predict(predict_pool)
 
-        prediction = self.model.predict(features)
         pool = self._prepare_pool(features, prediction)
         shap_values = self.model.get_feature_importance(pool, type="ShapValues")
 

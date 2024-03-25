@@ -61,6 +61,7 @@ extensions = [
     "sphinx.ext.mathjax",  # render math via JavaScript
     "sphinx.ext.githubpages",  # creates .nojekyll file
     "sphinx.ext.linkcode",  # add external links to source code
+    "sphinx.ext.autosectionlabel"  # allow reference sections using its title
 ]
 
 # List of patterns, relative to source directory, that match files and

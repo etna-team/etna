@@ -9,6 +9,7 @@ from sklearn.tree import DecisionTreeRegressor
 from etna.analysis import StatisticsRelevanceTable
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
+from etna.transforms import BinaryOperationTransform
 from etna.transforms import BoxCoxTransform
 from etna.transforms import ChangePointsLevelTransform
 from etna.transforms import ChangePointsSegmentationTransform
@@ -210,6 +211,20 @@ class TestInverseTransformTrain:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {},
@@ -383,8 +398,21 @@ class TestInverseTransformTrain:
                 "ts_to_resample",
                 {},
             ),
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {"change": {"target"}}),
             (
-                TimeSeriesImputerTransform(in_column="target"),
+                TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {"change": {"target"}}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {"change": {"target"}}),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="running_mean"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"),
                 "ts_to_fill",
                 {"change": {"target"}},
             ),
@@ -423,15 +451,21 @@ class TestInverseTransformTrain:
                 {},
             ),
             (HolidayTransform(out_column="res", mode="binary"), "regular_ts", {}),
-            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
             (
                 HolidayTransform(out_column="res", mode="binary", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
                 {},
             ),
+            (HolidayTransform(out_column="res", mode="category"), "regular_ts", {}),
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
@@ -598,6 +632,20 @@ class TestInverseTransformTrain:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {},
@@ -764,8 +812,21 @@ class TestInverseTransformTrain:
             ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
             # missing_values
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {"change": {"target"}}),
             (
-                TimeSeriesImputerTransform(in_column="target"),
+                TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {"change": {"target"}}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {"change": {"target"}}),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="running_mean"),
+                "ts_to_fill",
+                {"change": {"target"}},
+            ),
+            (
+                TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"),
                 "ts_to_fill",
                 {"change": {"target"}},
             ),
@@ -803,6 +864,12 @@ class TestInverseTransformTrain:
                 "ts_with_external_timestamp",
                 {},
             ),
+            # TODO: fix after discussing conceptual problems
+            # (
+            #         HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+            #         "ts_with_external_timestamp_one_month",
+            #         {},
+            # ),
             (
                 SpecialDaysTransform(in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -863,6 +930,11 @@ class TestInverseTransformTrain:
             (
                 HolidayTransform(out_column="res", mode="category"),
                 "regular_ts",
+                "Transform can't work with integer index",
+            ),
+            (
+                HolidayTransform(out_column="res", mode="days_count"),
+                "regular_ts_one_month",
                 "Transform can't work with integer index",
             ),
             (TimeFlagsTransform(out_column="res"), "regular_ts", "Transform can't work with integer index"),
@@ -961,6 +1033,18 @@ class TestInverseTransformTrainSubsetSegments:
             # math
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+            ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
                 ExogShiftTransform(lag="auto", horizon=7),
@@ -1032,7 +1116,12 @@ class TestInverseTransformTrainSubsetSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill"),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -1061,6 +1150,11 @@ class TestInverseTransformTrainSubsetSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+            ),
+            (HolidayTransform(mode="days_count"), "regular_ts_one_month"),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
             ),
             (SpecialDaysTransform(), "regular_ts"),
             (
@@ -1185,6 +1279,18 @@ class TestInverseTransformFutureSubsetSegments:
             (AddConstTransform(in_column="target", value=1, inplace=False), "regular_ts"),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts"),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog"),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+            ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (
                 ExogShiftTransform(lag="auto", horizon=7),
@@ -1280,7 +1386,12 @@ class TestInverseTransformFutureSubsetSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill"),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill"),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -1309,6 +1420,11 @@ class TestInverseTransformFutureSubsetSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+            ),
+            (HolidayTransform(mode="days_count"), "regular_ts_one_month"),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
             ),
             (SpecialDaysTransform(), "regular_ts"),
             (
@@ -1440,6 +1556,20 @@ class TestInverseTransformTrainNewSegments:
                 {},
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
@@ -1579,6 +1709,12 @@ class TestInverseTransformTrainNewSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {},
             ),
             (
@@ -1773,6 +1909,20 @@ class TestInverseTransformFutureNewSegments:
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {},
@@ -1958,6 +2108,12 @@ class TestInverseTransformFutureNewSegments:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {},
             ),
             (
@@ -2268,6 +2424,20 @@ class TestInverseTransformFutureWithTarget:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {"change": {"target"}},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
                 {},
@@ -2440,12 +2610,13 @@ class TestInverseTransformFutureWithTarget:
                 "ts_to_resample",
                 {},
             ),
-            (
-                # this behaviour can be unexpected for someone
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-                {},
-            ),
+            # this behaviour can be unexpected for someone
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill", {}),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -2486,6 +2657,12 @@ class TestInverseTransformFutureWithTarget:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
@@ -2683,6 +2860,20 @@ class TestInverseTransformFutureWithoutTarget:
             ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="target"
+                ),
+                "ts_with_exog",
+                {},
+            ),
+            (
+                BinaryOperationTransform(
+                    left_column="positive", right_column="target", operator="+", out_column="new_col"
+                ),
+                "ts_with_exog",
+                {},
+            ),
             (
                 LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
                 "regular_ts",
@@ -2909,12 +3100,13 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_to_resample",
                 {},
             ),
-            (
-                # this behaviour can be unexpected for someone
-                TimeSeriesImputerTransform(in_column="target"),
-                "ts_to_fill",
-                {},
-            ),
+            # this behaviour can be unexpected for someone
+            (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="forward_fill"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="running_mean"), "ts_to_fill", {}),
+            (TimeSeriesImputerTransform(in_column="target", strategy="seasonal_nonautoreg"), "ts_to_fill", {}),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
@@ -2955,6 +3147,12 @@ class TestInverseTransformFutureWithoutTarget:
             (
                 HolidayTransform(out_column="res", mode="category", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
+                {},
+            ),
+            (HolidayTransform(out_column="res", mode="days_count"), "regular_ts_one_month", {}),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),

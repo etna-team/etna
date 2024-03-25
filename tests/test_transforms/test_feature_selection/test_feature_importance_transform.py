@@ -282,11 +282,17 @@ def test_fit_transform_with_nans(model, ts_diff_endings):
 @pytest.mark.parametrize("fast_redundancy", ([True, False]))
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
-def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors, fast_redundancy):
+@pytest.mark.parametrize("redundancy_aggregation_mode", ["mean", "median"])
+def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors, fast_redundancy, redundancy_aggregation_mode):
     """Check that transform selects exactly top_k regressors."""
     all_regressors = ts_with_regressors.regressors
     ts = ts_with_regressors
-    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k, fast_redundancy=fast_redundancy)
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=top_k,
+        fast_redundancy=fast_redundancy,
+        redundancy_aggregation_mode=redundancy_aggregation_mode,
+    )
     df_selected = mrmr.fit_transform(ts).to_pandas()
 
     selected_regressors = set()

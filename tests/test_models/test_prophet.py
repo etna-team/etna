@@ -428,7 +428,6 @@ def test_predict_components_names(
     assert set(components.columns) == expected_columns
 
 
-# TODO: подумать над тем, чтобы добавить тест на timestamp column
 @pytest.mark.parametrize(
     "timestamp_column,timestamp_column_regressors", [(None, []), ("external_timestamp", ["external_timestamp"])]
 )
