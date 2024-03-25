@@ -980,6 +980,35 @@ def simple_test_size_():
     assert ts_temp.size()[2] == 3
 
 
+def test_size_with_diff_number_of_features():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp)
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] is None
+
+
+def test_size_target_only():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq="D")
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_temp) / 3
+    assert ts_temp.size()[1] == 3
+    assert ts_temp.size()[2] == 1
+
+
+def simple_test_size_():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    df_exog_temp["other_feature"] = 1
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp) / 2
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] == 3
+
+
 @pytest.mark.xfail
 def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
     with pytest.raises(ValueError, match="All segments should end at the same timestamp"):
