@@ -144,11 +144,11 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         mask:
             the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
 
-            - `'binomial'` - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-            - `'continuous'` - mask random windows of timestamps
-            - `'all_true'` - mask none of the timestamps
-            - `'all_false'` - mask all timestamps
-            - `'mask_last'` - mask last timestamp
+            - 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            - 'continuous' - mask random windows of timestamps
+            - 'all_true' - mask none of the timestamps
+            - 'all_false' - mask all timestamps
+            - 'mask_last' - mask last timestamp
         sliding_length:
             the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
@@ -188,11 +188,11 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         mask:
             the mask used by encoder on the test phase can be specified with this parameter. The possible options are:
 
-            - `'binomial'` - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
-            - `'continuous'` - mask random windows of timestamps
-            - `'all_true'` - mask none of the timestamps
-            - `'all_false'` - mask all timestamps
-            - `'mask_last'` - mask last timestamp
+            - 'binomial' - mask timestamp with probability 0.5 (default one, used in the paper). It is used on the training phase.
+            - 'continuous' - mask random windows of timestamps
+            - 'all_true' - mask none of the timestamps
+            - 'all_false' - mask all timestamps
+            - 'mask_last' - mask last timestamp
         sliding_length:
             the length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
         sliding_padding:
@@ -200,7 +200,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         encoding_window:
             when this param is specified, the computed representation would the max pooling over this window. The possible options are:
 
-            - `'multiscale'`
+            - 'multiscale'
             - integer specifying the pooling kernel size.
             This param will be ignored when encoding full series
 
