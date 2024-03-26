@@ -38,8 +38,8 @@ def ts_with_exog_nan_end_numpy(ts_with_exog_nan_end) -> np.ndarray:
 
 @pytest.mark.smoke
 def test_fit(ts_with_exog_nan_begin_numpy):
-    model = TS2VecEmbeddingModel(input_dims=3, n_epochs=1)
-    model.fit(ts_with_exog_nan_begin_numpy)
+    model = TS2VecEmbeddingModel(input_dims=3)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
 
 
 @pytest.mark.smoke
@@ -64,7 +64,7 @@ def test_save(tmp_path):
 
 @pytest.mark.smoke
 def test_load(tmp_path):
-    model = TS2VecEmbeddingModel(input_dims=3, n_epochs=1)
+    model = TS2VecEmbeddingModel(input_dims=3)
 
     path = pathlib.Path(tmp_path) / "tmp.zip"
     model.save(path=path)
@@ -72,7 +72,7 @@ def test_load(tmp_path):
 
 
 @pytest.mark.parametrize(
-    "output_dims, segment_shape_expected, window_shape_expected", [(2, (5, 2), (10, 5, 2)), (3, (5, 3), (10, 5, 3))]
+    "output_dims, segment_shape_expected, window_shape_expected", [(2, (5, 2), (5, 10, 2)), (3, (5, 3), (5, 10, 3))]
 )
 def test_encode_format(ts_with_exog_nan_begin_numpy, output_dims, segment_shape_expected, window_shape_expected):
     model = TS2VecEmbeddingModel(input_dims=3, output_dims=output_dims)
@@ -83,17 +83,53 @@ def test_encode_format(ts_with_exog_nan_begin_numpy, output_dims, segment_shape_
 
 
 def test_encode_pre_fitted(ts_with_exog_nan_begin_numpy, tmp_path):
-    model = TS2VecEmbeddingModel(input_dims=3, n_epochs=1)
-    assert model._is_fitted is False
-
-    model.fit(ts_with_exog_nan_begin_numpy)
-    assert model._is_fitted is True
-
+    model = TS2VecEmbeddingModel(input_dims=3)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
     path = pathlib.Path(tmp_path) / "tmp.zip"
     model.save(path=path)
-    model_loaded = TS2VecEmbeddingModel.load(path=path)
-    assert model_loaded._is_fitted is True
 
+    model_loaded = TS2VecEmbeddingModel.load(path=path)
+
+    np.testing.assert_array_equal(
+        model.encode_window(ts_with_exog_nan_begin_numpy), model_loaded.encode_window(ts_with_exog_nan_begin_numpy)
+    )
+    np.testing.assert_array_equal(
+        model.encode_segment(ts_with_exog_nan_begin_numpy), model_loaded.encode_segment(ts_with_exog_nan_begin_numpy)
+    )
+
+
+def test_not_freeze_fit(ts_with_exog_nan_begin_numpy, tmp_path):
+    model = TS2VecEmbeddingModel(input_dims=3)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+    model.freeze(is_freezed=False)
+    path = pathlib.Path(tmp_path) / "tmp.zip"
+    model.save(path=path)
+
+    model_loaded = TS2VecEmbeddingModel.load(path=path)
+    model_loaded.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+
+    assert model_loaded.is_freezed is False
+    with pytest.raises(AssertionError):
+        np.testing.assert_array_equal(
+            model.encode_window(ts_with_exog_nan_begin_numpy), model_loaded.encode_window(ts_with_exog_nan_begin_numpy)
+        )
+        np.testing.assert_array_equal(
+            model.encode_segment(ts_with_exog_nan_begin_numpy),
+            model_loaded.encode_segment(ts_with_exog_nan_begin_numpy),
+        )
+
+
+def test_freeze_fit(ts_with_exog_nan_begin_numpy, tmp_path):
+    model = TS2VecEmbeddingModel(input_dims=3)
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+    model.freeze(is_freezed=True)
+    path = pathlib.Path(tmp_path) / "tmp.zip"
+    model.save(path=path)
+
+    model_loaded = TS2VecEmbeddingModel.load(path=path)
+    model_loaded.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+
+    assert model_loaded.is_freezed is True
     np.testing.assert_array_equal(
         model.encode_window(ts_with_exog_nan_begin_numpy), model_loaded.encode_window(ts_with_exog_nan_begin_numpy)
     )
@@ -108,8 +144,8 @@ def test_encode_pre_fitted(ts_with_exog_nan_begin_numpy, tmp_path):
 )
 def test_encode_not_contains_nan(data, input_dim, request):
     data = request.getfixturevalue(data)
-    model = TS2VecEmbeddingModel(input_dims=input_dim, n_epochs=1)
-    model.fit(data)
+    model = TS2VecEmbeddingModel(input_dims=input_dim)
+    model.fit(data, n_epochs=1)
     encoded_segment = model.encode_segment(data)
     encoded_window = model.encode_window(data)
 
