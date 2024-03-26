@@ -386,15 +386,14 @@ def test_transform_binary_day_with_nans(two_segments_simple_ts_daily_with_nans):
     ],
 )
 @pytest.mark.parametrize(
-    "iso_code, answer_name",
+    "iso_code,answer",
     [
         ("UK", np.array(["New Year's Day"] + ["New Year Holiday [Scotland]"] + ["NO_HOLIDAY"] * 13)),
         ("US", np.array(["New Year's Day"] + ["NO_HOLIDAY"] * 14)),
     ],
 )
-def test_transform_category_day(in_column, ts_name, iso_code, answer_name, request):
+def test_transform_category_day(in_column, ts_name, iso_code, answer, request):
     ts = request.getfixturevalue(ts_name)
-    answer = request.getfixturevalue(answer_name)
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="category", out_column="holiday", in_column=in_column)
     df = holidays_finder.fit_transform(ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
