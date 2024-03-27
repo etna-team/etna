@@ -237,10 +237,9 @@ class VariableSelectionNetwork(nn.Module):
         :
             output batch of data with shapes (batch_size, num_timestamps, output_size)
         """
-        feature = list(x.values())[0]
-        output = torch.zeros(
-            feature.size() + torch.Size([len(x)])
-        ).to(feature.device)  # (batch_size, num_timestamps, input_size, num_features)
+        output = torch.zeros(list(x.values())[0].size() + torch.Size([len(x)])).to(
+            list(x.values())[0].device
+        )  # (batch_size, num_timestamps, input_size, num_features)
         for i, (feature, embedding) in enumerate(x.items()):
             output[:, :, :, i] = self.grns[feature](embedding)
 
