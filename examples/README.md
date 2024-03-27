@@ -118,7 +118,6 @@ We have prepared a set of tutorials for an easy introduction:
   - `DirectEnsemble`
 - Summary
 
-
 #### [Mechanics of forecasting](https://github.com/etna-team/etna/tree/master/examples/209-mechanics_of_forecasting.ipynb)
 - Loading dataset
 - Forecasting
@@ -180,7 +179,6 @@ We have prepared a set of tutorials for an easy introduction:
   - Loading pretrained analyzer 
   - Analyzing segments predictability
 
-  
 #### [Prediction intervals](https://github.com/etna-team/etna/tree/master/examples/306-prediction_intervals.ipynb)
 - Loading and preparing data
 - Estimating intervals using builtin method
@@ -195,6 +193,11 @@ We have prepared a set of tutorials for an easy introduction:
     - Non-parametric method
     - Estimating historical residuals
 
+#### [Working with misaligned data](https://github.com/etna-team/etna/tree/master/examples/307-working_with_misaligned_data.ipynb)
+- Loading data
+- Preparing data
+- Forecasting
+- Working with irregular data 
 
 ## Scripts
 
