@@ -237,8 +237,8 @@ class VariableSelectionNetwork(nn.Module):
         :
             output batch of data with shapes (batch_size, num_timestamps, output_size)
         """
-        output = torch.zeros(
-            list(x.values())[0].size() + torch.Size([len(x)])
+        output = torch.zeros(list(x.values())[0].size() + torch.Size([len(x)])).to(
+            list(x.values())[0].device
         )  # (batch_size, num_timestamps, input_size, num_features)
         for i, (feature, embedding) in enumerate(x.items()):
             output[:, :, :, i] = self.grns[feature](embedding)
@@ -366,7 +366,7 @@ class TemporalFusionDecoder(nn.Module):
         x = self.grn1(x, context)
         residual = x
 
-        attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1)
+        attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1).to(x.device)
 
         x, _ = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
         x = self.gate_norm(x[:, -self.decoder_length :, :], residual[:, -self.decoder_length :, :])
