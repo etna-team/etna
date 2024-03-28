@@ -59,7 +59,7 @@ def example_make_samples_df():
     )
     return df
 
-
+@pytest.fixture()
 def example_make_samples_df_int_timestamp(example_make_samples_df):
     example_make_samples_df["timestamp"] = np.arange(len(example_make_samples_df)) + 10
     return example_make_samples_df
