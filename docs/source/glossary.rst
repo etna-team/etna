@@ -14,15 +14,15 @@ This page lists some common terms used in documentation of the library.
       Times at which measurements are taken for :term:`time series`.
 
    Regular timestamps
-      :term:`Timestamps` that are spaced regularly.
+      :term:`Timestamps` that are spaced regularly, for example every hour.
       It doesn't have to be always the same number of seconds.
       For example, taking the first day of each month gives regular timestamps.
 
-   Regular timestamps
-      :term:`Timestamps` that aren't spaced regularly.
+   Irregular timestamps
+      :term:`Timestamps` that aren't spaced regularly, for example it can be times at which our backend server receives a request.
 
    Time series frequency
-      Quantity that determines the size of spaces between :term:`regular timestamps`.
+      Quantity that determines the size of spaces between :term:`regular timestamps`. Examples of frequencies: hourly, daily, monthly.
 
    Univariate time series
       A single :term:`time series` containing measurements of a scalar variable.
