@@ -17,7 +17,8 @@ from typing_extensions import Literal
 from etna.commands.utils import estimate_max_n_folds
 from etna.commands.utils import remove_params
 from etna.datasets import TSDataset
-from etna.models.utils import determine_num_steps
+from etna.datasets.utils import _check_timestamp_param
+from etna.datasets.utils import determine_num_steps
 from etna.pipeline import Pipeline
 
 ADDITIONAL_FORECAST_PARAMETERS = {"start_timestamp", "estimate_n_folds"}
@@ -27,7 +28,9 @@ ADDITIONAL_PIPELINE_PARAMETERS = {"context_size"}
 def compute_horizon(horizon: int, forecast_params: Dict[str, Any], tsdataset: TSDataset) -> int:
     """Compute new pipeline horizon if `start_timestamp` presented in `forecast_params`."""
     if "start_timestamp" in forecast_params:
-        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"])
+        forecast_start_timestamp = _check_timestamp_param(
+            param=forecast_params["start_timestamp"], param_name="start_timestamp", freq=tsdataset.freq
+        )
         train_end_timestamp = tsdataset.index.max()
 
         if forecast_start_timestamp <= train_end_timestamp:
@@ -53,7 +56,9 @@ def update_horizon(pipeline_configs: Dict[str, Any], forecast_params: Dict[str, 
 def filter_forecast(forecast_ts: TSDataset, forecast_params: Dict[str, Any]) -> TSDataset:
     """Filter out forecasts before `start_timestamp` if `start_timestamp` presented in `forecast_params`."""
     if "start_timestamp" in forecast_params:
-        forecast_start_timestamp = pd.Timestamp(forecast_params["start_timestamp"])
+        forecast_start_timestamp = _check_timestamp_param(
+            param=forecast_params["start_timestamp"], param_name="start_timestamp", freq=forecast_ts.freq
+        )
         forecast_ts.df = forecast_ts.df.loc[forecast_start_timestamp:, :]
 
     return forecast_ts
@@ -62,7 +67,9 @@ def filter_forecast(forecast_ts: TSDataset, forecast_params: Dict[str, Any]) -> 
 def forecast(
     config_path: Path = typer.Argument(..., help="path to yaml config with desired pipeline"),
     target_path: Path = typer.Argument(..., help="path to csv with data to forecast"),
-    freq: str = typer.Argument(..., help="frequency of timestamp in files in pandas format"),
+    freq: str = typer.Argument(
+        ..., help="frequency of timestamp in files in pandas format or 'None' for integer timestamps"
+    ),
     output_path: Path = typer.Argument(..., help="where to save forecast"),
     exog_path: Optional[Path] = typer.Argument(None, help="path to csv with exog data"),
     forecast_config_path: Optional[Path] = typer.Argument(None, help="path to yaml config with forecast params"),
@@ -115,18 +122,25 @@ def forecast(
         forecast_params_config = {}
     forecast_params: Dict[str, Any] = hydra_slayer.get_from_params(**forecast_params_config)
 
-    df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
+    if freq == "None":
+        freq_init = None
+        parse_dates = None
+    else:
+        freq_init = freq
+        parse_dates = ["timestamp"]
+
+    df_timeseries = pd.read_csv(target_path, parse_dates=parse_dates)
 
     df_timeseries = TSDataset.to_dataset(df_timeseries)
 
     df_exog = None
     k_f: Union[Literal["all"], Sequence[Any]] = ()
     if exog_path:
-        df_exog = pd.read_csv(exog_path, parse_dates=["timestamp"])
+        df_exog = pd.read_csv(exog_path, parse_dates=parse_dates)
         df_exog = TSDataset.to_dataset(df_exog)
         k_f = "all" if not known_future else known_future
 
-    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
+    tsdataset = TSDataset(df=df_timeseries, freq=freq_init, df_exog=df_exog, known_future=k_f)
 
     update_horizon(pipeline_configs=pipeline_configs, forecast_params=forecast_params, tsdataset=tsdataset)
 

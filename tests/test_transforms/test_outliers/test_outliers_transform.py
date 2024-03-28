@@ -42,6 +42,20 @@ def outliers_solid_tsds():
     return ts
 
 
+@pytest.mark.parametrize("attribute_name,value_type", (("outliers_timestamps", list), ("original_values", pd.Series)))
+def test_density_outliers_deprecated_store_attributes(outliers_solid_tsds, attribute_name, value_type):
+    transform = DensityOutliersTransform(in_column="target")
+    transform.fit(ts=outliers_solid_tsds)
+
+    with pytest.warns(DeprecationWarning, match=".* is deprecated and will be removed"):
+        res = getattr(transform, attribute_name)
+
+    assert isinstance(res, dict)
+    for key, value in res.items():
+        assert isinstance(key, str)
+        assert isinstance(value, value_type)
+
+
 @pytest.mark.parametrize("in_column", ["target", "regressor_1"])
 @pytest.mark.parametrize(
     "transform_constructor, constructor_kwargs",

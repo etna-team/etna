@@ -25,6 +25,7 @@ class DeepStateBatch(TypedDict):
     decoder_real: Tensor  # (batch_size, horizon, input_size)
     datetime_index: Tensor  # (batch_size, num_models , seq_length + horizon)
     encoder_target: Tensor  # (batch_size, seq_length, 1)
+    segment: Tensor  # (batch_size)
 
 
 class DeepStateNet(DeepBaseNet):

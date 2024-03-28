@@ -32,8 +32,7 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     >>> from etna.models import ProphetModel
     >>> from etna.pipeline import Pipeline
     >>> df = generate_ar_df(periods=30, start_time="2021-06-01", ar_coef=[1.2], n_segments=3)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> prophet_pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=7)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=7)
     >>> ensemble = VotingEnsemble(
@@ -214,8 +213,8 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,

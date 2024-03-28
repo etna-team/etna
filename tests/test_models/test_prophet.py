@@ -6,7 +6,8 @@ import pytest
 from prophet import Prophet
 from prophet.serialize import model_to_dict
 
-from etna.datasets.tsdataset import TSDataset
+from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.models import ProphetModel
 from etna.models.prophet import _ProphetAdapter
 from etna.pipeline import Pipeline
@@ -22,7 +23,7 @@ def _check_forecast(ts, model, horizon):
     res = res.to_pandas(flatten=True)
 
     assert not res["target"].isnull().values.any()
-    assert len(res) == horizon * 2
+    assert len(res) == horizon * len(ts.segments)
 
 
 def _check_predict(ts, model):
@@ -31,7 +32,7 @@ def _check_predict(ts, model):
     res = res.to_pandas(flatten=True)
 
     assert not res["target"].isnull().values.any()
-    assert len(res) == len(ts.index) * 2
+    assert len(res) == len(ts.index) * len(ts.segments)
 
 
 def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
@@ -48,14 +49,60 @@ def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
         model.fit(ts)
 
 
-def test_prediction(example_tsds):
-    _check_forecast(ts=deepcopy(example_tsds), model=ProphetModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_tsds), model=ProphetModel())
+def test_fit_int_timestamp_fail(example_tsds_int_timestamp):
+    ts = example_tsds_int_timestamp
+    model = ProphetModel()
+    with pytest.raises(ValueError, match="Invalid timestamp! Only datetime type is supported."):
+        model.fit(ts)
 
 
-def test_prediction_with_reg(example_reg_tsds):
-    _check_forecast(ts=deepcopy(example_reg_tsds), model=ProphetModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_reg_tsds), model=ProphetModel())
+def test_fit_external_timestamp_not_present_fail(example_tsds):
+    ts = example_tsds
+    model = ProphetModel(timestamp_column="unknown_feature")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It isn't present in a given dataset."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_regressor_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = pd.date_range(start="2020-01-01", periods=100)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, known_future=[], freq=None)
+
+    model = ProphetModel(timestamp_column="external_timestamp")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! It should be a regressor."):
+        model.fit(ts)
+
+
+def test_fit_external_timestamp_not_datetime_fail():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
+    df_exog["target"] = np.arange(100)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
+    ts = TSDataset(df=df_wide.iloc[:-5], df_exog=df_exog_wide, known_future="all", freq=None)
+
+    model = ProphetModel(timestamp_column="external_timestamp")
+    with pytest.raises(ValueError, match="Invalid timestamp_column! Only datetime type is supported."):
+        model.fit(ts)
+
+
+@pytest.mark.parametrize(
+    "ts_name, timestamp_column",
+    [
+        ("example_tsds", None),
+        ("example_reg_tsds", None),
+        ("ts_with_external_timestamp", "external_timestamp"),
+    ],
+)
+def test_prediction(ts_name, timestamp_column, request):
+    ts = request.getfixturevalue(ts_name)
+    _check_forecast(ts=deepcopy(ts), model=ProphetModel(timestamp_column=timestamp_column), horizon=7)
+    _check_predict(ts=deepcopy(ts), model=ProphetModel(timestamp_column=timestamp_column))
 
 
 def test_prediction_with_cap_floor():
@@ -95,10 +142,18 @@ def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
         _check_forecast(ts=deepcopy(ts), model=ProphetModel(), horizon=20)
 
 
-def test_prediction_interval_run_insample(example_tsds):
-    model = ProphetModel()
-    model.fit(example_tsds)
-    forecast = model.forecast(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+@pytest.mark.parametrize(
+    "ts_name, timestamp_column",
+    [
+        ("example_tsds", None),
+        ("ts_with_external_timestamp", "external_timestamp"),
+    ],
+)
+def test_prediction_interval_run_insample(ts_name, timestamp_column, request):
+    ts = request.getfixturevalue(ts_name)
+    model = ProphetModel(timestamp_column=timestamp_column)
+    model.fit(ts)
+    forecast = model.forecast(ts, prediction_interval=True, quantiles=[0.025, 0.975])
 
     assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     prediction_intervals = forecast.get_prediction_intervals()
@@ -112,10 +167,18 @@ def test_prediction_interval_run_insample(example_tsds):
         assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
-def test_prediction_interval_run_infuture(example_tsds):
-    model = ProphetModel()
-    model.fit(example_tsds)
-    future = example_tsds.make_future(10)
+@pytest.mark.parametrize(
+    "ts_name, timestamp_column",
+    [
+        ("example_tsds", None),
+        ("ts_with_external_timestamp", "external_timestamp"),
+    ],
+)
+def test_prediction_interval_run_infuture(ts_name, timestamp_column, request):
+    ts = request.getfixturevalue(ts_name)
+    model = ProphetModel(timestamp_column=timestamp_column)
+    model.fit(ts)
+    future = ts.make_future(10)
     forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
 
     assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
@@ -185,6 +248,7 @@ def test_getstate_not_fitted(prophet_default_params):
         "_is_fitted": False,
         "_model_dict": {},
         "regressor_columns": None,
+        "timestamp_column": None,
         **prophet_default_params,
     }
     assert state == expected_state
@@ -199,6 +263,7 @@ def test_getstate_fitted(example_tsds, prophet_default_params):
         "_is_fitted": True,
         "_model_dict": model_to_dict(model.model),
         "regressor_columns": [],
+        "timestamp_column": None,
         **prophet_default_params,
     }
     assert state == expected_state
@@ -363,6 +428,9 @@ def test_predict_components_names(
     assert set(components.columns) == expected_columns
 
 
+@pytest.mark.parametrize(
+    "timestamp_column,timestamp_column_regressors", [(None, []), ("external_timestamp", ["external_timestamp"])]
+)
 @pytest.mark.parametrize("growth,cap", (("linear", []), ("logistic", ["cap"])))
 @pytest.mark.parametrize("regressors", (["f1", "f2"], []))
 @pytest.mark.parametrize("custom_seas", ([{"name": "s1", "period": 14, "fourier_order": 1}], []))
@@ -371,12 +439,26 @@ def test_predict_components_names(
 @pytest.mark.parametrize("weekly", (True, False))
 @pytest.mark.parametrize("yearly", (True, False))
 def test_predict_components_sum_up_to_target(
-    prophet_dfs, regressors, use_holidays, daily, weekly, yearly, custom_seas, growth, cap
+    prophet_dfs,
+    regressors,
+    use_holidays,
+    daily,
+    weekly,
+    yearly,
+    custom_seas,
+    growth,
+    cap,
+    timestamp_column,
+    timestamp_column_regressors,
 ):
     train, test, holidays = prophet_dfs
 
     if not use_holidays:
         holidays = None
+
+    if timestamp_column is not None:
+        train[timestamp_column] = train["timestamp"]
+        test[timestamp_column] = test["timestamp"]
 
     model = _ProphetAdapter(
         growth=growth,
@@ -385,8 +467,9 @@ def test_predict_components_sum_up_to_target(
         weekly_seasonality=weekly,
         yearly_seasonality=yearly,
         additional_seasonality_params=custom_seas,
+        timestamp_column=timestamp_column,
     )
-    model.fit(df=train, regressors=regressors + cap)
+    model.fit(df=train, regressors=regressors + cap + timestamp_column_regressors)
 
     components = model.predict_components(df=test)
     pred = model.predict(df=test, prediction_interval=False, quantiles=[])

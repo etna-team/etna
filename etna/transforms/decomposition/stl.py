@@ -11,10 +11,14 @@ from statsmodels.tsa.exponential_smoothing.ets import ETSModel
 from statsmodels.tsa.forecasting.stl import STLForecast
 from statsmodels.tsa.forecasting.stl import STLForecastResults
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
+
+_DEFAULT_FREQ = object()
 
 
 class _OneSegmentSTLTransform(OneSegmentTransform):
@@ -80,6 +84,8 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         self.model_kwargs = model_kwargs
         self.stl_kwargs = stl_kwargs
         self.fit_results: Optional[STLForecastResults] = None
+        self._first_train_timestamp: Union[pd.Timestamp, int, None] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentSTLTransform":
         """
@@ -92,15 +98,24 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: _OneSegmentSTLTransform
+        :
             instance after processing
         """
         df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
+
+        self._first_train_timestamp = df.index.min()
+        self._freq = determine_freq(df.index)
+
+        endog = df[self.in_column]
+        if pd.api.types.is_integer_dtype(df.index):
+            # make index start with zero
+            endog.index = endog.index - self._first_train_timestamp
+
         model = STLForecast(
-            df[self.in_column],
-            self.model,
+            endog=endog,
+            model=self.model,
             model_kwargs=self.model_kwargs,
             period=self.period,
             robust=self.robust,
@@ -108,6 +123,30 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         )
         self.fit_results = model.fit()
         return self
+
+    def _get_season_trend(self, df: pd.DataFrame) -> pd.Series:
+        if self.fit_results is None:
+            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
+
+        start_timestamp = df[self.in_column].first_valid_index()
+        end_timestamp = df[self.in_column].last_valid_index()
+
+        # if all values are NaNs
+        if start_timestamp is None:
+            return pd.Series([], dtype=float)
+
+        start_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
+        )
+        end_idx = determine_num_steps(
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
+        )
+
+        prediction = self.fit_results.get_prediction(start=start_idx, end=end_idx).predicted_mean.values
+
+        index = df.index[df.index.get_loc(start_timestamp) : df.index.get_loc(end_timestamp) + 1]
+        season_trend = pd.Series(prediction, index=index)
+        return season_trend
 
     def transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -120,16 +159,11 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: pd.DataFrame
+        :
             Dataframe with extracted features
         """
         result = df
-        if self.fit_results is not None:
-            season_trend = self.fit_results.get_prediction(
-                start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
-            ).predicted_mean
-        else:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
+        season_trend = self._get_season_trend(df=df)
         result[self.in_column] -= season_trend
         return result
 
@@ -144,19 +178,13 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
 
         Returns
         -------
-        result: pd.DataFrame
+        :
             Dataframe with extracted features
         """
         result = df
-        if self.fit_results is None:
-            raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
-        season_trend = self.fit_results.get_prediction(
-            start=df[self.in_column].first_valid_index(), end=df[self.in_column].last_valid_index()
-        ).predicted_mean
-
+        season_trend = self._get_season_trend(df=df)
         for colum_name in df.columns:
             result.loc[:, colum_name] += season_trend
-
         return result
 
 

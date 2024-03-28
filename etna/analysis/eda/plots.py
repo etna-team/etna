@@ -215,7 +215,7 @@ def plot_periodogram(
         _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
-            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()]
             if segment_df.isna().any():
                 raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
@@ -233,7 +233,7 @@ def plot_periodogram(
         lengths_segments = []
         for segment in segments:
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
-            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+            segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()]
             if segment_df.isna().any():
                 raise ValueError(f"Periodogram can't be calculated on segment with NaNs inside: {segment}")
             lengths_segments.append(len(segment_df))
@@ -244,7 +244,7 @@ def plot_periodogram(
         spectrums_segments = []
         for segment in segments:
             segment_df = df.loc[:, pd.IndexSlice[segment, "target"]]
-            segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
+            segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()][-cut_length:]
             frequencies, spectrum = periodogram(x=segment_df, fs=period, **periodogram_params)
             frequencies_segments.append(frequencies)
             spectrums_segments.append(spectrum)
@@ -271,8 +271,8 @@ def plot_holidays(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
     as_is: bool = False,
 ):
     """Plot holidays for segments.
@@ -292,7 +292,11 @@ def plot_holidays(
 
         * if str, then this is code of the country in `holidays <https://pypi.org/project/holidays/>`_ library;
 
-        * if DataFrame, then dataframe is expected to be in prophet`s holiday format;
+        * if DataFrame and ``as_is == False``, then dataframe is expected to be in prophet`s holiday format;
+
+        * if DataFrame and ``as_is == True``, then dataframe is expected to be
+          in a format with a timestamp index and holiday names columns.
+          In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
 
     segments:
         segments to use
@@ -301,8 +305,7 @@ def plot_holidays(
     figsize:
         size of the figure per subplot with one segment in inches
     as_is:
-        Use this option if DataFrame is represented as a dataframe with a timestamp index and holiday names columns.
-        In a holiday column values 0 represent absence of holiday in that timestamp, 1 represent the presence.
+        See ``holidays`` parameter
     start:
         start timestamp for plot
     end:
@@ -311,11 +314,15 @@ def plot_holidays(
     Raises
     ------
     ValueError:
-        Holiday nor ``pd.DataFrame`` or ``str``.
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
+    ValueError:
+        If ``holidays`` nor ``pd.DataFrame`` or ``str``.
     ValueError:
         Holiday is an empty ``pd.DataFrame``.
     ValueError:
         If ``as_is=True`` while holiday is string.
+    ValueError
+        If ``holiday`` is ``str`` and data has integer timestamp
     ValueError:
         If ``upper_window`` is negative.
     ValueError:
@@ -334,7 +341,7 @@ def plot_holidays(
 
     for i, segment in enumerate(segments):
         segment_df = df.loc[start:end, pd.IndexSlice[segment, "target"]]  # type: ignore
-        segment_df = segment_df[segment_df.first_valid_index() : segment_df.last_valid_index()]
+        segment_df = segment_df.loc[segment_df.first_valid_index() : segment_df.last_valid_index()]
 
         # plot target on segment
         target_plot = ax[i].plot(segment_df.index, segment_df)
@@ -594,7 +601,7 @@ def distribution_plot(
     segments: Optional[List[str]] = None,
     shift: int = 30,
     window: int = 30,
-    freq: str = "1M",
+    freq: Optional[Union[str, int]] = None,
     n_rows: int = 10,
     figsize: Tuple[int, int] = (10, 5),
 ):
@@ -620,7 +627,14 @@ def distribution_plot(
     window:
         number of points for statistics calc
     freq:
-        group for z-values
+        how z-values should be grouped:
+
+        * frequency string for data with datetime timestamp, groups are formed by a given frequency,
+          default value is "1M"
+
+        * integer for data with integer timestamp, groups are formed by ``timestamp // freq``,
+          default value is ``ts.index.max() + 1``
+
     n_rows:
         maximum number of rows to plot
     figsize:
@@ -640,7 +654,16 @@ def distribution_plot(
     df_full = df_full.dropna()
     df_full.loc[:, "z"] = (df_full["target"] - df_full["mean"]) / df_full["std"]
 
-    grouped_data = df_full.groupby([df_full.timestamp.dt.to_period(freq)])
+    if ts.freq is None:
+        # make only one group
+        if freq is None:
+            freq = ts.index.max() + 1
+        grouped_data = df_full.groupby(df_full.timestamp // freq)
+    else:
+        if freq is None:
+            freq = "1M"
+        grouped_data = df_full.groupby(df_full.timestamp.dt.to_period(freq))
+
     columns_num = min(2, len(grouped_data))
     rows_num = min(n_rows, math.ceil(len(grouped_data) / columns_num))
     groups = set(list(grouped_data.groups.keys())[-rows_num * columns_num :])
@@ -665,8 +688,8 @@ def plot_imputation(
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot the result of imputation by a given imputer.
 
@@ -686,6 +709,11 @@ def plot_imputation(
         start timestamp for plot
     end:
         end timestamp for plot
+
+    Raises
+    ------
+    ValueError:
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
     """
     start, end = _get_borders_ts(ts, start, end)
 

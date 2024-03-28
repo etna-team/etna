@@ -3,11 +3,13 @@ import tempfile
 from copy import deepcopy
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import pytest
 from lightning_fabric.utilities.seed import seed_everything
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import timestamp_range
 from etna.pipeline.base import AbstractPipeline
 
 
@@ -68,7 +70,9 @@ def assert_pipeline_forecasts_without_self_ts(
     else:
         expected_segments = ts.segments
     assert forecast_ts.segments == expected_segments
-    expected_index = pd.date_range(start=ts.index[-1], periods=horizon + 1, freq=ts.freq, name="timestamp")[1:]
+
+    expected_index = timestamp_range(start=ts.index[-1], periods=horizon + 1, freq=ts.freq)[1:]
+    expected_index.name = "timestamp"
     pd.testing.assert_index_equal(forecast_ts.index, expected_index)
     assert not forecast_df["target"].isna().any()
 
@@ -89,9 +93,9 @@ def assert_pipeline_forecasts_given_ts(pipeline: AbstractPipeline, ts: TSDataset
     else:
         expected_segments = to_forecast_ts.segments
     assert forecast_ts.segments == expected_segments
-    expected_index = pd.date_range(
-        start=to_forecast_ts.index[-1], periods=horizon + 1, freq=to_forecast_ts.freq, name="timestamp"
-    )[1:]
+
+    expected_index = timestamp_range(start=to_forecast_ts.index[-1], periods=horizon + 1, freq=ts.freq)[1:]
+    expected_index.name = "timestamp"
     pd.testing.assert_index_equal(forecast_ts.index, expected_index)
     assert not forecast_df["target"].isna().any()
 
@@ -116,12 +120,41 @@ def assert_pipeline_forecasts_given_ts_with_prediction_intervals(
     else:
         expected_segments = to_forecast_ts.segments
     assert forecast_ts.segments == expected_segments
-    expected_index = pd.date_range(
-        start=to_forecast_ts.index[-1], periods=horizon + 1, freq=to_forecast_ts.freq, name="timestamp"
-    )[1:]
+
+    expected_index = timestamp_range(start=to_forecast_ts.index[-1], periods=horizon + 1, freq=ts.freq)[1:]
+    expected_index.name = "timestamp"
     pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+
     assert not forecast_df["target"].isna().any()
     assert not forecast_df["target_0.025"].isna().any()
     assert not forecast_df["target_0.975"].isna().any()
+
+    return pipeline
+
+
+def assert_pipeline_predicts(
+    pipeline: AbstractPipeline, ts: TSDataset, start_idx: int, end_idx: int
+) -> AbstractPipeline:
+    predict_ts = deepcopy(ts)
+    pipeline.fit(ts)
+
+    start_timestamp = ts.index[start_idx]
+    end_timestamp = ts.index[end_idx]
+    num_points = end_idx - start_idx + 1
+
+    predict_ts = pipeline.predict(ts=predict_ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
+    predict_df = predict_ts.to_pandas(flatten=True)
+
+    if ts.has_hierarchy():
+        expected_segments = ts.hierarchical_structure.get_level_segments(predict_ts.current_df_level)
+    else:
+        expected_segments = predict_ts.segments
+    assert predict_ts.segments == expected_segments
+
+    expected_index = timestamp_range(start=start_timestamp, periods=num_points, freq=ts.freq)
+    expected_index.name = "timestamp"
+    pd.testing.assert_index_equal(predict_ts.index, expected_index)
+
+    assert not np.any(predict_df["target"].isna())
 
     return pipeline

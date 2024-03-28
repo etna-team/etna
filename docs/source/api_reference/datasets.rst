@@ -19,6 +19,7 @@ Basic structures:
    :template: class.rst
 
    TSDataset
+   DataFrameFormat
    HierarchicalStructure
 
 Utilities for dataset generation:

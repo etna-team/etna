@@ -2,6 +2,7 @@ from contextlib import suppress
 from copy import deepcopy
 from typing import List
 from typing import Tuple
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -10,15 +11,19 @@ from pandas.testing import assert_frame_equal
 
 from etna.datasets import generate_ar_df
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import DataFrameFormat
+from etna.datasets.utils import apply_alignment
+from etna.datasets.utils import infer_alignment
+from etna.datasets.utils import make_timestamp_df_from_alignment
 from etna.transforms import AddConstTransform
 from etna.transforms import DifferencingTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
-@pytest.fixture()
+@pytest.fixture
 def tsdf_with_exog(random_seed) -> TSDataset:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="1d")})
+    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="D")})
+    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="D")})
     df_1["segment"] = "Moscow"
     df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     df_2["segment"] = "Omsk"
@@ -32,7 +37,19 @@ def tsdf_with_exog(random_seed) -> TSDataset:
     classic_df_exog.rename(columns={"target": "exog"}, inplace=True)
     df_exog = TSDataset.to_dataset(classic_df_exog)
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="1D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    return ts
+
+
+@pytest.fixture
+def tsdf_int_with_exog(tsdf_with_exog) -> TSDataset:
+    df = tsdf_with_exog.raw_df
+    df_exog = tsdf_with_exog.df_exog
+    ref_point = pd.Timestamp("2021-01-01")
+    df.index = pd.Index((df.index - ref_point).days, name=df.index.name)
+    df_exog.index = pd.Index((df_exog.index - ref_point).days, name=df_exog.index.name)
+
+    ts = TSDataset(df=df, df_exog=df_exog, freq=None)
     return ts
 
 
@@ -310,6 +327,179 @@ def ts_with_prediction_intervals(ts_without_target_components, prediction_interv
     return ts
 
 
+def test_create_ts_with_datetime_timestamp():
+    freq = "D"
+    df = generate_ar_df(periods=10, freq=freq, n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+    df_wide.index.freq = freq
+    ts = TSDataset(df=df_wide, freq=freq)
+
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), df_wide)
+
+
+def test_create_ts_with_int_timestamp():
+    df = generate_ar_df(periods=10, freq=None, n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df_wide, freq=None)
+
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), df_wide)
+
+
+@pytest.mark.filterwarnings(
+    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime.",
+    "ignore: You probably set wrong freq. Discovered freq in you data is N, you set D",
+)
+def test_create_ts_with_int_timestamp_with_freq():
+    df = generate_ar_df(periods=10, freq=None, n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df_wide, freq="D")
+
+    assert ts.index.dtype == "datetime64[ns]"
+
+
+def test_create_ts_with_exog_datetime_timestamp():
+    freq = "D"
+    df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=freq)
+
+    expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1, level=(0, 1))
+    expected_merged.index.freq = freq
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), expected_merged)
+
+
+def test_create_ts_with_exog_int_timestamp():
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=None)
+
+    expected_merged = pd.concat([df_wide, df_exog_wide.loc[df_wide.index]], axis=1).sort_index(axis=1, level=(0, 1))
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), expected_merged)
+
+
+@pytest.mark.filterwarnings(
+    "ignore: Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime.",
+    "ignore: You probably set wrong freq. Discovered freq in you data is N, you set D",
+)
+def test_create_ts_with_exog_int_timestamp_with_freq():
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+
+    assert ts.index.dtype == "datetime64[ns]"
+
+
+def test_create_ts_missing_datetime_timestamp():
+    freq = "D"
+    df = generate_ar_df(periods=10, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=0)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_wide_missing = df_wide.drop(index=df_wide.index[3:5])
+    ts = TSDataset(df=df_wide_missing, freq=freq)
+
+    expected_df = df_wide.copy()
+    expected_df.iloc[3:5] = np.NaN
+    expected_df.index.freq = freq
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), expected_df)
+
+
+def test_create_ts_missing_int_timestamp():
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_wide_missing = df_wide.drop(index=df_wide.index[3:5])
+    ts = TSDataset(df=df_wide_missing, freq=None)
+
+    expected_df = df_wide.copy()
+    expected_df.iloc[3:5] = np.NaN
+    pd.testing.assert_index_equal(ts.index, df_wide.index)
+    pd.testing.assert_frame_equal(ts.to_pandas(), expected_df)
+
+
+def test_create_ts_with_int_timestamp_fail_datetime():
+    df = generate_ar_df(periods=10, freq="D", n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+    with pytest.raises(ValueError, match="You set wrong freq"):
+        _ = TSDataset(df=df_wide, freq=None)
+
+
+def test_create_datetime_conversion_during_init():
+    classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
+    classic_df["categorical_column"] = [0] * 30 + [1] * 30
+    classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
+    df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
+    df_exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
+    df.index = df.index.astype(str)
+    df_exog.index = df.index.astype(str)
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    assert ts.index.dtype == "datetime64[ns]"
+
+
+def test_create_segment_conversion_during_init(df_segments_int):
+    df_wide = TSDataset.to_dataset(df_segments_int)
+    df_exog = df_segments_int.rename(columns={"target": "exog"})
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+
+    # make conversion back to integers
+    columns_frame = df_wide.columns.to_frame()
+    columns_frame["segment"] = columns_frame["segment"].astype(int)
+    df_wide.columns = pd.MultiIndex.from_frame(columns_frame)
+
+    columns_frame = df_exog_wide.columns.to_frame()
+    columns_frame["segment"] = columns_frame["segment"].astype(int)
+    df_exog_wide.columns = pd.MultiIndex.from_frame(columns_frame)
+
+    with pytest.warns(UserWarning, match="Segment values doesn't have string type"):
+        ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+
+    assert np.all(ts.columns.get_level_values("segment") == ["1", "1", "2", "2"])
+
+
+def test_create_from_long_format_with_exog():
+    freq = "D"
+    df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+    ts_long = TSDataset(df=df, df_exog=df_exog, freq=freq)
+
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts_wide = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=freq)
+
+    pd.testing.assert_index_equal(ts_long.index, ts_wide.index)
+    pd.testing.assert_frame_equal(ts_long.to_pandas(), ts_wide.to_pandas())
+
+
+@patch("etna.datasets.utils.DataFrameFormat.determine")
+def test_create_from_long_format_with_exog_calls_determine(determine_mock):
+    determine_mock.side_effect = [DataFrameFormat.long, DataFrameFormat.long]
+
+    freq = "D"
+    df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+    _ = TSDataset(df=df, df_exog=df_exog, freq=freq)
+
+    assert determine_mock.call_count == 2
+
+
 def test_check_endings_error():
     """Check that _check_endings method raises exception if some segments end with nan."""
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
@@ -389,162 +579,335 @@ def test_categorical_after_call_to_pandas():
 
 
 @pytest.mark.parametrize(
-    "borders, true_borders",
+    "ts_name, borders, true_borders",
     (
+        # datetime timestamp
         (
+            "tsdf_with_exog",
             ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01"),
             ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01"),
         ),
         (
+            "tsdf_with_exog",
             ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
             ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
         ),
         (
+            "tsdf_with_exog",
             ("2021-02-01", "2021-06-20", "2021-06-21", "2021-06-28"),
             ("2021-02-01", "2021-06-20", "2021-06-21", "2021-06-28"),
         ),
         (
+            "tsdf_with_exog",
             ("2021-02-01", "2021-06-20", "2021-06-23", "2021-07-01"),
             ("2021-02-01", "2021-06-20", "2021-06-23", "2021-07-01"),
         ),
-        ((None, "2021-06-20", "2021-06-23", "2021-06-28"), ("2021-02-01", "2021-06-20", "2021-06-23", "2021-06-28")),
-        (("2021-02-03", "2021-06-20", "2021-06-23", None), ("2021-02-03", "2021-06-20", "2021-06-23", "2021-07-01")),
-        ((None, "2021-06-20", "2021-06-23", None), ("2021-02-01", "2021-06-20", "2021-06-23", "2021-07-01")),
-        ((None, "2021-06-20", None, None), ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
-        ((None, None, "2021-06-21", None), ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
+        (
+            "tsdf_with_exog",
+            (None, "2021-06-20", "2021-06-23", "2021-06-28"),
+            ("2021-02-01", "2021-06-20", "2021-06-23", "2021-06-28"),
+        ),
+        (
+            "tsdf_with_exog",
+            ("2021-02-03", "2021-06-20", "2021-06-23", None),
+            ("2021-02-03", "2021-06-20", "2021-06-23", "2021-07-01"),
+        ),
+        (
+            "tsdf_with_exog",
+            (None, "2021-06-20", "2021-06-23", None),
+            ("2021-02-01", "2021-06-20", "2021-06-23", "2021-07-01"),
+        ),
+        ("tsdf_with_exog", (None, "2021-06-20", None, None), ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
+        ("tsdf_with_exog", (None, None, "2021-06-21", None), ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
+        # int timestamp
+        (
+            "tsdf_int_with_exog",
+            (31, 50, 51, 58),
+            (31, 50, 51, 58),
+        ),
+        (
+            "tsdf_int_with_exog",
+            (35, 50, 51, 58),
+            (35, 50, 51, 58),
+        ),
+        (
+            "tsdf_int_with_exog",
+            (31, 50, 51, 55),
+            (31, 50, 51, 55),
+        ),
+        (
+            "tsdf_int_with_exog",
+            (31, 50, 53, 58),
+            (31, 50, 53, 58),
+        ),
+        ("tsdf_int_with_exog", (None, 50, 53, 58), (31, 50, 53, 58)),
+        ("tsdf_int_with_exog", (35, 50, 53, None), (35, 50, 53, 181)),
+        ("tsdf_int_with_exog", (None, 50, 53, None), (31, 50, 53, 181)),
+        ("tsdf_int_with_exog", (None, 50, None, None), (31, 50, 51, 181)),
+        ("tsdf_int_with_exog", (None, None, 51, None), (31, 50, 51, 181)),
     ),
 )
-def test_train_test_split(borders, true_borders, tsdf_with_exog):
+def test_train_test_split(ts_name, borders, true_borders, request):
+    ts = request.getfixturevalue(ts_name)
     train_start, train_end, test_start, test_end = borders
     train_start_true, train_end_true, test_start_true, test_end_true = true_borders
-    train, test = tsdf_with_exog.train_test_split(
+    train, test = ts.train_test_split(
         train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end
     )
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    assert (train.df == tsdf_with_exog.df[train_start_true:train_end_true]).all().all()
-    assert (train.df_exog == tsdf_with_exog.df_exog).all().all()
-    assert (test.df == tsdf_with_exog.df[test_start_true:test_end_true]).all().all()
-    assert (test.df_exog == tsdf_with_exog.df_exog).all().all()
+    pd.testing.assert_frame_equal(train.df, ts.df.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(test.df, ts.df.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
 
 
 @pytest.mark.parametrize(
-    "test_size, true_borders",
+    "ts_name, test_size, true_borders",
     (
-        (11, ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
-        (9, ("2021-02-01", "2021-06-22", "2021-06-23", "2021-07-01")),
-        (1, ("2021-02-01", "2021-06-30", "2021-07-01", "2021-07-01")),
+        # datetime timestamp
+        ("tsdf_with_exog", 11, ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01")),
+        ("tsdf_with_exog", 9, ("2021-02-01", "2021-06-22", "2021-06-23", "2021-07-01")),
+        ("tsdf_with_exog", 1, ("2021-02-01", "2021-06-30", "2021-07-01", "2021-07-01")),
+        # int timestamp
+        ("tsdf_int_with_exog", 11, (31, 170, 171, 181)),
+        ("tsdf_int_with_exog", 9, (31, 172, 173, 181)),
+        ("tsdf_int_with_exog", 1, (31, 180, 181, 181)),
     ),
 )
-def test_train_test_split_with_test_size(test_size, true_borders, tsdf_with_exog):
+def test_train_test_split_with_test_size(ts_name, test_size, true_borders, request):
+    ts = request.getfixturevalue(ts_name)
     train_start_true, train_end_true, test_start_true, test_end_true = true_borders
-    train, test = tsdf_with_exog.train_test_split(test_size=test_size)
+    train, test = ts.train_test_split(test_size=test_size)
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    assert (train.df == tsdf_with_exog.df[train_start_true:train_end_true]).all().all()
-    assert (train.df_exog == tsdf_with_exog.df_exog).all().all()
-    assert (test.df == tsdf_with_exog.df[test_start_true:test_end_true]).all().all()
-    assert (test.df_exog == tsdf_with_exog.df_exog).all().all()
+    pd.testing.assert_frame_equal(train.df, ts.df.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(test.df, ts.df.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
 
 
 @pytest.mark.filterwarnings("ignore: test_size, test_start and test_end cannot be")
 @pytest.mark.parametrize(
-    "test_size, borders, true_borders",
+    "ts_name, test_size, borders, true_borders",
     (
+        # datetime timestamp
         (
+            "tsdf_with_exog",
             10,
             ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01"),
             ("2021-02-01", "2021-06-20", "2021-06-21", "2021-07-01"),
         ),
         (
+            "tsdf_with_exog",
             15,
             ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
             ("2021-02-03", "2021-06-20", "2021-06-22", "2021-07-01"),
         ),
-        (11, ("2021-02-02", None, None, "2021-06-28"), ("2021-02-02", "2021-06-17", "2021-06-18", "2021-06-28")),
         (
+            "tsdf_with_exog",
+            11,
+            ("2021-02-02", None, None, "2021-06-28"),
+            ("2021-02-02", "2021-06-17", "2021-06-18", "2021-06-28"),
+        ),
+        (
+            "tsdf_with_exog",
             4,
             ("2021-02-03", "2021-06-20", None, "2021-07-01"),
             ("2021-02-03", "2021-06-20", "2021-06-28", "2021-07-01"),
         ),
         (
+            "tsdf_with_exog",
             4,
             ("2021-02-03", "2021-06-20", None, None),
             ("2021-02-03", "2021-06-20", "2021-06-21", "2021-06-24"),
         ),
+        # int timestamp
+        (
+            "tsdf_int_with_exog",
+            10,
+            (31, 171, 172, 181),
+            (31, 171, 172, 181),
+        ),
+        (
+            "tsdf_int_with_exog",
+            15,
+            (31, 169, 172, 181),
+            (31, 169, 172, 181),
+        ),
+        (
+            "tsdf_int_with_exog",
+            11,
+            (33, None, None, 170),
+            (33, 159, 160, 170),
+        ),
+        (
+            "tsdf_int_with_exog",
+            4,
+            (33, 170, None, 181),
+            (33, 170, 178, 181),
+        ),
+        (
+            "tsdf_int_with_exog",
+            4,
+            (33, 170, None, None),
+            (33, 170, 171, 174),
+        ),
     ),
 )
-def test_train_test_split_both(test_size, borders, true_borders, tsdf_with_exog):
+def test_train_test_split_both(ts_name, test_size, borders, true_borders, request):
+    ts = request.getfixturevalue(ts_name)
     train_start, train_end, test_start, test_end = borders
     train_start_true, train_end_true, test_start_true, test_end_true = true_borders
-    train, test = tsdf_with_exog.train_test_split(
+    train, test = ts.train_test_split(
         train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end, test_size=test_size
     )
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    assert (train.df == tsdf_with_exog.df[train_start_true:train_end_true]).all().all()
-    assert (train.df_exog == tsdf_with_exog.df_exog).all().all()
-    assert (test.df == tsdf_with_exog.df[test_start_true:test_end_true]).all().all()
-    assert (test.df_exog == tsdf_with_exog.df_exog).all().all()
+    pd.testing.assert_frame_equal(train.df, ts.df.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(test.df, ts.df.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
 
 
 @pytest.mark.parametrize(
-    "borders, match",
+    "ts_name, borders, match",
     (
-        (("2021-01-01", "2021-06-20", "2021-06-21", "2021-07-01"), "Min timestamp in df is"),
-        (("2021-02-01", "2021-06-20", "2021-06-21", "2021-08-01"), "Max timestamp in df is"),
+        ("tsdf_with_exog", ("2021-01-01", "2021-06-20", "2021-06-21", "2021-07-01"), "Min timestamp in df is"),
+        ("tsdf_with_exog", ("2021-02-01", "2021-06-20", "2021-06-21", "2021-08-01"), "Max timestamp in df is"),
+        ("tsdf_int_with_exog", (1, 50, 51, 181), "Min timestamp in df is"),
+        ("tsdf_int_with_exog", (31, 50, 51, 200), "Max timestamp in df is"),
     ),
 )
-def test_train_test_split_warning(borders, match, tsdf_with_exog):
+def test_train_test_split_warning_borders(ts_name, borders, match, request):
+    ts = request.getfixturevalue(ts_name)
     train_start, train_end, test_start, test_end = borders
     with pytest.warns(UserWarning, match=match):
-        tsdf_with_exog.train_test_split(
-            train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end
-        )
+        ts.train_test_split(train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end)
 
 
 @pytest.mark.parametrize(
-    "test_size, borders, match",
+    "ts_name, test_size, borders, match",
     (
         (
+            "tsdf_with_exog",
             10,
             ("2021-02-01", None, "2021-06-21", "2021-07-01"),
             "test_size, test_start and test_end cannot be applied at the same time. test_size will be ignored",
         ),
+        (
+            "tsdf_int_with_exog",
+            10,
+            (31, None, 50, 60),
+            "test_size, test_start and test_end cannot be applied at the same time. test_size will be ignored",
+        ),
     ),
 )
-def test_train_test_split_warning2(test_size, borders, match, tsdf_with_exog):
+def test_train_test_split_warning_many_parameters(ts_name, test_size, borders, match, request):
+    ts = request.getfixturevalue(ts_name)
     train_start, train_end, test_start, test_end = borders
     with pytest.warns(UserWarning, match=match):
-        tsdf_with_exog.train_test_split(
+        ts.train_test_split(
             train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end, test_size=test_size
         )
 
 
 @pytest.mark.parametrize(
-    "test_size, borders, match",
+    "ts_name, test_size, borders, match",
     (
+        # datetime timestamp
         (
+            "tsdf_with_exog",
             None,
             ("2021-02-03", None, None, "2021-07-01"),
             "At least one of train_end, test_start or test_size should be defined",
         ),
         (
+            "tsdf_with_exog",
+            None,
+            (10, "2021-06-20", "2021-06-26", "2021-07-01"),
+            "Parameter train_start has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
+            None,
+            ("2021-02-03", 10, "2021-06-26", "2021-07-01"),
+            "Parameter train_end has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
+            None,
+            ("2021-02-03", "2021-06-20", 10, "2021-07-01"),
+            "Parameter test_start has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
+            None,
+            ("2021-02-03", "2021-06-20", "2021-06-26", 10),
+            "Parameter test_end has incorrect type",
+        ),
+        (
+            "tsdf_with_exog",
             17,
             ("2021-02-01", "2021-06-20", None, "2021-07-01"),
             "The beginning of the test goes before the end of the train",
         ),
         (
+            "tsdf_with_exog",
             17,
             ("2021-02-01", "2021-06-20", "2021-06-26", None),
             "test_size is 17, but only 6 available with your test_start",
         ),
+        # int timestamp
+        (
+            "tsdf_int_with_exog",
+            None,
+            (33, None, None, 181),
+            "At least one of train_end, test_start or test_size should be defined",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (pd.Timestamp("2020-01-01"), 170, 176, 181),
+            "Parameter train_start has incorrect type",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (33, pd.Timestamp("2020-01-01"), 176, 181),
+            "Parameter train_end has incorrect type",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (33, 170, pd.Timestamp("2020-01-01"), 181),
+            "Parameter test_start has incorrect type",
+        ),
+        (
+            "tsdf_int_with_exog",
+            None,
+            (33, 170, 176, pd.Timestamp("2020-01-01")),
+            "Parameter test_end has incorrect type",
+        ),
+        (
+            "tsdf_int_with_exog",
+            17,
+            (31, 170, None, 181),
+            "The beginning of the test goes before the end of the train",
+        ),
+        (
+            "tsdf_int_with_exog",
+            17,
+            (31, 50, 176, None),
+            "test_size is 17, but only 6 available with your test_start",
+        ),
     ),
 )
-def test_train_test_split_failed(test_size, borders, match, tsdf_with_exog):
+def test_train_test_split_failed(ts_name, test_size, borders, match, request):
+    ts = request.getfixturevalue(ts_name)
     train_start, train_end, test_start, test_end = borders
     with pytest.raises(ValueError, match=match):
-        tsdf_with_exog.train_test_split(
+        ts.train_test_split(
             train_start=train_start, train_end=train_end, test_start=test_start, test_end=test_end, test_size=test_size
         )
 
@@ -569,24 +932,11 @@ def test_train_test_split_pass_prediction_intervals_to_output(ts_with_prediction
     assert sorted(test.prediction_intervals_names) == sorted(ts_with_prediction_intervals.prediction_intervals_names)
 
 
-def test_dataset_datetime_conversion():
+def test_to_dataset_datetime_conversion():
     classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
     classic_df["timestamp"] = classic_df["timestamp"].astype(str)
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
-    # todo: deal with pandas datetime format
     assert df.index.dtype == "datetime64[ns]"
-
-
-def test_dataset_datetime_conversion_during_init():
-    classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
-    classic_df["categorical_column"] = [0] * 30 + [1] * 30
-    classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
-    df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
-    exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
-    df.index = df.index.astype(str)
-    exog.index = df.index.astype(str)
-    ts = TSDataset(df, "D", exog)
-    assert ts.df.index.dtype == "datetime64[ns]"
 
 
 def test_to_dataset_segment_conversion(df_segments_int):
@@ -595,15 +945,68 @@ def test_to_dataset_segment_conversion(df_segments_int):
     assert np.all(df.columns.get_level_values("segment") == ["1", "2"])
 
 
-def test_dataset_segment_conversion_during_init(df_segments_int):
-    """Test that `TSDataset.__init__` makes casting of segment to string."""
-    df = TSDataset.to_dataset(df_segments_int)
-    # make conversion back to integers
-    columns_frame = df.columns.to_frame()
-    columns_frame["segment"] = columns_frame["segment"].astype(int)
-    df.columns = pd.MultiIndex.from_frame(columns_frame)
-    ts = TSDataset(df=df, freq="D")
-    assert np.all(ts.columns.get_level_values("segment") == ["1", "2"])
+def test_to_dataset_on_integer_timestamp():
+    classic_df = generate_ar_df(periods=30, freq=None, n_segments=2)
+    df = TSDataset.to_dataset(classic_df)
+    assert pd.api.types.is_integer_dtype(df.index.dtype)
+
+
+def test_size_with_diff_number_of_features():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp)
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] is None
+
+
+def test_size_target_only():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq="D")
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_temp) / 3
+    assert ts_temp.size()[1] == 3
+    assert ts_temp.size()[2] == 1
+
+
+def simple_test_size_():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    df_exog_temp["other_feature"] = 1
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp) / 2
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] == 3
+
+
+def test_size_with_diff_number_of_features():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp)
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] is None
+
+
+def test_size_target_only():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq="D")
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_temp) / 3
+    assert ts_temp.size()[1] == 3
+    assert ts_temp.size()[2] == 1
+
+
+def simple_test_size_():
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
+    df_exog_temp["other_feature"] = 1
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    assert ts_temp.size()[0] == len(df_exog_temp) / 2
+    assert ts_temp.size()[1] == 2
+    assert ts_temp.size()[2] == 3
 
 
 @pytest.mark.xfail
@@ -619,15 +1022,35 @@ def test_make_future_with_imputer(ts_diff_endings, ts_future):
     assert_frame_equal(future.to_pandas(), ts_future.to_pandas())
 
 
-def test_make_future():
-    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
-    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
-    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
-    df = pd.concat([df1, df2], ignore_index=False)
+def test_make_future_datetime_timestamp():
+    df = generate_ar_df(periods=20, freq="D", n_segments=2)
     ts = TSDataset(TSDataset.to_dataset(df), freq="D")
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
     assert set(ts_future.columns.get_level_values("feature")) == {"target"}
+
+
+def test_make_future_int_timestamp():
+    freq = None
+    df = generate_ar_df(periods=20, freq=freq, n_segments=2)
+    ts = TSDataset(TSDataset.to_dataset(df), freq=freq)
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == np.arange(ts.index.max() + 1, ts.index.max() + 10 + 1))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
+
+
+def test_make_future_with_exog_datetime_timestamp(tsdf_with_exog):
+    ts = tsdf_with_exog
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+
+
+def test_make_future_with_exog_int_timestamp(tsdf_int_with_exog):
+    ts = tsdf_int_with_exog
+    ts_future = ts.make_future(10)
+    assert np.all(ts_future.index == np.arange(ts.index.max() + 1, ts.index.max() + 10 + 1))
+    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
 
 
 def test_make_future_small_horizon():
@@ -642,19 +1065,6 @@ def test_make_future_small_horizon():
     train = TSDataset(ts[: ts.index[10], :, :], freq="D")
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
         assert len(train.make_future(1).df) == 1
-
-
-def test_make_future_with_exog():
-    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
-    df1 = pd.DataFrame({"timestamp": timestamp, "target": 1, "segment": "segment_1"})
-    df2 = pd.DataFrame({"timestamp": timestamp, "target": 2, "segment": "segment_2"})
-    df = pd.concat([df1, df2], ignore_index=False)
-    exog = df.copy()
-    exog.columns = ["timestamp", "exog", "segment"]
-    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(exog), freq="D")
-    ts_future = ts.make_future(10)
-    assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
 
 
 def test_make_future_with_regressors(df_and_regressors):
@@ -823,6 +1233,16 @@ def test_to_flatten_simple(example_df):
     assert np.all(expected_df.values == obtained_df.values)
 
 
+def test_to_flatten_simple_int_timestamp():
+    flat_df = generate_ar_df(periods=10, freq=None, n_segments=3)
+    sorted_columns = sorted(flat_df.columns)
+    expected_df = flat_df[sorted_columns]
+    obtained_df = TSDataset.to_flatten(TSDataset.to_dataset(flat_df))[sorted_columns]
+    assert np.all(expected_df.columns == obtained_df.columns)
+    assert np.all(expected_df.dtypes == obtained_df.dtypes)
+    assert np.all(expected_df.values == obtained_df.values)
+
+
 def test_to_flatten_with_exog(df_and_regressors_flat):
     """Check that TSDataset.to_flatten works correctly with exogenous features."""
     df, df_exog = df_and_regressors_flat
@@ -875,6 +1295,14 @@ def test_to_flatten_raise_error_incorrect_literal(df_and_regressors):
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     with pytest.raises(ValueError, match="The only possible literal is 'all'"):
         _ = ts.to_flatten(ts.df, features="incorrect")
+
+
+def test_to_pandas_simple_int_timestamp():
+    df = generate_ar_df(periods=30, freq=None, n_segments=3)
+    df_wide = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df_wide, freq=None)
+    pandas_df = ts.to_pandas(flatten=False, features="all")
+    pd.testing.assert_frame_equal(pandas_df, df_wide)
 
 
 @pytest.mark.parametrize(
@@ -1285,3 +1713,215 @@ def test_target_quantiles_names_deprecation_warning(ts_with_prediction_intervals
         DeprecationWarning, match="Usage of this property may mislead while accessing prediction intervals."
     ):
         _ = ts_with_prediction_intervals.target_quantiles_names
+
+
+@pytest.mark.parametrize(
+    "ts_name, params, match",
+    [
+        ("tsdf_with_exog", {"start": 1}, "Parameter start has incorrect type"),
+        ("tsdf_with_exog", {"end": 1}, "Parameter end has incorrect type"),
+        ("tsdf_int_with_exog", {"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ("tsdf_int_with_exog", {"end": "2020-01-01"}, "Parameter end has incorrect type"),
+    ],
+)
+def test_plot_fail_incorrect_start_end_type(ts_name, params, match, request):
+    ts = request.getfixturevalue(ts_name)
+    with pytest.raises(ValueError, match=match):
+        ts.plot(**params)
+
+
+@pytest.mark.filterwarnings("ignore: You probably set wrong freq. Discovered freq in you data is N, you set D")
+def test_check_timestamp_type_warning():
+    match = "Timestamp contains numeric values, and given freq is D. Timestamp will be converted to datetime."
+
+    df = generate_ar_df(periods=10, start_time=5, freq=None, n_segments=3, random_seed=0)
+    df_exog = generate_ar_df(periods=20, start_time=0, freq=None, n_segments=3, random_seed=1)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+    df_wide = TSDataset.to_dataset(df)
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+
+    with pytest.warns(UserWarning, match=match):
+        TSDataset(df=df_wide, freq="D")
+
+    with pytest.warns(UserWarning, match=match):
+        TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+
+
+@pytest.mark.parametrize(
+    "df_name, freq, original_timestamp_name, future_steps",
+    [
+        ("df_aligned_datetime", "D", "external_timestamp", 1),
+        ("df_aligned_int", None, "external_timestamp", 1),
+        ("df_misaligned_datetime", "D", "external_timestamp", 1),
+        ("df_misaligned_int", None, "external_timestamp", 1),
+        ("df_misaligned_datetime", "D", "new_timestamp", 1),
+        ("df_misaligned_datetime", "D", "external_timestamp", 3),
+        ("df_misaligned_datetime", "D", "external_timestamp", 100),
+    ],
+)
+def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_name, future_steps, request):
+    df = request.getfixturevalue(df_name)
+    ts = TSDataset.create_from_misaligned(
+        df=df, df_exog=None, freq=freq, original_timestamp_name=original_timestamp_name, future_steps=future_steps
+    )
+
+    alignment = infer_alignment(df)
+    expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
+    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+
+    timestamp_df = make_timestamp_df_from_alignment(
+        alignment=alignment,
+        start=expected_raw_df.index[0],
+        periods=len(expected_raw_df) + future_steps,
+        freq=freq,
+        timestamp_name=original_timestamp_name,
+    )
+    expected_df_exog = TSDataset.to_dataset(timestamp_df)
+    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+
+    assert original_timestamp_name in ts.known_future
+    assert ts.freq is None
+
+
+@pytest.mark.parametrize(
+    "df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps",
+    [
+        ("df_aligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "new_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 3),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 100),
+    ],
+)
+def test_create_from_misaligned_with_exog(
+    df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps, request
+):
+    df = request.getfixturevalue(df_name)
+    df_exog = request.getfixturevalue(df_exog_name)
+    ts = TSDataset.create_from_misaligned(
+        df=df,
+        df_exog=df_exog,
+        freq=freq,
+        original_timestamp_name=original_timestamp_name,
+        future_steps=future_steps,
+        known_future=known_future,
+    )
+
+    alignment = infer_alignment(df)
+    expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
+    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+
+    expected_df_exog = TSDataset.to_dataset(apply_alignment(df=df_exog, alignment=alignment))
+    timestamp_df = make_timestamp_df_from_alignment(
+        alignment=alignment,
+        start=expected_raw_df.index[0],
+        periods=len(expected_raw_df) + future_steps,
+        freq=freq,
+        timestamp_name=original_timestamp_name,
+    )
+    expected_df_exog = expected_df_exog.join(TSDataset.to_dataset(timestamp_df), how="outer")
+    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+
+    expected_known_future = sorted(set(known_future).union([original_timestamp_name]))
+    assert ts.known_future == expected_known_future
+
+    assert ts.freq is None
+
+
+@pytest.mark.parametrize(
+    "df_name, df_exog_name, freq, original_timestamp_name, future_steps, expected_known_future",
+    [
+        (
+            "df_misaligned_datetime",
+            "df_exog_all_misaligned_datetime",
+            "D",
+            "external_timestamp",
+            1,
+            ["exog_1", "exog_2", "external_timestamp"],
+        ),
+    ],
+)
+def test_create_from_misaligned_with_exog_all(
+    df_name, df_exog_name, freq, original_timestamp_name, future_steps, expected_known_future, request
+):
+    df = request.getfixturevalue(df_name)
+    df_exog = request.getfixturevalue(df_exog_name)
+    ts = TSDataset.create_from_misaligned(
+        df=df,
+        df_exog=df_exog,
+        freq=freq,
+        original_timestamp_name=original_timestamp_name,
+        future_steps=future_steps,
+        known_future="all",
+    )
+
+    alignment = infer_alignment(df)
+    expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
+    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+
+    expected_df_exog = TSDataset.to_dataset(apply_alignment(df=df_exog, alignment=alignment))
+    timestamp_df = make_timestamp_df_from_alignment(
+        alignment=alignment,
+        start=expected_raw_df.index[0],
+        periods=len(expected_raw_df) + future_steps,
+        freq=freq,
+        timestamp_name=original_timestamp_name,
+    )
+    expected_df_exog = expected_df_exog.join(TSDataset.to_dataset(timestamp_df), how="outer")
+    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+
+    assert ts.known_future == expected_known_future
+    assert ts.freq is None
+
+
+@pytest.mark.parametrize(
+    "df_name, freq, original_timestamp_name, future_steps",
+    [
+        ("df_misaligned_datetime", "D", "external_timestamp", 0),
+        ("df_misaligned_datetime", "D", "external_timestamp", -3),
+        ("df_misaligned_int", None, "external_timestamp", 0),
+        ("df_misaligned_int", None, "external_timestamp", -3),
+    ],
+)
+def test_create_from_misaligned_fail_non_positive_future_steps(
+    df_name, freq, original_timestamp_name, future_steps, request
+):
+    df = request.getfixturevalue(df_name)
+    with pytest.raises(ValueError, match="Parameter future_steps should be positive"):
+        _ = TSDataset.create_from_misaligned(
+            df=df,
+            df_exog=None,
+            freq=freq,
+            original_timestamp_name=original_timestamp_name,
+            future_steps=future_steps,
+        )
+
+
+@pytest.mark.parametrize(
+    "df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps",
+    [
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "exog_1", 1),
+    ],
+)
+def test_create_from_misaligned_fail_name_intersection(
+    df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps, request
+):
+    df = request.getfixturevalue(df_name)
+    df_exog = request.getfixturevalue(df_exog_name)
+    with pytest.raises(
+        ValueError, match="Parameter original_timestamp_name shouldn't intersect with columns in df_exog"
+    ):
+        _ = TSDataset.create_from_misaligned(
+            df=df,
+            df_exog=df_exog,
+            freq=freq,
+            original_timestamp_name=original_timestamp_name,
+            future_steps=future_steps,
+            known_future=known_future,
+        )

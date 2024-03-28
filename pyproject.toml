@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "2.4.0"
+version = "2.5.0"
 repository = "https://github.com/etna-team/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -130,7 +130,7 @@ statsforecast = ["statsforecast"]
 release = ["click", "semver"]
 docs = ["Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design", "jupyter"]
 tests = ["pytest-cov", "pytest", "pytest-shard"]
-jupyter = ["jupyter", "nbconvert", "black"]
+jupyter = ["jupyter", "nbconvert", "black", "ipywidgets"]
 style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "nbqa"]
 
 all = [
@@ -152,7 +152,7 @@ all-dev = [
     "pytest-cov", "pytest", "pytest-shard",
     "black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy", "types-PyYAML", "codespell", "flake8-bugbear", "flake8-comprehensions", "types-setuptools", "nbqa",
     "click", "semver",
-    "jupyter", "nbconvert",
+    "jupyter", "nbconvert", "ipywidgets",
     "pyts", "tsfresh",
     "statsforecast"
 ]
@@ -202,7 +202,7 @@ filterwarnings = [
     "ignore: TSDataset freq can't be inferred",
     "ignore: You probably set wrong freq. Discovered freq in you data",
     "ignore: Option `fast_redundancy=False` was added for backward compatibility and will be removed in etna 3.0.0.",
-    "ignore: Some regressors don't have enough values in segment",
+    "ignore: Some regressors don't have enough values",
     "ignore: Segments contains NaNs in the last timestamps",
     "ignore: Given top_k=.* is bigger than n_features=.*. Transform will not filter",
     "ignore: Given top_k=.* is less than n_segments=.*. Algo will filter data without Gale-Shapley run.",

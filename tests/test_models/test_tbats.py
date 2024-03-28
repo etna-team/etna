@@ -15,6 +15,7 @@ from etna.models.tbats import _TBATSAdapter
 from tests.test_models.test_linear_model import linear_segments_by_parameters
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_prediction_components_are_present
+from tests.utils import convert_ts_to_int_timestamp
 
 
 @pytest.fixture()
@@ -26,7 +27,6 @@ def linear_segments_ts_unique(random_seed):
 
 @pytest.fixture()
 def sinusoid_ts():
-    horizon = 14
     periods = 100
     sinusoid_ts_1 = pd.DataFrame(
         {
@@ -45,7 +45,12 @@ def sinusoid_ts():
     df = pd.concat((sinusoid_ts_1, sinusoid_ts_2))
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df, freq="D")
-    return ts.train_test_split(test_size=horizon)
+    return ts
+
+
+@pytest.fixture()
+def sinusoid_ts_int_timestamp(sinusoid_ts):
+    return convert_ts_to_int_timestamp(ts=sinusoid_ts, shift=10)
 
 
 @pytest.fixture()
@@ -69,6 +74,15 @@ def periodic_dfs():
     )
 
     return df.iloc[:40], df.iloc[40:]
+
+
+@pytest.fixture()
+def periodic_dfs_int_timestamp(periodic_dfs):
+    shift = 10
+    train_df, test_df = periodic_dfs
+    train_df["timestamp"] = np.arange(len(train_df)) + shift
+    test_df["timestamp"] = np.arange(len(test_df)) + len(train_df) + shift
+    return train_df, test_df
 
 
 @pytest.fixture()
@@ -147,14 +161,17 @@ def test_not_fitted(model, method, linear_segments_ts_unique):
         method_to_call(ts=Mock())
 
 
+@pytest.mark.parametrize("ts_name", ["sinusoid_ts", "sinusoid_ts_int_timestamp"])
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 @pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
-def test_dummy(model, method, use_future, sinusoid_ts):
-    train, test = sinusoid_ts
+def test_dummy(ts_name, model, method, use_future, request):
+    horizon = 14
+    ts = request.getfixturevalue(ts_name)
+    train, test = ts.train_test_split(test_size=horizon)
     model.fit(train)
 
     if use_future:
-        pred_ts = train.make_future(14)
+        pred_ts = train.make_future(horizon)
         y_true = test
     else:
         pred_ts = deepcopy(train)
@@ -168,14 +185,16 @@ def test_dummy(model, method, use_future, sinusoid_ts):
     assert value_metric < 0.33
 
 
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
 @pytest.mark.parametrize("model", [TBATSModel(), BATSModel()])
 @pytest.mark.parametrize("method, use_future", (("predict", False), ("forecast", True)))
-def test_prediction_interval(model, method, use_future, example_tsds):
-    model.fit(example_tsds)
+def test_prediction_interval(ts_name, model, method, use_future, request):
+    ts = request.getfixturevalue(ts_name)
+    model.fit(ts)
     if use_future:
-        pred_ts = example_tsds.make_future(3)
+        pred_ts = ts.make_future(3)
     else:
-        pred_ts = deepcopy(example_tsds)
+        pred_ts = deepcopy(ts)
 
     method_to_call = getattr(model, method)
     forecast = method_to_call(ts=pred_ts, prediction_interval=True, quantiles=[0.025, 0.975])
@@ -375,6 +394,7 @@ def test_arma_with_seasonal_components_not_fitted(periodic_dfs, estimator, metho
 
 
 @pytest.mark.filterwarnings("ignore:.*not fitted.*")
+@pytest.mark.parametrize("dfs_name", ["periodic_dfs", "periodic_dfs_int_timestamp"])
 @pytest.mark.parametrize(
     "estimator",
     (
@@ -407,8 +427,8 @@ def test_arma_with_seasonal_components_not_fitted(periodic_dfs, estimator, metho
     ),
 )
 @pytest.mark.parametrize("method,use_future", (("predict_components", False), ("forecast_components", True)))
-def test_forecast_decompose_sum_up_to_target(periodic_dfs, estimator, params, method, use_future):
-    train, test = periodic_dfs
+def test_forecast_decompose_sum_up_to_target(dfs_name, estimator, params, method, use_future, request):
+    train, test = request.getfixturevalue(dfs_name)
 
     model = _TBATSAdapter(model=estimator(**params))
     model.fit(train, [])

@@ -125,9 +125,9 @@ def test_estimate_max_n_folds_invalid_method_name(pipeline_without_context, exam
         )
 
 
-def test_estimate_max_n_folds_empty_ts(pipeline_without_context, empty_ts):
+def test_estimate_max_n_folds_small_ts(pipeline_without_context, small_ts):
     with pytest.raises(ValueError, match="Not enough data points!"):
-        _ = estimate_max_n_folds(pipeline=pipeline_without_context, ts=empty_ts, method_name="forecast", context_size=1)
+        _ = estimate_max_n_folds(pipeline=pipeline_without_context, ts=small_ts, method_name="forecast", context_size=1)
 
 
 def test_estimate_max_n_folds_negative_context(pipeline_without_context, example_tsds):

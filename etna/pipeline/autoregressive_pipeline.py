@@ -6,6 +6,7 @@ import pandas as pd
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import timestamp_range
 from etna.models.base import ContextIgnorantModelType
 from etna.models.base import ContextRequiredModelType
 from etna.models.base import ModelType
@@ -27,14 +28,13 @@ class AutoRegressivePipeline(
     >>> from etna.datasets import TSDataset
     >>> from etna.models import LinearPerSegmentModel
     >>> from etna.transforms import LagTransform
-    >>> classic_df = generate_periodic_df(
+    >>> df = generate_periodic_df(
     ...     periods=100,
     ...     start_time="2020-01-01",
     ...     n_segments=4,
     ...     period=7,
     ...     sigma=3
     ... )
-    >>> df = TSDataset.to_dataset(df=classic_df)
     >>> ts = TSDataset(df, freq="D")
     >>> horizon = 7
     >>> transforms = [
@@ -106,12 +106,13 @@ class AutoRegressivePipeline(
 
     def _create_predictions_template(self, ts: TSDataset) -> pd.DataFrame:
         """Create dataframe to fill with forecasts."""
-        prediction_df = ts[:, :, "target"]
-        future_dates = pd.date_range(
-            start=prediction_df.index.max(), periods=self.horizon + 1, freq=ts.freq, closed="right"
-        )
-        prediction_df = prediction_df.reindex(prediction_df.index.append(future_dates))
-        prediction_df.index.name = "timestamp"
+        prediction_df = ts.to_pandas(features=["target"])
+        last_timestamp = prediction_df.index[-1]
+        to_add_index = timestamp_range(start=last_timestamp, periods=self.horizon + 1, freq=ts.freq)[1:]
+        new_index = prediction_df.index.append(to_add_index)
+        index_name = prediction_df.index.name
+        prediction_df = prediction_df.reindex(new_index)
+        prediction_df.index.name = index_name
         return prediction_df
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
@@ -172,21 +173,3 @@ class AutoRegressivePipeline(
             prediction_ts.add_target_components(target_components_df=target_components_df)
 
         return prediction_ts
-
-    def _predict(
-        self,
-        ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
-        prediction_interval: bool,
-        quantiles: Sequence[float],
-        return_components: bool = False,
-    ) -> TSDataset:
-        return super()._predict(
-            ts=ts,
-            start_timestamp=start_timestamp,
-            end_timestamp=end_timestamp,
-            prediction_interval=prediction_interval,
-            quantiles=quantiles,
-            return_components=return_components,
-        )

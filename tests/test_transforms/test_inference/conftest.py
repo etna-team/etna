@@ -29,6 +29,28 @@ def regular_ts(random_seed) -> TSDataset:
 
 
 @pytest.fixture
+def regular_ts_one_month(random_seed) -> TSDataset:
+    periods = 100
+    df_1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
+    df_1["segment"] = "segment_1"
+    df_1["target"] = np.random.uniform(10, 20, size=periods)
+
+    df_2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
+    df_2["segment"] = "segment_2"
+    df_2["target"] = np.random.uniform(-15, 5, size=periods)
+
+    df_3 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods, freq="M")})
+    df_3["segment"] = "segment_3"
+    df_3["target"] = np.random.uniform(-5, 5, size=periods)
+
+    df = pd.concat([df_1, df_2, df_3]).reset_index(drop=True)
+    df = TSDataset.to_dataset(df)
+    tsds = TSDataset(df, freq="M")
+
+    return tsds
+
+
+@pytest.fixture
 def ts_with_exog(regular_ts) -> TSDataset:
     df = regular_ts.to_pandas(flatten=True)
     periods = 200
@@ -51,6 +73,61 @@ def ts_with_exog(regular_ts) -> TSDataset:
     df_exog_wide.loc[:, pd.IndexSlice["segment_3", "positive"]] = rng.uniform(5, 10, size=periods)
 
     ts = TSDataset(df=TSDataset.to_dataset(df).iloc[5:], df_exog=df_exog_wide, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_with_exog_to_shift(regular_ts) -> TSDataset:
+    df = regular_ts.to_pandas(flatten=True)
+    periods = 120
+    timestamp = pd.date_range("2020-01-01", periods=periods)
+    feature = timestamp.weekday.astype(float)
+    df_exog_common = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "feature_1": feature[:100].tolist() + [None] * 20,
+            "feature_2": feature[:105].tolist() + [None] * 15,
+            "feature_3": feature,
+        }
+    )
+    df_exog_wide = duplicate_data(df=df_exog_common, segments=regular_ts.segments)
+    ts = TSDataset(df=TSDataset.to_dataset(df).iloc[5:], df_exog=df_exog_wide, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_with_external_timestamp(regular_ts) -> TSDataset:
+    df = regular_ts.to_pandas(flatten=True)
+    df_exog = df.copy()
+    df_exog["external_timestamp"] = df["timestamp"]
+    df_exog.drop(columns=["target"], inplace=True)
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all"
+    )
+    return ts
+
+
+@pytest.fixture
+def ts_with_external_timestamp_one_month(regular_ts_one_month) -> TSDataset:
+    df = regular_ts_one_month.to_pandas(flatten=True)
+    df_exog = df.copy()
+    df_exog["external_timestamp"] = df["timestamp"]
+    df_exog.drop(columns=["target"], inplace=True)
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq="M", known_future="all"
+    )
+    return ts
+
+
+@pytest.fixture
+def ts_with_external_int_timestamp(regular_ts) -> TSDataset:
+    df = regular_ts.to_pandas(flatten=True)
+    df_exog = df.copy()
+    df_exog["external_timestamp"] = np.arange(10, 110).tolist() * 3
+    df_exog.drop(columns=["target"], inplace=True)
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all"
+    )
     return ts
 
 
@@ -138,6 +215,57 @@ def ts_to_resample() -> TSDataset:
     )
     df_exog = pd.concat([df_exog_1, df_exog_2, df_exog_3], ignore_index=True)
     ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    return ts
+
+
+@pytest.fixture
+def ts_to_resample_int_timestamp() -> TSDataset:
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": np.arange(24, 144),
+            "segment": "segment_1",
+            "target": 1,
+        }
+    )
+    df_2 = pd.DataFrame(
+        {
+            "timestamp": np.arange(24, 144),
+            "segment": "segment_2",
+            "target": ([1] + 23 * [0]) * 5,
+        }
+    )
+    df_3 = pd.DataFrame(
+        {
+            "timestamp": np.arange(24, 144),
+            "segment": "segment_3",
+            "target": ([4] + 23 * [0]) * 5,
+        }
+    )
+    df = pd.concat([df_1, df_2, df_3], ignore_index=True)
+
+    df_exog_1 = pd.DataFrame(
+        {
+            "timestamp": np.arange(24, 216, 24),
+            "segment": "segment_1",
+            "regressor_exog": 2,
+        }
+    )
+    df_exog_2 = pd.DataFrame(
+        {
+            "timestamp": np.arange(24, 216, 24),
+            "segment": "segment_2",
+            "regressor_exog": 40,
+        }
+    )
+    df_exog_3 = pd.DataFrame(
+        {
+            "timestamp": np.arange(24, 216, 24),
+            "segment": "segment_3",
+            "regressor_exog": 40,
+        }
+    )
+    df_exog = pd.concat([df_exog_1, df_exog_2, df_exog_3], ignore_index=True)
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=None, df_exog=TSDataset.to_dataset(df_exog), known_future="all")
     return ts
 
 
