@@ -311,7 +311,6 @@ class TemporalFusionDecoder(nn.Module):
     def __init__(
         self,
         input_size: int,
-        decoder_length: int,
         n_heads: int,
         context_size: Optional[int] = None,
         dropout: float = 0.1,
@@ -322,8 +321,6 @@ class TemporalFusionDecoder(nn.Module):
         ----------
         input_size:
             input size of the feature representation
-        decoder_length:
-            number of prediction timestamps
         n_heads:
             number of heads in multi-head attention
         context_size:
@@ -333,7 +330,6 @@ class TemporalFusionDecoder(nn.Module):
         """
         super().__init__()
         self.input_size = input_size
-        self.decoder_length = decoder_length
         self.n_heads = n_heads
         self.context_size = context_size
         self.dropout = dropout
@@ -361,7 +357,7 @@ class TemporalFusionDecoder(nn.Module):
         Returns
         -------
         :
-            output batch of data with shapes (batch_size, decoder_length, output_size)
+            output batch of data with shapes (batch_size, num_timestamps, output_size)
         """
         x = self.grn1(x, context)
         residual = x
@@ -369,6 +365,6 @@ class TemporalFusionDecoder(nn.Module):
         attn_mask = torch.triu(torch.ones(x.size()[1], x.size()[1], dtype=torch.bool), diagonal=1).to(x.device)
 
         x, _ = self.attention(query=x, key=x, value=x, attn_mask=attn_mask)
-        x = self.gate_norm(x[:, -self.decoder_length :, :], residual[:, -self.decoder_length :, :])
+        x = self.gate_norm(x, residual)
         output = self.grn2(x)
         return output

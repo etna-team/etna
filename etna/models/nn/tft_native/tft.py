@@ -195,7 +195,6 @@ class TFTNativeNet(DeepBaseNet):
 
         self.temporal_fusion_decoder = TemporalFusionDecoder(
             input_size=self.hidden_size,
-            decoder_length=self.decoder_length,
             n_heads=self.n_heads,
             context_size=self.hidden_size if self._num_static > 0 else None,
             dropout=self.dropout,
@@ -284,6 +283,7 @@ class TFTNativeNet(DeepBaseNet):
             forecast with shape (batch_size, decoder_length, 1)
         """
         target_true = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
+        decoder_length = target_true.size()[1]
         batch_size = target_true.size()[0]
         batch = self._transform_features(x)
 
@@ -312,14 +312,14 @@ class TFTNativeNet(DeepBaseNet):
             decoder_features.update(batch["time_varying_categoricals_decoder"])
             if self._num_static > 0:
                 decoder_output = self.decoder_variable_selection(
-                    x=decoder_features, context=c_s.expand(batch_size, self.decoder_length, self.hidden_size)
+                    x=decoder_features, context=c_s.expand(batch_size, decoder_length, self.hidden_size)
                 )  # (batch_size, decoder_length, hidden_size)
             else:
                 decoder_output = self.decoder_variable_selection(
                     x=decoder_features
                 )  # (batch_size, decoder_length, hidden_size)
         else:
-            decoder_output = torch.zeros(batch_size, self.decoder_length, self.hidden_size)
+            decoder_output = torch.zeros(batch_size, decoder_length, self.hidden_size)
         residual = torch.cat((encoder_output, decoder_output), dim=1)
 
         # Pass encoder and decoder data through LSTM
@@ -351,7 +351,7 @@ class TFTNativeNet(DeepBaseNet):
 
         # Get decoder timestamps and pass through gated layer
         decoder_features = self.gated_norm2(
-            x=features[:, -self.decoder_length :, :], residual=residual[:, -self.decoder_length :, :]
+            x=features[:, -decoder_length :, :], residual=residual[:, -decoder_length :, :]
         )  # (batch_size, decoder_length, hidden_size)
 
         target_pred = self.output_fc(decoder_features)  # (batch_size, decoder_length, 1)
