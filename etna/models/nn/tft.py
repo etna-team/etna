@@ -3,9 +3,9 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from deprecated import deprecated
 
 import pandas as pd
+from deprecated import deprecated
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset

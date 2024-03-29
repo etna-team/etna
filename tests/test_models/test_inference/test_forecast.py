@@ -701,9 +701,9 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
-                    TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                    [],
-                    "example_tsds",
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
             ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
@@ -802,9 +802,9 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
-                    TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                    [],
-                    "example_tsds",
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
             ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
@@ -963,9 +963,9 @@ class TestForecastOutSamplePrefix:
                 "example_tsds",
             ),
             (
-                    TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                    [],
-                    "example_tsds",
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
             ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
@@ -1317,9 +1317,9 @@ class TestForecastMixedInOutSample:
                 "example_tsds",
             ),
             (
-                    TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                    [],
-                    "example_tsds",
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
             ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
@@ -1489,9 +1489,9 @@ class TestForecastSubsetSegments:
                 "example_tsds",
             ),
             (
-                    TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                    [],
-                    "example_tsds",
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
             ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
@@ -1607,9 +1607,9 @@ class TestForecastNewSegments:
                 "example_tsds",
             ),
             (
-                    TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
-                    [],
-                    "example_tsds",
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
             ),
             (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (

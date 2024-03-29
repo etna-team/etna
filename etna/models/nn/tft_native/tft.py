@@ -351,7 +351,7 @@ class TFTNativeNet(DeepBaseNet):
 
         # Get decoder timestamps and pass through gated layer
         decoder_features = self.gated_norm2(
-            x=features[:, -decoder_length :, :], residual=residual[:, -decoder_length :, :]
+            x=features[:, -decoder_length:, :], residual=residual[:, -decoder_length:, :]
         )  # (batch_size, decoder_length, hidden_size)
 
         target_pred = self.output_fc(decoder_features)  # (batch_size, decoder_length, 1)
