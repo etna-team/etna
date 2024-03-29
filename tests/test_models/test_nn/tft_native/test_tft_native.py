@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from pytorch_lightning import seed_everything
 
+from etna.datasets import TSDataset
 from etna.metrics import MAE
 from etna.models.nn import TFTNativeModel
 from etna.models.nn.tft_native.tft import TFTNativeNet
@@ -13,6 +14,20 @@ from etna.transforms import SegmentEncoderTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
+
+
+def ts_label_encode(ts: TSDataset) -> TSDataset:
+    seg = SegmentEncoderTransform()
+    label1 = LabelEncoderTransform(in_column="categ_exog", out_column="categ_exog_label", strategy="none")
+    label2 = LabelEncoderTransform(in_column="categ_regr", out_column="categ_regr_label", strategy="none")
+    label3 = LabelEncoderTransform(in_column="categ_regr_new", out_column="categ_regr_new_label", strategy="none")
+
+    seg.fit_transform(ts)
+    label1.fit_transform(ts)
+    label2.fit_transform(ts)
+    label3.fit_transform(ts)
+
+    return ts
 
 
 @pytest.mark.parametrize(
@@ -103,6 +118,7 @@ def test_tft_backtest(
     pipeline.backtest(ts_different_regressors, metrics=[MAE()], n_folds=2)
 
 
+@pytest.mark.parametrize("ts", ["ts_different_regressors", "ts_different_regressors_int_timestamp"])
 @pytest.mark.parametrize(
     "static_reals,static_categoricals,"
     "time_varying_reals_encoder,time_varying_categoricals_encoder,"
@@ -123,7 +139,7 @@ def test_tft_backtest(
     ],
 )
 def test_tft_make_samples(
-    ts_different_regressors_encoded,
+    ts,
     static_reals,
     static_categoricals,
     time_varying_reals_encoder,
@@ -132,6 +148,7 @@ def test_tft_make_samples(
     time_varying_categoricals_decoder,
     num_embeddings,
     features_to_encode,
+    request,
 ):
     encoder_length = 4
     decoder_length = 1
@@ -144,8 +161,9 @@ def test_tft_make_samples(
         time_varying_categoricals_decoder=time_varying_categoricals_decoder,
         num_embeddings=num_embeddings,
     )
-
-    df = ts_different_regressors_encoded.to_pandas(flatten=True)
+    ts = request.getfixturevalue(ts)
+    ts_encoded = ts_label_encode(ts)
+    df = ts_encoded.to_pandas(flatten=True)
     ts_samples = list(
         TFTNativeNet.make_samples(
             tft_module,
@@ -154,8 +172,9 @@ def test_tft_make_samples(
             decoder_length=decoder_length,
         )
     )
-    first_sample = ts_samples[0]
 
+    first_sample = ts_samples[0]
+    assert len(ts_samples) == len(df) - encoder_length - decoder_length + 1
     assert first_sample["segment"] == "segment_0"
     assert first_sample["decoder_target"].shape == (decoder_length, 1)
 

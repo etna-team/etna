@@ -6,8 +6,6 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
-from etna.transforms import LabelEncoderTransform
-from etna.transforms import SegmentEncoderTransform
 
 
 @pytest.fixture()
@@ -67,7 +65,7 @@ def example_make_samples_df_int_timestamp(example_make_samples_df):
 
 
 @pytest.fixture()
-def ts_different_regressors():
+def df_different_regressors():
     df = generate_ar_df(start_time="2001-01-01", n_segments=1, periods=7)
     df_exog = generate_ar_df(start_time="2001-01-01", n_segments=1, periods=10)
     df_exog.drop(columns=["target"], inplace=True)
@@ -79,6 +77,20 @@ def ts_different_regressors():
     df_exog["categ_regr_new"] = ["b", "b", "b", "b", "b", "b", "b", "c", "b", "c"]
 
     df_exog["categ_exog"] = df_exog["categ_exog"].fillna("Unknown")
+    return df, df_exog
+
+
+@pytest.fixture()
+def df_different_regressors_int_timestamp(df_different_regressors):
+    df, df_exog = df_different_regressors
+    df["timestamp"] = np.arange(len(df)) + 10
+    df_exog["timestamp"] = np.arange(len(df_exog)) + 10
+    return df, df_exog
+
+
+@pytest.fixture()
+def ts_different_regressors(df_different_regressors):
+    df, df_exog = df_different_regressors
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
 
@@ -92,15 +104,15 @@ def ts_different_regressors():
 
 
 @pytest.fixture()
-def ts_different_regressors_encoded(ts_different_regressors):
-    seg = SegmentEncoderTransform()
-    label1 = LabelEncoderTransform(in_column="categ_exog", out_column="categ_exog_label", strategy="none")
-    label2 = LabelEncoderTransform(in_column="categ_regr", out_column="categ_regr_label", strategy="none")
-    label3 = LabelEncoderTransform(in_column="categ_regr_new", out_column="categ_regr_new_label", strategy="none")
+def ts_different_regressors_int_timestamp(df_different_regressors_int_timestamp):
+    df, df_exog = df_different_regressors_int_timestamp
+    df = TSDataset.to_dataset(df)
+    df_exog = TSDataset.to_dataset(df_exog)
 
-    seg.fit_transform(ts_different_regressors)
-    label1.fit_transform(ts_different_regressors)
-    label2.fit_transform(ts_different_regressors)
-    label3.fit_transform(ts_different_regressors)
-
-    return ts_different_regressors
+    ts = TSDataset(
+        df=df,
+        freq=None,
+        df_exog=df_exog,
+        known_future=["reals_static", "reals_regr", "categ_regr", "categ_regr_new"],
+    )
+    return ts
