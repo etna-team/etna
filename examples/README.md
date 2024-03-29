@@ -196,7 +196,14 @@ We have prepared a set of tutorials for an easy introduction:
 #### [Working with misaligned data](https://github.com/etna-team/etna/tree/master/examples/307-working_with_misaligned_data.ipynb)
 - Loading data
 - Preparing data
-- Forecasting
+    - Using `TSDataset.create_from_misaligned`
+    - Using `infer_alignment`
+    - Using `apply_alignment`
+    - Using `make_timestamp_df_from_alignment`
+- Examples with regular data
+    - Forecasting with `CatBoostMultiSegmentModel`
+    - Utilizing old data with `CatBoostMultiSegmentModel`
+    - Forecasting with `ProphetModel`
 - Working with irregular data 
 
 ## Scripts
