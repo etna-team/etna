@@ -3,6 +3,7 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from deprecated import deprecated
 
 import pandas as pd
 
@@ -27,6 +28,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import Trainer
 
 
+@deprecated(reason="TFTModel is deprecated. Use TFTNativeModel instead.", version="3.0")
 class TFTModel(
     _DeepCopyMixin, PytorchForecastingMixin, SavePytorchForecastingMixin, PredictionIntervalContextRequiredAbstractModel
 ):
