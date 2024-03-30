@@ -483,6 +483,8 @@ class TFTNativeModel(DeepBaseModel):
     Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
     Feature values that were not seen during `fit` should be set to NaN for expected behaviour with `strategy="none"`
 
+    Passed features for each feature type are not validated.
+
     Note
     ----
     This model requires ``torch`` extension to be installed.
@@ -534,9 +536,11 @@ class TFTNativeModel(DeepBaseModel):
         lr:
             learning rate
         static_categoricals:
-            categorical features for the whole series, e.g. `segment`
+            categorical features that have one unique feature value for the whole series, e.g. `segment`.
+            The first value in the series is passed to batch for each feature.
         static_reals:
-            continuous features for the whole series
+            continuous features that have one unique feature value for the whole series.
+            The first value in the series is passed to batch for each feature.
         time_varying_categoricals_encoder:
             time varying categorical features for encoder
         time_varying_categoricals_decoder:
