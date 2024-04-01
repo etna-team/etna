@@ -466,11 +466,14 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     url_data = "https://forvis.github.io/data"
     end_date = "2022-01-01"
     freq = get_freq[dataset_freq]
+    horizon = get_horizon[dataset_freq]
     exog_dir = dataset_dir / EXOG_SUBDIRECTORY
 
     exog_dir.mkdir(exist_ok=True, parents=True)
 
     data = pd.read_csv(f"{url_data}/M3_{dataset_freq}_TSTS.csv")
+
+    max_len = data.groupby("series_id")["timestamp"].count().max()
 
     df_full = pd.DataFrame()
     df_train = pd.DataFrame()
@@ -478,9 +481,8 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
 
     df_full_exog = pd.DataFrame()
     df_test_exog = pd.DataFrame()
-    horizon = get_horizon[dataset_freq]
     for _, group in data.groupby("series_id"):
-        timestamps = pd.date_range(end=end_date, freq=freq, periods=group.shape[0])
+        timestamps = np.arange(start=max_len - group.shape[0], stop=max_len)
         group.rename(columns={"timestamp": "origin_timestamp", "series_id": "segment", "value": "target"}, inplace=True)
         group["segment"] = group["segment"] + "_" + group["category"]
         group.drop(columns=["category"], inplace=True)
@@ -499,6 +501,9 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_test = pd.concat([df_test, test_part])
         df_full_exog = pd.concat([df_full_exog, df_full_part_exog])
         df_test_exog = pd.concat([df_test_exog, df_test_part_exog])
+
+    df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"])
+    df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"])
 
     TSDataset.to_dataset(df_full).to_csv(
         dataset_dir / f"m3_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip", float_format="%.8f"
@@ -799,7 +804,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "m3_monthly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="monthly"),
-        "freq": "M",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "cfa58e9c2caf28849f5397ba159887b2",
@@ -809,7 +814,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "m3_quarterly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="quarterly"),
-        "freq": "Q-DEC",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "f944dd06aa47a495f18b40f0a1dab6a5",
@@ -819,7 +824,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "m3_yearly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="yearly"),
-        "freq": "A-DEC",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "6eb14930144e2012d0132f0b809cf2d8",
@@ -829,7 +834,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "m3_other": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="other"),
-        "freq": "Q-DEC",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "9132a834a7edb7f7c10215f753c0d68c",
