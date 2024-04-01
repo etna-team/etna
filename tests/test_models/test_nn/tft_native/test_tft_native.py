@@ -22,10 +22,7 @@ def ts_label_encode(ts: TSDataset) -> TSDataset:
     label2 = LabelEncoderTransform(in_column="categ_regr", out_column="categ_regr_label", strategy="none")
     label3 = LabelEncoderTransform(in_column="categ_regr_new", out_column="categ_regr_new_label", strategy="none")
 
-    seg.fit_transform(ts)
-    label1.fit_transform(ts)
-    label2.fit_transform(ts)
-    label3.fit_transform(ts)
+    ts.fit_transform([seg, label1, label2, label3])
 
     return ts
 

@@ -1162,7 +1162,7 @@ class TestForecastOutSampleSuffix:
         ],
     )
     def test_forecast_out_sample_suffix_failed_tft(self, model, transforms, dataset_name, request):
-        """This test is expected to fail due to dependence of future predictions on previous predictions in TFT."""
+        """This test is expected to fail due to encoder-decoder structure of TFT."""
         ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(ts, model, transforms)

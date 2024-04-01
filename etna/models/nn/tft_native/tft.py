@@ -483,7 +483,7 @@ class TFTNativeModel(DeepBaseModel):
     Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
     Feature values that were not seen during `fit` should be set to NaN for expected behaviour with `strategy="none"`
 
-    Passed features for each feature type are not validated.
+    Passed feature values aren't validated on being static or being correctly label encoded.
 
     Note
     ----
