@@ -445,9 +445,9 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     data originally does not have any particular frequency, but we assume it as a quarterly data. Each frequency mode
     has its own specific prediction horizon: 6 for yearly, 8 for quarterly, 18 for monthly, and 8 for other.
 
-    M3 dataset has series ending on different dates. As to the specificity of TSDataset we should add custom dates
-    to make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
-    dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
+    M3 dataset has series ending on different dates. As to the specificity of TSDataset we use integer index to make
+    series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train dataset
+    has dates for train and test and ``df_exog`` of test dataset has dates only for test.
 
     Parameters
     ----------
@@ -461,18 +461,14 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     .. [1] https://forvis.github.io/datasets/m3-data/
     .. [2] https://forecasters.org/resources/time-series-data/m3-competition/
     """
-    get_freq = {"monthly": "M", "quarterly": "Q-DEC", "yearly": "A-DEC", "other": "Q-DEC"}
     get_horizon = {"monthly": 18, "quarterly": 8, "yearly": 6, "other": 8}
     url_data = "https://forvis.github.io/data"
-    end_date = "2022-01-01"
-    freq = get_freq[dataset_freq]
     horizon = get_horizon[dataset_freq]
     exog_dir = dataset_dir / EXOG_SUBDIRECTORY
 
     exog_dir.mkdir(exist_ok=True, parents=True)
 
     data = pd.read_csv(f"{url_data}/M3_{dataset_freq}_TSTS.csv")
-
     max_len = data.groupby("series_id")["timestamp"].count().max()
 
     df_full = pd.DataFrame()
