@@ -207,12 +207,7 @@ class HolidayTransform(IrreversibleTransform):
 
     def _infer_external_freq(self, df: pd.DataFrame) -> str:
         df = df.droplevel("feature", axis=1)
-
-        # here we are assuming that every segment has the same timestamp dtype
-        timestamp_dtype = df.dtypes.iloc[0]
-        if not pd.api.types.is_datetime64_dtype(timestamp_dtype):
-            raise ValueError("Transform can work only with datetime external timestamp!")
-
+        # here we are assuming that every segment has the same timestamp freq
         sample_segment = df.columns[0]
         sample_timestamps = df[sample_segment]
         sample_timestamps = sample_timestamps.loc[sample_timestamps.first_valid_index() :]
