@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Add tutorial about working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
 - 
 - 
 - 
@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Update glossary with terms related to working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
 - 
 - Add ignoring of integer timestamp as a feature into native DL models ([#210](https://github.com/etna-team/etna/pull/210))
 - Update `pytorch_forecasting` models to handle integer timestamp ([#208](https://github.com/etna-team/etna/pull/208))
