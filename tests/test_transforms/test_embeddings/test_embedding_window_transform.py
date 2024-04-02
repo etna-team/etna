@@ -13,13 +13,12 @@ from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LagTransform
 from etna.transforms.embeddings.models import TS2VecEmbeddingModel
+from etna.transforms.embeddings.models import TSTCCEmbeddingModel
 
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3),
-    ],
+    [TS2VecEmbeddingModel(input_dims=3), TSTCCEmbeddingModel(input_dims=3, batch_size=2)],
 )
 @pytest.mark.smoke
 def test_fit(ts_with_exog_nan_begin, embedding_model):
@@ -31,9 +30,7 @@ def test_fit(ts_with_exog_nan_begin, embedding_model):
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3),
-    ],
+    [TS2VecEmbeddingModel(input_dims=3), TSTCCEmbeddingModel(input_dims=3, batch_size=2)],
 )
 @pytest.mark.smoke
 def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
@@ -45,9 +42,7 @@ def test_fit_transform(ts_with_exog_nan_begin, embedding_model):
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=1, output_dims=2),
-    ],
+    [TS2VecEmbeddingModel(input_dims=1, output_dims=2), TSTCCEmbeddingModel(input_dims=1, batch_size=2, output_dims=2)],
 )
 @pytest.mark.smoke
 def test_fit_forecast(example_tsds, embedding_model):
@@ -70,9 +65,7 @@ def test_fit_forecast(example_tsds, embedding_model):
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=1, output_dims=2),
-    ],
+    [TS2VecEmbeddingModel(input_dims=1, output_dims=2), TSTCCEmbeddingModel(input_dims=1, batch_size=2, output_dims=2)],
 )
 @pytest.mark.smoke
 def test_backtest(example_tsds, embedding_model):
@@ -95,9 +88,7 @@ def test_backtest(example_tsds, embedding_model):
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3),
-    ],
+    [TS2VecEmbeddingModel(input_dims=3), TSTCCEmbeddingModel(input_dims=3)],
 )
 @pytest.mark.smoke
 def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
@@ -112,9 +103,7 @@ def test_save(ts_with_exog_nan_begin, tmp_path, embedding_model):
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3),
-    ],
+    [TS2VecEmbeddingModel(input_dims=3), TSTCCEmbeddingModel(input_dims=1)],
 )
 @pytest.mark.smoke
 def test_load(ts_with_exog_nan_begin, tmp_path, embedding_model):
@@ -143,9 +132,7 @@ def test_get_out_columns(output_dims, out_column, expected_out_columns):
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3, output_dims=3),
-    ],
+    [TS2VecEmbeddingModel(input_dims=3, output_dims=3), TSTCCEmbeddingModel(input_dims=3, batch_size=2, output_dims=3)],
 )
 def test_transform_format(
     ts_with_exog_nan_begin,
@@ -168,9 +155,7 @@ def test_transform_format(
 
 @pytest.mark.parametrize(
     "embedding_model",
-    [
-        TS2VecEmbeddingModel(input_dims=3, output_dims=3),
-    ],
+    [TS2VecEmbeddingModel(input_dims=3, output_dims=3), TSTCCEmbeddingModel(input_dims=3, batch_size=2, output_dims=3)],
 )
 def test_transform_load_pre_fitted(ts_with_exog_nan_begin, tmp_path, embedding_model):
     transform = EmbeddingWindowTransform(

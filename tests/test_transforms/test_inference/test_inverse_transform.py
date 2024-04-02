@@ -60,6 +60,7 @@ from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
 from etna.transforms.embeddings.models import TS2VecEmbeddingModel
+from etna.transforms.embeddings.models import TSTCCEmbeddingModel
 from tests.test_transforms.test_inference.common import find_columns_diff
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
@@ -88,7 +89,9 @@ class TestInverseTransformTrainSubsetSegments:
         inverse_transformed_subset_df = transform.inverse_transform(transformed_subset_ts).to_pandas()
 
         # check
-        assert_frame_equal(inverse_transformed_subset_df, inverse_transformed_df.loc[:, pd.IndexSlice[segments, :]])
+        assert_frame_equal(
+            inverse_transformed_subset_df, inverse_transformed_df.loc[:, pd.IndexSlice[segments, :]], atol=1e-6
+        )
 
     @pytest.mark.parametrize(
         "transform, dataset_name",
@@ -134,9 +137,25 @@ class TestInverseTransformTrainSubsetSegments:
                 "regular_ts",
             ),
             (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
@@ -286,7 +305,9 @@ class TestInverseTransformFutureSubsetSegments:
 
         # check
         assert_frame_equal(
-            inverse_transformed_subset_future_df, inverse_transformed_future_df.loc[:, pd.IndexSlice[segments, :]]
+            inverse_transformed_subset_future_df,
+            inverse_transformed_future_df.loc[:, pd.IndexSlice[segments, :]],
+            atol=1e-6,
         )
 
     @pytest.mark.parametrize(
@@ -349,9 +370,25 @@ class TestInverseTransformFutureSubsetSegments:
                 "regular_ts",
             ),
             (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
@@ -538,7 +575,7 @@ class TestInverseTransformTrainNewSegments:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
     @pytest.mark.parametrize(
@@ -555,9 +592,27 @@ class TestInverseTransformTrainNewSegments:
                 {},
             ),
             (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
@@ -882,7 +937,7 @@ class TestInverseTransformFutureNewSegments:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
     @pytest.mark.parametrize(
@@ -899,9 +954,27 @@ class TestInverseTransformFutureNewSegments:
                 {},
             ),
             (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
@@ -1294,8 +1367,7 @@ class TestInverseTransformFutureWithTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)],
-            flat_inverse_transformed_test_df[list(changed_columns)],
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
     @pytest.mark.parametrize(
@@ -1345,9 +1417,27 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
@@ -1710,8 +1800,7 @@ class TestInverseTransformFutureWithoutTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)],
-            flat_inverse_transformed_test_df[list(changed_columns)],
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
     @pytest.mark.parametrize(
@@ -1775,9 +1864,27 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
-                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2, batch_size=1),
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",

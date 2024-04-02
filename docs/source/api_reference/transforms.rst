@@ -65,7 +65,8 @@ Embedding transforms and their utilities:
 
    EmbeddingSegmentTransform
    EmbeddingWindowTransform
-   embeddings.TS2VecEmbeddingModel
+   embeddings.models.TS2VecEmbeddingModel
+   embeddings.models.TSTCCEmbeddingModel
 
 Feature selection transforms:
 

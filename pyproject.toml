@@ -76,6 +76,7 @@ prophet = {version = "^1.0", optional = true}
 torch = {version = ">=1.8.0,<3", optional = true}
 pytorch-forecasting = {version = "^0.9.0", optional = true}
 pytorch-lightning = {version = "*", optional = true}
+einops = {version = "*", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
 
@@ -245,7 +246,10 @@ filterwarnings = [
     "ignore: Trying to infer the `batch_size` from an ambiguous collection", # pytorch_forecasting
     "ignore: Implicitly cleaning up <TemporaryDirectory",
     "ignore: Call to deprecated class DeepARModel.",
-    "ignore: dropout option adds dropout after all but last recurrent layer"
+    "ignore: dropout option adds dropout after all but last recurrent layer",
+    "ignore: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created",
+    "ignore: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument",
+    "ignore: Initializing zero-element tensors is a no-op"
 ]
 markers = [
     "smoke"
