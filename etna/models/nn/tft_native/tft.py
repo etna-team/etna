@@ -630,7 +630,7 @@ class TFTNativeModel(DeepBaseModel):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
-        This grid tunes parameters: ``num_layers``, ``n_heads``, ``hidden_size``, ``lr``, ``dropout``, ``train_batch_size``.
+        This grid tunes parameters: ``num_layers``, ``n_heads``, ``hidden_size``, ``lr``, ``dropout``.
         Other parameters are expected to be set by the user.
 
         Returns
