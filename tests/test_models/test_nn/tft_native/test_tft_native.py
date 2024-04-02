@@ -31,7 +31,8 @@ def ts_label_encode(ts: TSDataset) -> TSDataset:
     "horizon,transform,epochs,lr,eps",
     [
         (8, [StandardScalerTransform(in_column="target")], 30, 0.005, 0.15),
-        (13, [StandardScalerTransform(in_column="target")], 35, 0.005, 0.15),
+        (14, [StandardScalerTransform(in_column="target")], 35, 0.005, 0.15),
+        (16, [StandardScalerTransform(in_column="target")], 35, 0.005, 0.15),
     ],
 )
 def test_tft_model_run_weekly_overfit(
