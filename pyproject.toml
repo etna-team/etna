@@ -249,8 +249,7 @@ filterwarnings = [
     "ignore: dropout option adds dropout after all but last recurrent layer",
     "ignore: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created",
     "ignore: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument",
-    "ignore: Initializing zero-element tensors is a no-op",
-    "ignore:  Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray"
+    "ignore: Initializing zero-element tensors is a no-op"
 ]
 markers = [
     "smoke"
