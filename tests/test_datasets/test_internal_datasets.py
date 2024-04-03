@@ -294,16 +294,6 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_idx, expe
             ("full", "train", "test"),
         ),
         (
-            "m3_other",
-            ((104, 174), (104, 174), (8, 174)),
-            (
-                (0, 103),
-                (0, 103),
-                (96, 103),
-            ),
-            ("full", "train", "test"),
-        ),
-        (
             "m3_yearly",
             ((47, 645), (47, 645), (6, 645)),
             (

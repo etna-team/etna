@@ -176,7 +176,7 @@ def load_dataset(
                 index_col=[0],
                 parse_dates=[0],
             )
-            df_exog = df_exog.astype('datetime64[ns]')
+            df_exog = df_exog.astype("datetime64[ns]")
             ts = TSDataset(data, df_exog=df_exog, freq=freq)
         else:
             ts = TSDataset(data, freq=freq)
@@ -262,7 +262,7 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     max_len = test_target.shape[1] + max([len(target) for target in train_target])
 
     df_list = []
-    test_timestamps = np.arange(start=max_len-test_target.shape[1], stop=max_len)
+    test_timestamps = np.arange(start=max_len - test_target.shape[1], stop=max_len)
     for segment, target in zip(segments, test_target):
         df_segment = pd.DataFrame({"target": target})
         df_segment["segment"] = segment
@@ -275,7 +275,8 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_segment = pd.DataFrame({"target": target})
         df_segment["segment"] = segment
         df_segment["timestamp"] = np.arange(
-            start=max_len - test_target.shape[1] - len(target), stop=max_len - test_target.shape[1])
+            start=max_len - test_target.shape[1] - len(target), stop=max_len - test_target.shape[1]
+        )
         df_list.append(df_segment)
     df_train = pd.concat(df_list, axis=0)
 
@@ -502,8 +503,8 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_test_exog = pd.concat([df_test_exog, df_test_part_exog])
 
     if dataset_freq == "yearly":
-        df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"], format='%Y')
-        df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"], format='%Y')
+        df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"], format="%Y")
+        df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"], format="%Y")
     else:
         df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"])
         df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"])
@@ -592,7 +593,7 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         target_test = data_test_[target_index : target_index + test_size]
         target_full = np.concatenate([target_train, target_test])
 
-        new_timestamps = np.arange(start=max_len-len(target_full), stop=max_len)
+        new_timestamps = np.arange(start=max_len - len(target_full), stop=max_len)
         initial_timestamps = pd.date_range(start=initial_date, periods=len(target_full), freq=freq)
 
         df_full_ = pd.DataFrame(
@@ -1029,17 +1030,3 @@ datasets_dict: Dict[str, Dict] = {
         "hash": {"full": "2dd34b5306d5e5372727e4d610b713be"},
     },
 }
-
-if __name__ == "__main__":
-    dataset_names = [
-        "m3_other"
-    ]
-    parts = ["train", "test", "full"]
-
-    for name in dataset_names:
-        get_dataset_function = datasets_dict[name]["get_dataset_function"]
-        dataset_dir = _DOWNLOAD_PATH / name
-        get_dataset_function(dataset_dir)
-        for part in parts:
-            _, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{part}.csv.gz")
-            print(f"name={name} and part={part}:", dataset_hash, end="\n")
