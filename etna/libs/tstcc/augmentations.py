@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # Note: Copied from ts-tcc repository (https://github.com/emadeldeen24/TS-TCC/tree/main)
+# Fix numpy warning in `permutation` function
 
 import numpy as np
 import torch
@@ -64,6 +65,7 @@ def permutation(x, max_segments=5, seg_mode="random"):
                 splits = np.split(orig_steps, split_points)
             else:
                 splits = np.array_split(orig_steps, num_segs[i])
+            # add `np.asarray(splits, dtype=object)` instead of `splits` due to warning about different length of arrays
             warp = np.concatenate(np.random.permutation(np.asarray(splits, dtype=object))).ravel()
             ret[i] = pat[0, warp]
         else:

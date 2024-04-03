@@ -122,7 +122,7 @@ types-setuptools = {version = "^65.7.0", optional = true}
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
-torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
+torch = ["torch", "pytorch-forecasting", "pytorch-lightning", "einops"]
 wandb = ["wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
@@ -136,7 +136,7 @@ style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
 
 all = [
     "prophet",
-    "torch", "pytorch-forecasting", "pytorch-lightning",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
     "wandb",
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
@@ -145,7 +145,7 @@ all = [
 
 all-dev = [
     "prophet",
-    "torch", "pytorch-forecasting", "pytorch-lightning",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
     "wandb",
     "optuna", "sqlalchemy",
     "click", "semver",
@@ -249,7 +249,8 @@ filterwarnings = [
     "ignore: dropout option adds dropout after all but last recurrent layer",
     "ignore: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created",
     "ignore: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument",
-    "ignore: Initializing zero-element tensors is a no-op"
+    "ignore: Initializing zero-element tensors is a no-op",
+    "ignore:  Creating an ndarray from ragged nested sequences (which is a list-or-tuple of lists-or-tuples-or ndarrays with different lengths or shapes) is deprecated. If you meant to do this, you must specify 'dtype=object' when creating the ndarray"
 ]
 markers = [
     "smoke"
