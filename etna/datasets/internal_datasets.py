@@ -168,7 +168,7 @@ def load_dataset(
                 "copy of the dataset reflects a more recent version of the data than your version of the library. "
                 "In this case you can try updating the library version."
             )
-        if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
+        if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz"):
             df_exog = pd.read_csv(
                 dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz",
                 compression="gzip",
@@ -176,6 +176,7 @@ def load_dataset(
                 index_col=[0],
                 parse_dates=[0],
             )
+            df_exog = df_exog.astype('datetime64[ns]')
             ts = TSDataset(data, df_exog=df_exog, freq=freq)
         else:
             ts = TSDataset(data, freq=freq)
@@ -247,7 +248,6 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     url_data = (
         "https://raw.githubusercontent.com/Mcompetitions/M4-methods/6c1067e5a57161249b17289a565178dc7a3fb3ca/Dataset/"
     )
-    end_date = "2022-01-01"
     freq = get_freq[dataset_freq]
 
     dataset_dir.mkdir(exist_ok=True, parents=True)
@@ -257,9 +257,12 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
 
     segments = data_test.index
     test_target = data_test.values
+    train_target = [x[~np.isnan(x)] for x in data_train.values]
+
+    max_len = test_target.shape[1] + max([len(target) for target in train_target])
 
     df_list = []
-    test_timestamps = pd.date_range(end=end_date, freq=freq, periods=test_target.shape[1])
+    test_timestamps = np.arange(start=max_len-test_target.shape[1], stop=max_len)
     for segment, target in zip(segments, test_target):
         df_segment = pd.DataFrame({"target": target})
         df_segment["segment"] = segment
@@ -267,12 +270,12 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_list.append(df_segment)
     df_test = pd.concat(df_list, axis=0)
 
-    train_target = [x[~np.isnan(x)] for x in data_train.values]
     df_list = []
     for segment, target in zip(segments, train_target):
         df_segment = pd.DataFrame({"target": target})
         df_segment["segment"] = segment
-        df_segment["timestamp"] = pd.date_range(end=test_timestamps[0], freq=freq, periods=len(target) + 1)[:-1]
+        df_segment["timestamp"] = np.arange(
+            start=max_len - test_target.shape[1] - len(target), stop=max_len - test_target.shape[1])
         df_list.append(df_segment)
     df_train = pd.concat(df_list, axis=0)
 
@@ -498,8 +501,12 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_full_exog = pd.concat([df_full_exog, df_full_part_exog])
         df_test_exog = pd.concat([df_test_exog, df_test_part_exog])
 
-    df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"])
-    df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"])
+    if dataset_freq == "yearly":
+        df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"], format='%Y')
+        df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"], format='%Y')
+    else:
+        df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"])
+        df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"])
 
     TSDataset.to_dataset(df_full).to_csv(
         dataset_dir / f"m3_{dataset_freq.lower()}_full.csv.gz", index=True, compression="gzip", float_format="%.8f"
@@ -510,24 +517,26 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     TSDataset.to_dataset(df_test).to_csv(
         dataset_dir / f"m3_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
-    TSDataset.to_dataset(df_full_exog).to_csv(
-        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_full_exog.csv.gz",
-        index=True,
-        compression="gzip",
-        float_format="%.8f",
-    )
-    TSDataset.to_dataset(df_full_exog).to_csv(
-        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_train_exog.csv.gz",
-        index=True,
-        compression="gzip",
-        float_format="%.8f",
-    )
-    TSDataset.to_dataset(df_test_exog).to_csv(
-        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_test_exog.csv.gz",
-        index=True,
-        compression="gzip",
-        float_format="%.8f",
-    )
+
+    if dataset_freq != "other":
+        TSDataset.to_dataset(df_full_exog).to_csv(
+            dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_full_exog.csv.gz",
+            index=True,
+            compression="gzip",
+            float_format="%.8f",
+        )
+        TSDataset.to_dataset(df_full_exog).to_csv(
+            dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_train_exog.csv.gz",
+            index=True,
+            compression="gzip",
+            float_format="%.8f",
+        )
+        TSDataset.to_dataset(df_test_exog).to_csv(
+            dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_test_exog.csv.gz",
+            index=True,
+            compression="gzip",
+            float_format="%.8f",
+        )
 
 
 def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
@@ -539,8 +548,8 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     academics, who had used them in previous tourism forecasting studies. Each frequency mode has its own specific
     prediction horizon: 4 for yearly, 8 for quarterly, 24 for monthly.
 
-    Tourism dataset has series ending on different dates. As to the specificity of TSDataset we should add custom dates
-    to make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
+    Tourism dataset has series ending on different dates. As to the specificity of TSDataset we use integer index to
+    make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
     dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
 
     References
@@ -549,7 +558,6 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     """
     get_freq = {"monthly": "MS", "quarterly": "Q-DEC", "yearly": "A-DEC"}
     start_index_target_rows = {"monthly": 3, "quarterly": 3, "yearly": 2}
-    end_date = "2022-01-01"
     freq = get_freq[dataset_freq]
     target_index = start_index_target_rows[dataset_freq]
     exog_dir = dataset_dir / EXOG_SUBDIRECTORY
@@ -561,7 +569,7 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         file_names=(f"{dataset_freq}_in.csv", f"{dataset_freq}_oos.csv"),
         read_functions=(partial(pd.read_csv, sep=","), partial(pd.read_csv, sep=",")),
     )
-
+    max_len = int(data_train.iloc[0].max() + data_test.iloc[0].max())
     segments = data_train.columns
 
     df_full = pd.DataFrame()
@@ -584,7 +592,7 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         target_test = data_test_[target_index : target_index + test_size]
         target_full = np.concatenate([target_train, target_test])
 
-        new_timestamps = pd.date_range(end=end_date, freq=freq, periods=len(target_full))
+        new_timestamps = np.arange(start=max_len-len(target_full), stop=max_len)
         initial_timestamps = pd.date_range(start=initial_date, periods=len(target_full), freq=freq)
 
         df_full_ = pd.DataFrame(
@@ -803,9 +811,9 @@ datasets_dict: Dict[str, Dict] = {
         "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "cfa58e9c2caf28849f5397ba159887b2",
-            "test": "9d8f9871e418239f0efc23550dbe2e91",
-            "full": "d1a8bad4aba489d04063dd48cedb96a5",
+            "train": "36535626a98157ccbfe3d1f5b2d964ac",
+            "test": "09af36fa503b41ea5283db6ec6063ae1",
+            "full": "4babb773e580501b4918557555157f34",
         },
     },
     "m3_quarterly": {
@@ -813,9 +821,9 @@ datasets_dict: Dict[str, Dict] = {
         "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "f944dd06aa47a495f18b40f0a1dab6a5",
-            "test": "d29138ea613c8a4945cbd421754254e0",
-            "full": "fdfdd5400dce06530d576f4136d13421",
+            "train": "fb4286f519a6aa9385937c47dde6ddf4",
+            "test": "a27614afc474472f842a152a6ceb95e6",
+            "full": "dba2451b2aac7fc397c1cff5ad32a3dd",
         },
     },
     "m3_yearly": {
@@ -823,9 +831,9 @@ datasets_dict: Dict[str, Dict] = {
         "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "6eb14930144e2012d0132f0b809cf2d8",
-            "test": "15ad9304aa9d0a3acf6496e7e5e03176",
-            "full": "d41fadf624a61645c545847e2154c4a9",
+            "train": "1d14eb24b2dd7bc9796a5758c6b215f1",
+            "test": "ad83bafa0533557a65e124aed9b1c381",
+            "full": "62fc772fe16c1e0eb53401f088f82b6a",
         },
     },
     "m3_other": {
@@ -833,69 +841,69 @@ datasets_dict: Dict[str, Dict] = {
         "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "9132a834a7edb7f7c10215f753c0d68c",
-            "test": "d489b43229c7498c937f38fa465e8734",
-            "full": "9b55fd0bc336120e3756e022f5beade3",
+            "train": "37316d0cc7eb45c653719aea0be53880",
+            "test": "a63258ce320d3f2e68c019c9f23767b1",
+            "full": "81b024a7ef1b6be31e748c47edb057be",
         },
     },
     "m4_hourly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Hourly"),
-        "freq": "H",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "61dcfc17181fdeb67821fc3a9ff4b509",
-            "test": "53768f5aa63d5c99eb6841fbd14fa42f",
-            "full": "1bf6e9a9f5ae7e19261bb01a9a24da6f",
+            "train": "239f11e69086ee0ef9c39fcb0bb89286",
+            "test": "36cc4ae564342a361695c402e6812074",
+            "full": "fd299eaaa9ef3deadabb0197c37ba8b2",
         },
     },
     "m4_daily": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Daily"),
-        "freq": "D",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "dbf8a576d00f1e523f01f8a72af6c0da",
-            "test": "294ad20e7c6f0a1dddb4f749b7473dc0",
-            "full": "11e60a29e9ea7c4f9672e77bd107e4d8",
+            "train": "7878f1485a779da34848f900c58ca991",
+            "test": "e26d4a1bc0b45428a52f1ba8be3bf510",
+            "full": "7a1ce18e378fb8c69f02757547ccab4c",
         },
     },
     "m4_weekly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Weekly"),
-        "freq": "W-MON",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "26821e9fd21cac965bbedc35a137f18a",
-            "test": "6798cae75181c5f0c1a608eb0e59e23f",
-            "full": "5bdbaff1a011ef8723f09a38e0266fcf",
+            "train": "6dedd34a04fefb7f6da626b37fcf0ad2",
+            "test": "69f807a621b864d7e2d51f6daca147d8",
+            "full": "9954d2341af9615472f58afcc9dae2fd",
         },
     },
     "m4_monthly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Monthly"),
-        "freq": "M",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "f625bc066e42299132aaad2a79e54537",
-            "test": "9e2dc5262ca01b5d2c0a6d2993039735",
-            "full": "78a96c47ee4335bd59e33a1e7b26c3b3",
+            "train": "6c1f5212132429c24279c583d8350ec3",
+            "test": "8495595ea49766f94855e2275adf41e8",
+            "full": "69e4479c83174eddf22b9c125de086b8",
         },
     },
     "m4_quarterly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Quarterly"),
-        "freq": "QS-JAN",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "540c397f52a13dd17f5158ab799a93f9",
-            "test": "8a145e44f9ce19ffe004d867ac7899d4",
-            "full": "745c6e679a600dcd96211c7717605d72",
+            "train": "a82abe6bb3d471ae23dc8de0c28d62c2",
+            "test": "2469cf58fea2468c30ffc4ad5891b67c",
+            "full": "bc076efa89d65cb5ce35d867b9bfcb3b",
         },
     },
     "m4_yearly": {
         "get_dataset_function": partial(get_m4_dataset, dataset_freq="Yearly"),
-        "freq": "D",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "67d73db6245af5c5551f38d315e290f9",
-            "test": "806d1f2257162fe95c98718db2f04ab7",
-            "full": "011bef4ab44721a99288d502ccb2bc98",
+            "train": "b44199b886507abd9118e0f756527af9",
+            "test": "676c705384b67d4ffad6d5b25873501e",
+            "full": "1ee536a16c9d505f5411de5fc8e0e265",
         },
     },
     "traffic_2008_10T": {
@@ -930,32 +938,32 @@ datasets_dict: Dict[str, Dict] = {
     },
     "tourism_monthly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="monthly"),
-        "freq": "MS",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "2a32e030b783a0de3e74f9d412e6e70c",
-            "test": "c5d4f520692d000cd6517e1cd67f2345",
-            "full": "f1d8b9bf506d49f6c902c97624fe23bd",
+            "train": "eb65658979dcf20254df2e27793c4a2f",
+            "test": "4413d427fb1c7fd161a2ae896a9f2e17",
+            "full": "ccb8fd049488568af81c9fe341d05470",
         },
     },
     "tourism_quarterly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="quarterly"),
-        "freq": "Q-DEC",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "9840d4875899d81349321aae6f859c21",
-            "test": "17e193090a32c91fc482db9993f5db28",
-            "full": "645822fcb6a46dfe7375d2eb6f117ef2",
+            "train": "380fe61422a5333043b714c22bcb6725",
+            "test": "0cea851864a96c344778037d3baaedf5",
+            "full": "a58fd54e937182b52220c7e733b982ca",
         },
     },
     "tourism_yearly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="yearly"),
-        "freq": "A-DEC",
+        "freq": None,
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "d0781023602223cc9b9c2dca1981c0fb",
-            "test": "a5461b2fcbf6bac12591d657b1b930f9",
-            "full": "9032dbd5d0a7e0f696d6a5c005a493e0",
+            "train": "62ccbd0a636fd8797d20eab58d78e503",
+            "test": "52d826295bf39cca8ab067c04e0fb883",
+            "full": "33bc585db54a4b965149ff9b991c2def",
         },
     },
     "weather_10T": {
@@ -1021,3 +1029,17 @@ datasets_dict: Dict[str, Dict] = {
         "hash": {"full": "2dd34b5306d5e5372727e4d610b713be"},
     },
 }
+
+if __name__ == "__main__":
+    dataset_names = [
+        "m3_other"
+    ]
+    parts = ["train", "test", "full"]
+
+    for name in dataset_names:
+        get_dataset_function = datasets_dict[name]["get_dataset_function"]
+        dataset_dir = _DOWNLOAD_PATH / name
+        get_dataset_function(dataset_dir)
+        for part in parts:
+            _, dataset_hash = read_dataset(dataset_path=dataset_dir / f"{name}_{part}.csv.gz")
+            print(f"name={name} and part={part}:", dataset_hash, end="\n")
