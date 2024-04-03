@@ -73,7 +73,7 @@ class TC(nn.Module):
         t_samples = torch.randint(seq_len - self.timestep, size=(1,)).long().to(
             self.device)  # randomly pick time stamps
 
-        nce = 0  # average over timestep and batch
+        score = 0  # average over timestep and batch
         encode_samples = torch.empty((self.timestep, batch, self.num_channels)).float().to(self.device)
 
         for i in np.arange(1, self.timestep + 1):
@@ -89,6 +89,6 @@ class TC(nn.Module):
             pred[i] = linear(c_t)
         for i in np.arange(0, self.timestep):
             total = torch.mm(encode_samples[i], torch.transpose(pred[i], 0, 1))
-            nce += torch.sum(torch.diag(self.lsoftmax(total)))
-        nce /= -1. * batch * self.timestep
-        return nce, self.projection_head(c_t)
+            score += torch.sum(torch.diag(self.lsoftmax(total)))
+        score /= -1. * batch * self.timestep
+        return score, self.projection_head(c_t)

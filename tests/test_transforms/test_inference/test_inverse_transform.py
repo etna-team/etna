@@ -574,7 +574,7 @@ class TestInverseTransformTrainNewSegments:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(
+        assert_frame_equal(
             flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
@@ -936,7 +936,7 @@ class TestInverseTransformFutureNewSegments:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(
+        assert_frame_equal(
             flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
@@ -1366,7 +1366,7 @@ class TestInverseTransformFutureWithTarget:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(
+        assert_frame_equal(
             flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
@@ -1799,7 +1799,7 @@ class TestInverseTransformFutureWithoutTarget:
         assert created_columns == expected_columns_to_create
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
-        pd.testing.assert_frame_equal(
+        assert_frame_equal(
             flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
         )
 
