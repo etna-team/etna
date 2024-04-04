@@ -168,7 +168,7 @@ def load_dataset(
                 "copy of the dataset reflects a more recent version of the data than your version of the library. "
                 "In this case you can try updating the library version."
             )
-        if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz"):
+        if _check_dataset_local(dataset_dir / EXOG_SUBDIRECTORY):
             df_exog = pd.read_csv(
                 dataset_dir / EXOG_SUBDIRECTORY / f"{name}_{part}_exog.csv.gz",
                 compression="gzip",
@@ -257,12 +257,13 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
 
     segments = data_test.index
     test_target = data_test.values
+    test_len = test_target.shape[1]
     train_target = [x[~np.isnan(x)] for x in data_train.values]
 
-    max_len = test_target.shape[1] + max([len(target) for target in train_target])
+    max_len = test_len + max([len(target) for target in train_target])
 
     df_list = []
-    test_timestamps = np.arange(start=max_len - test_target.shape[1], stop=max_len)
+    test_timestamps = np.arange(start=max_len - test_len, stop=max_len)
     for segment, target in zip(segments, test_target):
         df_segment = pd.DataFrame({"target": target})
         df_segment["segment"] = segment
@@ -275,7 +276,7 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         df_segment = pd.DataFrame({"target": target})
         df_segment["segment"] = segment
         df_segment["timestamp"] = np.arange(
-            start=max_len - test_target.shape[1] - len(target), stop=max_len - test_target.shape[1]
+            start=max_len - test_target.shape[1] - len(target), stop=max_len - test_len
         )
         df_list.append(df_segment)
     df_train = pd.concat(df_list, axis=0)
@@ -449,9 +450,9 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     data originally does not have any particular frequency, but we assume it as a quarterly data. Each frequency mode
     has its own specific prediction horizon: 6 for yearly, 8 for quarterly, 18 for monthly, and 8 for other.
 
-    M3 dataset has series ending on different dates. As to the specificity of TSDataset we use integer index to make
-    series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train dataset
-    has dates for train and test and ``df_exog`` of test dataset has dates only for test.
+    M3 dataset has series ending on different dates. As to the specificity of TSDataset we use integer index use integer
+    index to make series end on one timestamp. Original dates are added as an exogenous data. For example, ``df_exog``
+    of train dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
 
     Parameters
     ----------
@@ -550,7 +551,7 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     prediction horizon: 4 for yearly, 8 for quarterly, 24 for monthly.
 
     Tourism dataset has series ending on different dates. As to the specificity of TSDataset we use integer index to
-    make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
+    make series end on one timestamp. Original dates are added as an exogenous data. For example, ``df_exog`` of train
     dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
 
     References

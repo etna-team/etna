@@ -79,7 +79,7 @@ def test_not_present_part():
 
 
 @pytest.mark.parametrize(
-    "dataset_name, expected_shape, expected_min_idx, expected_max_idx, dataset_parts",
+    "dataset_name, expected_shape, expected_min_timestamp, expected_max_timestamp, dataset_parts",
     [
         pytest.param(
             "electricity_15T",
@@ -258,11 +258,11 @@ def test_not_present_part():
         ),
     ],
 )
-def test_dataset_statistics(dataset_name, expected_shape, expected_min_idx, expected_max_idx, dataset_parts):
+def test_dataset_statistics(dataset_name, expected_shape, expected_min_timestamp, expected_max_timestamp, dataset_parts):
     ts_full = load_dataset(dataset_name, parts="full", rebuild_dataset=True)
     assert ts_full.df.shape == expected_shape
-    assert ts_full.index.min() == expected_min_idx
-    assert ts_full.index.max() == expected_max_idx
+    assert ts_full.index.min() == expected_min_timestamp
+    assert ts_full.index.max() == expected_max_timestamp
 
     if dataset_parts:
         ts_parts = load_dataset(dataset_name, parts=dataset_parts)
@@ -271,7 +271,7 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_idx, expe
 
 
 @pytest.mark.parametrize(
-    "dataset_name, expected_df_exog_shapes, expected_df_exog_ids, dataset_parts",
+    "dataset_name, expected_df_exog_shapes, expected_df_exog_timestamps, dataset_parts",
     [
         (
             "m3_monthly",
@@ -338,14 +338,14 @@ def test_dataset_statistics(dataset_name, expected_shape, expected_min_idx, expe
 def test_df_exog_statistics(
     dataset_name,
     expected_df_exog_shapes,
-    expected_df_exog_ids,
+    expected_df_exog_timestamps,
     dataset_parts,
 ):
     ts_parts = load_dataset(dataset_name, parts=dataset_parts)
     for i, part in enumerate(ts_parts):
         assert part.df_exog.shape == expected_df_exog_shapes[i]
     for i, part in enumerate(ts_parts):
-        assert (part.df_exog.index.min(), part.df_exog.index.max()) == expected_df_exog_ids[i]
+        assert (part.df_exog.index.min(), part.df_exog.index.max()) == expected_df_exog_timestamps[i]
     for i, part in enumerate(ts_parts):
         exog_col_type = part.df_exog.dtypes.iloc[0]
         assert pd.api.types.is_datetime64_dtype(exog_col_type)
@@ -364,9 +364,15 @@ def test_list_datasets():
             marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
         ),
         "m4_hourly",
-        "m4_daily",
+        pytest.param(
+            "m4_daily",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
         "m4_weekly",
-        "m4_monthly",
+        pytest.param(
+            "m4_monthly",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
         "m4_quarterly",
         "m4_yearly",
         pytest.param(
@@ -393,7 +399,10 @@ def test_list_datasets():
         "ETTm2",
         "ETTh1",
         "ETTh2",
-        "IHEPC_T",
+        pytest.param(
+            "IHEPC_T",
+            marks=pytest.mark.skip(reason="Dataset is too large for testing in GitHub."),
+        ),
         "australian_wine_sales_monthly",
     ],
 )
