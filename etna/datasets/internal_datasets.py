@@ -176,6 +176,8 @@ def load_dataset(
                 index_col=[0],
                 parse_dates=[0],
             )
+            # For some datasets there are real dates that we cannot use directly, so we save them in exog data. When we
+            # load dataset, we convert this dates into datetime so that the user can apply transforms to them.
             df_exog = df_exog.astype("datetime64[ns]")
             ts = TSDataset(data, df_exog=df_exog, freq=freq)
         else:
