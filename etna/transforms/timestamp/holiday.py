@@ -15,6 +15,7 @@ from pandas.tseries.offsets import YearEnd
 from typing_extensions import assert_never
 
 from etna.datasets import TSDataset
+from etna.datasets import duplicate_data
 from etna.datasets.utils import determine_freq
 from etna.transforms.base import IrreversibleTransform
 
@@ -315,13 +316,8 @@ class HolidayTransform(IrreversibleTransform):
                 raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
             feature = self._compute_feature(timestamps=df.index).values
-            cols = df.columns.get_level_values("segment").unique()
-            encoded_matrix = feature.reshape(-1, 1).repeat(len(cols), axis=1)
-            wide_df = pd.DataFrame(
-                encoded_matrix,
-                columns=pd.MultiIndex.from_product([cols, [out_column]], names=("segment", "feature")),
-                index=df.index,
-            )
+            segments = df.columns.get_level_values("segment").unique().tolist()
+            wide_df = duplicate_data(df=feature.reset_index(), segments=segments)
         else:
             self._validate_external_timestamps(df=df)
             features = TSDataset.to_flatten(df=df, features=[self.in_column])
