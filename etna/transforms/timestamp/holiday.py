@@ -273,7 +273,7 @@ class HolidayTransform(IrreversibleTransform):
                 elif t in self.holidays:
                     values.append(self.holidays[t])
                 else:
-                    values.append(self._no_holiday_name)
+                    values.append(self._no_holiday_name)  # type: ignore
         elif self._mode is HolidayTransformMode.binary:
             values = [int(x in self.holidays) if x is not pd.NaT else pd.NA for x in timestamps]
         else:
