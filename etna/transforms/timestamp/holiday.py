@@ -4,6 +4,7 @@ from typing import Optional
 from typing import cast
 
 import holidays
+import numpy as np
 import pandas as pd
 from pandas.tseries.offsets import MonthBegin
 from pandas.tseries.offsets import MonthEnd
@@ -248,7 +249,6 @@ class HolidayTransform(IrreversibleTransform):
         return self
 
     def _compute_feature(self, timestamps: pd.Series) -> pd.Series:
-        values = None
         dtype = "float"
         if self._mode is HolidayTransformMode.binary or self._mode is HolidayTransformMode.category:
             dtype = "category"
@@ -258,7 +258,7 @@ class HolidayTransform(IrreversibleTransform):
             values = []
             for dt in timestamps:
                 if dt is pd.NaT:
-                    values.append(pd.NA)
+                    values.append(np.NAN)
                 else:
                     start_date, end_date = define_period(date_offset, pd.Timestamp(dt), self._freq)
                     date_range = pd.date_range(start=start_date, end=end_date, freq="D")
@@ -278,7 +278,7 @@ class HolidayTransform(IrreversibleTransform):
             values = [int(x in self.holidays) if x is not pd.NaT else pd.NA for x in timestamps]
         else:
             assert_never(self._mode)
-        result = pd.Series(values, index=timestamps, dtype=dtype)
+        result = pd.Series(values, index=timestamps, dtype=dtype, name=self._get_column_name())
 
         return result
 
