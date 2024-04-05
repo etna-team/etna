@@ -258,7 +258,9 @@ def test_not_present_part():
         ),
     ],
 )
-def test_dataset_statistics(dataset_name, expected_shape, expected_min_timestamp, expected_max_timestamp, dataset_parts):
+def test_dataset_statistics(
+    dataset_name, expected_shape, expected_min_timestamp, expected_max_timestamp, dataset_parts
+):
     ts_full = load_dataset(dataset_name, parts="full", rebuild_dataset=True)
     assert ts_full.df.shape == expected_shape
     assert ts_full.index.min() == expected_min_timestamp

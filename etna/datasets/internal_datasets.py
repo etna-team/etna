@@ -279,9 +279,7 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     for segment, target in zip(segments, train_target):
         df_segment = pd.DataFrame({"target": target})
         df_segment["segment"] = segment
-        df_segment["timestamp"] = np.arange(
-            start=max_len - test_target.shape[1] - len(target), stop=max_len - test_len
-        )
+        df_segment["timestamp"] = np.arange(start=max_len - test_target.shape[1] - len(target), stop=max_len - test_len)
         df_list.append(df_segment)
     df_train = pd.concat(df_list, axis=0)
 
