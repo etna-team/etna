@@ -10,10 +10,19 @@ This page lists some common terms used in documentation of the library.
    Time series
       A series of variable measurements obtained at successive times according to :term:`frequency <time series frequency>`.
 
-   Time series frequency
-      Quantity that determines how often we take measurements for :term:`time series`.
+   Timestamps
+      Times at which measurements are taken for :term:`time series`.
+
+   Regular timestamps
+      :term:`Timestamps` that are spaced regularly, for example every hour.
       It doesn't have to be always the same number of seconds.
-      For example, taking the first day of each month is a valid frequency.
+      For example, taking the first day of each month gives regular timestamps.
+
+   Irregular timestamps
+      :term:`Timestamps` that aren't spaced regularly, for example it can be times at which our backend server receives a request.
+
+   Time series frequency
+      Quantity that determines the size of spaces between :term:`regular timestamps`. Examples of frequencies: hourly, daily, monthly.
 
    Univariate time series
       A single :term:`time series` containing measurements of a scalar variable.
@@ -29,7 +38,14 @@ This page lists some common terms used in documentation of the library.
    Hierarchical time series
       Multiple :term:`time series` having a level structure in which higher levels can be disaggregated
       by different attributes of interest into series of lower levels.
-      See :doc:`tutorials/14-hierarchical_pipeline`.
+      See :doc:`tutorials/303-hierarchical_pipeline`.
+
+   Aligned time series
+      Set of :term:`time series` that have the same :term:`time series frequency` and end with the same :term:`timestamps`.
+
+   Misaligned time series
+      Set of :term:`time series` that have the same :term:`time series frequency`, but end with different :term:`timestamps`.
+      These times series can be shifted in time to become aligned.
 
    Segment
       We use this term to refer to one :term:`time series` in a :term:`dataset`.
@@ -84,7 +100,7 @@ This page lists some common terms used in documentation of the library.
    Backtesting
       Type of cross-validation when we check the quality of the forecast model using historical data.
 
-   Per-segment / local approach
+   Per-segment / Local approach
       Mode of operation when there is a separate :term:`model` / :term:`transform` for each :term:`segment` of the dataset.
 
    Multi-segment / Global approach
@@ -92,7 +108,7 @@ This page lists some common terms used in documentation of the library.
 
    Forecasting strategy
       Algorithm for using an ML model to produce a multi-step time series :term:`forecast <forecasting>`.
-      See :doc:`tutorials/09-forecasting_strategies`.
+      See :doc:`tutorials/208-forecasting_strategies`.
 
    Forecasting context
       Suffix of a :term:`dataset` we want to :term:`forecast <forecasting>` that is necessary for the :term:`model` we are using.

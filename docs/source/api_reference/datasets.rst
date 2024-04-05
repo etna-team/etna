@@ -42,3 +42,6 @@ Utilities for data manipulation:
 
    duplicate_data
    set_columns_wide
+   infer_alignment
+   apply_alignment
+   make_timestamp_df_from_alignment

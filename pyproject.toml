@@ -245,7 +245,9 @@ filterwarnings = [
     "ignore: Trying to infer the `batch_size` from an ambiguous collection", # pytorch_forecasting
     "ignore: Implicitly cleaning up <TemporaryDirectory",
     "ignore: Call to deprecated class DeepARModel.",
-    "ignore: dropout option adds dropout after all but last recurrent layer"
+    "ignore: dropout option adds dropout after all but last recurrent layer",
+    "ignore: Call to deprecated class TFTModel."
+
 ]
 markers = [
     "smoke"
