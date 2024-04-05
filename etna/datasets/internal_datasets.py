@@ -178,7 +178,9 @@ def load_dataset(
             )
             # For some datasets there are real dates that we cannot use directly, so we save them in exog data. When we
             # load dataset, we convert this dates into datetime so that the user can apply transforms to them.
-            df_exog = df_exog.astype("datetime64[ns]")
+            if "exog_datetime_columns" in dataset_params:
+                dt_columns = [col for col in df_exog.columns if col[1] in dataset_params["exog_datetime_columns"]]
+                df_exog[dt_columns] = df_exog[dt_columns].astype("datetime64[ns]")
             ts = TSDataset(data, df_exog=df_exog, freq=freq)
         else:
             ts = TSDataset(data, freq=freq)
@@ -508,7 +510,7 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     if dataset_freq == "yearly":
         df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"], format="%Y")
         df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"], format="%Y")
-    else:
+    elif dataset_freq != "other":
         df_full_exog["origin_timestamp"] = pd.to_datetime(df_full_exog["origin_timestamp"])
         df_test_exog["origin_timestamp"] = pd.to_datetime(df_test_exog["origin_timestamp"])
 
@@ -522,25 +524,24 @@ def get_m3_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         dataset_dir / f"m3_{dataset_freq.lower()}_test.csv.gz", index=True, compression="gzip", float_format="%.8f"
     )
 
-    if dataset_freq != "other":
-        TSDataset.to_dataset(df_full_exog).to_csv(
-            dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_full_exog.csv.gz",
-            index=True,
-            compression="gzip",
-            float_format="%.8f",
-        )
-        TSDataset.to_dataset(df_full_exog).to_csv(
-            dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_train_exog.csv.gz",
-            index=True,
-            compression="gzip",
-            float_format="%.8f",
-        )
-        TSDataset.to_dataset(df_test_exog).to_csv(
-            dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_test_exog.csv.gz",
-            index=True,
-            compression="gzip",
-            float_format="%.8f",
-        )
+    TSDataset.to_dataset(df_full_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_full_exog.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
+    )
+    TSDataset.to_dataset(df_full_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_train_exog.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
+    )
+    TSDataset.to_dataset(df_test_exog).to_csv(
+        dataset_dir / EXOG_SUBDIRECTORY / f"m3_{dataset_freq.lower()}_test_exog.csv.gz",
+        index=True,
+        compression="gzip",
+        float_format="%.8f",
+    )
 
 
 def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
@@ -765,7 +766,7 @@ def get_ihepc_dataset(dataset_dir: Path) -> None:
     df_full.to_csv(dataset_dir / f"IHEPC_T_full.csv.gz", index=True, compression="gzip", float_format="%.8f")
 
 
-def get_australian_wine_sales_daataset(dataset_dir: Path) -> None:
+def get_australian_wine_sales_dataset(dataset_dir: Path) -> None:
     """
     Download and save Australian total wine sales by wine makers in bottles.
 
@@ -813,6 +814,7 @@ datasets_dict: Dict[str, Dict] = {
     "m3_monthly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="monthly"),
         "freq": None,
+        "exog_datetime_columns": ("origin_timestamp",),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "36535626a98157ccbfe3d1f5b2d964ac",
@@ -823,6 +825,7 @@ datasets_dict: Dict[str, Dict] = {
     "m3_quarterly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="quarterly"),
         "freq": None,
+        "exog_datetime_columns": ("origin_timestamp",),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "fb4286f519a6aa9385937c47dde6ddf4",
@@ -833,6 +836,7 @@ datasets_dict: Dict[str, Dict] = {
     "m3_yearly": {
         "get_dataset_function": partial(get_m3_dataset, dataset_freq="yearly"),
         "freq": None,
+        "exog_datetime_columns": ("origin_timestamp",),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "1d14eb24b2dd7bc9796a5758c6b215f1",
@@ -943,6 +947,7 @@ datasets_dict: Dict[str, Dict] = {
     "tourism_monthly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="monthly"),
         "freq": None,
+        "exog_datetime_columns": ("origin_timestamp",),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "eb65658979dcf20254df2e27793c4a2f",
@@ -953,6 +958,7 @@ datasets_dict: Dict[str, Dict] = {
     "tourism_quarterly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="quarterly"),
         "freq": None,
+        "exog_datetime_columns": ("origin_timestamp",),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "380fe61422a5333043b714c22bcb6725",
@@ -963,6 +969,7 @@ datasets_dict: Dict[str, Dict] = {
     "tourism_yearly": {
         "get_dataset_function": partial(get_tourism_dataset, dataset_freq="yearly"),
         "freq": None,
+        "exog_datetime_columns": ("origin_timestamp",),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "62ccbd0a636fd8797d20eab58d78e503",
@@ -1027,7 +1034,7 @@ datasets_dict: Dict[str, Dict] = {
         "hash": {"full": "8909138462ea130b9809907e947ffae6"},
     },
     "australian_wine_sales_monthly": {
-        "get_dataset_function": get_australian_wine_sales_daataset,
+        "get_dataset_function": get_australian_wine_sales_dataset,
         "freq": "MS",
         "parts": ("full",),
         "hash": {"full": "2dd34b5306d5e5372727e4d610b713be"},
