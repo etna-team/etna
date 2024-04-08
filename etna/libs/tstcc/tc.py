@@ -47,7 +47,7 @@ class TC(nn.Module):
         self.heads = heads
         self.depth = depth
         self.Wk = nn.ModuleList([nn.Linear(hidden_dim, self.num_channels) for i in range(self.timestep)])
-        self.lsoftmax = nn.LogSoftmax()
+        self.lsoftmax = nn.LogSoftmax(dim=1)
         self.device = device
         self.n_seq_steps = n_seq_steps
 

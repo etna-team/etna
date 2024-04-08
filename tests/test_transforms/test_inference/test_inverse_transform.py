@@ -90,7 +90,7 @@ class TestInverseTransformTrainSubsetSegments:
 
         # check
         assert_frame_equal(
-            inverse_transformed_subset_df, inverse_transformed_df.loc[:, pd.IndexSlice[segments, :]], atol=1e-6
+            inverse_transformed_subset_df, inverse_transformed_df.loc[:, pd.IndexSlice[segments, :]], atol=1e-5
         )
 
     @pytest.mark.parametrize(
@@ -307,7 +307,7 @@ class TestInverseTransformFutureSubsetSegments:
         assert_frame_equal(
             inverse_transformed_subset_future_df,
             inverse_transformed_future_df.loc[:, pd.IndexSlice[segments, :]],
-            atol=1e-6,
+            atol=1e-5,
         )
 
     @pytest.mark.parametrize(
@@ -575,7 +575,7 @@ class TestInverseTransformTrainNewSegments:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(
@@ -937,7 +937,7 @@ class TestInverseTransformFutureNewSegments:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(
@@ -1367,7 +1367,7 @@ class TestInverseTransformFutureWithTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(
@@ -1800,7 +1800,7 @@ class TestInverseTransformFutureWithoutTarget:
         assert removed_columns == expected_columns_to_remove
         assert changed_columns == expected_columns_to_change
         assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-6
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(

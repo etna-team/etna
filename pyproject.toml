@@ -248,7 +248,6 @@ filterwarnings = [
     "ignore: Call to deprecated class DeepARModel.",
     "ignore: dropout option adds dropout after all but last recurrent layer",
     "ignore: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created",
-    "ignore: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument",
     "ignore: Initializing zero-element tensors is a no-op"
 ]
 markers = [

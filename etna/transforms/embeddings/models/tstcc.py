@@ -147,6 +147,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         temperature: float = 0.2,
         lambda1: float = 1,
         lambda2: float = 0.7,
+        verbose: bool = False,
     ) -> "TSTCCEmbeddingModel":
         """Fit TSTCC embedding model.
 
@@ -164,10 +165,18 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             The relative weight of the first item in the loss (temporal contrasting loss).
         lambda2:
             The relative weight of the second item in the loss (contextual contrasting loss).
+        verbose:
+            Whether to print the training loss after each epoch.
         """
         if not self._is_freezed:
             self.embedding_model.fit(
-                train_data=x, n_epochs=n_epochs, lr=lr, temperature=temperature, lambda1=lambda1, lambda2=lambda2
+                train_data=x,
+                n_epochs=n_epochs,
+                lr=lr,
+                temperature=temperature,
+                lambda1=lambda1,
+                lambda2=lambda2,
+                verbose=verbose,
             )
         return self
 

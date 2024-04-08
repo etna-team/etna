@@ -29,7 +29,7 @@ from etna.libs.tstcc.encoder import ConvEncoder
 from etna.libs.tstcc.tc import TC
 from etna.libs.tstcc.dataloader import Load_Dataset
 from etna.libs.tstcc.loss import NTXentLoss
-
+from etna.loggers import tslogger, ConsoleLogger
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -131,6 +131,8 @@ class TSTCC:
 
         self.use_cosine_similarity = use_cosine_similarity
 
+        tslogger.add(ConsoleLogger())
+
     def prepare_data(self, data, mode):
         data = data.transpose(0, 2, 1)
         dataset = Load_Dataset(
@@ -158,7 +160,7 @@ class TSTCC:
             )
         return data_loader
 
-    def fit(self, train_data, n_epochs, lr, temperature, lambda1, lambda2):
+    def fit(self, train_data, n_epochs, lr, temperature, lambda1, lambda2, verbose):
         """
         Fit model
 
@@ -176,12 +178,14 @@ class TSTCC:
             The relative weight of the first item in the loss (temporal contrasting loss).
         lambda2:
             The relative weight of the second item in the loss (contextual contrasting loss).
+        verbose:
+            Whether to print the training loss after each epoch.
         """
         train_loader = self.prepare_data(data=train_data, mode="train")
         model_optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, betas=(0.9, 0.99),
                                            weight_decay=3e-4)
         self.model.train()
-        for epoch in range(1, n_epochs + 1):
+        for epoch in range(n_epochs):
 
             total_loss = []
             for batch_idx, (aug1, aug2) in enumerate(train_loader):
@@ -219,11 +223,8 @@ class TSTCC:
                 model_optimizer.step()
 
             train_loss = torch.tensor(total_loss).mean()
-
-            print(f'\nEpoch : {epoch}\n'
-                  f'Train Loss     : {train_loss:.4f}\n')
-
-        print("\n################## Training is Done! #########################")
+            if verbose:
+                tslogger.log(f"Epoch {epoch}: loss={train_loss:.4f}")
 
     def encode(self, data, encode_full_series):
         """
