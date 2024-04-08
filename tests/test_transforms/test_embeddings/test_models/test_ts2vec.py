@@ -1,9 +1,14 @@
 import pathlib
+from tempfile import NamedTemporaryFile
 
 import numpy as np
 import pytest
+from loguru import logger as _logger
 
+from etna.loggers import ConsoleLogger
+from etna.loggers import tslogger
 from etna.transforms.embeddings.models import TS2VecEmbeddingModel
+from tests.test_transforms.test_embeddings.test_models.utils import check_logged_loss
 
 
 @pytest.mark.smoke
@@ -121,3 +126,15 @@ def test_encode_not_contains_nan(data, input_dim, request):
 
     assert np.isnan(encoded_segment).sum() == 0
     assert np.isnan(encoded_window).sum() == 0
+
+
+@pytest.mark.parametrize("verbose, n_epochs, n_lines_expected", [(True, 1, 1), (False, 1, 0)])
+def test_logged_loss(ts_with_exog_nan_begin_numpy, verbose, n_epochs, n_lines_expected):
+    """Check logging loss during training."""
+    model = TS2VecEmbeddingModel(input_dims=3)
+    file = NamedTemporaryFile()
+    _logger.add(file.name)
+    idx = tslogger.add(ConsoleLogger())
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=n_epochs, verbose=verbose)
+    check_logged_loss(log_file=file.name, n_lines_expected=n_lines_expected)
+    tslogger.remove(idx)

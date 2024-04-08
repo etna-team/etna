@@ -86,8 +86,6 @@ class TS2Vec:
         self.n_epochs = 0
         self.n_iters = 0
 
-        tslogger.add(ConsoleLogger())
-
     def fit(self, train_data, n_epochs=None, n_iters=None, verbose=False):
         ''' Training the TS2Vec model.
 
@@ -100,6 +98,7 @@ class TS2Vec:
         Returns:
             loss_log: a list containing the training losses on each epoch.
         '''
+
         assert train_data.ndim == 3
 
         if n_iters is None and n_epochs is None:

@@ -1,9 +1,14 @@
 import pathlib
+from tempfile import NamedTemporaryFile
 
 import numpy as np
 import pytest
+from loguru import logger as _logger
 
+from etna.loggers import ConsoleLogger
+from etna.loggers import tslogger
 from etna.transforms.embeddings.models import TSTCCEmbeddingModel
+from tests.test_transforms.test_embeddings.test_models.utils import check_logged_loss
 
 
 @pytest.mark.smoke
@@ -127,3 +132,15 @@ def test_failed_batch_size_1(ts_with_exog_nan_begin_numpy):
     model = TSTCCEmbeddingModel(input_dims=3, batch_size=1)
     with pytest.raises(ValueError):
         model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
+
+
+@pytest.mark.parametrize("verbose, n_epochs, n_lines_expected", [(True, 1, 1), (False, 1, 0)])
+def test_logged_loss(ts_with_exog_nan_begin_numpy, verbose, n_epochs, n_lines_expected):
+    """Check logging loss during training."""
+    model = TSTCCEmbeddingModel(input_dims=3)
+    file = NamedTemporaryFile()
+    _logger.add(file.name)
+    idx = tslogger.add(ConsoleLogger())
+    model.fit(ts_with_exog_nan_begin_numpy, n_epochs=n_epochs, verbose=verbose)
+    check_logged_loss(log_file=file.name, n_lines_expected=n_lines_expected)
+    tslogger.remove(idx)

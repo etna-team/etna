@@ -131,8 +131,6 @@ class TSTCC:
 
         self.use_cosine_similarity = use_cosine_similarity
 
-        tslogger.add(ConsoleLogger())
-
     def prepare_data(self, data, mode):
         data = data.transpose(0, 2, 1)
         dataset = Load_Dataset(
