@@ -83,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update internal datasets to work with unaligned data ([#292](https://github.com/etna-team/etna/pull/292))
 - 
 - 
-- 
+- Speed up "timestamp" transforms ([#295](https://github.com/etna-team/etna/pull/295)
 - 
 - 
 - 
