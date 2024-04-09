@@ -24,6 +24,9 @@ SOFTWARE.
 # Note: Copied from ts-tcc repository (https://github.com/emadeldeen24/TS-TCC/tree/main)
 
 # In the original implementation, the name of this file is "model.py".
+# Added ignoring warning about even kernel lengths and odd dilation in nn.Conv1d blocks.
+import warnings
+
 from torch import nn
 
 
@@ -63,7 +66,9 @@ class ConvEncoder(nn.Module):
         )
 
     def forward(self, x_in):
-        x = self.conv_block1(x_in)
-        x = self.conv_block2(x)
-        x = self.conv_block3(x)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            x = self.conv_block1(x_in)
+            x = self.conv_block2(x)
+            x = self.conv_block3(x)
         return x

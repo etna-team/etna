@@ -247,7 +247,6 @@ filterwarnings = [
     "ignore: Implicitly cleaning up <TemporaryDirectory",
     "ignore: Call to deprecated class DeepARModel.",
     "ignore: dropout option adds dropout after all but last recurrent layer",
-    "ignore: Using padding='same' with even kernel lengths and odd dilation may require a zero-padded copy of the input be created",
 ]
 markers = [
     "smoke"
