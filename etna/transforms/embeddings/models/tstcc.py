@@ -16,6 +16,8 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
 
     Each following calling of ``fit`` method continues the learning of the same model.
 
+    Using custom `output_dims`, set it to a value > 3 to have the loss calculated correctly.
+
     For more details read the
     `paper <https://arxiv.org/abs/2106.14112>`_.
 

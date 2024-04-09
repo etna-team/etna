@@ -22,6 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # Note: Copied from ts-tcc repository (https://github.com/emadeldeen24/TS-TCC/tree/main)
+# Added ignoring warning about empty linear layer in self.projection_head when input_dims < 4
+
+import warnings
 
 import torch
 import torch.nn as nn
@@ -50,13 +53,14 @@ class TC(nn.Module):
         self.lsoftmax = nn.LogSoftmax(dim=1)
         self.device = device
         self.n_seq_steps = n_seq_steps
-
-        self.projection_head = nn.Sequential(
-            nn.Linear(hidden_dim, input_dims // 2),
-            nn.BatchNorm1d(input_dims // 2),
-            nn.ReLU(inplace=True),
-            nn.Linear(input_dims // 2, input_dims // 4),
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.projection_head = nn.Sequential(
+                nn.Linear(hidden_dim, input_dims // 2),
+                nn.BatchNorm1d(input_dims // 2),
+                nn.ReLU(inplace=True),
+                nn.Linear(input_dims // 2, input_dims // 4),
+            )
 
         self.seq_transformer = Seq_Transformer(patch_size=self.num_channels, dim=self.hidden_dim, depth=self.depth,
                                                heads=self.heads, mlp_dim=64)

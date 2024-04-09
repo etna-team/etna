@@ -29,7 +29,7 @@ from etna.libs.tstcc.encoder import ConvEncoder
 from etna.libs.tstcc.tc import TC
 from etna.libs.tstcc.dataloader import Load_Dataset
 from etna.libs.tstcc.loss import NTXentLoss
-from etna.loggers import tslogger, ConsoleLogger
+from etna.loggers import tslogger
 import numpy as np
 import torch
 import torch.nn.functional as F
