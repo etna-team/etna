@@ -134,7 +134,7 @@ def get_anomalies_density(
     n_neighbors: int = 3,
     distance_func: Union[Literal["absolute_difference"], Callable[[float, float], float]] = "absolute_difference",
     index_only: bool = True,
-) -> Dict[str, Union[List[pd.Timestamp], pd.Series]]:
+) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
     """Compute outliers according to density rule.
 
     For each element in the series build all the windows of size ``window_size`` containing this point.

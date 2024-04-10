@@ -1,4 +1,5 @@
 import math
+import reprlib
 import warnings
 from abc import abstractmethod
 from copy import deepcopy
@@ -9,6 +10,7 @@ from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -23,13 +25,13 @@ from typing_extensions import assert_never
 from etna.core import AbstractSaveable
 from etna.core import BaseMixin
 from etna.datasets import TSDataset
+from etna.datasets.utils import _check_timestamp_param
+from etna.datasets.utils import timestamp_range
 from etna.distributions import BaseDistribution
 from etna.loggers import tslogger
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics.functional_metrics import ArrayLike
-
-Timestamp = Union[str, pd.Timestamp]
 
 
 class CrossValidationMode(str, Enum):
@@ -53,11 +55,17 @@ class FoldMask(BaseMixin):
 
     def __init__(
         self,
-        first_train_timestamp: Optional[Timestamp],
-        last_train_timestamp: Timestamp,
-        target_timestamps: List[Timestamp],
+        first_train_timestamp: Union[pd.Timestamp, int, str, None],
+        last_train_timestamp: Union[pd.Timestamp, int, str],
+        target_timestamps: List[Union[pd.Timestamp, int, str]],
     ):
         """Init FoldMask.
+
+        Values of ``target_timestamps`` are sorted in ascending order.
+
+        Notes
+        -----
+        String value is converted into :py:class`pd.Timestamps` using :py:func:`pandas.to_datetime`.
 
         Parameters
         ----------
@@ -67,23 +75,93 @@ class FoldMask(BaseMixin):
             Last train timestamp
         target_timestamps:
             List of target timestamps
+
+        Raises
+        ------
+        ValueError:
+            All timestamps should be one of two possible types: pd.Timestamp or int
+        ValueError:
+            Last train timestamp should be not sooner than first train timestamp
+        ValueError:
+            Target timestamps shouldn't be empty
+        ValueError:
+            Target timestamps shouldn't contain duplicates
+        ValueError:
+            Target timestamps should be strictly later then last train timestamp
         """
-        self.first_train_timestamp = pd.to_datetime(first_train_timestamp) if first_train_timestamp else None
-        self.last_train_timestamp = pd.to_datetime(last_train_timestamp)
-        self.target_timestamps = sorted([pd.to_datetime(timestamp) for timestamp in target_timestamps])
+        if isinstance(first_train_timestamp, str):
+            first_train_timestamp = pd.to_datetime(first_train_timestamp)
 
-        self._validate_last_train_timestamp()
-        self._validate_target_timestamps()
+        if isinstance(last_train_timestamp, str):
+            last_train_timestamp = pd.to_datetime(last_train_timestamp)
 
-    def _validate_last_train_timestamp(self):
-        """Check that last train timestamp is later then first train timestamp."""
-        if self.first_train_timestamp and self.last_train_timestamp < self.first_train_timestamp:
+        target_timestamps_processed = []
+        for timestamp in target_timestamps:
+            if isinstance(timestamp, str):
+                target_timestamps_processed.append(pd.to_datetime(timestamp))
+            else:
+                target_timestamps_processed.append(timestamp)
+
+        self._validate_parameters_same_type(
+            first_train_timestamp=first_train_timestamp,
+            last_train_timestamp=last_train_timestamp,
+            target_timestamps=target_timestamps_processed,
+        )
+
+        target_timestamps = sorted(target_timestamps_processed)
+
+        self._validate_first_last_train_timestamps_order(
+            first_train_timestamp=first_train_timestamp, last_train_timestamp=last_train_timestamp
+        )
+        self._validate_target_timestamps(last_train_timestamp=last_train_timestamp, target_timestamps=target_timestamps)
+
+        self.first_train_timestamp = first_train_timestamp
+        self.last_train_timestamp = last_train_timestamp
+        self.target_timestamps = target_timestamps
+
+    @staticmethod
+    def _validate_parameters_same_type(
+        first_train_timestamp: Union[pd.Timestamp, int, str, None],
+        last_train_timestamp: Union[pd.Timestamp, int],
+        target_timestamps: List[Union[pd.Timestamp, int]],
+    ):
+        """Check that first train timestamp, last train timestamp, target timestamps has the same type."""
+        if first_train_timestamp is not None:
+            values_to_check = [first_train_timestamp, last_train_timestamp, *target_timestamps]
+        else:
+            values_to_check = [last_train_timestamp, *target_timestamps]
+
+        types: Set[type] = set()
+        for value in values_to_check:
+            if isinstance(value, np.integer):
+                types.add(int)
+            else:
+                types.add(type(value))
+
+        if len(types) > 1:
+            raise ValueError("All timestamps should be one of two possible types: pd.Timestamp or int!")
+
+    @staticmethod
+    def _validate_first_last_train_timestamps_order(
+        first_train_timestamp: Union[pd.Timestamp, int, None], last_train_timestamp: Union[pd.Timestamp, int]
+    ):
+        """Check that last train timestamp is later than first train timestamp."""
+        if first_train_timestamp is not None and last_train_timestamp < first_train_timestamp:  # type: ignore
             raise ValueError("Last train timestamp should be not sooner than first train timestamp!")
 
-    def _validate_target_timestamps(self):
-        """Check that all target timestamps are later then last train timestamp."""
-        first_target_timestamp = self.target_timestamps[0]
-        if first_target_timestamp <= self.last_train_timestamp:
+    @staticmethod
+    def _validate_target_timestamps(
+        last_train_timestamp: Union[pd.Timestamp, int], target_timestamps: List[Union[pd.Timestamp, int]]
+    ):
+        """Check that all target timestamps aren't empty and later than last train timestamp."""
+        if len(target_timestamps) == 0:
+            raise ValueError("Target timestamps shouldn't be empty!")
+
+        if len(target_timestamps) != len(set(target_timestamps)):
+            raise ValueError("Target timestamps shouldn't contain duplicates!")
+
+        first_target_timestamp = target_timestamps[0]
+        if first_target_timestamp <= last_train_timestamp:  # type: ignore
             raise ValueError("Target timestamps should be strictly later then last train timestamp!")
 
     def validate_on_dataset(self, ts: TSDataset, horizon: int):
@@ -95,29 +173,44 @@ class FoldMask(BaseMixin):
             Dataset to validate on
         horizon:
             Forecasting horizon
+
+        Raises
+        ------
+        ValueError:
+            First train timestamp isn't present in a given dataset
+        ValueError:
+            Last train timestamp isn't present in a given dataset
+        ValueError:
+            Some of target timestamps aren't present in a given dataset
+        ValueError:
+            First train timestamp should be later than minimal dataset timestamp
+        ValueError:
+            Last train timestamp should be not later than the ending of the shortest segment
+        ValueError:
+            Last target timestamp should be not later than horizon steps after last train timestamp
         """
-        dataset_timestamps = list(ts.index)
+        timestamps = ts.index.to_list()
+
+        if self.first_train_timestamp is not None and self.first_train_timestamp not in timestamps:
+            raise ValueError("First train timestamp isn't present in a given dataset!")
+
+        if self.last_train_timestamp not in timestamps:
+            raise ValueError("Last train timestamp isn't present in a given dataset!")
+
+        if not set(self.target_timestamps).issubset(set(timestamps)):
+            diff = set(self.target_timestamps).difference(set(timestamps))
+            raise ValueError(f"Some target timestamps aren't present in a given dataset: {reprlib.repr(diff)}")
+
         dataset_description = ts.describe()
 
-        min_first_timestamp = ts.index.min()
-        if self.first_train_timestamp and self.first_train_timestamp < min_first_timestamp:
-            raise ValueError(f"First train timestamp should be later than {min_first_timestamp}!")
+        dataset_min_last_timestamp = dataset_description["end_timestamp"].min()
+        if self.last_train_timestamp > dataset_min_last_timestamp:
+            raise ValueError(f"Last train timestamp should be not later than {dataset_min_last_timestamp}!")
 
-        last_timestamp = dataset_description["end_timestamp"].min()
-        if self.last_train_timestamp > last_timestamp:
-            raise ValueError(f"Last train timestamp should be not later than {last_timestamp}!")
-
-        dataset_first_target_timestamp = dataset_timestamps[dataset_timestamps.index(self.last_train_timestamp) + 1]
-        mask_first_target_timestamp = self.target_timestamps[0]
-        if mask_first_target_timestamp < dataset_first_target_timestamp:
-            raise ValueError(f"First target timestamp should be not sooner than {dataset_first_target_timestamp}!")
-
-        dataset_last_target_timestamp = dataset_timestamps[
-            dataset_timestamps.index(self.last_train_timestamp) + horizon
-        ]
+        dataset_horizon_border_timestamp = timestamps[timestamps.index(self.last_train_timestamp) + horizon]
         mask_last_target_timestamp = self.target_timestamps[-1]
-        if dataset_last_target_timestamp < mask_last_target_timestamp:
-            raise ValueError(f"Last target timestamp should be not later than {dataset_last_target_timestamp}!")
+        if dataset_horizon_border_timestamp < mask_last_target_timestamp:
+            raise ValueError(f"Last target timestamp should be not later than {dataset_horizon_border_timestamp}!")
 
 
 class AbstractPipeline(AbstractSaveable):
@@ -178,8 +271,8 @@ class AbstractPipeline(AbstractSaveable):
     def predict(
         self,
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp] = None,
-        end_timestamp: Optional[pd.Timestamp] = None,
+        start_timestamp: Union[pd.Timestamp, int, str, None] = None,
+        end_timestamp: Union[pd.Timestamp, int, str, None] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         return_components: bool = False,
@@ -188,6 +281,8 @@ class AbstractPipeline(AbstractSaveable):
 
         Currently, in situation when segments start with different timestamps
         we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
+
+        Parameters ``start_timestamp`` and ``end_timestamp`` of type ``str`` are converted into ``pd.Timestamp``.
 
         Parameters
         ----------
@@ -214,6 +309,8 @@ class AbstractPipeline(AbstractSaveable):
 
         Raises
         ------
+        ValueError:
+            Incorrect type of ``start_timestamp`` or ``end_timestamp`` is used according to ``ts.freq``
         ValueError:
             Value of ``end_timestamp`` is less than ``start_timestamp``.
         ValueError:
@@ -462,9 +559,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     @staticmethod
     def _make_predict_timestamps(
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp] = None,
-        end_timestamp: Optional[pd.Timestamp] = None,
-    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        start_timestamp: Union[pd.Timestamp, int, str, None],
+        end_timestamp: Union[pd.Timestamp, int, str, None],
+    ) -> Union[Tuple[pd.Timestamp, pd.Timestamp], Tuple[int, int]]:
+        start_timestamp = _check_timestamp_param(param=start_timestamp, param_name="start_timestamp", freq=ts.freq)
+        end_timestamp = _check_timestamp_param(param=end_timestamp, param_name="end_timestamp", freq=ts.freq)
+
         min_timestamp = ts.describe()["start_timestamp"].max()
         max_timestamp = ts.index[-1]
 
@@ -478,7 +578,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         if end_timestamp > max_timestamp:
             raise ValueError("Value of end_timestamp is more than ending of dataset!")
 
-        if start_timestamp > end_timestamp:
+        if start_timestamp > end_timestamp:  # type: ignore
             raise ValueError("Value of end_timestamp is less than start_timestamp!")
 
         return start_timestamp, end_timestamp
@@ -487,8 +587,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp],
-        end_timestamp: Optional[pd.Timestamp],
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,
@@ -498,8 +598,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
     def predict(
         self,
         ts: TSDataset,
-        start_timestamp: Optional[pd.Timestamp] = None,
-        end_timestamp: Optional[pd.Timestamp] = None,
+        start_timestamp: Union[pd.Timestamp, int, str, None] = None,
+        end_timestamp: Union[pd.Timestamp, int, str, None] = None,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         return_components: bool = False,
@@ -508,6 +608,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         Currently, in situation when segments start with different timestamps
         we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
+
+        Parameters ``start_timestamp`` and ``end_timestamp`` of type ``str`` are converted into ``pd.Timestamp``.
 
         Parameters
         ----------
@@ -534,6 +636,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         Raises
         ------
+        ValueError
+            Incorrect type of ``start_timestamp`` or ``end_timestamp`` is used according to ``ts.freq``
         ValueError:
             Value of ``end_timestamp`` is less than ``start_timestamp``.
         ValueError:
@@ -632,11 +736,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
             min_train, max_train = dataset_timestamps[min_train_idx], dataset_timestamps[max_train_idx]
             min_test, max_test = dataset_timestamps[min_test_idx], dataset_timestamps[max_test_idx]
-
+            target_timestamps = timestamp_range(start=min_test, end=max_test, freq=ts.freq).tolist()
             mask = FoldMask(
                 first_train_timestamp=min_train,
                 last_train_timestamp=max_train,
-                target_timestamps=list(pd.date_range(start=min_test, end=max_test, freq=ts.freq)),
+                target_timestamps=target_timestamps,
             )
             masks.append(mask)
 

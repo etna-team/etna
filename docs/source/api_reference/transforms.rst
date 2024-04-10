@@ -147,7 +147,7 @@ Scaling transforms:
    MinMaxScalerTransform
    MaxAbsScalerTransform
 
-Functional transforms:
+Functional transforms and their utilities:
 
 .. autosummary::
    :toctree: api/
@@ -155,6 +155,8 @@ Functional transforms:
 
    LambdaTransform
    AddConstTransform
+   BinaryOperationTransform
+   BinaryOperator
    LogTransform
    YeoJohnsonTransform
    BoxCoxTransform

@@ -13,7 +13,7 @@ if typing.TYPE_CHECKING:
 
 def get_anomalies_median(
     ts: "TSDataset", in_column: str = "target", window_size: int = 10, alpha: float = 3, index_only: bool = True
-) -> Dict[str, Union[List[pd.Timestamp], pd.Series]]:
+) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
     """
     Get point outliers in time series using median model (estimation model-based method).
 

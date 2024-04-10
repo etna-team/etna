@@ -137,16 +137,17 @@ def test_inverse_transform_multi_segments(ts_name, model, request):
     pd.testing.assert_frame_equal(df_inverse_transformed, df)
 
 
+@pytest.mark.parametrize("horizon", [1, 3])
 @pytest.mark.parametrize("model_decompose", ["additive", "multiplicative"])
-def test_forecast(ts_seasonal, model_decompose):
+def test_forecast(horizon, model_decompose, ts_seasonal):
     """Test that transform works correctly in forecast."""
     transform = DeseasonalityTransform(in_column="target", period=7, model=model_decompose)
-    ts_train, ts_test = ts_seasonal.train_test_split(test_size=3)
+    ts_train, ts_test = ts_seasonal.train_test_split(test_size=horizon)
     transform.fit_transform(ts_train)
     model = NaiveModel()
     model.fit(ts_train)
-    ts_future = ts_train.make_future(future_steps=3, transforms=[transform], tail_steps=model.context_size)
-    ts_forecast = model.forecast(ts_future, prediction_size=3)
+    ts_future = ts_train.make_future(future_steps=horizon, transforms=[transform], tail_steps=model.context_size)
+    ts_forecast = model.forecast(ts_future, prediction_size=horizon)
     ts_forecast.inverse_transform([transform])
     for segment in ts_forecast.segments:
         np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.1)

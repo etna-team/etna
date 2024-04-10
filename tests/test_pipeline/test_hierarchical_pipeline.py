@@ -15,10 +15,12 @@ from etna.models import CatBoostMultiSegmentModel
 from etna.models import LinearPerSegmentModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
+from etna.models import SARIMAXModel
 from etna.pipeline.hierarchical_pipeline import HierarchicalPipeline
 from etna.reconciliation import BottomUpReconciliator
 from etna.reconciliation import TopDownReconciliator
 from etna.transforms import DateFlagsTransform
+from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import MeanTransform
@@ -27,6 +29,7 @@ from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
+from tests.test_pipeline.utils import assert_pipeline_predicts
 
 
 @pytest.mark.parametrize(
@@ -498,26 +501,39 @@ def test_save_load(model, transforms, reconciliator, product_level_constant_hier
     ),
 )
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "product_level_constant_hierarchical_ts",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
         ),
         (
+            "product_level_constant_hierarchical_ts",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
         ),
-        (NaiveModel(), []),
-        (ProphetModel(), []),
+        ("product_level_constant_hierarchical_ts", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts", ProphetModel(), []),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        ("product_level_constant_hierarchical_ts_int_timestamp", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecasts_without_self_ts(model, transforms, reconciliator, product_level_constant_hierarchical_ts):
+def test_forecasts_without_self_ts(ts_name, model, transforms, reconciliator, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 1
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_without_self_ts(
-        pipeline=pipeline, ts=product_level_constant_hierarchical_ts, horizon=horizon
-    )
+    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=ts, horizon=horizon)
 
 
 @pytest.mark.parametrize(
@@ -530,24 +546,39 @@ def test_forecasts_without_self_ts(model, transforms, reconciliator, product_lev
     ),
 )
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "product_level_constant_hierarchical_ts",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
         ),
         (
+            "product_level_constant_hierarchical_ts",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
         ),
-        (NaiveModel(), []),
-        (ProphetModel(), []),
+        ("product_level_constant_hierarchical_ts", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts", ProphetModel(), []),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        ("product_level_constant_hierarchical_ts_int_timestamp", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecast_given_ts(model, transforms, reconciliator, product_level_constant_hierarchical_ts):
+def test_forecast_given_ts(ts_name, model, transforms, reconciliator, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 1
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=product_level_constant_hierarchical_ts, horizon=horizon)
+    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=ts, horizon=horizon)
 
 
 @pytest.mark.parametrize(
@@ -560,28 +591,84 @@ def test_forecast_given_ts(model, transforms, reconciliator, product_level_const
     ),
 )
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "product_level_constant_hierarchical_ts",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
         ),
         (
+            "product_level_constant_hierarchical_ts",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
         ),
-        (NaiveModel(), []),
-        (ProphetModel(), []),
+        ("product_level_constant_hierarchical_ts", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts", ProphetModel(), []),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        ("product_level_constant_hierarchical_ts_int_timestamp", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecast_given_ts_with_prediction_interval(
-    model, transforms, reconciliator, product_level_constant_hierarchical_ts
-):
+def test_forecast_given_ts_with_prediction_interval(ts_name, model, transforms, reconciliator, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 1
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
-        pipeline=pipeline, ts=product_level_constant_hierarchical_ts, horizon=horizon, n_folds=2
-    )
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=ts, horizon=horizon, n_folds=2)
+
+
+@pytest.mark.parametrize(
+    "reconciliator",
+    (
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="AHP"),
+        TopDownReconciliator(target_level="product", source_level="market", period=1, method="PHA"),
+        BottomUpReconciliator(target_level="market", source_level="product"),
+        BottomUpReconciliator(target_level="total", source_level="market"),
+    ),
+)
+@pytest.mark.parametrize(
+    "ts_name, model, transforms",
+    [
+        (
+            "product_level_constant_hierarchical_ts",
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            "product_level_constant_hierarchical_ts",
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=[1])],
+        ),
+        ("product_level_constant_hierarchical_ts", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts", ProphetModel(), []),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        (
+            "product_level_constant_hierarchical_ts_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=[1])],
+        ),
+        ("product_level_constant_hierarchical_ts_int_timestamp", NaiveModel(), []),
+        ("product_level_constant_hierarchical_ts_int_timestamp", SARIMAXModel(), []),
+    ],
+)
+def test_predict(ts_name, model, transforms, reconciliator, request):
+    ts = request.getfixturevalue(ts_name)
+    horizon = 1
+    pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=horizon)
+    assert_pipeline_predicts(pipeline=pipeline, ts=ts, start_idx=1, end_idx=2)
 
 
 @pytest.mark.parametrize(

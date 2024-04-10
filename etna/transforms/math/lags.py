@@ -7,12 +7,19 @@ from typing import Union
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.models.utils import determine_num_steps
+from etna.datasets.utils import determine_num_steps
 from etna.transforms.base import IrreversibleTransform
+
+_DEFAULT_FREQ = object()
 
 
 class LagTransform(IrreversibleTransform):
-    """Generates series of lags from given dataframe."""
+    """Generates series of lags from given dataframe.
+
+    Notes
+    -----
+    Types of shifted variables could change due to applying :py:meth:`pandas.DataFrame.shift`.
+    """
 
     def __init__(self, in_column: str, lags: Union[List[int], int], out_column: Optional[str] = None):
         """Create instance of LagTransform.
@@ -89,6 +96,7 @@ class LagTransform(IrreversibleTransform):
         features = df.loc[:, pd.IndexSlice[:, self.in_column]]
         for lag in self.lags:
             column_name = self._get_column_name(lag)
+            # this could lead to type changes due to introduction of NaNs
             transformed_features = features.shift(lag)
             transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]])
             all_transformed_features.append(transformed_features)
@@ -102,7 +110,12 @@ class LagTransform(IrreversibleTransform):
 
 
 class ExogShiftTransform(IrreversibleTransform):
-    """Shifts exogenous variables from a given dataframe."""
+    """Shifts exogenous variables from a given dataframe.
+
+    Notes
+    -----
+    Types of shifted variables could change due to applying :py:meth:`pandas.DataFrame.shift`.
+    """
 
     def __init__(self, lag: Union[int, Literal["auto"]], horizon: Optional[int] = None):
         """Create instance of ExogShiftTransform.
@@ -126,10 +139,10 @@ class ExogShiftTransform(IrreversibleTransform):
         self.horizon: Optional[int] = None
         self._auto = False
 
-        self._freq: Optional[str] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
         self._created_regressors: Optional[List[str]] = None
         self._exog_shifts: Optional[Dict[str, int]] = None
-        self._exog_last_date: Optional[Dict[str, pd.Timestamp]] = None
+        self._exog_last_timestamp: Union[Dict[str, pd.Timestamp], Dict[str, int], None] = None
         self._filter_out_columns = {"target"}
 
         if isinstance(lag, int):
@@ -147,9 +160,9 @@ class ExogShiftTransform(IrreversibleTransform):
             self.horizon = horizon
             self._auto = True
 
-    def _save_exog_last_date(self, df_exog: Optional[pd.DataFrame] = None):
-        """Save last available date of each exogenous variable."""
-        self._exog_last_date = {}
+    def _save_exog_last_timestamp(self, df_exog: Optional[pd.DataFrame] = None):
+        """Save last available timestamp of each exogenous variable."""
+        exog_last_timestamp = {}
         if df_exog is not None:
             exog_names = set(df_exog.columns.get_level_values("feature"))
 
@@ -157,9 +170,11 @@ class ExogShiftTransform(IrreversibleTransform):
                 feature = df_exog.loc[:, pd.IndexSlice[:, name]]
 
                 na_mask = pd.isna(feature).any(axis=1)
-                last_date = feature.index[~na_mask].max()
+                last_timestamp = feature.index[~na_mask].max()
 
-                self._exog_last_date[name] = last_date
+                exog_last_timestamp[name] = last_timestamp
+
+        self._exog_last_timestamp = exog_last_timestamp
 
     def fit(self, ts: TSDataset) -> "ExogShiftTransform":
         """Fit the transform.
@@ -175,7 +190,7 @@ class ExogShiftTransform(IrreversibleTransform):
             The fitted transform instance.
         """
         self._freq = ts.freq
-        self._save_exog_last_date(df_exog=ts.df_exog)
+        self._save_exog_last_timestamp(df_exog=ts.df_exog)
 
         super().fit(ts=ts)
 
@@ -211,8 +226,8 @@ class ExogShiftTransform(IrreversibleTransform):
     def _get_feature_names(self, df: pd.DataFrame) -> List[str]:
         """Return the names of exogenous variables."""
         feature_names = []
-        if self._exog_last_date is not None:
-            feature_names = list(self._exog_last_date.keys())
+        if self._exog_last_timestamp is not None:
+            feature_names = list(self._exog_last_timestamp.keys())
 
         df_columns = df.columns.get_level_values("feature")
         for name in feature_names:
@@ -226,11 +241,11 @@ class ExogShiftTransform(IrreversibleTransform):
         if not self._auto:
             return self.lag  # type: ignore
 
-        if self._exog_last_date is None or self._freq is None:
+        if self._exog_last_timestamp is None:
             raise ValueError("Call `fit()` method before estimating exog shifts!")
 
         last_date = df.index.max()
-        last_feature_date = self._exog_last_date[feature_name]
+        last_feature_date = self._exog_last_timestamp[feature_name]
 
         if last_feature_date > last_date:
             delta = -determine_num_steps(start_timestamp=last_date, end_timestamp=last_feature_date, freq=self._freq)
@@ -273,7 +288,8 @@ class ExogShiftTransform(IrreversibleTransform):
             feature = df.loc[:, pd.IndexSlice[:, feature_name]]
 
             if shift > 0:
-                shifted_feature = feature.shift(shift, freq=self._freq)
+                # this could lead to type changes due to introduction of NaNs
+                shifted_feature = feature.shift(shift)
 
                 column_name = f"{feature_name}_shift_{shift}"
                 shifted_feature.columns = pd.MultiIndex.from_product([segments, [column_name]])

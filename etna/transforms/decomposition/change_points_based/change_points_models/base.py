@@ -3,13 +3,14 @@ from abc import abstractmethod
 from typing import List
 from typing import Tuple
 from typing import Type
+from typing import Union
 
 import pandas as pd
 from sklearn.base import RegressorMixin
 
 from etna.core import BaseMixin
 
-TTimestampInterval = Tuple[pd.Timestamp, pd.Timestamp]
+TTimestampInterval = Tuple[Union[pd.Timestamp, int, None], Union[pd.Timestamp, int, None]]
 TDetrendModel = Type[RegressorMixin]
 
 
@@ -35,10 +36,9 @@ class BaseChangePointsModelAdapter(BaseMixin, ABC):
         pass
 
     @staticmethod
-    def _build_intervals(change_points: List[pd.Timestamp]) -> List[TTimestampInterval]:
+    def _build_intervals(change_points: List[Union[pd.Timestamp, int]]) -> List[TTimestampInterval]:
         """Create list of stable intervals from list of change points."""
-        change_points.extend([pd.Timestamp.min, pd.Timestamp.max])
-        change_points = sorted(change_points)
+        change_points = [None] + sorted(change_points) + [None]
         intervals = list(zip(change_points[:-1], change_points[1:]))
         return intervals
 
@@ -48,7 +48,7 @@ class BaseChangePointsModelAdapter(BaseMixin, ABC):
         Parameters
         ----------
         df:
-            dataframe indexed with timestamp
+            dataframe indexed with timestamp (datetime or integer)
         in_column:
             name of column to get change points
 

@@ -3,6 +3,7 @@ from abc import abstractmethod
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -37,7 +38,7 @@ class OutliersTransform(ReversibleTransform, ABC):
         reason="Attribute `outliers_timestamps` is deprecated and will be removed! Use `segment_outliers` instead.",
         version="3.0",
     )
-    def outliers_timestamps(self) -> Optional[Dict[str, List[pd.Timestamp]]]:
+    def outliers_timestamps(self) -> Union[Dict[str, List[pd.Timestamp]], Dict[str, List[int]], None]:
         """Backward compatibility property."""
         if self.segment_outliers is not None:
             return {segment: outliers.index.to_list() for segment, outliers in self.segment_outliers.items()}
@@ -48,7 +49,7 @@ class OutliersTransform(ReversibleTransform, ABC):
         reason="Attribute `original_values` is deprecated and will be removed! Use `segment_outliers` instead.",
         version="3.0",
     )
-    def original_values(self) -> Optional[Dict[str, List[pd.Series]]]:
+    def original_values(self) -> Optional[Dict[str, pd.Series]]:
         """Backward compatibility property."""
         if self.segment_outliers is not None:
             return self.segment_outliers.copy()
@@ -64,6 +65,24 @@ class OutliersTransform(ReversibleTransform, ABC):
         """
         return []
 
+    def fit(self, ts: TSDataset) -> "OutliersTransform":
+        """Fit the transform.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
+        """
+        self.segment_outliers = self.detect_outliers(ts)
+        self._fit_segments = ts.segments
+        super().fit(ts=ts)
+        return self
+
     def _fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
         Find outliers using detection method.
@@ -75,13 +94,9 @@ class OutliersTransform(ReversibleTransform, ABC):
 
         Returns
         -------
-        result: OutliersTransform
+        result:
             instance with saved outliers
         """
-        ts = TSDataset(df, freq=pd.infer_freq(df.index))
-        self.segment_outliers = self.detect_outliers(ts)
-        self._fit_segments = ts.segments
-
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:

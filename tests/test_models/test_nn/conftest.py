@@ -1,5 +1,6 @@
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -38,8 +39,25 @@ def ts_dataset_weekly_function_with_horizon(weekly_period_df):
 
 
 @pytest.fixture()
-def df_with_ascending_window_mean():
-    segment_1 = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=len(segment_1)))
-    df = pd.DataFrame({"timestamp": ts_range, "target": segment_1, "segment": ["segment_1"] * len(segment_1)})
+def example_make_samples_df():
+    target = np.arange(50).astype(float)
+    timestamp = pd.date_range("2020-01-03", freq="D", periods=len(target))
+    df = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target": target,
+            "segment": ["segment_1"] * len(target),
+            "regressor_float": timestamp.weekday.astype(float) * 2,
+            "regressor_int": timestamp.weekday * 3,
+            "regressor_bool": timestamp.weekday.isin([5, 6]),
+            "regressor_str": timestamp.weekday.astype(str),
+            "regressor_int_cat": timestamp.weekday.astype("category"),
+        }
+    )
     return df
+
+
+@pytest.fixture()
+def example_make_samples_df_int_timestamp(example_make_samples_df):
+    example_make_samples_df["timestamp"] = np.arange(len(example_make_samples_df)) + 10
+    return example_make_samples_df

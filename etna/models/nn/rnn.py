@@ -135,7 +135,8 @@ class RNNNet(DeepBaseNet):
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
         values_real = (
-            df.select_dtypes(include=[np.number])
+            df.drop(["segment", "timestamp"], axis=1)
+            .select_dtypes(include=[np.number])
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])

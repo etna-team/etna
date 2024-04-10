@@ -184,3 +184,12 @@ Advanced
 
       ^^^
       How to estimate prediction intervals
+
+   .. grid-item-card:: Working with misaligned data
+      :text-align: center
+      :link: tutorials/307-working_with_misaligned_data
+      :link-type: doc
+      :class-header: card-tutorial-advanced
+
+      ^^^
+      How to work with misaligned data

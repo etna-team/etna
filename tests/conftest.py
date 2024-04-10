@@ -8,6 +8,7 @@ import pytest
 from etna.datasets import generate_const_df
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
+from tests.utils import convert_ts_to_int_timestamp
 
 
 @pytest.fixture(autouse=True)
@@ -111,7 +112,7 @@ def train_test_dfs(random_seed):
 
 
 @pytest.fixture
-def simple_df() -> TSDataset:
+def simple_tsdf() -> TSDataset:
     """Generate dataset with simple values without any noise"""
     history = 49
 
@@ -189,6 +190,11 @@ def example_tsds(random_seed) -> TSDataset:
 
 
 @pytest.fixture
+def example_tsds_int_timestamp(example_tsds) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=example_tsds, shift=10)
+
+
+@pytest.fixture
 def example_reg_tsds(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
@@ -216,6 +222,11 @@ def example_reg_tsds(random_seed) -> TSDataset:
     tsds = TSDataset(df, freq="D", df_exog=exog, known_future="all")
 
     return tsds
+
+
+@pytest.fixture
+def example_reg_tsds_int_timestamp(example_reg_tsds) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=example_reg_tsds, shift=10)
 
 
 @pytest.fixture()
@@ -344,6 +355,12 @@ def example_tsdf(random_seed) -> TSDataset:
     df.columns.names = ["segment", "feature"]
     df = TSDataset(df, freq="H")
     return df
+
+
+@pytest.fixture
+def example_tsdf_int_timestamp(example_tsdf) -> TSDataset:
+    ts = convert_ts_to_int_timestamp(example_tsdf, shift=10)
+    return ts
 
 
 @pytest.fixture
@@ -698,6 +715,11 @@ def product_level_constant_hierarchical_ts(product_level_constant_hierarchical_d
         hierarchical_structure=hierarchical_structure,
     )
     return ts
+
+
+@pytest.fixture
+def product_level_constant_hierarchical_ts_int_timestamp(product_level_constant_hierarchical_ts):
+    return convert_ts_to_int_timestamp(product_level_constant_hierarchical_ts)
 
 
 @pytest.fixture

@@ -2,9 +2,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from etna.analysis import distribution_plot
 from etna.analysis.eda import acf_plot
+from etna.analysis.eda import plot_holidays
+from etna.analysis.eda import plot_imputation
 from etna.analysis.eda.plots import _cross_correlation
 from etna.datasets import TSDataset
+from etna.transforms import TimeSeriesImputerTransform
 
 
 def test_cross_corr_fail_lengths():
@@ -133,3 +137,50 @@ def test_acf_nan_begin(df_with_nans_in_head):
     ts = TSDataset(df_with_nans_in_head, freq="H")
     acf_plot(ts, partial=False)
     acf_plot(ts, partial=True)
+
+
+@pytest.mark.parametrize(
+    "ts_name, params, match",
+    [
+        ("example_tsdf", {"start": 10}, "Parameter start has incorrect type"),
+        ("example_tsdf", {"end": 10}, "Parameter end has incorrect type"),
+        ("example_tsdf_int_timestamp", {"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ("example_tsdf_int_timestamp", {"end": "2020-01-01"}, "Parameter end has incorrect type"),
+    ],
+)
+def test_plot_holidays_incorrect_start_end_type(ts_name, params, match, request):
+    ts = request.getfixturevalue(ts_name)
+    holidays = pd.DataFrame(
+        {
+            "holiday": "Example",
+            "ds": [3],
+            "upper_window": 3,
+        }
+    )
+    with pytest.raises(ValueError, match=match):
+        plot_holidays(ts=ts, holidays=holidays, **params)
+
+
+@pytest.mark.parametrize(
+    "ts_name, params, match",
+    [
+        ("example_tsdf", {"start": 10}, "Parameter start has incorrect type"),
+        ("example_tsdf", {"end": 10}, "Parameter end has incorrect type"),
+        ("example_tsdf_int_timestamp", {"start": "2020-01-01"}, "Parameter start has incorrect type"),
+        ("example_tsdf_int_timestamp", {"end": "2020-01-01"}, "Parameter end has incorrect type"),
+    ],
+)
+def test_plot_imputation_fail_incorrect_start_end_type(ts_name, params, match, request):
+    ts = request.getfixturevalue(ts_name)
+    imputer = TimeSeriesImputerTransform(in_column="target", strategy="constant", constant_value=0)
+    with pytest.raises(ValueError, match=match):
+        plot_imputation(ts=ts, imputer=imputer, **params)
+
+
+def test_distribution_plot_datetime_timestamp(example_tsdf):
+    distribution_plot(example_tsdf, freq="D")
+
+
+@pytest.mark.parametrize("freq", [1, 24, 1000])
+def test_distribution_plot_int_timestamp(freq, example_tsdf_int_timestamp):
+    distribution_plot(example_tsdf_int_timestamp, freq=freq)

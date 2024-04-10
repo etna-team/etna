@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 import numpy as np
+import pandas as pd
 import pytest
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
@@ -50,24 +51,46 @@ def test_save_regressors_on_fit(example_reg_tsds):
         assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
 
 
-def test_select_regressors_correctly(example_reg_tsds):
+def test_select_regressors_correctly_datetime_timestamp(example_reg_tsds):
+    ts = example_reg_tsds
     model = AutoARIMAModel()
-    model.fit(ts=example_reg_tsds)
+    model.fit(ts=ts)
     for segment, segment_model in model._models.items():
-        segment_features = example_reg_tsds[:, segment, :].droplevel("segment", axis=1)
-        segment_regressors_expected = segment_features[example_reg_tsds.regressors]
-        segment_regressors = segment_model._select_regressors(df=segment_features.reset_index())
-        assert (segment_regressors == segment_regressors_expected).all().all()
+        segment_features = ts[:, segment, :].droplevel("segment", axis=1).reset_index()
+
+        segment_regressors_expected = segment_features[ts.regressors].astype(float)
+        segment_regressors_expected.index = segment_features["timestamp"]
+        segment_regressors = segment_model._select_regressors(df=segment_features)
+
+        pd.testing.assert_frame_equal(segment_regressors, segment_regressors_expected)
 
 
-def test_prediction(example_tsds):
-    _check_forecast(ts=deepcopy(example_tsds), model=AutoARIMAModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_tsds), model=AutoARIMAModel())
+def test_select_regressors_correctly_int_timestamp(example_reg_tsds_int_timestamp):
+    ts = example_reg_tsds_int_timestamp
+    model = AutoARIMAModel()
+    model.fit(ts=ts)
+    for segment, segment_model in model._models.items():
+        segment_features = ts[:, segment, :].droplevel("segment", axis=1).reset_index()
+
+        segment_regressors_expected = segment_features[ts.regressors].astype(float)
+        segment_regressors_expected.index = pd.Index(np.arange(len(segment_regressors_expected)), name="timestamp")
+        segment_regressors = segment_model._select_regressors(df=segment_features)
+
+        pd.testing.assert_frame_equal(segment_regressors, segment_regressors_expected)
 
 
-def test_prediction_with_reg(example_reg_tsds):
-    _check_forecast(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_reg_tsds), model=AutoARIMAModel())
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
+def test_prediction(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    _check_forecast(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=7)
+    _check_predict(ts=deepcopy(ts), model=AutoARIMAModel())
+
+
+@pytest.mark.parametrize("ts_name", ["example_reg_tsds", "example_reg_tsds_int_timestamp"])
+def test_prediction_with_reg(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    _check_forecast(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=7)
+    _check_predict(ts=deepcopy(ts), model=AutoARIMAModel())
 
 
 @pytest.mark.filterwarnings("ignore: Error fitting  ARIMA")
@@ -98,12 +121,14 @@ def test_prediction_with_params(example_reg_tsds):
     _check_predict(ts=deepcopy(example_reg_tsds), model=deepcopy(model))
 
 
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
 @pytest.mark.parametrize("method_name", ["forecast", "predict"])
-def test_prediction_interval_insample(example_tsds, method_name):
+def test_prediction_interval_insample(ts_name, method_name, request):
+    ts = request.getfixturevalue(ts_name)
     model = AutoARIMAModel()
-    model.fit(example_tsds)
+    model.fit(ts)
     method = getattr(model, method_name)
-    forecast = method(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+    forecast = method(ts, prediction_interval=True, quantiles=[0.025, 0.975])
 
     assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     prediction_intervals = forecast.get_prediction_intervals()
@@ -120,10 +145,12 @@ def test_prediction_interval_insample(example_tsds, method_name):
         assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
-def test_forecast_prediction_interval_infuture(example_tsds):
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
+def test_forecast_prediction_interval_infuture(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
     model = AutoARIMAModel()
-    model.fit(example_tsds)
-    future = example_tsds.make_future(10)
+    model.fit(ts)
+    future = ts.make_future(10)
     forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
 
     assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")

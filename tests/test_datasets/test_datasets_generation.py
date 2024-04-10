@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets.datasets_generation import generate_ar_df
@@ -21,7 +22,102 @@ def check_not_equal_within_3_sigma(generated_value, expected_value, sigma, **kwa
     return abs(generated_value - expected_value) <= 3 * sigma
 
 
-def test_simple_ar_process_check():
+@pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
+@pytest.mark.parametrize("freq", [None, "D"])
+@pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
+def test_generate_method_columns_set(generate_method, freq, periods, n_segments):
+    expected_columns = {"timestamp", "segment", "target"}
+    df = generate_method(periods=periods, n_segments=n_segments, freq=freq)
+    assert set(df.columns) == expected_columns
+
+
+@pytest.mark.parametrize("freq", [None, "D"])
+@pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
+def test_generate_from_patterns_df_columns_set(freq, periods, patterns):
+    expected_columns = {"timestamp", "segment", "target"}
+    df = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=None)
+    assert set(df.columns) == expected_columns
+
+
+@pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
+@pytest.mark.parametrize("freq", [None, "D"])
+@pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
+def test_generate_method_periods(generate_method, freq, periods, n_segments):
+    df = generate_method(periods=periods, n_segments=n_segments, freq=freq)
+    assert df["timestamp"].nunique() == periods
+
+
+@pytest.mark.parametrize("freq", [None, "D"])
+@pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
+def test_generate_from_patterns_df_periods(freq, periods, patterns):
+    df = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=None)
+    assert df["timestamp"].nunique() == periods
+
+
+@pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
+@pytest.mark.parametrize("freq", [None, "D"])
+@pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
+def test_generate_method_segments(generate_method, freq, periods, n_segments):
+    df = generate_method(periods=periods, n_segments=n_segments, freq=freq)
+    assert df["segment"].nunique() == n_segments
+
+
+@pytest.mark.parametrize("freq", [None, "D"])
+@pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
+def test_generate_from_patterns_df_segments(freq, periods, patterns):
+    df = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=None)
+    assert df["segment"].nunique() == len(patterns)
+
+
+@pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
+@pytest.mark.parametrize(
+    "start_time, expected_start_time, freq",
+    [
+        (None, 0, None),
+        (1, 1, None),
+        (None, pd.Timestamp("2000-01-01"), "D"),
+        ("2020-01-01", pd.Timestamp("2020-01-01"), "D"),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), "D"),
+    ],
+)
+@pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
+def test_generate_method_start_time(generate_method, start_time, expected_start_time, freq, periods, n_segments):
+    df = generate_method(periods=periods, n_segments=n_segments, freq=freq, start_time=start_time)
+    assert df["timestamp"].min() == expected_start_time
+
+
+@pytest.mark.parametrize(
+    "start_time, expected_start_time, freq",
+    [
+        (None, 0, None),
+        (1, 1, None),
+        (None, pd.Timestamp("2000-01-01"), "D"),
+        ("2020-01-01", pd.Timestamp("2020-01-01"), "D"),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), "D"),
+    ],
+)
+@pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
+def test_generate_from_patterns_df_start_time(start_time, expected_start_time, freq, periods, patterns):
+    df = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=start_time)
+    assert df["timestamp"].min() == expected_start_time
+
+
+@pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
+@pytest.mark.parametrize("start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, "D")])
+@pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
+def test_generate_method_timestamp_start_time_fail(generate_method, start_time, freq, periods, n_segments):
+    with pytest.raises(ValueError, match="Parameter start_time has incorrect type"):
+        _ = generate_method(periods=periods, n_segments=n_segments, freq=freq, start_time=start_time)
+
+
+@pytest.mark.parametrize("start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, "D")])
+@pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
+def test_generate_from_patterns_df_start_time_fail(start_time, freq, periods, patterns):
+    with pytest.raises(ValueError, match="Parameter start_time has incorrect type"):
+        _ = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=start_time)
+
+
+def test_generate_ar_df_values():
     ar_coef = [10, 11]
     random_seed = 1
     periods = 10
@@ -37,7 +133,7 @@ def test_simple_ar_process_check():
 
 
 @pytest.mark.parametrize("add_noise, checker", [(False, check_equals), (True, check_not_equal_within_3_sigma)])
-def test_simple_periodic_df_check(add_noise, checker):
+def test_generate_periodic_df_values(add_noise, checker):
     period = 3
     periods = 11
     sigma = 0.1
@@ -58,7 +154,7 @@ def test_simple_periodic_df_check(add_noise, checker):
 
 
 @pytest.mark.parametrize("add_noise, checker", [(False, check_equals), (True, check_not_equal_within_3_sigma)])
-def test_simple_const_df_check(add_noise, checker):
+def test_generate_const_df_values(add_noise, checker):
     const = 1
     periods = 3
     sigma = 0.1
@@ -78,7 +174,7 @@ def test_simple_const_df_check(add_noise, checker):
 
 
 @pytest.mark.parametrize("add_noise, checker", [(False, check_equals), (True, check_not_equal_within_3_sigma)])
-def test_simple_from_patterns_df_check(add_noise, checker):
+def test_generate_from_patterns_df_values(add_noise, checker):
     patterns = [[0, 1], [0, 2, 1]]
     periods = 10
     sigma = 0.1
@@ -147,3 +243,10 @@ def test_generate_hierarchical_df_convert_to_wide_format(periods, n_segments):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments)
     level_names = [f"level_{idx}" for idx in range(len(n_segments))]
     TSDataset.to_hierarchical_dataset(df=hierarchical_df, level_columns=level_names)
+
+
+@pytest.mark.parametrize("start_time", ["2020-01-01", pd.Timestamp("2020-01-01")])
+@pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
+def test_generate_hierarchical_df_start_time_fail(start_time, periods, n_segments):
+    with pytest.raises(ValueError, match="Parameter start_time has incorrect type"):
+        _ = generate_hierarchical_df(periods=periods, n_segments=n_segments, freq=None, start_time=start_time)

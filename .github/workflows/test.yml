@@ -17,14 +17,17 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: "3.10"
 
-      - name: Install Dependencies
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
         run: |
-          pip install poetry==1.4.0 # TODO: remove after poetry fix
-          poetry --version
-          poetry config virtualenvs.in-project true
-          poetry install -E style --no-root
+          poetry install -E style -vv
 
       - name: Static Analysis
         run: poetry run make lint
@@ -62,7 +65,7 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E "all tests" -vv
+          poetry install -E "all jupyter tests" -vv
 
       - name: PyTest with sharding
         run: |
@@ -101,7 +104,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E "all tests" -vv
+          poetry install -E "all jupyter tests" -vv
           poetry run pip install "pandas${{ matrix.pandas-version }}"
 
       - name: PyTest ("tsdataset transforms")

@@ -5,6 +5,7 @@ from copy import deepcopy
 from typing import Dict
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,9 @@ from etna.transforms import Transform
 class ModelPipelinePredictMixin:
     """Mixin for pipelines with model inside with implementation of ``_predict`` method."""
 
-    def _create_ts(self, ts: TSDataset, start_timestamp: pd.Timestamp, end_timestamp: pd.Timestamp) -> TSDataset:
+    def _create_ts(
+        self, ts: TSDataset, start_timestamp: Union[pd.Timestamp, int], end_timestamp: Union[pd.Timestamp, int]
+    ) -> TSDataset:
         """Create ``TSDataset`` to make predictions on."""
         self.model: ModelType
         self.transforms: Sequence[Transform]
@@ -37,7 +40,7 @@ class ModelPipelinePredictMixin:
         freq = deepcopy(ts.freq)
         known_future = deepcopy(ts.known_future)
 
-        df_to_transform = df[:end_timestamp]
+        df_to_transform = df.loc[:end_timestamp]
 
         cur_ts = TSDataset(
             df=df_to_transform,
@@ -51,25 +54,25 @@ class ModelPipelinePredictMixin:
 
         # correct start_timestamp taking into account context size
         timestamp_indices = pd.Series(np.arange(len(df.index)), index=df.index)
-        start_idx = timestamp_indices[start_timestamp]
+        start_idx = timestamp_indices.loc[start_timestamp]
         start_idx = max(0, start_idx - self.model.context_size)
         start_timestamp = timestamp_indices.index[start_idx]
 
-        cur_ts.df = cur_ts.df[start_timestamp:end_timestamp]
+        cur_ts.df = cur_ts.df.loc[start_timestamp:end_timestamp]
         return cur_ts
 
     def _determine_prediction_size(
-        self, ts: TSDataset, start_timestamp: pd.Timestamp, end_timestamp: pd.Timestamp
+        self, ts: TSDataset, start_timestamp: Union[pd.Timestamp, int], end_timestamp: Union[pd.Timestamp, int]
     ) -> int:
         timestamp_indices = pd.Series(np.arange(len(ts.index)), index=ts.index)
-        timestamps = timestamp_indices[start_timestamp:end_timestamp]
+        timestamps = timestamp_indices.loc[start_timestamp:end_timestamp]
         return len(timestamps)
 
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool = False,

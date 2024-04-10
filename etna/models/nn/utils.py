@@ -14,9 +14,10 @@ from sklearn.preprocessing import StandardScaler
 from etna import SETTINGS
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import determine_num_steps
+from etna.datasets.utils import timestamp_range
 from etna.loggers import tslogger
 from etna.models.base import log_decorator
-from etna.models.utils import determine_num_steps
 
 if SETTINGS.torch_required:
     import pytorch_lightning as pl
@@ -266,7 +267,7 @@ class PytorchForecastingMixin:
             raise ValueError("Trainer or model is None")
         return self
 
-    def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> pd.Timestamp:
+    def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> Union[pd.Timestamp, int]:
         return ts.index[-horizon]
 
     def _is_in_sample_prediction(self, ts: TSDataset, horizon: int) -> bool:
@@ -275,7 +276,7 @@ class PytorchForecastingMixin:
 
     def _is_prediction_with_gap(self, ts: TSDataset, horizon: int) -> bool:
         first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
-        first_timestamp_after_train = pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]
+        first_timestamp_after_train = timestamp_range(start=self._last_train_timestamp, periods=2, freq=self._freq)[-1]
         return first_prediction_timestamp > first_timestamp_after_train
 
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:

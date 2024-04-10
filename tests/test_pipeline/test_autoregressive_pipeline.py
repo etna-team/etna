@@ -28,6 +28,7 @@ from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.pipeline import AutoRegressivePipeline
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import FourierTransform
 from etna.transforms import LagTransform
 from etna.transforms import LinearTrendTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
@@ -35,6 +36,7 @@ from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
+from tests.test_pipeline.utils import assert_pipeline_predicts
 
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
@@ -261,44 +263,6 @@ def test_get_historical_forecasts_sanity(step_ts: TSDataset):
     assert np.all(forecast_df == expected_forecast_df)
 
 
-@pytest.mark.parametrize(
-    "model, transforms",
-    [
-        (
-            CatBoostMultiSegmentModel(iterations=100),
-            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
-        ),
-        (
-            LinearPerSegmentModel(),
-            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(7, 15)))],
-        ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
-    ],
-)
-def test_predict_format(model, transforms, example_tsds):
-    ts = example_tsds
-    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=7)
-    pipeline.fit(ts)
-
-    start_idx = 50
-    end_idx = 70
-    start_timestamp = ts.index[start_idx]
-    end_timestamp = ts.index[end_idx]
-    num_points = end_idx - start_idx + 1
-
-    # create a separate TSDataset with slice of original timestamps
-    predict_ts = deepcopy(ts)
-    predict_ts.df = predict_ts.df.iloc[5 : end_idx + 5]
-
-    result_ts = pipeline.predict(ts=predict_ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
-    result_df = result_ts.to_pandas(flatten=True)
-
-    assert not np.any(result_df["target"].isna())
-    assert len(result_df) == len(example_tsds.segments) * num_points
-
-
 def test_predict_values(example_tsds):
     original_ts = deepcopy(example_tsds)
 
@@ -345,69 +309,150 @@ def test_forecast_raise_error_if_no_ts(example_tsds):
 
 
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "example_tsds",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
         (
+            "example_tsds",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecasts_without_self_ts(model, transforms, example_tsds):
+def test_forecasts_without_self_ts(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 3
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+    assert_pipeline_forecasts_without_self_ts(pipeline=pipeline, ts=ts, horizon=horizon)
 
 
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "example_tsds",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
         (
+            "example_tsds",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecast_given_ts(model, transforms, example_tsds):
+def test_forecast_given_ts(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 3
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+    assert_pipeline_forecasts_given_ts(pipeline=pipeline, ts=ts, horizon=horizon)
 
 
 @pytest.mark.parametrize(
-    "model, transforms",
+    "ts_name, model, transforms",
     [
         (
+            "example_tsds",
             CatBoostMultiSegmentModel(iterations=100),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
         (
+            "example_tsds",
             LinearPerSegmentModel(),
             [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
         ),
-        (SeasonalMovingAverageModel(window=2, seasonality=7), []),
-        (SARIMAXModel(), []),
-        (ProphetModel(), []),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
     ],
 )
-def test_forecast_given_ts_with_prediction_interval(model, transforms, example_tsds):
+def test_forecast_given_ts_with_prediction_interval(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
     horizon = 3
     pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=horizon)
-    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=example_tsds, horizon=horizon)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=pipeline, ts=ts, horizon=horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, model, transforms",
+    [
+        (
+            "example_tsds",
+            CatBoostMultiSegmentModel(iterations=100),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds",
+            LinearPerSegmentModel(),
+            [DateFlagsTransform(), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds", SARIMAXModel(), []),
+        ("example_tsds", ProphetModel(), []),
+        (
+            "example_tsds_int_timestamp",
+            CatBoostMultiSegmentModel(iterations=100),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        (
+            "example_tsds_int_timestamp",
+            LinearPerSegmentModel(),
+            [FourierTransform(period=7, order=1), LagTransform(in_column="target", lags=list(range(3, 10)))],
+        ),
+        ("example_tsds_int_timestamp", SeasonalMovingAverageModel(window=2, seasonality=7), []),
+        ("example_tsds_int_timestamp", SARIMAXModel(), []),
+    ],
+)
+def test_predict(ts_name, model, transforms, request):
+    ts = request.getfixturevalue(ts_name)
+    pipeline = AutoRegressivePipeline(model=model, transforms=transforms, horizon=7)
+    assert_pipeline_predicts(pipeline=pipeline, ts=ts, start_idx=50, end_idx=70)
 
 
 @pytest.mark.parametrize(

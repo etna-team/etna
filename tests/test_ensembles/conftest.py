@@ -15,6 +15,7 @@ from etna.ensembles import VotingEnsemble
 from etna.models import CatBoostPerSegmentModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
+from etna.models import SARIMAXModel
 from etna.pipeline import HierarchicalPipeline
 from etna.pipeline import Pipeline
 from etna.reconciliation import BottomUpReconciliator
@@ -38,6 +39,13 @@ def catboost_pipeline() -> Pipeline:
 def prophet_pipeline() -> Pipeline:
     """Generate pipeline with ProphetModel."""
     pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=7)
+    return pipeline
+
+
+@pytest.fixture
+def sarimax_pipeline() -> Pipeline:
+    """Generate pipeline with SARIMAXModel."""
+    pipeline = Pipeline(model=SARIMAXModel(), transforms=[], horizon=7)
     return pipeline
 
 
@@ -107,6 +115,14 @@ def voting_ensemble_pipeline(
 
 
 @pytest.fixture
+def voting_ensemble_pipeline_int_timestamp(
+    catboost_pipeline: Pipeline, sarimax_pipeline: Pipeline, naive_pipeline_1: Pipeline
+) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[catboost_pipeline, sarimax_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
 def voting_ensemble_hierarchical_pipeline(
     naive_pipeline_top_down_market_14: HierarchicalPipeline, naive_pipeline_bottom_up_market_14: HierarchicalPipeline
 ) -> VotingEnsemble:
@@ -133,6 +149,14 @@ def stacking_ensemble_pipeline(
     catboost_pipeline: Pipeline, prophet_pipeline: Pipeline, naive_pipeline_1: Pipeline
 ) -> StackingEnsemble:
     pipeline = StackingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def stacking_ensemble_pipeline_int_timestamp(
+    catboost_pipeline: Pipeline, sarimax_pipeline: Pipeline, naive_pipeline_1: Pipeline
+) -> StackingEnsemble:
+    pipeline = StackingEnsemble(pipelines=[catboost_pipeline, sarimax_pipeline, naive_pipeline_1])
     return pipeline
 
 

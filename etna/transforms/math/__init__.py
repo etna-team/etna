@@ -1,5 +1,7 @@
 from etna.transforms.math.add_constant import AddConstTransform
 from etna.transforms.math.apply_lambda import LambdaTransform
+from etna.transforms.math.binary_operator import BinaryOperationTransform
+from etna.transforms.math.binary_operator import BinaryOperator
 from etna.transforms.math.differencing import DifferencingTransform
 from etna.transforms.math.lags import ExogShiftTransform
 from etna.transforms.math.lags import LagTransform

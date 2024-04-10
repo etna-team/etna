@@ -31,6 +31,7 @@ from etna.analysis.forecast.utils import _validate_intersecting_segments
 from etna.analysis.forecast.utils import get_residuals
 from etna.analysis.utils import _prepare_axes
 from etna.datasets.utils import match_target_components
+from etna.datasets.utils import timestamp_range
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
@@ -142,7 +143,7 @@ def plot_forecast(
         if n_train_samples is None:
             plot_df = segment_train_df
         elif n_train_samples != 0:
-            plot_df = segment_train_df[-n_train_samples:]
+            plot_df = segment_train_df.iloc[-n_train_samples:]
         else:
             plot_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
@@ -304,18 +305,18 @@ def plot_backtest(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
+            end_fold_exclusive = timestamp_range(start=end_fold, periods=2, freq=ts.freq)[-1]
 
             # draw test
-            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            backtest_df_slice_fold = segment_backtest_df.loc[start_fold:end_fold_exclusive]
             ax[i].plot(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
 
             if draw_only_lines:
                 # draw forecast
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold_exclusive]
                 ax[i].plot(forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"])
             else:
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold]
                 backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
 
                 # draw points on test
@@ -430,10 +431,10 @@ def plot_backtest_interactive(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
+            end_fold_exclusive = timestamp_range(start=end_fold, periods=2, freq=ts.freq)[-1]
 
             # draw test
-            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            backtest_df_slice_fold = segment_backtest_df.loc[start_fold:end_fold_exclusive]
             fig.add_trace(
                 go.Scattergl(
                     x=backtest_df_slice_fold.index,
@@ -449,7 +450,7 @@ def plot_backtest_interactive(
 
             if draw_only_lines:
                 # draw forecast
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold_exclusive]
                 fig.add_trace(
                     go.Scattergl(
                         x=forecast_df_slice_fold.index,
@@ -463,7 +464,7 @@ def plot_backtest_interactive(
                     )
                 )
             else:
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold]
                 backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
 
                 # draw points on test

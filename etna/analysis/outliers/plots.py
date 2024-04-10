@@ -18,13 +18,13 @@ if TYPE_CHECKING:
 
 def plot_anomalies(
     ts: "TSDataset",
-    anomaly_dict: Dict[str, List[pd.Timestamp]],
+    anomaly_dict: Dict[str, List[Union[pd.Timestamp, int]]],
     in_column: str = "target",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
     figsize: Tuple[int, int] = (10, 5),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -47,6 +47,11 @@ def plot_anomalies(
         start timestamp for plot
     end:
         end timestamp for plot
+
+    Raises
+    ------
+    ValueError:
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
     """
     start, end = _get_borders_ts(ts, start, end)
 
@@ -71,12 +76,12 @@ def plot_anomalies(
 def plot_anomalies_interactive(
     ts: "TSDataset",
     segment: str,
-    method: Callable[..., Dict[str, List[pd.Timestamp]]],
+    method: Callable[..., Dict[str, List[Union[pd.Timestamp, int]]]],
     params_bounds: Dict[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
     in_column: str = "target",
     figsize: Tuple[int, int] = (20, 10),
-    start: Optional[str] = None,
-    end: Optional[str] = None,
+    start: Optional[Union[pd.Timestamp, int, str]] = None,
+    end: Optional[Union[pd.Timestamp, int, str]] = None,
 ):
     """Plot a time series with indicated anomalies.
 
@@ -107,13 +112,17 @@ def plot_anomalies_interactive(
     Jupyter notebook might display the results incorrectly,
     in this case try to use ``!jupyter nbextension enable --py widgetsnbextension``.
 
+    Raises
+    ------
+    ValueError:
+        Incorrect type of ``start`` or ``end`` is used according to ``ts.freq``.
+
     Examples
     --------
     >>> from etna.datasets import TSDataset
     >>> from etna.datasets import generate_ar_df
     >>> from etna.analysis import plot_anomalies_interactive, get_anomalies_density
-    >>> classic_df = generate_ar_df(periods=1000, start_time="2021-08-01", n_segments=2)
-    >>> df = TSDataset.to_dataset(classic_df)
+    >>> df = generate_ar_df(periods=1000, start_time="2021-08-01", n_segments=2)
     >>> ts = TSDataset(df, "D")
     >>> params_bounds = {"window_size": (5, 20, 1), "distance_coef": (0.1, 3, 0.25)}
     >>> method = get_anomalies_density
