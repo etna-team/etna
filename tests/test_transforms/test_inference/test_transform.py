@@ -130,40 +130,40 @@ class TestTransformTrain:
                     in_columns=["target"],
                     embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             (
                 EmbeddingSegmentTransform(
                     in_columns=["target"],
                     embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
                     embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
                     embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
@@ -544,40 +544,40 @@ class TestTransformTrain:
                     in_columns=["target"],
                     embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             (
                 EmbeddingSegmentTransform(
                     in_columns=["target"],
                     embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
                     embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             (
                 EmbeddingWindowTransform(
                     in_columns=["target"],
                     embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
                     training_params={"n_epochs": 1},
-                    out_column="emb"
+                    out_column="emb",
                 ),
                 "regular_ts",
-                {"create": {"emb_0", "emb_1"}}
+                {"create": {"emb_0", "emb_1"}},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),

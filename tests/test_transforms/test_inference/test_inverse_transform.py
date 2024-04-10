@@ -100,9 +100,7 @@ class TestInverseTransformTrain:
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-        assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
-        )
+        assert_frame_equal(flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)])
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -148,7 +146,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             (
                 EmbeddingSegmentTransform(
@@ -157,7 +155,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             (
                 EmbeddingWindowTransform(
@@ -166,7 +164,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             (
                 EmbeddingWindowTransform(
@@ -175,7 +173,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
@@ -606,7 +604,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             (
                 EmbeddingSegmentTransform(
@@ -615,7 +613,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             (
                 EmbeddingWindowTransform(
@@ -624,7 +622,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             (
                 EmbeddingWindowTransform(
@@ -633,7 +631,7 @@ class TestInverseTransformTrain:
                     training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
-                {}
+                {},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
@@ -3022,8 +3020,7 @@ class TestInverseTransformFutureWithoutTarget:
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
         assert_frame_equal(
-            flat_test_df[list(changed_columns)],
-            flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(
