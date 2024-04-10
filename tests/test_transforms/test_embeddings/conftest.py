@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -67,3 +68,33 @@ def ts_with_exog_nan_end() -> TSDataset:
 
     ts = TSDataset(df=df, freq="D")
     return ts
+
+
+@pytest.fixture
+def ts_with_exog_nan_begin_numpy(ts_with_exog_nan_begin) -> np.ndarray:
+    n_features = 3
+    df = ts_with_exog_nan_begin.to_pandas()
+    n_timestamps = len(df.index)
+    n_segments = df.columns.get_level_values("segment").nunique()
+    x = df.values.reshape((n_timestamps, n_segments, n_features)).transpose(1, 0, 2)
+    return x
+
+
+@pytest.fixture
+def ts_with_exog_nan_middle_numpy(ts_with_exog_nan_middle) -> np.ndarray:
+    n_features = 2
+    df = ts_with_exog_nan_middle.to_pandas()
+    n_timestamps = len(df.index)
+    n_segments = df.columns.get_level_values("segment").nunique()
+    x = df.values.reshape((n_timestamps, n_segments, n_features)).transpose(1, 0, 2)
+    return x
+
+
+@pytest.fixture
+def ts_with_exog_nan_end_numpy(ts_with_exog_nan_end) -> np.ndarray:
+    n_features = 1
+    df = ts_with_exog_nan_end.to_pandas()
+    n_timestamps = len(df.index)
+    n_segments = df.columns.get_level_values("segment").nunique()
+    x = df.values.reshape((n_timestamps, n_segments, n_features)).transpose(1, 0, 2)
+    return x

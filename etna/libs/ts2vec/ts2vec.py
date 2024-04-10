@@ -29,6 +29,7 @@ import torch.nn.functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 from etna.libs.ts2vec.encoder import TSEncoder
+from etna.loggers import tslogger, ConsoleLogger
 from etna.libs.ts2vec.losses import  hierarchical_contrastive_loss
 from etna.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, AveragedModel
 import math
@@ -97,6 +98,7 @@ class TS2Vec:
         Returns:
             loss_log: a list containing the training losses on each epoch.
         '''
+
         assert train_data.ndim == 3
 
         if n_iters is None and n_epochs is None:
@@ -182,7 +184,7 @@ class TS2Vec:
             cum_loss /= n_epoch_iters
             loss_log.append(cum_loss)
             if verbose:
-                print(f"Epoch #{cur_epoch}: loss={cum_loss}")
+                tslogger.log(f"Epoch {cur_epoch}: loss={cum_loss:.4f}")
             cur_epoch += 1
 
             if self.after_epoch_callback is not None:
