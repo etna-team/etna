@@ -5,6 +5,7 @@ from typing import Optional
 from typing import Sequence
 
 import pandas as pd
+from deprecated import deprecated
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
@@ -27,6 +28,7 @@ if SETTINGS.torch_required:
     from pytorch_lightning import Trainer
 
 
+@deprecated(reason="TFTModel is deprecated. Use TFTNativeModel instead.", version="3.0")
 class TFTModel(
     _DeepCopyMixin, PytorchForecastingMixin, SavePytorchForecastingMixin, PredictionIntervalContextRequiredAbstractModel
 ):

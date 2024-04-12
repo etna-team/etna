@@ -1,6 +1,7 @@
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Type
 from typing import Union
 
@@ -32,7 +33,13 @@ class MedianOutliersTransform(OutliersTransform):
     it uses information from the whole train part.
     """
 
-    def __init__(self, in_column: str, window_size: int = 10, alpha: float = 3):
+    def __init__(
+        self,
+        in_column: str,
+        window_size: int = 10,
+        alpha: float = 3,
+        ignore_flag_column: Optional[str] = None,
+    ):
         """Create instance of MedianOutliersTransform.
 
         Parameters
@@ -43,10 +50,12 @@ class MedianOutliersTransform(OutliersTransform):
             number of points in the window
         alpha:
             coefficient for determining the threshold
+        ignore_flag_column:
+            column name for skipping values from outlier check
         """
         self.window_size = window_size
         self.alpha = alpha
-        super().__init__(in_column=in_column)
+        super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call :py:func:`~etna.analysis.outliers.median_outliers.get_anomalies_median` function with self parameters.
@@ -97,6 +106,7 @@ class DensityOutliersTransform(OutliersTransform):
         distance_coef: float = 3,
         n_neighbors: int = 3,
         distance_func: Union[Literal["absolute_difference"], Callable[[float, float], float]] = "absolute_difference",
+        ignore_flag_column: Optional[str] = None,
     ):
         """Create instance of DensityOutliersTransform.
 
@@ -113,12 +123,14 @@ class DensityOutliersTransform(OutliersTransform):
         distance_func:
             distance function. If a string is specified, a corresponding vectorized implementation will be used.
             Custom callable will be used as a scalar function, which will result in worse performance.
+        ignore_flag_column:
+            column name for skipping values from outlier check
         """
         self.window_size = window_size
         self.distance_coef = distance_coef
         self.n_neighbors = n_neighbors
         self.distance_func = distance_func
-        super().__init__(in_column=in_column)
+        super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
         """Call :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density` function with self parameters.
@@ -169,6 +181,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
         in_column: str,
         model: Union[Literal["prophet"], Literal["sarimax"], Type["ProphetModel"], Type["SARIMAXModel"]],
         interval_width: float = 0.95,
+        ignore_flag_column: Optional[str] = None,
         **model_kwargs,
     ):
         """Create instance of PredictionIntervalOutliersTransform.
@@ -181,7 +194,8 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
             model for prediction interval estimation
         interval_width:
             width of the prediction interval
-
+        ignore_flag_column:
+            column name for skipping values from outlier check
         Notes
         -----
         For not "target" column only column data will be used for learning.
@@ -190,7 +204,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
         self.interval_width = interval_width
         self.model_kwargs = model_kwargs
         self._model_type = self._get_model_type(model)
-        super().__init__(in_column=in_column)
+        super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
 
     @staticmethod
     def _get_model_type(

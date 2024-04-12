@@ -896,12 +896,11 @@ class TestTransformTrain:
                 "ts_with_external_timestamp",
                 {"create": {"res"}},
             ),
-            # TODO: fix after discussing conceptual problems
-            # (
-            #         HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
-            #         "ts_with_external_timestamp_one_month",
-            #         {"create": {"res"}},
-            # ),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
+                {"create": {"res"}},
+            ),
             (
                 SpecialDaysTransform(in_column="external_timestamp"),
                 "ts_with_external_timestamp",

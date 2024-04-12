@@ -146,6 +146,40 @@ def two_segments_w_mon_int_timestamp(two_segments_w_mon: TSDataset):
 
 
 @pytest.fixture()
+def two_segments_w_mon_external_int_timestamp(two_segments_w_mon_int_timestamp: TSDataset):
+    ts = two_segments_w_mon_int_timestamp
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    external_int_timestamp = np.arange(len(df_exog))
+    df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = external_int_timestamp
+    df_exog.loc[:, pd.IndexSlice["segment_2", "external_timestamp"]] = external_int_timestamp
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
+    return ts
+
+
+@pytest.fixture()
+def two_segments_w_mon_external_irregular_timestamp(two_segments_w_mon: TSDataset):
+    ts = two_segments_w_mon
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta("3H")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
+    return ts
+
+
+@pytest.fixture()
+def two_segments_w_mon_external_irregular_timestamp_different_freq(two_segments_w_mon: TSDataset):
+    ts = two_segments_w_mon
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = pd.date_range(
+        start="2020-01-01", periods=len(df_exog), freq="W-SUN"
+    )
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
+    return ts
+
+
+@pytest.fixture()
 def two_segments_w_mon_with_nans(two_segments_w_mon: TSDataset):
     ts = two_segments_w_mon
     df = ts.raw_df
@@ -207,18 +241,6 @@ def two_segments_simple_ts_minute(simple_constant_df_minute):
     return ts
 
 
-@pytest.fixture()
-def uk_holiday_names_daily():
-    values = ["New Year's Day"] + ["New Year Holiday [Scotland]"] + ["NO_HOLIDAY"] * 13
-    return np.array(values)
-
-
-@pytest.fixture()
-def us_holiday_names_daily():
-    values = ["New Year's Day"] + ["NO_HOLIDAY"] * 14
-    return np.array(values)
-
-
 @pytest.mark.parametrize(
     "freq, timestamp, expected_result",
     (
@@ -241,11 +263,36 @@ def test_define_period_end(freq, timestamp, expected_result):
     assert (define_period(pd.tseries.frequencies.to_offset(freq), timestamp, freq))[1] == expected_result[1]
 
 
-def test_holiday_with_regressors(simple_ts_with_regressors: TSDataset):
-    holiday = HolidayTransform(out_column="holiday")
-    new = holiday.fit_transform(simple_ts_with_regressors)
-    len_holiday = len([cols for cols in new.columns if cols[1] == "holiday"])
-    assert len_holiday == len(np.unique(new.columns.get_level_values("segment")))
+def test_fit_days_count_fail_int_index(two_segments_w_mon_int_timestamp):
+    ts = two_segments_w_mon_int_timestamp
+    transform = HolidayTransform(out_column="holiday", mode="days_count")
+    with pytest.raises(ValueError, match="Transform can't work with integer index, parameter in_column should be set"):
+        transform.fit(ts=ts)
+
+
+def test_fit_days_count_fail_external_timestamp_int(two_segments_w_mon_external_int_timestamp):
+    ts = two_segments_w_mon_external_int_timestamp
+    transform = HolidayTransform(in_column="external_timestamp", out_column="holiday", mode="days_count")
+    with pytest.raises(ValueError, match="Transform can work only with datetime external timestamp"):
+        transform.fit(ts=ts)
+
+
+def test_fit_days_count_fail_irregular_timestamp(two_segments_w_mon_external_irregular_timestamp):
+    ts = two_segments_w_mon_external_irregular_timestamp
+    transform = HolidayTransform(in_column="external_timestamp", out_column="holiday", mode="days_count")
+    with pytest.raises(
+        ValueError, match="Invalid in_column values! Datetime values should be regular timestamps with some frequency"
+    ):
+        transform.fit(ts=ts)
+
+
+def test_fit_days_count_fail_different_freq(two_segments_w_mon_external_irregular_timestamp_different_freq):
+    ts = two_segments_w_mon_external_irregular_timestamp_different_freq
+    transform = HolidayTransform(in_column="external_timestamp", out_column="holiday", mode="days_count")
+    with pytest.raises(
+        ValueError, match="Invalid in_column values! Datetime values should have the same frequency for every segment"
+    ):
+        transform.fit(ts=ts)
 
 
 @pytest.mark.parametrize(
@@ -263,7 +310,7 @@ def test_holiday_with_regressors(simple_ts_with_regressors: TSDataset):
         ("US", np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     ),
 )
-def test_holidays_binary_day(in_column: Optional[str], ts_name, iso_code: str, answer: np.array, request):
+def test_transform_binary_day(in_column: Optional[str], ts_name, iso_code: str, answer: np.array, request):
     ts = request.getfixturevalue(ts_name)
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="binary", out_column="holiday", in_column=in_column)
     ts = holidays_finder.fit_transform(ts)
@@ -280,7 +327,7 @@ def test_holidays_binary_day(in_column: Optional[str], ts_name, iso_code: str, a
         ("US", np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     ),
 )
-def test_holidays_binary_hour(iso_code: str, answer: np.array, two_segments_simple_ts_hour: TSDataset):
+def test_transform_binary_hour(iso_code: str, answer: np.array, two_segments_simple_ts_hour: TSDataset):
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="binary", out_column="holiday")
     df = holidays_finder.fit_transform(two_segments_simple_ts_hour).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
@@ -295,7 +342,7 @@ def test_holidays_binary_hour(iso_code: str, answer: np.array, two_segments_simp
         ("US", np.array([0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1])),
     ),
 )
-def test_holidays_binary_minute(iso_code: str, answer: np.array, two_segments_simple_ts_minute):
+def test_transform_binary_minute(iso_code: str, answer: np.array, two_segments_simple_ts_minute):
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="binary", out_column="holiday")
     df = holidays_finder.fit_transform(two_segments_simple_ts_minute).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
@@ -303,7 +350,22 @@ def test_holidays_binary_minute(iso_code: str, answer: np.array, two_segments_si
         assert df[segment]["holiday"].dtype == "category"
 
 
-def test_holidays_binary_day_with_nans(two_segments_simple_ts_daily_with_nans):
+@pytest.mark.parametrize(
+    "iso_code,answer",
+    (
+        ("RUS", np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        ("US", np.array([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+    ),
+)
+def test_transform_binary_w_mon(iso_code: str, answer: np.array, two_segments_w_mon):
+    holidays_finder = HolidayTransform(iso_code=iso_code, mode="binary", out_column="holiday")
+    df = holidays_finder.fit_transform(two_segments_w_mon).to_pandas()
+    for segment in df.columns.get_level_values("segment").unique():
+        assert np.array_equal(df[segment]["holiday"].values, answer)
+        assert df[segment]["holiday"].dtype == "category"
+
+
+def test_transform_binary_day_with_nans(two_segments_simple_ts_daily_with_nans):
     ts = two_segments_simple_ts_daily_with_nans
     holidays_finder = HolidayTransform(
         iso_code="RUS", mode="binary", out_column="holiday", in_column="external_timestamp"
@@ -324,15 +386,14 @@ def test_holidays_binary_day_with_nans(two_segments_simple_ts_daily_with_nans):
     ],
 )
 @pytest.mark.parametrize(
-    "iso_code, answer_name",
+    "iso_code,answer",
     [
-        ("UK", "uk_holiday_names_daily"),
-        ("US", "us_holiday_names_daily"),
+        ("UK", np.array(["New Year's Day"] + ["New Year Holiday [Scotland]"] + ["NO_HOLIDAY"] * 13)),
+        ("US", np.array(["New Year's Day"] + ["NO_HOLIDAY"] * 14)),
     ],
 )
-def test_holidays_category_day(in_column, ts_name, iso_code, answer_name, request):
+def test_transform_category_day(in_column, ts_name, iso_code, answer, request):
     ts = request.getfixturevalue(ts_name)
-    answer = request.getfixturevalue(answer_name)
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="category", out_column="holiday", in_column=in_column)
     df = holidays_finder.fit_transform(ts).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
@@ -340,7 +401,30 @@ def test_holidays_category_day(in_column, ts_name, iso_code, answer_name, reques
         assert df[segment]["holiday"].dtype == "category"
 
 
-def test_holidays_category_day_with_nans(two_segments_simple_ts_daily_with_nans):
+@pytest.mark.parametrize(
+    "iso_code,answer",
+    (
+        ("RUS", np.array(["NO_HOLIDAY"] * 18)),
+        (
+            "US",
+            np.array(
+                ["NO_HOLIDAY", "Martin Luther King Jr. Day"]
+                + ["NO_HOLIDAY"] * 3
+                + ["Washington's Birthday"]
+                + ["NO_HOLIDAY"] * 12
+            ),
+        ),
+    ),
+)
+def test_transform_category_w_mon(iso_code: str, answer: np.array, two_segments_w_mon):
+    holidays_finder = HolidayTransform(iso_code=iso_code, mode="category", out_column="holiday")
+    df = holidays_finder.fit_transform(two_segments_w_mon).to_pandas()
+    for segment in df.columns.get_level_values("segment").unique():
+        assert np.array_equal(df[segment]["holiday"].values, answer)
+        assert df[segment]["holiday"].dtype == "category"
+
+
+def test_transform_category_day_with_nans(two_segments_simple_ts_daily_with_nans):
     ts = two_segments_simple_ts_daily_with_nans
     holidays_finder = HolidayTransform(
         iso_code="RUS", mode="category", out_column="holiday", in_column="external_timestamp"
@@ -352,7 +436,6 @@ def test_holidays_category_day_with_nans(two_segments_simple_ts_daily_with_nans)
         assert df[segment]["holiday"].dtype == "category"
 
 
-# TODO: fix after discussing conceptual problems
 @pytest.mark.xfail()
 @pytest.mark.parametrize(
     "in_column, ts_name",
@@ -369,7 +452,7 @@ def test_holidays_category_day_with_nans(two_segments_simple_ts_daily_with_nans)
         ("US", np.array([0, 1 / 7, 0, 0, 0, 1 / 7] + 12 * [0])),
     ),
 )
-def test_holidays_days_count_w_mon(in_column, ts_name, iso_code, answer, request):
+def test_transform_days_count_w_mon(in_column, ts_name, iso_code, answer, request):
     ts = request.getfixturevalue(ts_name)
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="days_count", out_column="holiday", in_column=in_column)
     ts = holidays_finder.fit_transform(ts)
@@ -378,7 +461,7 @@ def test_holidays_days_count_w_mon(in_column, ts_name, iso_code, answer, request
         assert np.array_equal(df[segment]["holiday"].values, answer)
 
 
-def test_holidays_days_count_w_mon_with_nans(two_segments_w_mon_with_nans):
+def test_transform_days_count_w_mon_with_nans(two_segments_w_mon_with_nans):
     ts = two_segments_w_mon_with_nans
     holidays_finder = HolidayTransform(
         iso_code="RUS", mode="days_count", out_column="holiday", in_column="external_timestamp"
@@ -389,19 +472,62 @@ def test_holidays_days_count_w_mon_with_nans(two_segments_w_mon_with_nans):
         assert df[segment]["holiday"].isna().sum() == 3
 
 
-@pytest.mark.parametrize("ts_name", ("two_segments_w_mon", "two_segments_simple_ts_day_15min"))
-@pytest.mark.parametrize("mode", ("binary", "category"))
-def test_holidays_binary_category_failed_wrong_freq(ts_name, mode, request):
-    ts = request.getfixturevalue(ts_name)
-    holidays_finder = HolidayTransform(out_column="holiday", mode=mode)
+@pytest.mark.parametrize(
+    "ts_name_fit, ts_name_transform, mode",
+    [
+        ("two_segments_simple_ts_daily_int_timestamp", "two_segments_simple_ts_daily_int_timestamp", "binary"),
+        ("two_segments_simple_ts_daily_int_timestamp", "two_segments_simple_ts_daily_int_timestamp", "category"),
+        ("two_segments_w_mon", "two_segments_w_mon_int_timestamp", "days_count"),
+    ],
+)
+def test_transform_fail_int_index(ts_name_fit, ts_name_transform, mode, request):
+    ts_fit = request.getfixturevalue(ts_name_fit)
+    ts_transform = request.getfixturevalue(ts_name_transform)
+    transform = HolidayTransform(out_column="holiday", in_column=None)
+    transform.fit(ts_fit)
+    with pytest.raises(ValueError, match="Transform can't work with integer index, parameter in_column should be set"):
+        _ = transform.transform(ts_transform)
+
+
+def test_transform_days_count_fail_external_timestamp_int(
+    two_segments_w_mon, two_segments_w_mon_external_int_timestamp
+):
+    ts_fit = two_segments_w_mon
+    ts_transform = two_segments_w_mon_external_int_timestamp
+    transform = HolidayTransform(in_column="external_timestamp", out_column="holiday", mode="days_count")
+    transform.fit(ts_fit)
+    with pytest.raises(ValueError, match="Transform can work only with datetime external timestamp"):
+        transform.transform(ts=ts_transform)
+
+
+def test_transform_days_count_fail_irregular_timestamp(
+    two_segments_w_mon, two_segments_w_mon_external_irregular_timestamp
+):
+    ts_fit = two_segments_w_mon
+    ts_transform = two_segments_w_mon_external_irregular_timestamp
+    transform = HolidayTransform(in_column="external_timestamp", out_column="holiday", mode="days_count")
+    transform.fit(ts_fit)
     with pytest.raises(
-        ValueError, match="For binary and category modes frequency of data should be no more than daily."
+        ValueError, match="Invalid in_column values! Datetime values should be regular timestamps with some frequency"
     ):
-        _ = holidays_finder.fit_transform(ts)
+        transform.transform(ts=ts_transform)
+
+
+def test_transform_days_count_fail_different_freq(
+    two_segments_w_mon, two_segments_w_mon_external_irregular_timestamp_different_freq
+):
+    ts_fit = two_segments_w_mon
+    ts_transform = two_segments_w_mon_external_irregular_timestamp_different_freq
+    transform = HolidayTransform(in_column="external_timestamp", out_column="holiday", mode="days_count")
+    transform.fit(ts_fit)
+    with pytest.raises(
+        ValueError, match="Invalid in_column values! Datetime values should have the same frequency for every segment"
+    ):
+        transform.transform(ts=ts_transform)
 
 
 @pytest.mark.parametrize("ts_name", ("two_segments_simple_ts_daily", "two_segments_simple_ts_minute"))
-def test_holidays_days_count_mode_failed(ts_name, request):
+def test_transform_days_count_mode_fail_wrong_freq(ts_name, request):
     ts = request.getfixturevalue(ts_name)
     holidays_finder = HolidayTransform(out_column="holiday", mode="days_count")
     with pytest.raises(
@@ -409,13 +535,6 @@ def test_holidays_days_count_mode_failed(ts_name, request):
         match=f"Days_count mode works only with weekly, monthly, quarterly or yearly data. You have freq={ts.freq}",
     ):
         _ = holidays_finder.fit_transform(ts)
-
-
-def test_transform_index_fail_int_timestamp(two_segments_simple_ts_daily_int_timestamp):
-    transform = HolidayTransform(out_column="holiday", in_column=None)
-    transform.fit(two_segments_simple_ts_daily_int_timestamp)
-    with pytest.raises(ValueError, match="Transform can't work with integer index, parameter in_column should be set"):
-        _ = transform.transform(two_segments_simple_ts_daily_int_timestamp)
 
 
 @pytest.mark.parametrize("mode", ["binary", "category", "days_count"])

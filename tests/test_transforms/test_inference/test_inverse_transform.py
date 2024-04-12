@@ -940,12 +940,11 @@ class TestInverseTransformTrain:
                 "ts_with_external_timestamp",
                 {},
             ),
-            # TODO: fix after discussing conceptual problems
-            # (
-            #         HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
-            #         "ts_with_external_timestamp_one_month",
-            #         {},
-            # ),
+            (
+                HolidayTransform(out_column="res", mode="days_count", in_column="external_timestamp"),
+                "ts_with_external_timestamp_one_month",
+                {},
+            ),
             (
                 SpecialDaysTransform(in_column="external_timestamp"),
                 "ts_with_external_timestamp",
