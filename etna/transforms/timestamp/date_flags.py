@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.datasets import duplicate_data
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import IrreversibleTransform
@@ -290,16 +291,9 @@ class DateFlagsTransform(IrreversibleTransform):
             features = self._compute_features(timestamps=timestamps)
             features.index = df.index
 
-            dataframes = []
-            for seg in df.columns.get_level_values("segment").unique():
-                tmp = df[seg].join(features)
-                _idx = tmp.columns.to_frame()
-                _idx.insert(0, "segment", seg)
-                tmp.columns = pd.MultiIndex.from_frame(_idx)
-                dataframes.append(tmp)
-            result = pd.concat(dataframes, axis=1).sort_index(axis=1)
-            result.columns.names = ["segment", "feature"]
-
+            segments = df.columns.get_level_values("segment").unique().tolist()
+            result = duplicate_data(df=features.reset_index(), segments=segments)
+            result = pd.concat([df, result], axis=1).sort_index(axis=1)
         else:
             flat_df = TSDataset.to_flatten(df=df, features=[self.in_column])
             features = self._compute_features(timestamps=flat_df[self.in_column])

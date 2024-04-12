@@ -5,34 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## Unreleased
 ### Added
-- Add `BinaryOperationTransform` to transforms ([#260](https://github.com/etna-team/etna/pull/260))
-- Add `TFTNativeModel` ([#290](https://github.com/etna-team/etna/pull/290))
 - Add `TS2VecEmbeddingModel` model ([#253](https://github.com/etna-team/etna/pull/253))
 - Add `EmbeddingSegmentTransform` ([#265](https://github.com/etna-team/etna/pull/265))
 - Add `EmbeddingWindowTransform` ([#265](https://github.com/etna-team/etna/pull/265))
 - Add `TSTCCEmbeddingModel` ([#294](https://github.com/etna-team/etna/pull/294))
 - 
 - 
-- Add warning on trying to pass numeric timestamp if freq is not None and add `_cast_index_to_datetime` ([#214](https://github.com/etna-team/etna/pull/214))
-- 
-- 
-- 
-- 
-- 
-- 
-- Add `infer_alignment`, `apply_alignment`, `make_timestamp_df` into `etna.dataset.utils` ([#256](https://github.com/etna-team/etna/pull/256))
-- 
-- 
-- 
-- Add `TSDataset.create_from_misaligned` constructor ([#269](https://github.com/etna-team/etna/pull/269))
-- 
-- 
-- 
-- 
-- Add tutorial about working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
 - 
 - 
 - 
@@ -41,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- Add in `OutliersTransform` possibilities use `ignore_flag_column` to skip values use ignore ([#291](https://github.com/etna-team/etna/pull/291))
+- 
 
 ### Changed
 - 
@@ -49,27 +29,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- Update glossary with terms related to working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
 - 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Fixed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [2.6.0] - 2024-04-11
+### Added
+- Add `BinaryOperationTransform` to transforms ([#260](https://github.com/etna-team/etna/pull/260))
+- Add `TFTNativeModel` ([#290](https://github.com/etna-team/etna/pull/290))
+- Add warning on trying to pass numeric timestamp if freq is not None and add `_cast_index_to_datetime` ([#214](https://github.com/etna-team/etna/pull/214))
+- Add `infer_alignment`, `apply_alignment`, `make_timestamp_df` into `etna.dataset.utils` ([#256](https://github.com/etna-team/etna/pull/256))
+- Add `TSDataset.create_from_misaligned` constructor ([#269](https://github.com/etna-team/etna/pull/269))
+- Add tutorial about working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
+- Add in `OutliersTransform` possibilities use `ignore_flag_column` to skip values use ignore ([#291](https://github.com/etna-team/etna/pull/291))
+
+### Changed
+- Update glossary with terms related to working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
 - Add ignoring of integer timestamp as a feature into native DL models ([#210](https://github.com/etna-team/etna/pull/210))
 - Update `pytorch_forecasting` models to handle integer timestamp ([#208](https://github.com/etna-team/etna/pull/208))
 - Update `datasets` module to work with integer timestamp ([#146](https://github.com/etna-team/etna/pull/146))
-- 
-- 
 - Add tests for `transform` on data with integer timestamp ([#153](https://github.com/etna-team/etna/pull/153))
 - Add tests for `models` on data with integer timestamp ([#188](https://github.com/etna-team/etna/pull/188))
-- 
 - Update `DateFlagsTransform`, `TimeFlagsTransform`, `HolidayTransform`, `SpecialDaysTransform`, `FourierTransform` to work with external timestamp ([#169](https://github.com/etna-team/etna/pull/169))
 - Update `analysis` module to work with integer timestamp ([#161](https://github.com/etna-team/etna/pull/161))
-- 
 - Update `StatsForecastARIMAModel`, `StatsForecastAutoARIMAModel`, `StatsForecastAutoCESModel`, `StatsForecastAutoETSModel`, `StatsForecastAutoThetaModel` to handle integer timestamp ([#197](https://github.com/etna-team/etna/pull/197))
 - Update `MRMRFeatureSelectionTransform` to handle integer timestamp ([#164](https://github.com/etna-team/etna/pull/164))
-- 
 - Update deseasonality transforms (`STLTransform`, `DeseasonalityTransform`) to handle integer timestamp ([#174](https://github.com/etna-team/etna/pull/174))
 - Update `HoltModel`, `HoltWintersModel`, `SimpleExpSmoothingModel`, `SARIMAXModel`, `AutoARIMAModel` to handle integer timestamp ((#200)[https://github.com/etna-team/etna/pull/200])
 - Update detrend transforms (`LinearTrendTransform`, `TheilSenTrendTransform`) to handle integer timestamp ([#163](https://github.com/etna-team/etna/pull/163))
 - Update `ResampleWithDistributionTransform` to work with integer timestamp ([#165](https://github.com/etna-team/etna/pull/165))
-- 
 - Update change point transforms (`ChangePointsSegmentationTransform`, `ChangePointsTrendTransform`, `ChangePointsLevelTransform`, `TrendTransform`) to handle integer timestamp ([#176](https://github.com/etna-team/etna/pull/176))
 - Update `BATSModel`, `TBATSModel` models to work with integer timestamp ([#195](https://github.com/etna-team/etna/pull/195))
 - Update `ProphetModel` to handle external timestamp ([#203](https://github.com/etna-team/etna/pull/203))
@@ -84,43 +96,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update `ExogShiftTransform` to handle integer timestamp ([#254](https://github.com/etna-team/etna/pull/254))
 - Extend base `TSDataset` constructor to handle long format dataframes, update documentation and tutorials with this change ([#266](https://github.com/etna-team/etna/pull/266))
 - Update internal datasets to work with unaligned data ([#292](https://github.com/etna-team/etna/pull/292))
-- 
-- 
 - Speed up "timestamp" transforms ([#295](https://github.com/etna-team/etna/pull/295)
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-
 
 ### Fixed
-- 
-- 
-- 
-- 
 - Fix `PredictionIntervalOutliersTransform` fails to work with created columns ([#291](https://github.com/etna-team/etna/pull/291))
 - Prohibit empty list value and duplication of `target_timestamps` parameter in `FoldMask` ([#226](https://github.com/etna-team/etna/pull/226))
-- 
-- 
 - Fix `DeseasonalityTransform` fails to inverse transform short series ([#174](https://github.com/etna-team/etna/pull/174))
-- 
 - Fix indexing in `stl_plot`, `plot_periodogram`, `plot_holidays`, `plot_backtest`, `plot_backtest_interactive`, `ResampleWithDistributionTransform` ([#244](https://github.com/etna-team/etna/pull/244))
 - Fix `DifferencingTransform` to handle integer timestamp on test ([#244](https://github.com/etna-team/etna/pull/244))
-- 
 - Fix `HolidayTransform` to handle integer timestamp in `days_count` mode ([#285](https://github.com/etna-team/etna/pull/285))
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
 
 ## [2.5.0] - 2024-03-18
 ### Added

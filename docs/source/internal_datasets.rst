@@ -33,145 +33,145 @@ List of internal datasets
    * - :ref:`electricity_15T <electricity dataset>`
      - 15 minutes
      - 140256 observations, 370 segments
-     - ("2011-01-01 00:15:00", "2015-01-01 00:00:00"), original
+     - ("2011-01-01 00:15:00", "2015-01-01 00:00:00")
      - No exog data
      - train, test, full
    * - :ref:`m3_monthly <m3 dataset>`
      - monthly
      - 144 observations, 1428 segments
-     - ("2010-01-31 00:00:00", "2021-12-31 00:00:00"), synthetic
+     - int timestamp
      - Original timestamp column
      - train, test, full
    * - :ref:`m3_quarterly <m3 dataset>`
      - quarterly
      - 72 observations, 756 segments
-     - ("2004-03-31 00:00:00", "2021-12-31 00:00:00"), synthetic
+     - int timestamp
      - Original timestamp column
      - train, test, full
    * - :ref:`m3_other <m3 dataset>`
      - unknown, expected quarterly
      - 104 observations, 174 segments
-     - ("1996-03-31 00:00:00", "2021-12-31 00:00:00"), synthetic
+     - int timestamp
      - Original timestamp column
      - train, test, full
    * - :ref:`m3_yearly <m3 dataset>`
      - yearly
      - 47 observations, 645 segments
-     - ("1975-12-31 00:00:00", "2021-12-31 00:00:00"), synthetic
+     - int timestamp
      - Original timestamp column
      - train, test, full
    * - :ref:`m4_hourly <m4 dataset>`
      - hourly
      - 1008 observations, 414 segments
-     - ("2021-11-20 01:00:00", "2022-01-01 00:00:00"), synthetic
+     - int timestamp
      - No exog data
      - train, test, full
    * - :ref:`m4_daily <m4 dataset>`
      - daily
      - 9933 observations, 4227 segments
-     - ("1994-10-23 00:00:00", "2022-01-01 00:00:00"), synthetic
+     - int timestamp
      - No exog data
      - train, test, full
    * - :ref:`m4_weekly <m4 dataset>`
      - weekly
      - 2610 observations, 359 segments
-     - ("1971-12-27 00:00:00", "2021-12-27 00:00:00"), synthetic
+     - int timestamp
      - No exog data
      - train, test, full
    * - :ref:`m4_monthly <m4 dataset>`
      - monthly
      - 2812 observations, 48000 segments
-     - ("1787-09-30 00:00:00", "2021-12-31 00:00:00"), synthetic
+     - int timestamp
      - No exog data
      - train, test, full
    * - :ref:`m4_quarterly <m4 dataset>`
      - quarterly
      - 874 observations, 24000 segments
-     - ("1803-10-01 00:00:00", "2022-01-01 00:00:00"), synthetic
+     - int timestamp
      - No exog data
      - train, test, full
    * - :ref:`m4_yearly <m4 dataset>`
      - daily
      - 47 observations, 23000 segments
-     - ("2019-09-14 00:00:00", "2022-01-01 00:00:00"), synthetic
+     - int timestamp
      - No exog data
      - train, test, full
    * - :ref:`traffic_2008_10T <traffic 2008 dataset>`
      - 10 minutes
      - 65520 observations, 963 segments
-     - ("2008-01-01 00:00:00", "2009-03-30 23:50:00"), original
+     - ("2008-01-01 00:00:00", "2009-03-30 23:50:00")
      - No exog data
      - train, test, full
    * - :ref:`traffic_2008_hourly <traffic 2008 dataset>`
      - hourly
      - 10920 observations, 963 segments
-     - ("2008-01-01 00:00:00", "2009-03-30 23:00:00"), original
+     - ("2008-01-01 00:00:00", "2009-03-30 23:00:00")
      - No exog data
      - train, test, full
    * - :ref:`traffic_2015_hourly <traffic 2015 dataset>`
      - hourly
      - 17544 observations, 862 segments
-     - ("2015-01-01 00:00:00", "2016-12-31 23:00:00"), original
+     - ("2015-01-01 00:00:00", "2016-12-31 23:00:00")
      - No exog data
      - train, test, full
    * - :ref:`tourism_monthly <tourism dataset>`
      - monthly
      - 333 observations, 366 segments
-     - ("1994-05-01 00:00:00", "2022-01-01 00:00:00"), synthetic
+     - int timestamp
      - Original timestamp column
      - train, test, full
    * - :ref:`tourism_quarterly <tourism dataset>`
      - quarterly
      - 130 observations, 427 segments
-     - ("1989-09-30 00:00:00", "2021-12-31 00:00:00"), synthetic
+     - int timestamp
      - Original timestamp column
      - train, test, full
    * - :ref:`tourism_yearly <tourism dataset>`
      - yearly
      - 47 observations, 518 segments
-     - ("1975-12-31 00:00:00", "2021-12-31 00:00:00"), synthetic
+     - int timestamp
      - Original timestamp column
      - train, test, full
    * - :ref:`weather_10T <weather dataset>`
      - 10 minutes
      - 52704 observations, 21 segments
-     - ("2020-01-01 00:10:00", "2021-01-01 00:00:00"), original
+     - ("2020-01-01 00:10:00", "2021-01-01 00:00:00")
      - No exog data
      - train, test, full
    * - :ref:`ETTm1 <Electricity Transformer Datasets (ETT)>`
      - 15 minutes
      - 69680 observations, 7 segments
-     - ("2016-07-01 00:00:00", "2018-06-26 19:45:00"), original
+     - ("2016-07-01 00:00:00", "2018-06-26 19:45:00")
      - No exog data
      - train, test, full
    * - :ref:`ETTm2 <Electricity Transformer Datasets (ETT)>`
      - 15 minutes
      - 69680 observations, 7 segments
-     - ("2016-07-01 00:00:00", "2018-06-26 19:45:00"), original
+     - ("2016-07-01 00:00:00", "2018-06-26 19:45:00")
      - No exog data
      - train, test, full
    * - :ref:`ETTh1 <Electricity Transformer Datasets (ETT)>`
      - hourly
      - 17420 observations, 7 segments
-     - ("2016-07-01 00:00:00", "2018-06-26 19:00:00"), original
+     - ("2016-07-01 00:00:00", "2018-06-26 19:00:00")
      - No exog data
      - train, test, full
    * - :ref:`ETTh2 <Electricity Transformer Datasets (ETT)>`
      - hourly
      - 17420 observations, 7 segments
-     - ("2016-07-01 00:00:00", "2018-06-26 19:00:00"), original
+     - ("2016-07-01 00:00:00", "2018-06-26 19:00:00")
      - No exog data
      - train, test, full
    * - :ref:`IHEPC_T <Individual household electric power consumption dataset>`
      - minute
      - 2075259 observations, 7 segments
-     - ("2006-12-16 17:24:00", "2010-11-26 21:02:00"), original
+     - ("2006-12-16 17:24:00", "2010-11-26 21:02:00")
      - No exog data
      - full
    * - :ref:`australian_wine_sales_monthly <Australian wine sales dataset>`
      - monthly
      - 176 observations, 1 segments
-     - ("1980-01-01 00:00:00", "1994-08-01 00:00:00"), original
+     - ("1980-01-01 00:00:00", "1994-08-01 00:00:00")
      - No exog data
      - full
 
@@ -199,8 +199,8 @@ Competition. The M3 dataset consists of time series of yearly, quarterly, monthl
 data originally does not have any particular frequency, but we assume it as a quarterly data. Each frequency mode
 has its own specific prediction horizon: 6 for yearly, 8 for quarterly, 18 for monthly, and 8 for other.
 
-M3 dataset has series ending on different dates. As to the specificity of ``TSDataset`` we should add custom dates
-to make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
+M3 dataset has series ending on different dates. As to the specificity of ``TSDataset`` we use integer index to make
+series end on one timestamp.. Original dates are added as an exogenous data. For example, ``df_exog`` of train
 dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
 
 Loading names:
@@ -280,8 +280,8 @@ tourism bodies (such as Tourism Australia, the Hong Kong Tourism Board and Touri
 academics, who had used them in previous tourism forecasting studies. Each frequency mode has its own specific
 prediction horizon: 4 for yearly, 8 for quarterly, 24 for monthly.
 
-Tourism dataset has series ending on different dates. As to the specificity of ``TSDataset`` we should add custom dates
-to make series end on one date. Original dates are added as an exogenous data. For example, ``df_exog`` of train
+Tourism dataset has series ending on different dates. As to the specificity of ``TSDataset`` we use integer index to
+make series end on one timestamp. Original dates are added as an exogenous data. For example, ``df_exog`` of train
 dataset has dates for train and test and ``df_exog`` of test dataset has dates only for test.
 
 Loading names:

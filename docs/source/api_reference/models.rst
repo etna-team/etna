@@ -82,6 +82,7 @@ Native neural network models:
    nn.NBeatsInterpretableModel
    nn.PatchTSModel
    nn.DeepARNativeModel
+   nn.TFTNativeModel
 
 Utilities for :py:class:`~etna.models.nn.deepstate.deepstate.DeepStateModel`
 

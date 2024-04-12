@@ -1,3 +1,6 @@
+import re
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -6,14 +9,48 @@ from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
 from etna.datasets.tsdataset import TSDataset
+from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
+from etna.pipeline import Pipeline
 from etna.transforms import DensityOutliersTransform
+from etna.transforms import HolidayTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
+from tests.test_transforms.utils import assert_column_changes
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.test_transforms.utils import find_columns_diff
 from tests.utils import select_segments_subset
+
+
+def insert_column(ts, info_col, timestamp, segment):
+    return ts.add_columns_from_pandas(
+        TSDataset.to_dataset(
+            pd.DataFrame(
+                {
+                    "is_holiday": info_col,
+                    "timestamp": timestamp,
+                    "segment": segment,
+                }
+            )
+        )
+    )
+
+
+def made_specific_ds(ts, add_error=True):
+    timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")
+    info_col1 = [1 if np.sin(i) > 0.5 else 0 for i in range(len(timestamp))]
+    info_col2 = [1 if np.sin(i) > 0 else 0 for i in range(len(timestamp))]
+
+    if add_error:
+        info_col1[9] = 4
+        info_col2[10] = 14
+
+    insert_column(ts, info_col1, timestamp, "1")
+    insert_column(ts, info_col2, timestamp, "2")
+
+    return ts
 
 
 @pytest.fixture()
@@ -40,6 +77,27 @@ def outliers_solid_tsds():
         known_future="all",
     )
     return ts
+
+
+@pytest.fixture()
+def outliers_solid_tsds_with_holidays(outliers_solid_tsds):
+    """Create TSDataset with outliers with holidays"""
+    ts = outliers_solid_tsds
+    holiday_transform = HolidayTransform(iso_code="RUS", mode="binary", out_column="is_holiday")
+    ts = holiday_transform.fit_transform(ts)
+    return ts
+
+
+@pytest.fixture()
+def outliers_solid_tsds_with_error(outliers_solid_tsds):
+    """Create TSDataset with outliers error inside ts, incorrect type column"""
+    return made_specific_ds(outliers_solid_tsds, add_error=True)
+
+
+@pytest.fixture()
+def outliers_solid_tsds_non_regressor_holiday(outliers_solid_tsds):
+    """Create TSDataset with outliers inside ts non regressor"""
+    return made_specific_ds(outliers_solid_tsds, add_error=False)
 
 
 @pytest.mark.parametrize("attribute_name,value_type", (("outliers_timestamps", list), ("original_values", pd.Series)))
@@ -255,3 +313,117 @@ def test_params_to_tune(transform, outliers_solid_tsds):
     ts = outliers_solid_tsds
     assert len(transform.params_to_tune()) > 0
     assert_sampling_is_valid(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target", ignore_flag_column="is_holiday"),
+        DensityOutliersTransform(in_column="target", ignore_flag_column="is_holiday"),
+        PredictionIntervalOutliersTransform(in_column="target", model="sarimax", ignore_flag_column="is_holiday"),
+    ),
+)
+def test_correct_ignore_flag(transform, outliers_solid_tsds_with_holidays):
+    ts = outliers_solid_tsds_with_holidays
+    transform.fit(ts)
+    ts_output = transform.transform(ts)
+    assert not any(ts_output["2021-01-06":"2021-01-06", "1", "target"].isna())
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target", ignore_flag_column="is_holiday"),
+        DensityOutliersTransform(in_column="target", ignore_flag_column="is_holiday"),
+        PredictionIntervalOutliersTransform(in_column="target", model="sarimax", ignore_flag_column="is_holiday"),
+    ),
+)
+def test_incorrect_not_exists_column(transform, outliers_solid_tsds):
+    ts = outliers_solid_tsds
+    with pytest.raises(ValueError, match='Name ignore_flag_column="is_holiday" not find.'):
+        transform.fit(ts)
+        _ = transform.transform(ts)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    (
+        MedianOutliersTransform(in_column="target", ignore_flag_column="is_holiday"),
+        DensityOutliersTransform(in_column="target", ignore_flag_column="is_holiday"),
+        PredictionIntervalOutliersTransform(in_column="target", model="sarimax", ignore_flag_column="is_holiday"),
+    ),
+)
+def test_incorrect_type_ignore_flag(transform, outliers_solid_tsds_with_error):
+    ts = outliers_solid_tsds_with_error
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Columns ignore_flag contain non binary value: columns: \"is_holiday\" in segment: ['1', '2']"),
+    ):
+        transform.fit(ts)
+        _ = transform.transform(ts)
+
+
+@pytest.mark.parametrize(
+    "transform, expected_changes",
+    [
+        (MedianOutliersTransform(in_column="target", ignore_flag_column="is_holiday"), {"change": {"target"}}),
+        (DensityOutliersTransform(in_column="target", ignore_flag_column="is_holiday"), {"change": {"target"}}),
+        (
+            PredictionIntervalOutliersTransform(in_column="target", model="sarimax", ignore_flag_column="is_holiday"),
+            {"change": {"target"}},
+        ),
+    ],
+)
+def test_full_train_with_outliers(transform, expected_changes, outliers_solid_tsds_with_holidays):
+    ts = outliers_solid_tsds_with_holidays
+
+    train_ts = deepcopy(ts)
+    test_ts = deepcopy(ts)
+
+    transform.fit(train_ts)
+
+    transformed_test_ts = transform.transform(deepcopy(test_ts))
+
+    inverse_transformed_test_ts = transform.inverse_transform(deepcopy(transformed_test_ts))
+
+    # check
+    assert_column_changes(ts_1=transformed_test_ts, ts_2=inverse_transformed_test_ts, expected_changes=expected_changes)
+    flat_test_df = test_ts.to_pandas(flatten=True)
+    flat_transformed_test_df = transformed_test_ts.to_pandas(flatten=True)
+    flat_inverse_transformed_test_df = inverse_transformed_test_ts.to_pandas(flatten=True)
+    created_columns, removed_columns, changed_columns = find_columns_diff(
+        flat_transformed_test_df, flat_inverse_transformed_test_df
+    )
+    pd.testing.assert_frame_equal(
+        flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+    )
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        (MedianOutliersTransform(in_column="target", ignore_flag_column="is_holiday")),
+        (DensityOutliersTransform(in_column="target", ignore_flag_column="is_holiday")),
+        (PredictionIntervalOutliersTransform(in_column="target", model="sarimax", ignore_flag_column="is_holiday")),
+    ],
+)
+def test_full_pipeline(transform, outliers_solid_tsds):
+    ts = outliers_solid_tsds
+
+    holiday_transform = HolidayTransform(iso_code="RUS", mode="binary", out_column="is_holiday")
+    pipeline = Pipeline(NaiveModel(lag=1), transforms=[holiday_transform, transform], horizon=3)
+    pipeline.fit(ts)
+
+
+@pytest.mark.parametrize(
+    "transform",
+    [
+        (MedianOutliersTransform(in_column="target", ignore_flag_column="is_holiday")),
+        (DensityOutliersTransform(in_column="target", ignore_flag_column="is_holiday")),
+        (PredictionIntervalOutliersTransform(in_column="target", model="sarimax", ignore_flag_column="is_holiday")),
+    ],
+)
+def test_advance_usage_data_in_transform_nonregressor(transform, outliers_solid_tsds_non_regressor_holiday):
+    ts = outliers_solid_tsds_non_regressor_holiday
+    transform.fit(ts)
+    _ = transform.transform(ts)

@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.datasets import duplicate_data
 from etna.datasets.utils import determine_freq
 from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
@@ -29,8 +30,8 @@ class FourierTransform(IrreversibleTransform):
       The features will be the same for each segment.
 
     - As external column. In this case for each segment its ``in_column`` will be used to compute features.
-      It is expected that for each segment we have the same type of timestamp data (datetime or numeric)
-      and for datetime type only one frequency is used.
+      It is expected that for each segment we have the same type of timestamp data (datetime or numeric),
+      and for datetime type only one frequency is used for all the segments.
 
     If we are working with external column, there is a difference in handling numeric and datetime data:
 
@@ -161,7 +162,25 @@ class FourierTransform(IrreversibleTransform):
         return output_columns
 
     def fit(self, ts: TSDataset) -> "FourierTransform":
-        """Fit the transform."""
+        """Fit the transform.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
+
+        Raises
+        ------
+        ValueError
+            if external timestamp doesn't have frequency
+        ValueError
+            if external timestamp doesn't have the same frequency for all segments
+        """
         if self.in_column is None:
             self._freq = ts.freq
             self.in_column_regressor = True
@@ -233,7 +252,15 @@ class FourierTransform(IrreversibleTransform):
 
         Returns
         -------
-        result:
+        :
+            The fitted transform instance.
+
+        Raises
+        ------
+        ValueError
+            if external timestamp doesn't have frequency
+        ValueError
+            if external timestamp doesn't have the same frequency for all segments
         """
         if self.in_column is None:
             self._reference_timestamp = df.index[0]
@@ -245,16 +272,9 @@ class FourierTransform(IrreversibleTransform):
 
     @staticmethod
     def _construct_answer_for_index(df: pd.DataFrame, features: pd.DataFrame) -> pd.DataFrame:
-        dataframes = []
-        for seg in df.columns.get_level_values("segment").unique():
-            tmp = df[seg].join(features)
-            _idx = tmp.columns.to_frame()
-            _idx.insert(0, "segment", seg)
-            tmp.columns = pd.MultiIndex.from_frame(_idx)
-            dataframes.append(tmp)
-
-        result = pd.concat(dataframes, axis=1).sort_index(axis=1)
-        result.columns.names = ["segment", "feature"]
+        segments = df.columns.get_level_values("segment").unique().tolist()
+        result = duplicate_data(df=features.reset_index(), segments=segments)
+        result = pd.concat([df, result], axis=1).sort_index(axis=1)
         return result
 
     def _compute_features(self, timestamps: pd.Series) -> pd.DataFrame:
@@ -293,8 +313,17 @@ class FourierTransform(IrreversibleTransform):
 
         Returns
         -------
-        result:
+        :
             transformed dataframe
+
+        Raises
+        ------
+        ValueError:
+            if transform isn't fitted
+        ValueError
+            if external timestamp doesn't have frequency
+        ValueError
+            if external timestamp doesn't have the same frequency for all segments
         """
         if self._freq is _DEFAULT_FREQ:
             raise ValueError("The transform isn't fitted!")
