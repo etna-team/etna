@@ -29,7 +29,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         hidden_dims: int = 64,
         depth: int = 10,
         device: Literal["cpu", "gpu"] = "cpu",
-        lr: float = 0.001,
         batch_size: int = 16,
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
@@ -48,8 +47,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             The number of hidden residual blocks in the encoder.
         device:
             The device used for training and inference.
-        lr:
-            The learning rate.
         batch_size:
             The batch size.
         max_train_length:
@@ -71,7 +68,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         self.temporal_unit = temporal_unit
 
         self.device = device
-        self.lr = lr
         self.batch_size = batch_size
 
         self.embedding_model = TS2Vec(
@@ -82,7 +78,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             max_train_length=self.max_train_length,
             temporal_unit=self.temporal_unit,
             device=self.device,
-            lr=self.lr,
             batch_size=self.batch_size,
         )
 
@@ -106,6 +101,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def fit(
         self,
         x: np.ndarray,
+        lr: float = 0.001,
         n_epochs: Optional[int] = None,
         n_iters: Optional[int] = None,
         verbose: Optional[bool] = None,
@@ -116,6 +112,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         ----------
         x:
             data with shapes (n_segments, n_timestamps, input_dims).
+        lr:
+            The learning rate.
         n_epochs:
             The number of epochs. When this reaches, the training stops.
         n_iters:
@@ -125,7 +123,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             Whether to print the training loss after each epoch.
         """
         if not self._is_freezed:
-            self.embedding_model.fit(train_data=x, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
+            self.embedding_model.fit(train_data=x, lr=lr, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
         return self
 
     def encode_segment(
@@ -263,7 +261,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             max_train_length=obj.max_train_length,
             temporal_unit=obj.temporal_unit,
             device=obj.device,
-            lr=obj.lr,
             batch_size=obj.batch_size,
         )
 

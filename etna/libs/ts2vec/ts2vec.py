@@ -45,7 +45,6 @@ class TS2Vec:
             hidden_dims=64,
             depth=10,
             device='cuda',
-            lr=0.001,
             batch_size=16,
             max_train_length=None,
             temporal_unit=0,
@@ -60,7 +59,6 @@ class TS2Vec:
             hidden_dims (int): The hidden dimension of the encoder.
             depth (int): The number of hidden residual blocks in the encoder.
             device (str): The gpu used for training and inference.
-            lr (float): The learning rate.
             batch_size (int): The batch size.
             max_train_length (Union[int, NoneType]): The maximum allowed sequence length for training. For sequence with a length greater than <max_train_length>, it would be cropped into some sequences, each of which has a length less than <max_train_length>.
             temporal_unit (int): The minimum unit to perform temporal contrast. When training on a very long sequence, this param helps to reduce the cost of time and memory.
@@ -70,7 +68,6 @@ class TS2Vec:
 
         super().__init__()
         self.device = device
-        self.lr = lr
         self.batch_size = batch_size
         self.max_train_length = max_train_length
         self.temporal_unit = temporal_unit
@@ -86,11 +83,12 @@ class TS2Vec:
         self.n_epochs = 0
         self.n_iters = 0
 
-    def fit(self, train_data, n_epochs=None, n_iters=None, verbose=False):
+    def fit(self, train_data, lr=0.001, n_epochs=None, n_iters=None, verbose=False):
         ''' Training the TS2Vec model.
 
         Args:
             train_data (numpy.ndarray): The training data. It should have a shape of (n_instance, n_timestamps, n_features). All missing data should be set to NaN.
+            lr (float): The learning rate.
             n_epochs (Union[int, NoneType]): The number of epochs. When this reaches, the training stops.
             n_iters (Union[int, NoneType]): The number of iterations. When this reaches, the training stops. If both n_epochs and n_iters are not specified, a default setting would be used that sets n_iters to 200 for a dataset with size <= 100000, 600 otherwise.
             verbose (bool): Whether to print the training loss after each epoch.
@@ -119,7 +117,7 @@ class TS2Vec:
         train_loader = DataLoader(train_dataset, batch_size=min(self.batch_size, len(train_dataset)), shuffle=True,
                                   drop_last=True)
 
-        optimizer = torch.optim.AdamW(self._net.parameters(), lr=self.lr)
+        optimizer = torch.optim.AdamW(self._net.parameters(), lr=lr)
 
         loss_log = []
 
