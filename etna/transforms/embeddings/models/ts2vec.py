@@ -28,7 +28,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         output_dims: int = 320,
         hidden_dims: int = 64,
         depth: int = 10,
-        device: Literal["cpu", "gpu"] = "cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
         batch_size: int = 16,
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
