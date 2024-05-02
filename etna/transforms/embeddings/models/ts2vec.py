@@ -3,7 +3,6 @@ import tempfile
 import zipfile
 from typing import Literal
 from typing import Optional
-from typing import Union
 
 import numpy as np
 
