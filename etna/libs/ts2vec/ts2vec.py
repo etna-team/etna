@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
-# Removed skipping training loop when model is already pretrained
+# Removed skipping training loop when model is already pretrained. Move lr parameter to fit method
 
 import torch
 import torch.nn.functional as F
