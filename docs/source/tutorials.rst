@@ -132,7 +132,7 @@ Intermediate
       :class-header: card-tutorial-intermediate
 
       ^^^
-      How pipelines are making forecasts under the hood
+      How to use embedding models
 
 Advanced
 --------
