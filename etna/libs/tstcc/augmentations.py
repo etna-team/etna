@@ -66,7 +66,7 @@ def permutation(x, max_segments=5, seg_mode="random"):
             else:
                 splits = np.array_split(orig_steps, num_segs[i])
             # add `np.asarray(splits, dtype=object)` instead of `splits` due to warning about different length of arrays
-            warp = np.concatenate(np.random.permutation(np.asarray(splits, dtype=object))).ravel()
+            warp = np.concatenate(np.random.permutation(np.asarray(splits, dtype=object))).ravel().astype(float)
             ret[i] = pat[0, warp]
         else:
             ret[i] = pat

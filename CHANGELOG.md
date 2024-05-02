@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `EmbeddingSegmentTransform` ([#265](https://github.com/etna-team/etna/pull/265))
 - Add `EmbeddingWindowTransform` ([#265](https://github.com/etna-team/etna/pull/265))
 - Add `TSTCCEmbeddingModel` ([#294](https://github.com/etna-team/etna/pull/294))
+- Add `210-embedding_models` example notebook ([#304](https://github.com/etna-team/etna/pull/304))
 - 
 - 
 - 

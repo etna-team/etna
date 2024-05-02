@@ -41,7 +41,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         jitter_ratio: float = 0.8,
         use_cosine_similarity: bool = True,
         n_seq_steps: int = 0,
-        device: Literal["cpu", "gpu"] = "cpu",
+        device: Literal["cpu", "cuda"] = "cpu",
         batch_size: int = 16,
         num_workers: int = 0,
     ):
