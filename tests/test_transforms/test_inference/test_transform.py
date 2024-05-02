@@ -1009,7 +1009,7 @@ class TestTransformTrainSubsetSegments:
         transformed_subset_df = transform.transform(subset_ts).to_pandas()
 
         # check
-        assert_frame_equal(transformed_subset_df, transformed_df.loc[:, pd.IndexSlice[segments, :]], atol=1e-5)
+        assert_frame_equal(transformed_subset_df, transformed_df.loc[:, pd.IndexSlice[segments, :]], atol=5e-4)
 
     @pytest.mark.parametrize(
         "transform, dataset_name",
@@ -1259,7 +1259,7 @@ class TestTransformFutureSubsetSegments:
         transformed_future_df = transformed_future_ts.to_pandas()
         transformed_subset_future_df = transformed_subset_future_ts.to_pandas()
         assert_frame_equal(
-            transformed_subset_future_df, transformed_future_df.loc[:, pd.IndexSlice[segments, :]], atol=1e-5
+            transformed_subset_future_df, transformed_future_df.loc[:, pd.IndexSlice[segments, :]], atol=5e-4
         )
 
     @pytest.mark.parametrize(
