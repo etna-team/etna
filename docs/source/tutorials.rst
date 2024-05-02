@@ -125,6 +125,15 @@ Intermediate
       ^^^
       How pipelines are making forecasts under the hood
 
+   .. grid-item-card:: Embedding models
+      :text-align: center
+      :link: tutorials/210-embedding_models
+      :link-type: doc
+      :class-header: card-tutorial-intermediate
+
+      ^^^
+      How pipelines are making forecasts under the hood
+
 Advanced
 --------
 

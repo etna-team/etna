@@ -126,6 +126,14 @@ We have prepared a set of tutorials for an easy introduction:
   - ML models
 - Summary
 
+#### [Embedding models](https://github.com/etna-team/etna/tree/master/examples/210-embedding_models.ipynb)
+- Using embedding models directly
+- Using embedding models with transforms
+  - Baseline
+  - EmbeddingSegmentTransform
+  - EmbeddingWindowTransform
+- Saving and loading models
+
 ### Advanced
 
 #### [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/301-custom_transform_and_model.ipynb)
