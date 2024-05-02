@@ -22,7 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
-# Removed skipping training loop when model is already pretrained. Move lr parameter to fit method
+# Removed skipping training loop when model is already pretrained. Removed "multiscale" encode option.
+# Move lr parameter to fit method
 
 import torch
 import torch.nn.functional as F
@@ -212,22 +213,6 @@ class TS2Vec:
             if slicing is not None:
                 out = out[:, slicing]
 
-        elif encoding_window == 'multiscale':
-            p = 0
-            reprs = []
-            while (1 << p) + 1 < out.size(1):
-                t_out = F.max_pool1d(
-                    out.transpose(1, 2),
-                    kernel_size=(1 << (p + 1)) + 1,
-                    stride=1,
-                    padding=1 << p
-                ).transpose(1, 2)
-                if slicing is not None:
-                    t_out = t_out[:, slicing]
-                reprs.append(t_out)
-                p += 1
-            out = torch.cat(reprs, dim=-1)
-
         else:
             if slicing is not None:
                 out = out[:, slicing]
@@ -241,7 +226,7 @@ class TS2Vec:
         Args:
             data (numpy.ndarray): This should have a shape of (n_instance, n_timestamps, n_features). All missing data should be set to NaN.
             mask (str): The mask used by encoder can be specified with this parameter. This can be set to 'binomial', 'continuous', 'all_true', 'all_false' or 'mask_last'.
-            encoding_window (Union[str, int]): When this param is specified, the computed representation would the max pooling over this window. This can be set to 'full_series', 'multiscale' or an integer specifying the pooling kernel size.
+            encoding_window (Union[str, int]): When this param is specified, the computed representation would the max pooling over this window. This can be set to 'full_series' or an integer specifying the pooling kernel size.
             causal (bool): When this param is set to True, the future information would not be encoded into representation of each timestamp.
             sliding_length (Union[int, NoneType]): The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
             sliding_padding (int): This param specifies the contextual data length used for inference every sliding windows.

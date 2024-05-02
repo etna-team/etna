@@ -175,7 +175,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         mask: Literal["binomial", "continuous", "all_true", "all_false", "mask_last"] = "all_true",
         sliding_length: Optional[int] = None,
         sliding_padding: int = 0,
-        encoding_window: Optional[Union[Literal["multiscale"], int]] = None,
+        encoding_window: Optional[int] = None,
     ) -> np.ndarray:
         """Create embeddings of each series timestamp.
 
@@ -196,10 +196,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         sliding_padding:
             the contextual data length used for inference every sliding windows.
         encoding_window:
-            when this param is specified, the computed representation would the max pooling over this window. The possible options are:
-
-            - 'multiscale'
-            - integer specifying the pooling kernel size.
+            when this param is specified, the computed representation would be the max pooling over this window.
             This param will be ignored when encoding full series
 
         Returns
