@@ -319,6 +319,99 @@ def test_mrmr_right_regressors(relevance_table, ts_with_regressors, fast_redunda
     assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
 
 
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_top_k_greater_than_number_of_regressors(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects right top_k regressors."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=20,
+        model=CatBoostRegressor(iterations=1),
+        fast_redundancy=fast_redundancy,
+    )
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+    assert selected_regressors == {
+        "regressor_useless_11",
+        "regressor_useless_3",
+        "regressor_useful_1",
+        "regressor_useful_0",
+        "regressor_useless_6",
+        "regressor_useless_5",
+        "regressor_useless_9",
+        "regressor_useless_4",
+        "regressor_useful_2",
+        "regressor_useless_7",
+        "regressor_useless_10",
+        "regressor_useless_8",
+        "regressor_useless_1",
+        "regressor_useless_2",
+        "regressor_useless_0",
+    }
+
+
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_drop_zero_mode_sanity_check(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects right top_k regressors."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table, top_k=3, model=CatBoostRegressor(iterations=4), fast_redundancy=fast_redundancy
+    )
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+
+    assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
+
+
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_select_top_k_regressors_in_drop_zero_mode(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects right top_k regressors."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=10,
+        model=CatBoostRegressor(iterations=1),
+        fast_redundancy=fast_redundancy,
+    )
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+    assert len(selected_regressors) == 10
+
+
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_drop_zero_mode_sanity_check(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects right top_k regressors."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table, top_k=3, model=CatBoostRegressor(iterations=4), fast_redundancy=fast_redundancy
+    )
+
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+
+    assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
+
+
 @pytest.mark.parametrize(
     "transform",
     [

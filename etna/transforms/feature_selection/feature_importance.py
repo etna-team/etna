@@ -235,8 +235,14 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         df_features = df_features.loc[df_features.first_valid_index() :]
         relevance_table = self.relevance_table(df_target, df_features, **self.relevance_params)
 
+        if relevance_table.values.min() < 0:
+            raise ValueError("Relevance should be greater than or equal to zero")
+
         if not self.relevance_table.greater_is_better:
-            relevance_table *= -1
+            min_relevance = relevance_table.values.min()
+            max_relevance = relevance_table.values.max()
+            relevance_table = max_relevance + min_relevance - relevance_table
+
         self.selected_features = mrmr(
             relevance_table=relevance_table,
             regressors=df_features,

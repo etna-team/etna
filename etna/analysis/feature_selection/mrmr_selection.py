@@ -1,3 +1,4 @@
+import math
 import warnings
 from enum import Enum
 from typing import List
@@ -30,11 +31,22 @@ AGGREGATION_FN = {
 }
 
 
+def is_relevant(relevance, feature, atol):
+    """Return True if feature is relevant, else return False."""
+    return not math.isclose(relevance.loc[feature], 0, abs_tol=atol)
+
+
+def is_not_relevant(relevance, feature, atol):
+    """Return False if feature is relevant, else return True."""
+    return math.isclose(relevance.loc[feature], 0, abs_tol=atol)
+
+
 def mrmr(
     relevance_table: pd.DataFrame,
     regressors: pd.DataFrame,
     top_k: int,
     fast_redundancy: bool = False,
+    drop_zero: bool = True,
     relevance_aggregation_mode: str = AggregationMode.mean,
     redundancy_aggregation_mode: str = AggregationMode.mean,
     atol: float = 1e-10,
@@ -59,6 +71,10 @@ def mrmr(
     fast_redundancy:
         * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)`
         * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
+    drop_zero:
+        If True, drop features with zero relevance before MRMR. If top_k is greater number of features
+        with relevance > 0, select all this features and add features with zero relevance to select top_k features
+
     relevance_aggregation_mode:
         the method for relevance values per-segment aggregation
     redundancy_aggregation_mode:
@@ -88,12 +104,25 @@ def mrmr(
     relevance = relevance_table.apply(relevance_aggregation_fn).fillna(0)
 
     all_features = relevance.index.to_list()
+
+    if top_k >= len(all_features):
+        return all_features.copy()
+
     segments = set(regressors.columns.get_level_values("segment"))
     selected_features: List[str] = []
     not_selected_features = all_features.copy()
 
-    redundancy_table = pd.DataFrame(np.inf, index=all_features, columns=all_features)
-    top_k = min(top_k, len(all_features))
+    if drop_zero is True:
+        not_relevant_features = list(
+            filter(lambda feature: is_not_relevant(relevance, feature, atol), not_selected_features)
+        )
+        not_selected_features = list(
+            filter(lambda feature: is_relevant(relevance, feature, atol), not_selected_features)
+        )
+        if top_k >= len(not_selected_features):
+            return not_selected_features + not_relevant_features[: (top_k - len(not_selected_features))]
+
+    redundancy_table = pd.DataFrame(1, index=all_features, columns=all_features)
 
     for i in range(top_k):
         score_numerator = relevance.loc[not_selected_features]
@@ -124,14 +153,13 @@ def mrmr(
             redundancy_table.loc[not_selected_features, last_selected_feature] = (
                 segment_redundancy.agg(redundancy_aggregation_fn)
                 .clip(atol)
-                .fillna(np.inf)
+                .fillna(1)
                 .loc[not_selected_features]
                 .values.squeeze()
             )
 
-            score_denominator = redundancy_table.loc[not_selected_features, selected_features].mean(axis=1)
-            score_denominator[np.isclose(score_denominator, 1, atol=atol)] = np.inf
-        score = score_numerator / score_denominator
+            score_denominator = redundancy_table.loc[not_selected_features, selected_features].max(axis=1)
+        score = score_numerator * (1 - score_denominator)
         best_feature = score.index[score.argmax()]
         selected_features.append(best_feature)
         not_selected_features.remove(best_feature)
