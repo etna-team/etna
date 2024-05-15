@@ -123,7 +123,7 @@ def mrmr(
 
     for i in range(top_k):
         score_numerator = relevance.loc[not_selected_features]
-        score_denominator = pd.Series(1, index=not_selected_features)
+        score_denominator = pd.Series(0, index=not_selected_features)
         if i > 0:
             last_selected_feature = selected_features[-1]
             last_selected_regressor = regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, last_selected_feature]]
