@@ -1710,14 +1710,14 @@ class TestInverseTransformTrainNewSegments:
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
                 ),
                 "ts_with_exog",
-                {"create": {"monthday", "positive", "weekday"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
-                {"create": {"monthday", "positive", "weekday"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
