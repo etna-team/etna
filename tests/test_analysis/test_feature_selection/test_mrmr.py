@@ -83,7 +83,6 @@ def test_mrmr_right_regressors(df_with_regressors, relevance_method, expected_re
     assert set(selected_regressors) == set(expected_regressors)
 
 
-
 @pytest.fixture()
 def high_relevance_high_redundancy_problem(periods=10):
     relevance_table = pd.DataFrame(

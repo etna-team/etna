@@ -368,7 +368,11 @@ def test_mrmr_drop_zero_mode_sanity_check(relevance_table, ts_with_regressors, f
     ts = ts_with_regressors
 
     mrmr = MRMRFeatureSelectionTransform(
-        relevance_table=relevance_table, top_k=3, model=RandomForestRegressor(), drop_zero=True, fast_redundancy=fast_redundancy
+        relevance_table=relevance_table,
+        top_k=3,
+        model=RandomForestRegressor(),
+        drop_zero=True,
+        fast_redundancy=fast_redundancy,
     )
 
     df_selected = mrmr.fit_transform(ts).to_pandas()
