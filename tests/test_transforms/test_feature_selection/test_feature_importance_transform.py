@@ -336,7 +336,7 @@ def test_mrmr_top_k_greater_than_number_of_regressors(relevance_table, ts_with_r
     for column in df_selected.columns.get_level_values("feature"):
         if column.startswith("regressor"):
             selected_regressors.add(column)
-    assert selected_regressors == {
+    assert set(selected_regressors) == {
         "regressor_useless_11",
         "regressor_useless_3",
         "regressor_useful_1",
