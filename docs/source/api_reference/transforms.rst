@@ -56,6 +56,18 @@ Categorical encoding transforms:
    LabelEncoderTransform
    OneHotEncoderTransform
 
+.. _embeddings:
+Embedding transforms and their utilities:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   EmbeddingSegmentTransform
+   EmbeddingWindowTransform
+   embeddings.models.TS2VecEmbeddingModel
+   embeddings.models.TSTCCEmbeddingModel
+
 Feature selection transforms:
 
 .. autosummary::

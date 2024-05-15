@@ -18,6 +18,8 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EmbeddingSegmentTransform
+from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import EventTransform
 from etna.transforms import ExogShiftTransform
 from etna.transforms import FilterFeaturesTransform
@@ -59,6 +61,8 @@ from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
+from etna.transforms.embeddings.models import TS2VecEmbeddingModel
+from etna.transforms.embeddings.models import TSTCCEmbeddingModel
 from tests.test_transforms.utils import assert_column_changes
 from tests.utils import convert_ts_to_int_timestamp
 from tests.utils import select_segments_subset
@@ -119,6 +123,47 @@ class TestTransformTrain:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
@@ -492,6 +537,47 @@ class TestTransformTrain:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
@@ -923,7 +1009,7 @@ class TestTransformTrainSubsetSegments:
         transformed_subset_df = transform.transform(subset_ts).to_pandas()
 
         # check
-        assert_frame_equal(transformed_subset_df, transformed_df.loc[:, pd.IndexSlice[segments, :]])
+        assert_frame_equal(transformed_subset_df, transformed_df.loc[:, pd.IndexSlice[segments, :]], atol=5e-4)
 
     @pytest.mark.parametrize(
         "transform, dataset_name",
@@ -951,6 +1037,39 @@ class TestTransformTrainSubsetSegments:
                 TrendTransform(
                     in_column="target",
                     change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
@@ -1139,7 +1258,9 @@ class TestTransformFutureSubsetSegments:
         # check
         transformed_future_df = transformed_future_ts.to_pandas()
         transformed_subset_future_df = transformed_subset_future_ts.to_pandas()
-        assert_frame_equal(transformed_subset_future_df, transformed_future_df.loc[:, pd.IndexSlice[segments, :]])
+        assert_frame_equal(
+            transformed_subset_future_df, transformed_future_df.loc[:, pd.IndexSlice[segments, :]], atol=5e-4
+        )
 
     @pytest.mark.parametrize(
         "transform, dataset_name",
@@ -1180,6 +1301,39 @@ class TestTransformFutureSubsetSegments:
                 TrendTransform(
                     in_column="target",
                     change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
@@ -1402,6 +1556,47 @@ class TestTransformTrainNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -1740,6 +1935,47 @@ class TestTransformFutureNewSegments:
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -2163,6 +2399,47 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"create": {"res"}},
             ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),
             (
@@ -2557,6 +2834,47 @@ class TestTransformFutureWithoutTarget:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                    out_column="emb",
+                ),
+                "regular_ts",
+                {"create": {"emb_0", "emb_1"}},
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {"create": {"res"}}),

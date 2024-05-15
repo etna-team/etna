@@ -76,6 +76,7 @@ prophet = {version = "^1.0", optional = true}
 torch = {version = ">=1.8.0,<3", optional = true}
 pytorch-forecasting = {version = "^0.9.0", optional = true}
 pytorch-lightning = {version = "*", optional = true}
+einops = {version = "*", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
 
@@ -121,7 +122,7 @@ types-setuptools = {version = "^65.7.0", optional = true}
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
-torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
+torch = ["torch", "pytorch-forecasting", "pytorch-lightning", "einops"]
 wandb = ["wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
@@ -135,7 +136,7 @@ style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
 
 all = [
     "prophet",
-    "torch", "pytorch-forecasting", "pytorch-lightning",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
     "wandb",
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
@@ -144,7 +145,7 @@ all = [
 
 all-dev = [
     "prophet",
-    "torch", "pytorch-forecasting", "pytorch-lightning",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
     "wandb",
     "optuna", "sqlalchemy",
     "click", "semver",
@@ -247,7 +248,6 @@ filterwarnings = [
     "ignore: Call to deprecated class DeepARModel.",
     "ignore: dropout option adds dropout after all but last recurrent layer",
     "ignore: Call to deprecated class TFTModel."
-
 ]
 markers = [
     "smoke"
