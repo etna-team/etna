@@ -33,12 +33,12 @@ AGGREGATION_FN = {
 
 def is_relevant(relevance, feature, atol):
     """Return True if feature is relevant, else return False."""
-    return not math.isclose(relevance.loc[feature], 0, abs_tol=atol)
+    return not relevance.loc[feature] == 0
 
 
 def is_not_relevant(relevance, feature, atol):
     """Return False if feature is relevant, else return True."""
-    return math.isclose(relevance.loc[feature], 0, abs_tol=atol)
+    return relevance.loc[feature] == 0
 
 
 def mrmr(
@@ -46,7 +46,7 @@ def mrmr(
     regressors: pd.DataFrame,
     top_k: int,
     fast_redundancy: bool = False,
-    drop_zero: bool = True,
+    drop_zero: bool = False,
     relevance_aggregation_mode: str = AggregationMode.mean,
     redundancy_aggregation_mode: str = AggregationMode.mean,
     atol: float = 1e-10,
@@ -116,9 +116,7 @@ def mrmr(
         not_relevant_features = list(
             filter(lambda feature: is_not_relevant(relevance, feature, atol), not_selected_features)
         )
-        not_selected_features = list(
-            filter(lambda feature: is_relevant(relevance, feature, atol), not_selected_features)
-        )
+        not_selected_features = list(set(all_features) - set(not_relevant_features))
         if top_k >= len(not_selected_features):
             return not_selected_features + not_relevant_features[: (top_k - len(not_selected_features))]
 

@@ -172,6 +172,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         top_k: int,
         features_to_use: Union[List[str], Literal["all"]] = "all",
         fast_redundancy: bool = False,
+        drop_zero: bool = False,
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
         atol: float = 1e-10,
@@ -209,6 +210,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.fast_redundancy = fast_redundancy
+        self.drop_zero = drop_zero
         self.relevance_aggregation_mode = relevance_aggregation_mode
         self.redundancy_aggregation_mode = redundancy_aggregation_mode
         self.atol = atol
@@ -248,6 +250,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             regressors=df_features,
             top_k=self.top_k,
             fast_redundancy=self.fast_redundancy,
+            drop_zero=self.drop_zero,
             relevance_aggregation_mode=self.relevance_aggregation_mode,
             redundancy_aggregation_mode=self.redundancy_aggregation_mode,
             atol=self.atol,
