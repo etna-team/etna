@@ -30,16 +30,6 @@ AGGREGATION_FN = {
 }
 
 
-def is_relevant(relevance, feature, atol):
-    """Return True if feature is relevant, else return False."""
-    return not relevance.loc[feature] == 0
-
-
-def is_not_relevant(relevance, feature, atol):
-    """Return False if feature is relevant, else return True."""
-    return relevance.loc[feature] == 0
-
-
 def mrmr(
     relevance_table: pd.DataFrame,
     regressors: pd.DataFrame,
@@ -51,40 +41,40 @@ def mrmr(
     atol: float = 1e-10,
 ) -> List[str]:
     """
-    Maximum Relevance and Minimum Redundancy feature selection method.
+      Maximum Relevance and Minimum Redundancy feature selection method.
 
-    Here relevance for each regressor is calculated as the per-segment aggregation of the relevance
-    values in relevance_table. The redundancy term for the regressor is calculated as a mean absolute correlation
-    between this regressor and other ones. The correlation between the two regressors is an aggregated pairwise
-    correlation for the regressors values in each segment.
+      Here relevance for each regressor is calculated as the per-segment aggregation of the relevance
+      values in relevance_table. The redundancy term for the regressor is calculated as a mean absolute correlation
+      between this regressor and other ones. The correlation between the two regressors is an aggregated pairwise
+      correlation for the regressors values in each segment.
 
-    Parameters
-    ----------
-    relevance_table:
-        dataframe of shape n_segment x n_exog_series with relevance table, where ``relevance_table[i][j]``
-        contains relevance of j-th ``df_exog`` series to i-th df series
-    regressors:
-        dataframe with regressors in etna format
-    top_k:
-        num of regressors to select; if there are not enough regressors, then all will be selected
-    fast_redundancy:
-        * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)`
-        * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
+      Parameters
+      ----------
+      relevance_table:
+          dataframe of shape n_segment x n_exog_series with relevance table, where ``relevance_table[i][j]``
+          contains relevance of j-th ``df_exog`` series to i-th df series
+      regressors:
+          dataframe with regressors in etna format
+      top_k:
+          num of regressors to select; if there are not enough regressors, then all will be selected
+      fast_redundancy:
+          * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)`
+          * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
     drop_zero:
-        If True, drop features with zero relevance before MRMR. If top_k is greater number of features
-        with relevance > 0, select all this features and add features with zero relevance to select top_k features
+          * True: use only features with relevance > 0 in calculations, if their number is less than zero
+              randomly selects features with zero relevance so that the total number of selected features is top_k
+          * False: use all features in calculations
+      relevance_aggregation_mode:
+          the method for relevance values per-segment aggregation
+      redundancy_aggregation_mode:
+          the method for redundancy values per-segment aggregation
+      atol:
+          the absolute tolerance to compare the float values
 
-    relevance_aggregation_mode:
-        the method for relevance values per-segment aggregation
-    redundancy_aggregation_mode:
-        the method for redundancy values per-segment aggregation
-    atol:
-        the absolute tolerance to compare the float values
-
-    Returns
-    -------
-    selected_features: List[str]
-        list of ``top_k`` selected regressors, sorted by their importance
+      Returns
+      -------
+      selected_features: List[str]
+          list of ``top_k`` selected regressors, sorted by their importance
     """
     if not fast_redundancy:
         warnings.warn(
@@ -112,9 +102,7 @@ def mrmr(
     not_selected_features = all_features.copy()
 
     if drop_zero is True:
-        not_relevant_features = list(
-            filter(lambda feature: is_not_relevant(relevance, feature, atol), not_selected_features)
-        )
+        not_relevant_features = list(filter(lambda feature: not relevance.loc[feature] == 0, not_selected_features))
         not_selected_features = list(set(all_features) - set(not_relevant_features))
         if top_k >= len(not_selected_features):
             return not_selected_features + not_relevant_features[: (top_k - len(not_selected_features))]

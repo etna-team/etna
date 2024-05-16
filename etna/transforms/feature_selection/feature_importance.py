@@ -191,6 +191,10 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         features_to_use:
             columns of the dataset to select from
             if "all" value is given, all columns are used
+        drop_zero:
+            * True: use only features with relevance > 0 in calculations, if their number is less than zero
+              randomly selects features with zero relevance so that the total number of selected features is top_k
+            * False: use all features in calculations
         fast_redundancy:
             * True: compute redundancy only inside the segments, time complexity :math:`O(top\_k \\cdot n\_segments \\cdot n\_features \\cdot history\_len)`
             * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k \\cdot n\_segments^2 \\cdot n\_features \\cdot history\_len)`
@@ -236,9 +240,6 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         df_features = df.loc[:, pd.IndexSlice[:, features]]
         df_features = df_features.loc[df_features.first_valid_index() :]
         relevance_table = self.relevance_table(df_target, df_features, **self.relevance_params)
-
-        if relevance_table.values.min() < 0:
-            raise ValueError("Relevance should be greater than or equal to zero")
 
         if not self.relevance_table.greater_is_better:
             min_relevance = relevance_table.values.min()

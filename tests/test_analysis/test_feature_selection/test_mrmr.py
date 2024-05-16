@@ -83,6 +83,25 @@ def test_mrmr_right_regressors(df_with_regressors, relevance_method, expected_re
     assert set(selected_regressors) == set(expected_regressors)
 
 
+@pytest.mark.parametrize("fast_redundancy", [True, False])
+def test_mrmr_not_depend_on_columns_order(df_with_regressors, fast_redundancy):
+    df, regressors = df_with_regressors["df"], df_with_regressors["regressors"]
+    relevance_table = ModelRelevanceTable()(df=df, df_exog=regressors, model=RandomForestRegressor())
+    expected_answer = mrmr(
+        relevance_table=relevance_table, regressors=regressors, top_k=5, fast_redundancy=fast_redundancy
+    )
+    columns = list(regressors.columns.get_level_values("feature").unique())
+    for i in range(10):
+        np.random.shuffle(columns)
+        answer = mrmr(
+            relevance_table=relevance_table[columns],
+            regressors=regressors.loc[pd.IndexSlice[:], pd.IndexSlice[:, columns]],
+            top_k=5,
+            fast_redundancy=fast_redundancy,
+        )
+        assert answer == expected_answer
+
+
 @pytest.fixture()
 def high_relevance_high_redundancy_problem(periods=10):
     relevance_table = pd.DataFrame(
