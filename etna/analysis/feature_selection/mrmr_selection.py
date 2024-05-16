@@ -42,7 +42,6 @@ def mrmr(
 ) -> List[str]:
     """
       Maximum Relevance and Minimum Redundancy feature selection method.
-
       Here relevance for each regressor is calculated as the per-segment aggregation of the relevance
       values in relevance_table. The redundancy term for the regressor is calculated as a mean absolute correlation
       between this regressor and other ones. The correlation between the two regressors is an aggregated pairwise
@@ -61,7 +60,7 @@ def mrmr(
           * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)`
           * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
     drop_zero:
-          * True: use only features with relevance > 0 in calculations, if their number is less than zero
+          * True: use only features with relevance > 0 in calculations, if their number is less than top_k
               randomly selects features with zero relevance so that the total number of selected features is top_k
           * False: use all features in calculations
       relevance_aggregation_mode:
