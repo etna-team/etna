@@ -47,7 +47,7 @@ pandas = "^1.1"
 catboost = ">=0.21"
 ruptures = "^1.1.5"
 numba = ">=0.53.1"
-seaborn = "^0.11.1,<1"
+seaborn = ">=0.11.1,<1"
 statsmodels = ">=0.12,<0.14"
 pmdarima = ">=1.8.0"
 dill = "^0.3.4"
@@ -231,7 +231,6 @@ filterwarnings = [
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
-    "ignore: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed", # seaborn
     "ignore: Jupyter is migrating its paths to use standard platformdirs",
     "ignore::sqlalchemy.exc.MovedIn20Warning",
     "ignore: Argument `closed` is deprecated in favor of `inclusive`",
