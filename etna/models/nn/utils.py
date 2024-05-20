@@ -21,10 +21,12 @@ from etna.models.base import log_decorator
 
 if SETTINGS.torch_required:
     import pytorch_lightning as pl
+    import torch
     from pytorch_forecasting.data import TimeSeriesDataSet
     from pytorch_forecasting.data.encoders import EncoderNormalizer
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
     from pytorch_forecasting.data.encoders import TorchNormalizer
+    from torch import nn
     from torch.utils.data import DataLoader
 
 else:
@@ -310,3 +312,34 @@ class PytorchForecastingMixin:
         ts.df = ts.df.iloc[-horizon:]
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
         return ts, prediction_dataloader
+
+
+class MultiEmbedding(nn.Module):
+    """Class for obtaining the embeddings of the categorical features."""
+
+    def __init__(self, embedding_sizes: Dict[str, Tuple[int, int]]):
+        """
+        Init MultiEmbedding.
+
+        Parameters
+        ----------
+        embedding_sizes:
+            dictionary mapping feature name to tuple of number of categorical classes and embedding size
+        """
+        super().__init__()
+
+        self.embedding_sizes = embedding_sizes
+        self.embedding = nn.ModuleDict(
+            {feature: nn.Embedding(n + 1, dim) for feature, (n, dim) in self.embedding_sizes.items()}
+        )
+
+    def forward(self, x: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x:
+            dictionary mapping feature name to feature values
+        """
+        return torch.concat([self.embedding[feature](x[feature].int().squeeze(2)) for feature in x.keys()], dim=2)

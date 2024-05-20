@@ -6,6 +6,9 @@ import pytest
 from etna.metrics import MAE
 from etna.models.nn import RNNModel
 from etna.models.nn.rnn import RNNNet
+from etna.pipeline import Pipeline
+from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LabelEncoderTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
@@ -43,6 +46,32 @@ def test_rnn_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
 
     mae = MAE("macro")
     assert mae(ts_test, future) < 0.06
+
+
+@pytest.mark.parametrize(
+    "embedding_sizes,features_to_encode",
+    [({}, []), ({"categ_regr_label": (2, 5), "categ_regr_new_label": (1, 5)}, ["categ_regr", "categ_regr_new"])],
+)
+def test_rnn_backtest(ts_different_regressors, embedding_sizes, features_to_encode):
+    encoder_length = 4
+    decoder_length = 1
+    model = RNNModel(
+        input_size=3,
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        embedding_sizes=embedding_sizes,
+        trainer_params=dict(max_epochs=1),
+    )
+    pipeline = Pipeline(
+        model=model,
+        transforms=[
+            LabelEncoderTransform(in_column=feature, strategy="none", out_column=f"{feature}_label")
+            for feature in features_to_encode
+        ]
+        + [FilterFeaturesTransform(exclude=["reals_exog", "categ_exog"])],
+        horizon=1,
+    )
+    pipeline.backtest(ts_different_regressors, metrics=[MAE()], n_folds=2)
 
 
 @pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
