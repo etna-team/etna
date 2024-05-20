@@ -74,10 +74,11 @@ def test_rnn_backtest(ts_different_regressors, embedding_sizes, features_to_enco
     pipeline.backtest(ts_different_regressors, metrics=[MAE()], n_folds=2)
 
 
+@pytest.mark.parametrize("categ_columns", [[], ["regressor_int_cat"]])
 @pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
-def test_rnn_make_samples(df_name, request):
+def test_rnn_make_samples(df_name, categ_columns, request):
     df = request.getfixturevalue(df_name)
-    rnn_module = MagicMock()
+    rnn_module = MagicMock(embedding_sizes={column: (7, 1) for column in categ_columns})
     encoder_length = 8
     decoder_length = 4
 
@@ -97,11 +98,26 @@ def test_rnn_make_samples(df_name, request):
             "decoder_real": df[["target_shifted", "regressor_float", "regressor_int"]]
             .iloc[encoder_length + i : encoder_length + decoder_length + i]
             .values,
+            "encoder_categorical": {
+                column: df[[column]].iloc[1 + i : encoder_length + i].values for column in categ_columns
+            },
+            "decoder_categorical": {
+                column: df[[column]].iloc[encoder_length + i : encoder_length + decoder_length + i].values
+                for column in categ_columns
+            },
             "encoder_target": df[["target"]].iloc[1 + i : encoder_length + i].values,
             "decoder_target": df[["target"]].iloc[encoder_length + i : encoder_length + decoder_length + i].values,
         }
 
-        assert ts_samples[i].keys() == {"encoder_real", "decoder_real", "encoder_target", "decoder_target", "segment"}
+        assert ts_samples[i].keys() == {
+            "encoder_real",
+            "decoder_real",
+            "encoder_categorical",
+            "decoder_categorical",
+            "encoder_target",
+            "decoder_target",
+            "segment",
+        }
         assert ts_samples[i]["segment"] == "segment_1"
         for key in expected_sample:
             np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
