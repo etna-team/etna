@@ -388,7 +388,7 @@ def test_transform_binary_day_with_nans(two_segments_simple_ts_daily_with_nans):
 @pytest.mark.parametrize(
     "iso_code,answer",
     [
-        ("UK", np.array(["New Year's Day"] + ["New Year Holiday [Scotland]"] + ["NO_HOLIDAY"] * 13)),
+        ("UK", np.array(["New Year's Day"] + ["NO_HOLIDAY"] * 14)),
         ("US", np.array(["New Year's Day"] + ["NO_HOLIDAY"] * 14)),
     ],
 )
