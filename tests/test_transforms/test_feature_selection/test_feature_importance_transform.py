@@ -385,6 +385,29 @@ def test_mrmr_drop_zero_mode_sanity_check(relevance_table, ts_with_regressors, f
     assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
 
 
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_drop_zero_mode_top_k_less_than_relevant(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects exact top_k regressors if number of relevant regressors greater than top_k."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=2,
+        model=RandomForestRegressor(),
+        drop_zero=True,
+        fast_redundancy=fast_redundancy,
+    )
+
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+
+    assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1"}
+
+
 @pytest.mark.parametrize(
     "transform",
     [
