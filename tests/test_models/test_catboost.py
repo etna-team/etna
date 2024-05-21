@@ -200,7 +200,7 @@ def test_prediction_decomposition(ts_with_features, model):
     assert_prediction_components_are_present(model=model, train=train, test=test)
 
 
-@pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
+@pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel(iterations=2000)))
 def test_prediction_decomposition_with_shuffled_columns(
     ts_with_features, model, train_order=("target", "cat_exog", "exog"), test_order=("target", "exog", "cat_exog")
 ):

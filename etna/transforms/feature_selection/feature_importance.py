@@ -192,8 +192,8 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             columns of the dataset to select from
             if "all" value is given, all columns are used
         drop_zero:
-            * True: use only features with relevance > 0 in calculations, if their number is less than top_k
-              randomly selects features with zero relevance so that the total number of selected features is top_k
+            * True: use only features with relevance > 0 in calculations, if their number is less than ``top_k``,
+              randomly selects features with zero relevance so that the total number of selected features is ``top_k``
             * False: use all features in calculations
         fast_redundancy:
             * True: compute redundancy only inside the segments, time complexity :math:`O(top\_k \\cdot n\_segments \\cdot n\_features \\cdot history\_len)`

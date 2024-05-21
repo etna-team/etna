@@ -329,7 +329,6 @@ def test_mrmr_top_k_greater_than_number_of_regressors(relevance_table, ts_with_r
         relevance_table=relevance_table,
         top_k=20,
         model=CatBoostRegressor(iterations=1),
-        drop_zero=True,
         fast_redundancy=fast_redundancy,
     )
     df_selected = mrmr.fit_transform(ts).to_pandas()
