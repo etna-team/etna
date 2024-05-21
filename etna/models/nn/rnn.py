@@ -264,9 +264,10 @@ class RNNModel(DeepBaseModel):
     """RNN based model on LSTM cell.
 
     Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
-    Feature values that were not seen during `fit` should be set to NaN for expected behaviour with `strategy="none"`.
+    Feature values that weren't seen during ``fit`` should be set to NaN, to get this behaviour use encoder with *strategy="none"*.
 
-    If there are numeric columns that are passed to `embedding_sizes` parameter, they will be considered only as categorical features.
+    If there are numeric columns that are passed to ``embedding_sizes`` parameter, they will be considered only as categorical features.
+
     Note
     ----
     This model requires ``torch`` extension to be installed.
