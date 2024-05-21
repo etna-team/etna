@@ -168,8 +168,11 @@ class RNNNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
+        categorical_numeric_columns = list(
+            df.select_dtypes(include=[np.number]).columns.intersection(self.embedding_sizes.keys())
+        )
         values_real = (
-            df.drop(["segment", "timestamp"], axis=1)
+            df.drop(["segment", "timestamp"] + categorical_numeric_columns, axis=1)
             .select_dtypes(include=[np.number])
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
@@ -261,8 +264,9 @@ class RNNModel(DeepBaseModel):
     """RNN based model on LSTM cell.
 
     Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
-    Feature values that were not seen during `fit` should be set to NaN for expected behaviour with `strategy="none"`
+    Feature values that were not seen during `fit` should be set to NaN for expected behaviour with `strategy="none"`.
 
+    If there are numeric columns that are passed to `embedding_sizes` parameter, they will be considered only as categorical features.
     Note
     ----
     This model requires ``torch`` extension to be installed.

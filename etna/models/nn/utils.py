@@ -329,6 +329,7 @@ class MultiEmbedding(nn.Module):
         super().__init__()
 
         self.embedding_sizes = embedding_sizes
+        # We should add one more embedding for new categories that were not seen during model's `fit`
         self.embedding = nn.ModuleDict(
             {feature: nn.Embedding(n + 1, dim) for feature, (n, dim) in self.embedding_sizes.items()}
         )
