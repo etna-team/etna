@@ -176,6 +176,7 @@ class RNNNet(DeepBaseNet):
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
             .values
         )
+        # Categories that were not seen during `fit` will be filled with new category
         for feature in self.embedding_sizes:
             df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
 
@@ -258,6 +259,9 @@ class RNNNet(DeepBaseNet):
 
 class RNNModel(DeepBaseModel):
     """RNN based model on LSTM cell.
+
+    Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
+    Feature values that were not seen during `fit` should be set to NaN for expected behaviour with `strategy="none"`
 
     Note
     ----
