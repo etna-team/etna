@@ -6,6 +6,9 @@ import pytest
 from etna.metrics import MAE
 from etna.models.nn import RNNModel
 from etna.models.nn.rnn import RNNNet
+from etna.pipeline import Pipeline
+from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LabelEncoderTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
@@ -45,10 +48,37 @@ def test_rnn_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_function_wit
     assert mae(ts_test, future) < 0.06
 
 
+@pytest.mark.parametrize(
+    "embedding_sizes,features_to_encode",
+    [({}, []), ({"categ_regr_label": (2, 5), "categ_regr_new_label": (1, 5)}, ["categ_regr", "categ_regr_new"])],
+)
+def test_handling_categoricals(ts_different_regressors, embedding_sizes, features_to_encode):
+    encoder_length = 4
+    decoder_length = 1
+    model = RNNModel(
+        input_size=3,
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        embedding_sizes=embedding_sizes,
+        trainer_params=dict(max_epochs=1),
+    )
+    pipeline = Pipeline(
+        model=model,
+        transforms=[
+            LabelEncoderTransform(in_column=feature, strategy="none", out_column=f"{feature}_label")
+            for feature in features_to_encode
+        ]
+        + [FilterFeaturesTransform(exclude=["reals_exog", "categ_exog"])],
+        horizon=1,
+    )
+    pipeline.backtest(ts_different_regressors, metrics=[MAE()], n_folds=2)
+
+
+@pytest.mark.parametrize("cat_columns", [[], ["regressor_int_cat"]])
 @pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
-def test_rnn_make_samples(df_name, request):
+def test_rnn_make_samples(df_name, cat_columns, request):
     df = request.getfixturevalue(df_name)
-    rnn_module = MagicMock()
+    rnn_module = MagicMock(embedding_sizes={column: (7, 1) for column in cat_columns})
     encoder_length = 8
     decoder_length = 4
 
@@ -68,11 +98,26 @@ def test_rnn_make_samples(df_name, request):
             "decoder_real": df[["target_shifted", "regressor_float", "regressor_int"]]
             .iloc[encoder_length + i : encoder_length + decoder_length + i]
             .values,
+            "encoder_categorical": {
+                column: df[[column]].iloc[1 + i : encoder_length + i].values for column in cat_columns
+            },
+            "decoder_categorical": {
+                column: df[[column]].iloc[encoder_length + i : encoder_length + decoder_length + i].values
+                for column in cat_columns
+            },
             "encoder_target": df[["target"]].iloc[1 + i : encoder_length + i].values,
             "decoder_target": df[["target"]].iloc[encoder_length + i : encoder_length + decoder_length + i].values,
         }
 
-        assert ts_samples[i].keys() == {"encoder_real", "decoder_real", "encoder_target", "decoder_target", "segment"}
+        assert ts_samples[i].keys() == {
+            "encoder_real",
+            "decoder_real",
+            "encoder_categorical",
+            "decoder_categorical",
+            "encoder_target",
+            "decoder_target",
+            "segment",
+        }
         assert ts_samples[i]["segment"] == "segment_1"
         for key in expected_sample:
             np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
