@@ -2,6 +2,7 @@ from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -20,6 +21,7 @@ if SETTINGS.torch_required:
     from etna.models.base import DeepBaseNet
     from etna.models.nn.deepar_native.loss import DeepARLoss
     from etna.models.nn.deepar_native.loss import GaussianLoss
+    from etna.models.nn.utils import MultiEmbedding
 
 
 class DeepARNativeBatch(TypedDict):
@@ -27,6 +29,8 @@ class DeepARNativeBatch(TypedDict):
 
     encoder_real: "torch.Tensor"
     decoder_real: "torch.Tensor"
+    encoder_categorical: Dict[str, "torch.Tensor"]
+    decoder_categorical: Dict[str, "torch.Tensor"]
     encoder_target: "torch.Tensor"
     decoder_target: "torch.Tensor"
     segment: "torch.Tensor"
@@ -42,6 +46,7 @@ class DeepARNativeNet(DeepBaseNet):
         num_layers: int,
         dropout: float,
         hidden_size: int,
+        embedding_sizes: Dict[str, Tuple[int, int]],
         lr: float,
         scale: bool,
         n_samples: int,
@@ -60,6 +65,8 @@ class DeepARNativeNet(DeepBaseNet):
             dropout rate in rnn layer
         hidden_size:
             size of the hidden state
+        embedding_sizes:
+            dictionary mapping categorical feature name to tuple of number of categorical classes and embedding size
         lr:
             learning rate
         scale:
@@ -77,15 +84,22 @@ class DeepARNativeNet(DeepBaseNet):
         self.num_layers = num_layers
         self.dropout = dropout
         self.hidden_size = hidden_size
+        self.embedding_sizes = embedding_sizes
         self.lr = lr
         self.scale = scale
         self.n_samples = n_samples
         self.loss = loss
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
+        self.cat_size = sum([dim for (_, dim) in self.embedding_sizes.values()])
+        self.embedding: Optional[MultiEmbedding] = None
+        if self.embedding_sizes:
+            self.embedding = MultiEmbedding(
+                embedding_sizes=self.embedding_sizes,
+            )
         self.rnn = nn.LSTM(
             num_layers=self.num_layers,
             hidden_size=self.hidden_size,
-            input_size=self.input_size,
+            input_size=self.input_size + self.cat_size,
             batch_first=True,
             dropout=self.dropout,
         )
@@ -114,22 +128,31 @@ class DeepARNativeNet(DeepBaseNet):
         """
         encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
+        encoder_categorical = x["encoder_categorical"]  # each (batch_size, encoder_length-1, 1)
+        decoder_categorical = x["decoder_categorical"]  # each (batch_size, decoder_length, 1)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
+
+        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
+        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+
+        encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
+        decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
+
         weights = x["weight"]
         forecasts = torch.zeros((decoder_target.shape[0], decoder_target.shape[1], self.n_samples))
 
         for j in range(self.n_samples):
-            _, (h_n, c_n) = self.rnn(encoder_real)
+            _, (h_n, c_n) = self.rnn(encoder_values)
             for i in range(decoder_length):
-                output, (h_n, c_n) = self.rnn(decoder_real[:, i, None], (h_n, c_n))  # (batch_size, 1, hidden_size)
+                output, (h_n, c_n) = self.rnn(decoder_values[:, i, None], (h_n, c_n))  # (batch_size, 1, hidden_size)
                 loc, scale = self.get_distribution_params(output)
                 forecast_point = self.loss.sample(
                     loc=loc, scale=scale, weights=weights, theoretical_mean=self.n_samples == 1
                 ).flatten()  # (batch_size)
                 forecasts[:, i, j] = forecast_point
                 if i < decoder_length - 1:
-                    decoder_real[:, i + 1, 0] = forecast_point
+                    decoder_values[:, i + 1, 0] = forecast_point
         return torch.mean(forecasts, dim=2).unsqueeze(2)
 
     def get_distribution_params(self, output):
@@ -164,12 +187,21 @@ class DeepARNativeNet(DeepBaseNet):
         """
         encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_length-1, input_size)
         decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
+        encoder_categorical = batch["encoder_categorical"]  # each (batch_size, encoder_length-1, 1)
+        decoder_categorical = batch["decoder_categorical"]  # each (batch_size, decoder_length, 1)
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
         weights = batch["weight"]
+
+        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
+        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+
+        encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
+        decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
+
         target = torch.cat((encoder_target, decoder_target), dim=1)  # (batch_size, encoder_length+decoder_length-1, 1)
         output, (_, _) = self.rnn(
-            torch.cat((encoder_real, decoder_real), dim=1)
+            torch.cat((encoder_values, decoder_values), dim=1)
         )  # (batch_size, encoder_length+decoder_length-1, hidden_size)
         loc, scale = self.get_distribution_params(output)  # (batch_size, encoder_length+decoder_length-1, 1)
         target_prediction = self.loss.sample(loc=loc, scale=scale, weights=weights, theoretical_mean=True)
@@ -178,10 +210,13 @@ class DeepARNativeNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
+        categorical_numeric_columns = list(
+            df.select_dtypes(include=[np.number]).columns.intersection(self.embedding_sizes.keys())
+        )
         segment = df["segment"].values[0]
         values_target = df["target"].values
         values_real = (
-            df.drop(["segment", "timestamp"], axis=1)
+            df.drop(["segment", "timestamp"] + categorical_numeric_columns, axis=1)
             .select_dtypes(include=[np.number])
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
@@ -189,8 +224,16 @@ class DeepARNativeNet(DeepBaseNet):
             .values
         )
 
+        # Categories that were not seen during `fit` will be filled with new category
+        for feature in self.embedding_sizes:
+            df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
+
+        # Columns in `values_categorical` are in the same order as in `embedding_sizes`
+        values_categorical = df[self.embedding_sizes.keys()].values.T
+
         def _make(
             values_real: np.ndarray,
+            values_categorical: np.ndarray,
             values_target: np.ndarray,
             segment: str,
             start_idx: int,
@@ -201,6 +244,8 @@ class DeepARNativeNet(DeepBaseNet):
             sample: Dict[str, Any] = {
                 "encoder_real": list(),
                 "decoder_real": list(),
+                "encoder_categorical": dict(),
+                "decoder_categorical": dict(),
                 "encoder_target": list(),
                 "decoder_target": list(),
                 "segment": None,
@@ -218,6 +263,15 @@ class DeepARNativeNet(DeepBaseNet):
             # Get shifted target and concatenate it with real values features
             sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length].copy()
             sample["encoder_real"] = sample["encoder_real"][1:]
+
+            for index, feature in enumerate(self.embedding_sizes.keys()):
+                sample["encoder_categorical"][feature] = values_categorical[index][
+                    start_idx : start_idx + encoder_length
+                ].reshape(-1, 1)[1:]
+
+                sample["decoder_categorical"][feature] = values_categorical[index][
+                    start_idx + encoder_length : start_idx + total_sample_length
+                ].reshape(-1, 1)
 
             target = values_target[start_idx : start_idx + total_sample_length].reshape(-1, 1)
             sample["encoder_target"] = target[1:encoder_length]
@@ -237,6 +291,7 @@ class DeepARNativeNet(DeepBaseNet):
             batch = _make(
                 values_target=values_target,
                 values_real=values_real,
+                values_categorical=values_categorical,
                 segment=segment,
                 start_idx=start_idx,
                 encoder_length=encoder_length,
@@ -256,6 +311,11 @@ class DeepARNativeNet(DeepBaseNet):
 class DeepARNativeModel(DeepBaseModel):
     """DeepAR based model on LSTM cell.
 
+    Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
+    Feature values that weren't seen during ``fit`` should be set to NaN, to get this behaviour use encoder with *strategy="none"*.
+
+    If there are numeric columns that are passed to ``embedding_sizes`` parameter, they will be considered only as categorical features.
+
     Note
     ----
     This model requires ``torch`` extension to be installed.
@@ -270,6 +330,7 @@ class DeepARNativeModel(DeepBaseModel):
         num_layers: int = 2,
         dropout: float = 0.0,
         hidden_size: int = 16,
+        embedding_sizes: Optional[Dict[str, Tuple[int, int]]] = None,
         lr: float = 1e-3,
         scale: bool = True,
         n_samples: int = 1,
@@ -288,7 +349,7 @@ class DeepARNativeModel(DeepBaseModel):
         Parameters
         ----------
         input_size:
-            size of the input feature space: target plus extra features
+            size of the input numeric feature space: target plus extra numeric features
         encoder_length:
             encoder length
         decoder_length:
@@ -299,6 +360,8 @@ class DeepARNativeModel(DeepBaseModel):
             dropout rate in rnn layer
         hidden_size:
             size of the hidden state
+        embedding_sizes:
+            dictionary mapping categorical feature name to tuple of number of categorical classes and embedding size
         lr:
             learning rate
         scale:
@@ -336,6 +399,7 @@ class DeepARNativeModel(DeepBaseModel):
         self.num_layers = num_layers
         self.dropout = dropout
         self.hidden_size = hidden_size
+        self.embedding_sizes = embedding_sizes
         self.lr = lr
         self.scale = scale
         self.n_samples = n_samples
@@ -347,6 +411,7 @@ class DeepARNativeModel(DeepBaseModel):
                 num_layers=num_layers,
                 dropout=dropout,
                 hidden_size=hidden_size,
+                embedding_sizes=embedding_sizes if embedding_sizes is not None else {},
                 lr=lr,
                 scale=scale,
                 n_samples=n_samples,
