@@ -152,7 +152,7 @@ def test_calling_private_prediction(
 class DummyDeepBaseModel(SaveDeepBaseModelMixin):
     def __init__(self, size: int):
         self.size = size
-        self.net = MLPNet(input_size=size, hidden_size=[size], lr=0.01, loss=torch.nn.MSELoss(), optimizer_params=None)
+        self.net = MLPNet(input_size=size, hidden_size=[size], embedding_sizes={}, lr=0.01, loss=torch.nn.MSELoss(), optimizer_params=None)
         self.trainer = Trainer()
 
 
@@ -162,7 +162,7 @@ class DummyPytorchForecastingModel(SavePytorchForecastingMixin):
         self.init_model = init_model
         if init_model:
             self.model = MLPNet(
-                input_size=size, hidden_size=[size], lr=0.01, loss=torch.nn.MSELoss(), optimizer_params=None
+                input_size=size, hidden_size=[size], embedding_sizes={}, lr=0.01, loss=torch.nn.MSELoss(), optimizer_params=None
             )
         else:
             self.model = None
