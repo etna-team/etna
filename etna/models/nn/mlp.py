@@ -256,7 +256,7 @@ class MLPModel(DeepBaseModel):
         Parameters
         ----------
         input_size:
-            size of the input numeric feature space
+            size of the input numeric feature space without target
         decoder_length:
             decoder length
         hidden_size:
