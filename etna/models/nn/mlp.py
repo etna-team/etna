@@ -3,6 +3,7 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -19,12 +20,15 @@ if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
 
+    from etna.models.nn.utils import MultiEmbedding
+
 
 class MLPBatch(TypedDict):
     """Batch specification for MLP."""
 
     decoder_real: "torch.Tensor"
     decoder_target: "torch.Tensor"
+    decoder_categorical: Dict[str, "torch.Tensor"]
     segment: "torch.Tensor"
 
 
@@ -35,6 +39,7 @@ class MLPNet(DeepBaseNet):
         self,
         input_size: int,
         hidden_size: List[int],
+        embedding_sizes: Dict[str, Tuple[int, int]],
         lr: float,
         loss: "torch.nn.Module",
         optimizer_params: Optional[dict],
@@ -47,6 +52,8 @@ class MLPNet(DeepBaseNet):
             size of the input feature space: target plus extra features
         hidden_size:
             list of sizes of the hidden states
+        embedding_sizes:
+            dictionary mapping categorical feature name to tuple of number of categorical classes and embedding size
         lr:
             learning rate
         loss:
@@ -58,10 +65,17 @@ class MLPNet(DeepBaseNet):
         self.save_hyperparameters()
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.embedding_sizes = embedding_sizes
         self.lr = lr
         self.loss = loss
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
-        layers = [nn.Linear(in_features=input_size, out_features=hidden_size[0]), nn.ReLU()]
+        self.cat_size = sum([dim for (_, dim) in self.embedding_sizes.values()])
+        self.embedding: Optional[MultiEmbedding] = None
+        if self.embedding_sizes:
+            self.embedding = MultiEmbedding(
+                embedding_sizes=self.embedding_sizes,
+            )
+        layers = [nn.Linear(in_features=input_size + self.cat_size, out_features=hidden_size[0]), nn.ReLU()]
         for i in range(1, len(hidden_size)):
             layers.append(nn.Linear(in_features=hidden_size[i - 1], out_features=hidden_size[i]))
             layers.append(nn.ReLU())
@@ -87,7 +101,13 @@ class MLPNet(DeepBaseNet):
         """
         self._validate_batch(batch)
         decoder_real = batch["decoder_real"].float()
-        return self.mlp(decoder_real)
+        decoder_categorical = batch["decoder_categorical"]  # each (batch_size, decoder_length, 1)
+
+        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+
+        decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
+
+        return self.mlp(decoder_values)
 
     def step(self, batch: MLPBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
@@ -103,23 +123,52 @@ class MLPNet(DeepBaseNet):
         """
         self._validate_batch(batch)
         decoder_real = batch["decoder_real"].float()
+        decoder_categorical = batch["decoder_categorical"]  # each (batch_size, decoder_length, 1)
         decoder_target = batch["decoder_target"].float()
 
-        output = self.mlp(decoder_real)
+        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+
+        decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
+        output = self.mlp(decoder_values)
         loss = self.loss(output, decoder_target)
         return loss, decoder_target, output
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterable[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.drop(["target", "segment", "timestamp"], axis=1).select_dtypes(include=[np.number]).values
+        categorical_numeric_columns = list(
+            df.select_dtypes(include=[np.number]).columns.intersection(self.embedding_sizes.keys())
+        )
+        values_real = (
+            df.drop(["target", "segment", "timestamp"] + categorical_numeric_columns, axis=1)
+            .select_dtypes(include=[np.number])
+            .values
+        )
+
+        # Categories that were not seen during `fit` will be filled with new category
+        for feature in self.embedding_sizes:
+            df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
+
+        # Columns in `values_categorical` are in the same order as in `embedding_sizes`
+        values_categorical = df[self.embedding_sizes.keys()].values.T
+
         values_target = df["target"].values
         segment = df["segment"].values[0]
 
         def _make(
-            values_target: np.ndarray, values_real: np.ndarray, segment: str, start_idx: int, decoder_length: int
+            values_target: np.ndarray,
+            values_real: np.ndarray,
+            values_categorical: np.ndarray,
+            segment: str,
+            start_idx: int,
+            decoder_length: int,
         ) -> Optional[dict]:
 
-            sample: Dict[str, Any] = {"decoder_real": list(), "decoder_target": list(), "segment": None}
+            sample: Dict[str, Any] = {
+                "decoder_real": list(),
+                "decoder_categorical": dict(),
+                "decoder_target": list(),
+                "segment": None,
+            }
             total_length = len(df["target"])
             total_sample_length = decoder_length
 
@@ -127,6 +176,12 @@ class MLPNet(DeepBaseNet):
                 return None
 
             sample["decoder_real"] = values_real[start_idx : start_idx + decoder_length]
+
+            for index, feature in enumerate(self.embedding_sizes.keys()):
+                sample["decoder_categorical"][feature] = values_categorical[index][
+                    start_idx + encoder_length : start_idx + total_sample_length
+                ].reshape(-1, 1)
+
             sample["decoder_target"] = values_target[start_idx : start_idx + decoder_length].reshape(-1, 1)
             sample["segment"] = segment
             return sample
@@ -136,6 +191,7 @@ class MLPNet(DeepBaseNet):
             batch = _make(
                 values_target=values_target,
                 values_real=values_real,
+                values_categorical=values_categorical,
                 segment=segment,
                 start_idx=start_idx,
                 decoder_length=decoder_length,
@@ -149,6 +205,7 @@ class MLPNet(DeepBaseNet):
             batch = _make(
                 values_target=values_target,
                 values_real=values_real,
+                values_categorical=values_categorical,
                 segment=segment,
                 start_idx=resid_length,
                 decoder_length=decoder_length,
@@ -165,6 +222,11 @@ class MLPNet(DeepBaseNet):
 class MLPModel(DeepBaseModel):
     """MLPModel.
 
+    Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
+    Feature values that weren't seen during ``fit`` should be set to NaN, to get this behaviour use encoder with *strategy="none"*.
+
+    If there are numeric columns that are passed to ``embedding_sizes`` parameter, they will be considered only as categorical features.
+
     Note
     ----
     This model requires ``torch`` extension to be installed.
@@ -176,6 +238,7 @@ class MLPModel(DeepBaseModel):
         input_size: int,
         decoder_length: int,
         hidden_size: List,
+        embedding_sizes: Optional[Dict[str, Tuple[int, int]]] = None,
         encoder_length: int = 0,
         lr: float = 1e-3,
         loss: Optional["torch.nn.Module"] = None,
@@ -193,11 +256,13 @@ class MLPModel(DeepBaseModel):
         Parameters
         ----------
         input_size:
-            size of the input feature space: target plus extra features
+            size of the input numeric feature space without target
         decoder_length:
             decoder length
         hidden_size:
             List of sizes of the hidden states
+        embedding_sizes:
+            dictionary mapping categorical feature name to tuple of number of categorical classes and embedding size
         encoder_length:
             encoder length
         lr:
@@ -226,6 +291,7 @@ class MLPModel(DeepBaseModel):
         """
         self.input_size = input_size
         self.hidden_size = hidden_size
+        self.embedding_sizes = embedding_sizes
         self.lr = lr
         self.loss = loss
         self.optimizer_params = optimizer_params
@@ -233,6 +299,7 @@ class MLPModel(DeepBaseModel):
             net=MLPNet(
                 input_size=input_size,
                 hidden_size=hidden_size,
+                embedding_sizes=embedding_sizes if embedding_sizes is not None else {},
                 lr=lr,
                 loss=nn.MSELoss() if loss is None else loss,
                 optimizer_params=optimizer_params,
