@@ -115,11 +115,11 @@ def test_mlp_make_samples(df_name, cat_columns, request):
 
 def test_mlp_forward_fail_nans():
     batch = {
-        "decoder_real": torch.Tensor([[torch.nan, 2, 3], [1, 2, 3], [1, 2, 3]]),
-        "decoder_target": torch.Tensor([[1], [2], [3]]),
+        "decoder_real": torch.Tensor([[[torch.nan, 2, 3], [1, 2, 3], [1, 2, 3]]]),
+        "decoder_target": torch.Tensor([[[1], [2], [3]]]),
         "segment": "A",
     }
-    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
+    model = MLPNet(input_size=3, hidden_size=[1], embedding_sizes={}, lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
     with pytest.raises(ValueError, match="There are NaNs in features"):
         _ = model.forward(batch)
 
@@ -127,17 +127,18 @@ def test_mlp_forward_fail_nans():
 def test_mlp_step():
 
     batch = {
-        "decoder_real": torch.Tensor([[1, 2, 3], [1, 2, 3], [1, 2, 3]]),
-        "decoder_target": torch.Tensor([[1], [2], [3]]),
+        "decoder_real": torch.Tensor([[[1, 2, 3], [1, 2, 3], [1, 2, 3]]]),
+        "decoder_categorical": {},
+        "decoder_target": torch.Tensor([[[1], [2], [3]]]),
         "segment": "A",
     }
-    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
+    model = MLPNet(input_size=3, hidden_size=[1], embedding_sizes={}, lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
     loss, decoder_target, output = model.step(batch)
     assert type(loss) == torch.Tensor
     assert type(decoder_target) == torch.Tensor
     assert torch.all(decoder_target == batch["decoder_target"])
     assert type(output) == torch.Tensor
-    assert output.shape == torch.Size([3, 1])
+    assert output.shape == torch.Size([1, 3, 1])
 
 
 def test_mlp_step_fail_nans():
@@ -146,13 +147,13 @@ def test_mlp_step_fail_nans():
         "decoder_target": torch.Tensor([[1], [2], [3]]),
         "segment": "A",
     }
-    model = MLPNet(input_size=3, hidden_size=[1], lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
+    model = MLPNet(input_size=3, hidden_size=[1], embedding_sizes={}, lr=1e-2, loss=nn.MSELoss(), optimizer_params=None)
     with pytest.raises(ValueError, match="There are NaNs in features"):
         _ = model.step(batch)
 
 
 def test_mlp_layers():
-    model = MLPNet(input_size=3, hidden_size=[10], lr=1e-2, loss=None, optimizer_params=None)
+    model = MLPNet(input_size=3, hidden_size=[10], embedding_sizes={}, lr=1e-2, loss=None, optimizer_params=None)
     model_ = nn.Sequential(
         nn.Linear(in_features=3, out_features=10), nn.ReLU(), nn.Linear(in_features=10, out_features=1)
     )
