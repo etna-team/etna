@@ -4,7 +4,6 @@ from typing import Iterator
 from typing import Optional
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
 

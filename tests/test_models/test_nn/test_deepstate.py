@@ -58,10 +58,7 @@ def test_deepstate_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_functi
     "embedding_sizes,features_to_encode",
     [
         ({}, []),
-        (
-            {"categ_regr_label": (2, 5), "categ_regr_new_label": (1, 5)},
-            ["categ_regr", "categ_regr_new"]
-        ),
+        ({"categ_regr_label": (2, 5), "categ_regr_new_label": (1, 5)}, ["categ_regr", "categ_regr_new"]),
     ],
 )
 def test_handling_categoricals(ts_different_regressors, embedding_sizes, features_to_encode):
@@ -82,7 +79,7 @@ def test_handling_categoricals(ts_different_regressors, embedding_sizes, feature
             for feature in features_to_encode
         ]
         + [FilterFeaturesTransform(exclude=["reals_exog", "categ_exog", "categ_regr", "categ_regr_new"])],
-        horizon=1,
+        horizon=2,
     )
     pipeline.backtest(ts_different_regressors, metrics=[MAE()], n_folds=2)
 
