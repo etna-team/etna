@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Fix `101-get-started` notebook to be rendered correctly ([#340](https://github.com/etna-team/etna/pull/340))
 - 
 - 
 - 
