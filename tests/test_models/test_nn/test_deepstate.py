@@ -8,6 +8,9 @@ from etna.models.nn import DeepStateModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.models.nn.deepstate.deepstate import DeepStateNet
+from etna.pipeline import Pipeline
+from etna.transforms import FilterFeaturesTransform
+from etna.transforms import LabelEncoderTransform
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
@@ -51,8 +54,42 @@ def test_deepstate_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_functi
     assert mae(ts_test, future) < 0.001
 
 
+@pytest.mark.parametrize(
+    "embedding_sizes,features_to_encode",
+    [
+        ({}, []),
+        (
+            {"categ_regr_label": (2, 5), "categ_regr_new_label": (1, 5)},
+            ["categ_regr", "categ_regr_new"]
+        ),
+    ],
+)
+def test_handling_categoricals(ts_different_regressors, embedding_sizes, features_to_encode):
+    encoder_length = 2
+    decoder_length = 1
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=2,
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        embedding_sizes=embedding_sizes,
+        trainer_params=dict(max_epochs=1),
+    )
+    pipeline = Pipeline(
+        model=model,
+        transforms=[
+            LabelEncoderTransform(in_column=feature, strategy="none", out_column=f"{feature}_label")
+            for feature in features_to_encode
+        ]
+        + [FilterFeaturesTransform(exclude=["reals_exog", "categ_exog", "categ_regr", "categ_regr_new"])],
+        horizon=1,
+    )
+    pipeline.backtest(ts_different_regressors, metrics=[MAE()], n_folds=2)
+
+
+@pytest.mark.parametrize("cat_columns", [[], ["regressor_int_cat"]])
 @pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
-def test_deepstate_make_samples(df_name, request):
+def test_deepstate_make_samples(df_name, cat_columns, request):
     df = request.getfixturevalue(df_name)
 
     # this model can't work with this type of columns
@@ -61,7 +98,7 @@ def test_deepstate_make_samples(df_name, request):
     ssm = MagicMock()
     datetime_index = np.arange(len(df))
     ssm.generate_datetime_index.return_value = datetime_index[np.newaxis, :]
-    module = MagicMock(ssm=ssm)
+    module = MagicMock(ssm=ssm, embedding_sizes={column: (7, 1) for column in cat_columns})
     encoder_length = 8
     decoder_length = 4
 
@@ -76,16 +113,31 @@ def test_deepstate_make_samples(df_name, request):
     for i in range(num_samples_check):
         expected_sample = {
             "encoder_real": df[["regressor_float", "regressor_int", "regressor_int_cat"]]
+            .drop(columns=cat_columns)
             .iloc[i : encoder_length + i]
             .values,
             "decoder_real": df[["regressor_float", "regressor_int", "regressor_int_cat"]]
+            .drop(columns=cat_columns)
             .iloc[encoder_length + i : encoder_length + decoder_length + i]
             .values,
+            "encoder_categorical": {column: df[[column]].iloc[i : encoder_length + i].values for column in cat_columns},
+            "decoder_categorical": {
+                column: df[[column]].iloc[encoder_length + i : encoder_length + decoder_length + i].values
+                for column in cat_columns
+            },
             "encoder_target": df[["target"]].iloc[i : encoder_length + i].values,
             "datetime_index": df[["datetime_index"]].iloc[i : encoder_length + decoder_length + i].values.T,
         }
 
-        assert ts_samples[i].keys() == {"encoder_real", "decoder_real", "encoder_target", "datetime_index", "segment"}
+        assert ts_samples[i].keys() == {
+            "encoder_real",
+            "decoder_real",
+            "encoder_categorical",
+            "decoder_categorical",
+            "encoder_target",
+            "datetime_index",
+            "segment",
+        }
         assert ts_samples[i]["segment"] == "segment_1"
         for key in expected_sample:
             np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
