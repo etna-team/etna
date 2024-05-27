@@ -2,13 +2,12 @@ from typing import Any
 from typing import Dict
 from typing import Iterator
 from typing import Optional
+from typing import Tuple
 
 import pandas as pd
-import torch
-import torch.nn as nn
-from torch import Tensor
 from typing_extensions import TypedDict
 
+from etna import SETTINGS
 from etna.distributions import BaseDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
@@ -17,15 +16,23 @@ from etna.models.base import DeepBaseNet
 from etna.models.nn.deepstate import LDS
 from etna.models.nn.deepstate import CompositeSSM
 
+if SETTINGS.torch_required:
+    import torch
+    import torch.nn as nn
+
+    from etna.models.nn.utils import MultiEmbedding
+
 
 class DeepStateBatch(TypedDict):
     """Batch specification for DeepStateModel."""
 
-    encoder_real: Tensor  # (batch_size, seq_length, input_size)
-    decoder_real: Tensor  # (batch_size, horizon, input_size)
-    datetime_index: Tensor  # (batch_size, num_models , seq_length + horizon)
-    encoder_target: Tensor  # (batch_size, seq_length, 1)
-    segment: Tensor  # (batch_size)
+    encoder_real: "torch.Tensor"  # (batch_size, seq_length, input_size)
+    decoder_real: "torch.Tensor"  # (batch_size, horizon, input_size)
+    encoder_categorical: Dict[str, "torch.Tensor"]  # each (batch_size, seq_length, 1)
+    decoder_categorical: Dict[str, "torch.Tensor"]  # each (batch_size, horizon, 1)
+    datetime_index: "torch.Tensor"  # (batch_size, num_models, seq_length + horizon)
+    encoder_target: "torch.Tensor"  # (batch_size, seq_length, 1)
+    segment: "torch.Tensor"  # (batch_size)
 
 
 class DeepStateNet(DeepBaseNet):
@@ -36,6 +43,7 @@ class DeepStateNet(DeepBaseNet):
         ssm: CompositeSSM,
         input_size: int,
         num_layers: int,
+        embedding_sizes: Dict[str, Tuple[int, int]],
         n_samples: int,
         lr: float,
         optimizer_params: Optional[dict],
@@ -50,6 +58,8 @@ class DeepStateNet(DeepBaseNet):
             Size of the input feature space: features for RNN part.
         num_layers:
             Number of layers in RNN.
+        embedding_sizes:
+            dictionary mapping categorical feature name to tuple of number of categorical classes and embedding size
         n_samples:
             Number of samples to use in predictions generation.
         lr:
@@ -62,13 +72,23 @@ class DeepStateNet(DeepBaseNet):
         self.ssm = ssm
         self.input_size = input_size
         self.num_layers = num_layers
+        self.embedding_sizes = embedding_sizes
         self.n_samples = n_samples
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
         self.latent_dim = self.ssm.latent_dim()
 
+        self.cat_size = sum([dim for (_, dim) in self.embedding_sizes.values()])
+        self.embedding: Optional[MultiEmbedding] = None
+        if self.embedding_sizes:
+            self.embedding = MultiEmbedding(
+                embedding_sizes=self.embedding_sizes,
+            )
         self.RNN = nn.LSTM(
-            num_layers=self.num_layers, hidden_size=self.latent_dim, input_size=self.input_size, batch_first=True
+            num_layers=self.num_layers,
+            hidden_size=self.latent_dim,
+            input_size=self.input_size + self.cat_size,
+            batch_first=True,
         )
         self.projectors = nn.ModuleDict(
             dict(
@@ -98,13 +118,17 @@ class DeepStateNet(DeepBaseNet):
             loss, true_target, prediction_target
         """
         encoder_real = batch["encoder_real"]  # (batch_size, seq_length, input_size)
+        encoder_categorical = batch["encoder_categorical"]  # each (batch_size, seq_length, 1)
         targets = batch["encoder_target"]  # (batch_size, seq_length, 1)
         seq_length = targets.shape[1]
         datetime_index = batch["datetime_index"].permute(1, 0, 2)[
             :, :, :seq_length
         ]  # (num_models, batch_size, seq_length)
 
-        output, (_, _) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
+        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
+        encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
+
+        output, (_, _) = self.RNN(encoder_values)  # (batch_size, seq_length, latent_dim)
         prior_std = self.projectors["prior_std"](output[:, 0])
 
         lds = LDS(
@@ -136,9 +160,11 @@ class DeepStateNet(DeepBaseNet):
             forecast with shape (batch_size, decoder_length, 1)
         """
         encoder_real = x["encoder_real"]  # (batch_size, seq_length, input_size)
+        encoder_categorical = x["encoder_categorical"]  # each (batch_size, seq_length, 1)
         seq_length = encoder_real.shape[1]
         targets = x["encoder_target"][:, :seq_length]  # (batch_size, seq_length, 1)
         decoder_real = x["decoder_real"]  # (batch_size, horizon, input_size)
+        decoder_categorical = x["decoder_categorical"]  # each (batch_size, horizon, 1)
         datetime_index_train = x["datetime_index"].permute(1, 0, 2)[
             :, :, :seq_length
         ]  # (num_models, batch_size, seq_length)
@@ -146,7 +172,13 @@ class DeepStateNet(DeepBaseNet):
             :, :, seq_length:
         ]  # (num_models, batch_size, horizon)
 
-        output, (h_n, c_n) = self.RNN(encoder_real)  # (batch_size, seq_length, latent_dim)
+        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
+        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+
+        encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
+        decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
+
+        output, (h_n, c_n) = self.RNN(encoder_values)  # (batch_size, seq_length, latent_dim)
         prior_std = self.projectors["prior_std"](output[:, 0])
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_train),
@@ -161,7 +193,7 @@ class DeepStateNet(DeepBaseNet):
         )
         _, prior_mean, prior_cov = lds.kalman_filter(targets=targets)
 
-        output, (_, _) = self.RNN(decoder_real, (h_n, c_n))  # (batch_size, horizon, latent_dim)
+        output, (_, _) = self.RNN(decoder_values, (h_n, c_n))  # (batch_size, horizon, latent_dim)
         horizon = output.shape[1]
         lds = LDS(
             emission_coeff=self.ssm.emission_coeff(datetime_index_test),
@@ -180,8 +212,16 @@ class DeepStateNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.drop(columns=["target", "segment", "timestamp"]).values
+        values_real = df.drop(columns=["target", "segment", "timestamp"] + list(self.embedding_sizes.keys())).values
         values_real = torch.from_numpy(values_real).float()
+
+        # Categories that were not seen during `fit` will be filled with new category
+        for feature in self.embedding_sizes:
+            df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
+
+        # Columns in `values_categorical` are in the same order as in `embedding_sizes`
+        values_categorical = torch.from_numpy(df[self.embedding_sizes.keys()].values.T)
+
         values_datetime = torch.from_numpy(self.ssm.generate_datetime_index(df["timestamp"]))
         values_datetime = values_datetime.to(torch.int64)
         values_target = df["target"].values
@@ -191,6 +231,7 @@ class DeepStateNet(DeepBaseNet):
         def _make(
             values_target: torch.Tensor,
             values_real: torch.Tensor,
+            values_categorical: torch.Tensor,
             values_datetime: torch.Tensor,
             segment: str,
             start_idx: int,
@@ -201,6 +242,8 @@ class DeepStateNet(DeepBaseNet):
             sample: Dict[str, Any] = {
                 "encoder_real": list(),
                 "decoder_real": list(),
+                "encoder_categorical": dict(),
+                "decoder_categorical": dict(),
                 "encoder_target": list(),
                 "segment": None,
             }
@@ -217,6 +260,15 @@ class DeepStateNet(DeepBaseNet):
             sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
             sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
 
+            for index, feature in enumerate(self.embedding_sizes.keys()):
+                sample["encoder_categorical"][feature] = values_categorical[index][
+                    start_idx : start_idx + encoder_length
+                ].reshape(-1, 1)
+
+                sample["decoder_categorical"][feature] = values_categorical[index][
+                    start_idx + encoder_length : start_idx + total_sample_length
+                ].reshape(-1, 1)
+
             return sample
 
         start_idx = 0
@@ -224,6 +276,7 @@ class DeepStateNet(DeepBaseNet):
             batch = _make(
                 values_target=values_target,
                 values_real=values_real,
+                values_categorical=values_categorical,
                 values_datetime=values_datetime,
                 segment=segment,
                 start_idx=start_idx,
@@ -244,6 +297,11 @@ class DeepStateNet(DeepBaseNet):
 class DeepStateModel(DeepBaseModel):
     """DeepState model.
 
+    Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
+    Feature values that weren't seen during ``fit`` should be set to NaN, to get this behaviour use encoder with *strategy="none"*.
+
+    If there are numeric columns that are passed to ``embedding_sizes`` parameter, they will be considered only as categorical features.
+
     Note
     ----
     This model requires ``torch`` extension to be installed.
@@ -257,6 +315,7 @@ class DeepStateModel(DeepBaseModel):
         encoder_length: int,
         decoder_length: int,
         num_layers: int = 1,
+        embedding_sizes: Optional[Dict[str, Tuple[int, int]]] = None,
         n_samples: int = 5,
         lr: float = 1e-3,
         train_batch_size: int = 16,
@@ -282,6 +341,8 @@ class DeepStateModel(DeepBaseModel):
             decoder length
         num_layers:
             number of layers in RNN
+        embedding_sizes:
+            dictionary mapping categorical feature name to tuple of number of categorical classes and embedding size
         n_samples:
             number of samples to use in predictions generation
         num_layers:
@@ -311,6 +372,7 @@ class DeepStateModel(DeepBaseModel):
         self.ssm = ssm
         self.input_size = input_size
         self.num_layers = num_layers
+        self.embedding_sizes = embedding_sizes
         self.n_samples = n_samples
         self.lr = lr
         self.optimizer_params = optimizer_params
@@ -319,6 +381,7 @@ class DeepStateModel(DeepBaseModel):
                 ssm=self.ssm,
                 input_size=self.input_size,
                 num_layers=self.num_layers,
+                embedding_sizes=self.embedding_sizes if self.embedding_sizes is not None else {},
                 n_samples=self.n_samples,
                 lr=self.lr,
                 optimizer_params=self.optimizer_params,
