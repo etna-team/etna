@@ -28,8 +28,8 @@ class DeepStateBatch(TypedDict):
 
     encoder_real: "torch.Tensor"  # (batch_size, seq_length, input_size)
     decoder_real: "torch.Tensor"  # (batch_size, horizon, input_size)
-    encoder_categorical: Dict[str, "torch.Tensor"]
-    decoder_categorical: Dict[str, "torch.Tensor"]
+    encoder_categorical: Dict[str, "torch.Tensor"]  # each (batch_size, seq_length, 1)
+    decoder_categorical: Dict[str, "torch.Tensor"]  # each (batch_size, horizon, 1)
     datetime_index: "torch.Tensor"  # (batch_size, num_models, seq_length + horizon)
     encoder_target: "torch.Tensor"  # (batch_size, seq_length, 1)
     segment: "torch.Tensor"  # (batch_size)
@@ -118,7 +118,7 @@ class DeepStateNet(DeepBaseNet):
             loss, true_target, prediction_target
         """
         encoder_real = batch["encoder_real"]  # (batch_size, seq_length, input_size)
-        encoder_categorical = batch["encoder_categorical"]  # each (batch_size, encoder_length-1, 1)
+        encoder_categorical = batch["encoder_categorical"]  # each (batch_size, seq_length, 1)
         targets = batch["encoder_target"]  # (batch_size, seq_length, 1)
         seq_length = targets.shape[1]
         datetime_index = batch["datetime_index"].permute(1, 0, 2)[
@@ -160,11 +160,11 @@ class DeepStateNet(DeepBaseNet):
             forecast with shape (batch_size, decoder_length, 1)
         """
         encoder_real = x["encoder_real"]  # (batch_size, seq_length, input_size)
-        encoder_categorical = x["encoder_categorical"]  # each (batch_size, encoder_length-1, 1)
+        encoder_categorical = x["encoder_categorical"]  # each (batch_size, seq_length, 1)
         seq_length = encoder_real.shape[1]
         targets = x["encoder_target"][:, :seq_length]  # (batch_size, seq_length, 1)
         decoder_real = x["decoder_real"]  # (batch_size, horizon, input_size)
-        decoder_categorical = x["decoder_categorical"]  # each (batch_size, decoder_length, 1)
+        decoder_categorical = x["decoder_categorical"]  # each (batch_size, horizon, 1)
         datetime_index_train = x["datetime_index"].permute(1, 0, 2)[
             :, :, :seq_length
         ]  # (num_models, batch_size, seq_length)
