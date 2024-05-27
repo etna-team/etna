@@ -168,11 +168,8 @@ class RNNNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        categorical_numeric_columns = list(
-            df.select_dtypes(include=[np.number]).columns.intersection(self.embedding_sizes.keys())
-        )
         values_real = (
-            df.drop(["segment", "timestamp"] + categorical_numeric_columns, axis=1)
+            df.drop(["segment", "timestamp"] + list(self.embedding_sizes.keys()), axis=1)
             .select_dtypes(include=[np.number])
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
