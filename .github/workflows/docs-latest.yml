@@ -5,6 +5,11 @@ on:
     branches:
       - master
 
+# we set this not to stuck in a state after clearing s3 folder and before filling it with new files
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-docs:
     runs-on: ubuntu-latest

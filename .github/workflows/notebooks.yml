@@ -9,6 +9,10 @@ on:
       - master
     types: [closed]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   
   notebooks-test:
