@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow `RNNModel` to work with categorical features ([#334](https://github.com/etna-team/etna/pull/334))
 - Allow `DeepARNativeModel` and `MLPModel` to work with categorical features ([#336](https://github.com/etna-team/etna/pull/336))
 - Allow `DeepState` to work with categorical features ([#342](https://github.com/etna-team/etna/pull/342))
-- 
+- Allow encoders to return numeric features([#352](https://github.com/etna-team/etna/pull/352))
 - 
 - 
 - 
