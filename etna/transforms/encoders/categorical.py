@@ -2,6 +2,8 @@ from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -21,6 +23,13 @@ class ImputerMode(str, Enum):
     new_value = "new_value"
     mean = "mean"
     none = "none"
+
+
+class ImputerType(str, Enum):
+    """Enum for data types of returned columns."""
+
+    categorical = "categorical"
+    numeric = "numeric"
 
 
 class _LabelEncoder(preprocessing.LabelEncoder):
@@ -50,7 +59,13 @@ class _LabelEncoder(preprocessing.LabelEncoder):
 class LabelEncoderTransform(IrreversibleTransform):
     """Encode categorical feature with value between 0 and n_classes-1."""
 
-    def __init__(self, in_column: str, out_column: Optional[str] = None, strategy: str = ImputerMode.mean):
+    def __init__(
+        self,
+        in_column: str,
+        out_column: Optional[str] = None,
+        strategy: str = ImputerMode.mean,
+        return_type: str = ImputerType.categorical,
+    ):
         """
         Init LabelEncoderTransform.
 
@@ -68,12 +83,19 @@ class LabelEncoderTransform(IrreversibleTransform):
             - If "mean", then replace missing values using the mean in encoded column
 
             - If "none", then replace missing values with None
+        return_type:
+            Data type of returned columns:
+
+            - If "categorical", then returned columns will have "category" data type
+
+            - If "numeric", then returned columns will have float data type
 
         """
         super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
         self.strategy = strategy
+        self.return_type = return_type
         self.le = _LabelEncoder()
         self.in_column_regressor: Optional[bool] = None
 
@@ -123,7 +145,16 @@ class LabelEncoderTransform(IrreversibleTransform):
         out_column = self._get_column_name()
         result_df = TSDataset.to_flatten(df)
         result_df[out_column] = self.le.transform(result_df[self.in_column], self.strategy)
-        result_df[out_column] = result_df[out_column].astype("category")
+
+        return_type: Union[Type[float], str]
+        if self.return_type == ImputerType.categorical:
+            return_type = "category"
+        elif self.return_type == ImputerType.numeric:
+            return_type = float
+        else:
+            raise ValueError(f"The return_type '{self.return_type}' is not supported")
+
+        result_df[out_column] = result_df[out_column].astype(return_type)
         result_df = TSDataset.to_dataset(result_df)
         return result_df
 
@@ -155,7 +186,7 @@ class OneHotEncoderTransform(IrreversibleTransform):
     encoded columns for this feature will be all zeros.
     """
 
-    def __init__(self, in_column: str, out_column: Optional[str] = None):
+    def __init__(self, in_column: str, out_column: Optional[str] = None, return_type: str = ImputerType.categorical):
         """
         Init OneHotEncoderTransform.
 
@@ -165,10 +196,17 @@ class OneHotEncoderTransform(IrreversibleTransform):
             Name of column to be encoded
         out_column:
             Prefix of names of added columns. If not given, use ``self.__repr__()``
+        return_type:
+            Data type of returned columns:
+
+            - If "categorical", then returned columns will have "category" data type
+
+            - If "numeric", then returned columns will have float data type
         """
         super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
+        self.return_type = return_type
         self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False, dtype=int)
         self.in_column_regressor: Optional[bool] = None
 
@@ -219,7 +257,16 @@ class OneHotEncoderTransform(IrreversibleTransform):
         x = result_df[[self.in_column]]
         out_columns = self._get_out_column_names()
         result_df[out_columns] = self.ohe.transform(X=x)
-        result_df[out_columns] = result_df[out_columns].astype("category")
+
+        return_type: Union[Type[float], str]
+        if self.return_type == ImputerType.categorical:
+            return_type = "category"
+        elif self.return_type == ImputerType.numeric:
+            return_type = float
+        else:
+            raise ValueError(f"The return_type '{self.return_type}' is not supported")
+
+        result_df[out_columns] = result_df[out_columns].astype(return_type)
         result_df = TSDataset.to_dataset(result_df)
         return result_df
 
