@@ -93,6 +93,36 @@ def test_iqr_outliers_stl_period_error(ts_name, error, request):
 
 
 @pytest.mark.parametrize(
+    "ts_name, answer",
+    (
+        (
+            "outliers_df_with_two_columns",
+            {
+                "1": [np.datetime64("2021-01-11")],
+                "2": [np.datetime64("2021-01-09"), np.datetime64("2021-01-16"), np.datetime64("2021-01-27")],
+            },
+        ),
+        ("outliers_df_with_two_columns_int_timestamp", {"1": [10], "2": [8, 15, 26]}),
+        (
+            "outliers_df_with_two_columns_minute_freq",
+            {
+                "1": [np.datetime64("2021-01-01T00:10:00")],
+                "2": [
+                    np.datetime64("2021-01-01T00:08:00"),
+                    np.datetime64("2021-01-01T00:15:00"),
+                    np.datetime64("2021-01-01T00:26:00"),
+                ],
+            },
+        ),
+    ),
+)
+def test_iqr_outliers_various_index(ts_name, answer, request):
+    ts = request.getfixturevalue(ts_name)
+    res = get_anomalies_iqr(ts=ts, window_size=10, stride=1, iqr_scale=1.5)
+    assert res == answer
+
+
+@pytest.mark.parametrize(
     "window_size, iqr_scale, stride, right_anomal",
     (
         (
@@ -191,6 +221,7 @@ def test_interface_correct_args(true_params, index_only, outliers_df_with_two_co
 
     for key in res:
         if index_only:
+            assert isinstance(res[key], list)
             for value in res[key]:
                 assert isinstance(value, np.datetime64)
         else:
