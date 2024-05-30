@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix FordA download url in classification notebook ([#309](https://github.com/etna-team/etna/pull/309))
 - Allow `seaborn` dependency to have higher version ([#319](https://github.com/etna-team/etna/pull/319))
 - Fix `MRMRFeatureSelectionTransform` to correctly handle less-is-better `relevance_table` ([#308](https://github.com/etna-team/etna/issues/308))
-- 
+- Fix `PatchTSModel` fails when using additional features ([#376](https://github.com/etna-team/etna/issues/376))
 - 
 - 
 - Fix `101-get-started` notebook to be rendered correctly ([#340](https://github.com/etna-team/etna/pull/340))
