@@ -11,6 +11,27 @@ from numpy.random import RandomState
 from etna.datasets import TSDataset
 
 
+def _select_features(
+    ts: TSDataset, features_to_use: Optional[Sequence[str]] = None, features_to_ignore: Optional[Sequence[str]] = None
+) -> pd.DataFrame:
+    if features_to_use is None and features_to_ignore is None:
+        return ts.to_pandas()
+
+    features = ts.columns.get_level_values("feature")
+    df = ts.to_pandas()
+    if features_to_use is not None and features_to_ignore is None:
+        if not set(features_to_use).issubset(features):
+            raise ValueError(f"Features {set(features_to_use) - set(features)} are not present in the dataset.")
+        features_to_ignore = set(features) - set(features_to_use)
+    elif features_to_ignore is not None and features_to_use is None:
+        if not set(features_to_ignore).issubset(features):
+            raise ValueError(f"Features {set(features_to_ignore) - set(features)} are not present in the dataset.")
+    else:
+        raise ValueError("There should be exactly one option set: features_to_use or features_to_ignore")
+    df = df.drop(columns=features_to_ignore, level="feature")
+    return df
+
+
 def get_anomalies_isolation_forest(
     ts: TSDataset,
     features_to_use: Optional[Sequence[str]] = None,
@@ -86,4 +107,4 @@ def get_anomalies_isolation_forest(
     :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
-    pass
+    df = _select_features(ts=ts, features_to_use=features_to_use, features_to_ignore=features_to_ignore)
