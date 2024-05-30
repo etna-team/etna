@@ -71,15 +71,11 @@ def test_patchts_make_samples(df_name, request):
     num_samples_check = 2
     for i in range(num_samples_check):
         expected_sample = {
-            "encoder_real": df[["target", "regressor_float", "regressor_int"]].iloc[i : encoder_length + i].values,
-            "decoder_real": df[["target", "regressor_float", "regressor_int"]]
-            .iloc[encoder_length + i : encoder_length + decoder_length + i]
-            .values,
             "encoder_target": df[["target"]].iloc[i : encoder_length + i].values,
             "decoder_target": df[["target"]].iloc[encoder_length + i : encoder_length + decoder_length + i].values,
         }
 
-        assert ts_samples[i].keys() == {"encoder_real", "decoder_real", "encoder_target", "decoder_target", "segment"}
+        assert ts_samples[i].keys() == {"encoder_target", "decoder_target", "segment"}
         assert ts_samples[i]["segment"] == "segment_1"
         for key in expected_sample:
             np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
