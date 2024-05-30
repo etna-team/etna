@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.utils._encode import _check_unknown
 from sklearn.utils._encode import _encode
+from typing_extensions import assert_never
 
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
@@ -41,7 +42,7 @@ class ReturnType(str, Enum):
 
 
 class _LabelEncoder(preprocessing.LabelEncoder):
-    def transform(self, y: pd.Series, strategy: str):
+    def transform(self, y: pd.Series, strategy: ImputerMode):
         diff = _check_unknown(y, known_values=self.classes_)
 
         is_new_index = np.isin(y, diff)
@@ -51,12 +52,14 @@ class _LabelEncoder(preprocessing.LabelEncoder):
             float
         )
 
-        if strategy == ImputerMode.none:
+        if strategy is ImputerMode.none:
             filling_value = None
-        elif strategy == ImputerMode.new_value:
+        elif strategy is ImputerMode.new_value:
             filling_value = -1
-        elif strategy == ImputerMode.mean:
+        elif strategy is ImputerMode.mean:
             filling_value = np.mean(encoded[~np.isin(y, diff)])
+        else:
+            assert_never(strategy)
 
         encoded[is_new_index] = filling_value
         return encoded
@@ -152,10 +155,12 @@ class LabelEncoderTransform(IrreversibleTransform):
         result_df = TSDataset.to_flatten(df)
         result_df[out_column] = self.le.transform(result_df[self.in_column], self.strategy)
 
-        if self.return_type == ReturnType.categorical:
+        if self.return_type is ReturnType.categorical:
             return_type = "category"
-        elif self.return_type == ReturnType.numeric:
+        elif self.return_type is ReturnType.numeric:
             return_type = "float"
+        else:
+            assert_never(self.return_type)
 
         result_df[out_column] = result_df[out_column].astype(return_type)
         result_df = TSDataset.to_dataset(result_df)
