@@ -23,7 +23,7 @@ def _select_features(
     if features_to_use is not None and features_to_ignore is None:
         if not set(features_to_use).issubset(features):
             raise ValueError(f"Features {set(features_to_use) - set(features)} are not present in the dataset.")
-        features_to_ignore = set(features) - set(features_to_use)
+        features_to_ignore = list(set(features) - set(features_to_use))
     elif features_to_ignore is not None and features_to_use is None:
         if not set(features_to_ignore).issubset(features):
             raise ValueError(f"Features {set(features_to_ignore) - set(features)} are not present in the dataset.")
@@ -47,8 +47,12 @@ def _prepare_segment_df(df, segment, ignore_missing):
     return df_segment.reset_index()
 
 
-def _get_anomalies_isolation_forest_segment(df: pd.DataFrame, model: IsolationForest) -> List[pd.Timestamp]:
-    pass
+def _get_anomalies_isolation_forest_segment(df_segment: pd.DataFrame, model: IsolationForest) -> List[pd.Timestamp]:
+    index = df_segment["timestamp"]
+    df_segment = df_segment.drop(columns=["timestamp"])
+    model.fit(X=df_segment)
+    anomalies_flags = model.predict(X=df_segment).astype(bool)
+    return list(index[anomalies_flags].values)
 
 
 def get_anomalies_isolation_forest(
@@ -142,6 +146,6 @@ def get_anomalies_isolation_forest(
     outliers_per_segment = {}
     for segment in ts.segments:
         df_segment = _prepare_segment_df(df=df, segment=segment, ignore_missing=ignore_missing)
-        outliers_per_segment[segment] = _get_anomalies_isolation_forest_segment(df=df_segment, model=model)
+        outliers_per_segment[segment] = _get_anomalies_isolation_forest_segment(df_segment=df_segment, model=model)
 
     return outliers_per_segment

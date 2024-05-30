@@ -1,9 +1,12 @@
 import numpy as np
 import pandas as pd
 import pytest
+from sklearn.ensemble import IsolationForest
 
+from etna.analysis.outliers.isolation_forest_outliers import _get_anomalies_isolation_forest_segment
 from etna.analysis.outliers.isolation_forest_outliers import _prepare_segment_df
 from etna.analysis.outliers.isolation_forest_outliers import _select_features
+from etna.analysis.outliers.isolation_forest_outliers import get_anomalies_isolation_forest
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
 
@@ -90,3 +93,16 @@ def test_prepare_segment_df_fails(ts_with_features):
         match="Series segment_1 contains NaNs! Set `ignore_missing=True` to drop them or impute them appropriately!",
     ):
         _ = _prepare_segment_df(df=ts_with_features.to_pandas(), segment="segment_1", ignore_missing=False)
+
+
+def test_get_anomalies_isolation_forest_segment(df_segment_0):
+    model = IsolationForest(n_estimators=3)
+    anomalies_index = _get_anomalies_isolation_forest_segment(df_segment=df_segment_0, model=model)
+    assert isinstance(anomalies_index[0], np.datetime64)
+
+
+def test_get_anomalies_isolation_forest(ts_with_features):
+    anomalies = get_anomalies_isolation_forest(
+        ts=ts_with_features, features_to_use=["target", "exog_1"], ignore_missing=True, n_estimators=3
+    )
+    assert sorted(anomalies.keys()) == sorted(ts_with_features.segments)
