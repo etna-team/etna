@@ -4,6 +4,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.tseries.frequencies import to_offset
 
 from etna.datasets import TSDataset
 from etna.datasets.utils import determine_num_steps
@@ -50,6 +51,29 @@ def convert_ts_to_int_timestamp(ts: TSDataset, shift=0):
         df_exog=df_exog,
         known_future=ts.known_future,
         freq=None,
+        hierarchical_structure=ts.hierarchical_structure,
+    )
+    return ts
+
+
+def convert_ts_index_to_freq(ts: TSDataset, freq: str, shift=0):
+    df = ts.to_pandas(features=["target"])
+    df_exog = ts.df_exog
+
+    if df_exog is not None:
+        exog_shift = determine_num_steps(start_timestamp=df_exog.index[0], end_timestamp=df.index[0], freq=ts.freq)
+
+        df_exog.index = pd.date_range(start=df_exog.index.min(), periods=len(df_exog), freq=freq) + (
+            shift - exog_shift
+        ) * to_offset(freq)
+
+    df.index = pd.date_range(start=df.index.min(), periods=len(df), freq=freq) + shift * to_offset(freq)
+
+    ts = TSDataset(
+        df=df,
+        df_exog=df_exog,
+        known_future=ts.known_future,
+        freq=freq,
         hierarchical_structure=ts.hierarchical_structure,
     )
     return ts
