@@ -7,6 +7,7 @@ from typing import Union
 
 import pandas as pd
 from numpy.random import RandomState
+from sklearn.ensemble import IsolationForest
 
 from etna.datasets import TSDataset
 
@@ -30,6 +31,24 @@ def _select_features(
         raise ValueError("There should be exactly one option set: features_to_use or features_to_ignore")
     df = df.drop(columns=features_to_ignore, level="feature")
     return df
+
+
+def _prepare_segment_df(df, segment, ignore_missing):
+    df_segment = df[segment]
+    if ignore_missing:
+        return df_segment.dropna().reset_index()
+
+    first_valid_index = df_segment.isna().any(axis=1).idxmin()
+    df_segment = df_segment.loc[first_valid_index:]
+    if df_segment.isna().any().any():
+        raise ValueError(
+            f"Series {segment} contains NaNs! Set `ignore_missing=True` to drop them or impute them appropriately!"
+        )
+    return df_segment.reset_index()
+
+
+def _get_anomalies_isolation_forest_segment(df: pd.DataFrame, model: IsolationForest) -> List[pd.Timestamp]:
+    pass
 
 
 def get_anomalies_isolation_forest(
@@ -108,3 +127,21 @@ def get_anomalies_isolation_forest(
         dict of outliers in format {segment: [outliers_timestamps]}
     """
     df = _select_features(ts=ts, features_to_use=features_to_use, features_to_ignore=features_to_ignore)
+    model = IsolationForest(
+        n_estimators=n_estimators,
+        max_samples=max_samples,
+        contamination=contamination,
+        max_features=max_features,
+        bootstrap=bootstrap,
+        n_jobs=n_jobs,
+        random_state=random_state,
+        verbose=verbose,
+        warm_start=warm_start,
+    )
+
+    outliers_per_segment = {}
+    for segment in ts.segments:
+        df_segment = _prepare_segment_df(df=df, segment=segment, ignore_missing=ignore_missing)
+        outliers_per_segment[segment] = _get_anomalies_isolation_forest_segment(df=df_segment, model=model)
+
+    return outliers_per_segment

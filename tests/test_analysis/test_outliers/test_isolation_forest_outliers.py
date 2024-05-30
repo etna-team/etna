@@ -1,5 +1,8 @@
+import numpy as np
+import pandas as pd
 import pytest
 
+from etna.analysis.outliers.isolation_forest_outliers import _prepare_segment_df
 from etna.analysis.outliers.isolation_forest_outliers import _select_features
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df
@@ -7,10 +10,35 @@ from etna.datasets import generate_ar_df
 
 @pytest.fixture
 def ts_with_features():
-    df = generate_ar_df(n_segments=3, periods=10, start_time="2000-01-01")
-    df["exog_1"] = [1] * 10 + [2] * 10 + [3] * 10
+    df = generate_ar_df(n_segments=2, periods=5, start_time="2000-01-01")
+    df["target"] = [np.NAN, np.NAN, 1, 2, 3] + [np.NAN, 10, np.NAN, 30, 40]
+    df["exog_1"] = [1] * 5 + [2] * 5
     ts = TSDataset(df=df.drop(columns=["exog_1"]), freq="D", df_exog=df.drop(columns=["target"]))
     return ts
+
+
+@pytest.fixture
+def df_segment_0():
+    df = pd.DataFrame(
+        {
+            "timestamp": [pd.Timestamp("2000-01-03"), pd.Timestamp("2000-01-04"), pd.Timestamp("2000-01-05")],
+            "target": [1.0, 2.0, 3.0],
+            "exog_1": [1, 1, 1],
+        }
+    )
+    return df
+
+
+@pytest.fixture
+def df_segment_1():
+    df = pd.DataFrame(
+        {
+            "timestamp": [pd.Timestamp("2000-01-02"), pd.Timestamp("2000-01-04"), pd.Timestamp("2000-01-05")],
+            "target": [10.0, 30.0, 40.0],
+            "exog_1": [2, 2, 2],
+        }
+    )
+    return df
 
 
 @pytest.mark.parametrize(
@@ -40,3 +68,25 @@ def test_select_features_fails(ts_with_features, features_to_use, features_to_ig
         _ = _select_features(
             ts=ts_with_features, features_to_use=features_to_use, features_to_ignore=features_to_ignore
         )
+
+
+@pytest.mark.parametrize(
+    "segment,ignore_missing, expected_df",
+    [
+        ("segment_0", True, "df_segment_0"),
+        ("segment_1", True, "df_segment_1"),
+        ("segment_0", False, "df_segment_0"),
+    ],
+)
+def test_prepare_segment_df(ts_with_features, segment, ignore_missing, expected_df, request):
+    expected_df = request.getfixturevalue(expected_df)
+    df = _prepare_segment_df(df=ts_with_features.to_pandas(), segment=segment, ignore_missing=ignore_missing)
+    pd.testing.assert_frame_equal(df.sort_index(axis=1), expected_df.sort_index(axis=1))
+
+
+def test_prepare_segment_df_fails(ts_with_features):
+    with pytest.raises(
+        ValueError,
+        match="Series segment_1 contains NaNs! Set `ignore_missing=True` to drop them or impute them appropriately!",
+    ):
+        _ = _prepare_segment_df(df=ts_with_features.to_pandas(), segment="segment_1", ignore_missing=False)
