@@ -82,7 +82,7 @@ def sliding_window_decorator(func: Callable) -> Callable:
 
 def _stl_decompose(
     series: pd.Series, period: Optional[int] = None, trend: bool = False, seasonality: bool = False, **kwargs
-):
+) -> pd.Series:
     """
     Estimate seasonal and trend components and remove them from the series.
 
@@ -156,8 +156,14 @@ def _outliers_per_segment(
 
 @sliding_window_decorator
 def iqr_method(
-    series: pd.Series, indices: np.ndarray, iqr_scale=1.5, period=None, trend=False, seasonality=False, stl_params=None
-):
+    series: pd.Series,
+    indices: np.ndarray,
+    iqr_scale: float = 1.5,
+    period: Optional[int] = None,
+    trend: bool = False,
+    seasonality: bool = False,
+    stl_params: Optional[Dict[str, Any]] = None,
+) -> np.ndarray:
     """
     Estimate anomalies using IQR statistics.
 
@@ -193,6 +199,8 @@ def iqr_method(
             stl_params = {}
 
         window = _stl_decompose(series=window, period=period, trend=trend, seasonality=seasonality, **stl_params)
+
+    window = window.values
 
     first = np.quantile(window, q=0.25)
     third = np.quantile(window, q=0.75)
