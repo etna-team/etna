@@ -45,31 +45,45 @@ def df_segment_1():
 
 
 @pytest.mark.parametrize(
-    "features_to_use,features_to_ignore,expected_features",
+    "in_column,features_to_use,features_to_ignore,expected_features",
     [
-        (None, None, ["target", "exog_1"]),
-        (["exog_1"], None, ["exog_1"]),
-        (None, ["exog_1"], ["target"]),
+        ("target", None, None, ["target", "exog_1"]),
+        ("exog_1", None, None, ["target", "exog_1"]),
+        ("target", ["exog_1"], None, ["target", "exog_1"]),
+        ("exog_1", ["exog_1"], None, ["exog_1"]),
+        ("target", None, ["exog_1"], ["target"]),
+        ("exog_1", None, ["exog_1"], ["target", "exog_1"]),
     ],
 )
-def test_select_features(ts_with_features, features_to_use, features_to_ignore, expected_features):
-    df = _select_features(ts=ts_with_features, features_to_use=features_to_use, features_to_ignore=features_to_ignore)
+def test_select_features(ts_with_features, in_column, features_to_use, features_to_ignore, expected_features):
+    df = _select_features(
+        ts=ts_with_features, in_column=in_column, features_to_use=features_to_use, features_to_ignore=features_to_ignore
+    )
     features = set(df.columns.get_level_values("feature"))
     assert sorted(features) == sorted(expected_features)
 
 
 @pytest.mark.parametrize(
-    "features_to_use,features_to_ignore,expected_error",
+    "in_column, features_to_use,features_to_ignore,expected_error",
     [
-        (["exog_1"], ["exog_1"], "There should be exactly one option set: features_to_use or features_to_ignore"),
-        (["exog_2"], None, "Features {'exog_2'} are not present in the dataset."),
-        (None, ["exog_2"], "Features {'exog_2'} are not present in the dataset."),
+        ("exog_3", None, None, "Feature exog_3 is not present in the dataset."),
+        (
+            "target",
+            ["exog_1"],
+            ["exog_1"],
+            "There should be exactly one option set: features_to_use or features_to_ignore",
+        ),
+        ("target", ["exog_2"], None, "Features {'exog_2'} are not present in the dataset."),
+        ("target", None, ["exog_2"], "Features {'exog_2'} are not present in the dataset."),
     ],
 )
-def test_select_features_fails(ts_with_features, features_to_use, features_to_ignore, expected_error):
+def test_select_features_fails(ts_with_features, in_column, features_to_use, features_to_ignore, expected_error):
     with pytest.raises(ValueError, match=expected_error):
         _ = _select_features(
-            ts=ts_with_features, features_to_use=features_to_use, features_to_ignore=features_to_ignore
+            ts=ts_with_features,
+            in_column=in_column,
+            features_to_use=features_to_use,
+            features_to_ignore=features_to_ignore,
         )
 
 
@@ -84,7 +98,7 @@ def test_select_features_fails(ts_with_features, features_to_use, features_to_ig
 def test_prepare_segment_df(ts_with_features, segment, ignore_missing, expected_df, request):
     expected_df = request.getfixturevalue(expected_df)
     df = _prepare_segment_df(df=ts_with_features.to_pandas(), segment=segment, ignore_missing=ignore_missing)
-    pd.testing.assert_frame_equal(df.sort_index(axis=1), expected_df.sort_index(axis=1))
+    pd.testing.assert_frame_equal(df.sort_index(axis=1), expected_df.sort_index(axis=1), check_names=False)
 
 
 def test_prepare_segment_df_fails(ts_with_features):
@@ -95,10 +109,48 @@ def test_prepare_segment_df_fails(ts_with_features):
         _ = _prepare_segment_df(df=ts_with_features.to_pandas(), segment="segment_1", ignore_missing=False)
 
 
-def test_get_anomalies_isolation_forest_segment(df_segment_0):
+@pytest.mark.parametrize("use_in_column", [True, False])
+@pytest.mark.parametrize(
+    "in_column, expected_anomalies",
+    [
+        ("target", [np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")]),
+        ("exog_1", [np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")]),
+    ],
+)
+def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_column, use_in_column, expected_anomalies):
     model = IsolationForest(n_estimators=3)
-    anomalies_index = _get_anomalies_isolation_forest_segment(df_segment=df_segment_0, model=model)
-    assert isinstance(anomalies_index[0], np.datetime64)
+    anomalies = _get_anomalies_isolation_forest_segment(
+        df_segment=df_segment_0, model=model, in_column=in_column, use_in_column=use_in_column, index_only=True
+    )
+    assert anomalies == expected_anomalies
+
+
+@pytest.mark.parametrize("use_in_column", [True, False])
+@pytest.mark.parametrize(
+    "in_column,expected_anomalies",
+    [
+        (
+            "target",
+            pd.Series(
+                data=[1.0, 2.0, 3.0],
+                index=[np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")],
+            ),
+        ),
+        (
+            "exog_1",
+            pd.Series(
+                data=[1, 1, 1],
+                index=[np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")],
+            ),
+        ),
+    ],
+)
+def test_get_anomalies_isolation_forest_segment_series(df_segment_0, in_column, use_in_column, expected_anomalies):
+    model = IsolationForest(n_estimators=3)
+    anomalies = _get_anomalies_isolation_forest_segment(
+        df_segment=df_segment_0, model=model, in_column=in_column, use_in_column=use_in_column, index_only=False
+    )
+    pd.testing.assert_series_equal(anomalies, expected_anomalies, check_names=False)
 
 
 def test_get_anomalies_isolation_forest(ts_with_features):

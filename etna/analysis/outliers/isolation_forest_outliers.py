@@ -13,12 +13,15 @@ from etna.datasets import TSDataset
 
 
 def _select_features(
-    ts: TSDataset, features_to_use: Optional[Sequence[str]] = None, features_to_ignore: Optional[Sequence[str]] = None
+    ts: TSDataset, in_column: str, features_to_use: Optional[Sequence[str]], features_to_ignore: Optional[Sequence[str]]
 ) -> pd.DataFrame:
+    features = ts.columns.get_level_values("feature")
+    if in_column not in features:
+        raise ValueError(f"Feature {in_column} is not present in the dataset.")
+
     if features_to_use is None and features_to_ignore is None:
         return ts.to_pandas()
 
-    features = ts.columns.get_level_values("feature")
     df = ts.to_pandas()
     if features_to_use is not None and features_to_ignore is None:
         if not set(features_to_use).issubset(features):
@@ -29,11 +32,12 @@ def _select_features(
             raise ValueError(f"Features {set(features_to_ignore) - set(features)} are not present in the dataset.")
     else:
         raise ValueError("There should be exactly one option set: features_to_use or features_to_ignore")
+    features_to_ignore = list(set(features_to_ignore) - {in_column})
     df = df.drop(columns=features_to_ignore, level="feature")
     return df
 
 
-def _prepare_segment_df(df, segment, ignore_missing):
+def _prepare_segment_df(df: pd.DataFrame, segment: str, ignore_missing: bool) -> pd.DataFrame:
     df_segment = df[segment]
     if ignore_missing:
         return df_segment.dropna().reset_index()
@@ -47,16 +51,23 @@ def _prepare_segment_df(df, segment, ignore_missing):
     return df_segment.reset_index()
 
 
-def _get_anomalies_isolation_forest_segment(df_segment: pd.DataFrame, model: IsolationForest) -> List[pd.Timestamp]:
-    index = df_segment["timestamp"]
-    df_segment = df_segment.drop(columns=["timestamp"])
-    model.fit(X=df_segment)
-    anomalies_flags = model.predict(X=df_segment).astype(bool)
-    return list(index[anomalies_flags].values)
+def _get_anomalies_isolation_forest_segment(
+    df_segment: pd.DataFrame, model: IsolationForest, in_column: str, use_in_column: bool, index_only: bool
+) -> Union[List[pd.Timestamp], List[int], pd.Series]:
+    df_segment = df_segment.set_index("timestamp")
+    model.fit(X=df_segment if use_in_column else df_segment.drop(columns=[in_column]))
+    anomalies_flags = model.predict(X=df_segment if use_in_column else df_segment.drop(columns=[in_column])).astype(
+        bool
+    )
+    anomalies_series = df_segment.loc[anomalies_flags, in_column]
+    if index_only:
+        return list(anomalies_series.index.values)
+    return anomalies_series
 
 
 def get_anomalies_isolation_forest(
     ts: TSDataset,
+    in_column: str = "target",
     features_to_use: Optional[Sequence[str]] = None,
     features_to_ignore: Optional[Sequence[str]] = None,
     ignore_missing: bool = False,
@@ -69,6 +80,7 @@ def get_anomalies_isolation_forest(
     random_state: Optional[Union[int, RandomState]] = None,
     verbose: int = 0,
     warm_start: bool = False,
+    index_only: bool = True,
 ) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
     """
     Get point outliers in time series using Isolation Forest algorithm.
@@ -79,6 +91,8 @@ def get_anomalies_isolation_forest(
     ----------
     ts:
         TSDataset with timeseries data
+    in_column:
+        Name of the column in which the anomaly is searching
     features_to_use:
         List of feature column names to use for anomaly detection
     features_to_ignore:
@@ -124,13 +138,17 @@ def get_anomalies_isolation_forest(
     warm_start:
         When set to True, reuse the solution of the previous call to fit and add more estimators to the ensemble,
         otherwise, just fit a whole new forest. See the Glossary.
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------
     :
         dict of outliers in format {segment: [outliers_timestamps]}
     """
-    df = _select_features(ts=ts, features_to_use=features_to_use, features_to_ignore=features_to_ignore)
+    df = _select_features(
+        ts=ts, in_column=in_column, features_to_use=features_to_use, features_to_ignore=features_to_ignore
+    )
     model = IsolationForest(
         n_estimators=n_estimators,
         max_samples=max_samples,
@@ -144,8 +162,13 @@ def get_anomalies_isolation_forest(
     )
 
     outliers_per_segment = {}
+    use_in_column = True
+    if features_to_ignore is not None and in_column in features_to_ignore:
+        use_in_column = False
     for segment in ts.segments:
         df_segment = _prepare_segment_df(df=df, segment=segment, ignore_missing=ignore_missing)
-        outliers_per_segment[segment] = _get_anomalies_isolation_forest_segment(df_segment=df_segment, model=model)
+        outliers_per_segment[segment] = _get_anomalies_isolation_forest_segment(
+            df_segment=df_segment, model=model, in_column=in_column, use_in_column=use_in_column, index_only=index_only
+        )
 
     return outliers_per_segment
