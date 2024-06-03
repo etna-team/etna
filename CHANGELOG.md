@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `TSTCCEmbeddingModel` ([#294](https://github.com/etna-team/etna/pull/294))
 - Add `210-embedding_models` example notebook ([#304](https://github.com/etna-team/etna/pull/304))
 - Add parameter `drop_zero` into `MRMRFeatureSelectionTransform` ([#308](https://github.com/etna-team/etna/issues/308))
-- 
+- Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
 - 
 - 
 - 
