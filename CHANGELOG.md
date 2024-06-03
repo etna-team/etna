@@ -64,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `MRMRFeatureSelectionTransform` to correctly handle less-is-better `relevance_table` ([#308](https://github.com/etna-team/etna/issues/308))
 - Fix `PatchTSModel` fails when using additional features ([#376](https://github.com/etna-team/etna/issues/376))
 - Fix `101-get-started` notebook to be rendered correctly ([#340](https://github.com/etna-team/etna/pull/340))
+- Fix `DeepStateModel` forecasting problem with horizon=1 ([#377](https://github.com/etna-team/etna/pull/377))
 
 ## [2.6.0] - 2024-04-11
 ### Added
