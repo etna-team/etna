@@ -42,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 
-## [2.7.0] - 2024-06-03
+## [2.7.0] - 2024-06-04
 ### Added
 - Add `TS2VecEmbeddingModel` model ([#253](https://github.com/etna-team/etna/pull/253))
 - Add `EmbeddingSegmentTransform` ([#265](https://github.com/etna-team/etna/pull/265))
