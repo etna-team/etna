@@ -15,7 +15,7 @@ from etna.datasets import generate_ar_df
 def ts_with_features():
     df = generate_ar_df(n_segments=2, periods=5, start_time="2000-01-01")
     df["target"] = [np.NAN, np.NAN, 1, 2, 3] + [np.NAN, 10, np.NAN, 30, 40]
-    df["exog_1"] = [1] * 5 + [2] * 5
+    df["exog_1"] = [1.0] * 5 + [2.0] * 5
     ts = TSDataset(df=df.drop(columns=["exog_1"]), freq="D", df_exog=df.drop(columns=["target"]))
     return ts
 
@@ -25,10 +25,12 @@ def df_segment_0():
     df = pd.DataFrame(
         {
             "timestamp": [pd.Timestamp("2000-01-03"), pd.Timestamp("2000-01-04"), pd.Timestamp("2000-01-05")],
+            "segment": "segment_0",
             "target": [1.0, 2.0, 3.0],
-            "exog_1": [1, 1, 1],
+            "exog_1": [1.0, 1.0, 1.0],
         }
     )
+    df = TSDataset(df=df, freq="D").df["segment_0"].dropna()
     return df
 
 
@@ -37,10 +39,12 @@ def df_segment_1():
     df = pd.DataFrame(
         {
             "timestamp": [pd.Timestamp("2000-01-02"), pd.Timestamp("2000-01-04"), pd.Timestamp("2000-01-05")],
+            "segment": "segment_1",
             "target": [10.0, 30.0, 40.0],
-            "exog_1": [2, 2, 2],
+            "exog_1": [2.0, 2.0, 2.0],
         }
     )
+    df = TSDataset(df=df, freq="D").df["segment_1"].dropna()
     return df
 
 
@@ -71,7 +75,7 @@ def test_select_features(ts_with_features, in_column, features_to_use, features_
             "target",
             ["exog_1"],
             ["exog_1"],
-            "There should be exactly one option set: features_to_use or features_to_ignore",
+            "Changing the defaults there should be exactly one option set: features_to_use or features_to_ignore",
         ),
         ("target", ["exog_2"], None, "Features {'exog_2'} are not present in the dataset."),
         ("target", None, ["exog_2"], "Features {'exog_2'} are not present in the dataset."),
@@ -153,8 +157,26 @@ def test_get_anomalies_isolation_forest_segment_series(df_segment_0, in_column, 
     pd.testing.assert_series_equal(anomalies, expected_anomalies, check_names=False)
 
 
-def test_get_anomalies_isolation_forest(ts_with_features):
+def test_get_anomalies_isolation_forest_interface(ts_with_features):
     anomalies = get_anomalies_isolation_forest(
         ts=ts_with_features, features_to_use=["target", "exog_1"], ignore_missing=True, n_estimators=3
     )
     assert sorted(anomalies.keys()) == sorted(ts_with_features.segments)
+
+
+def test_get_anomalies_isolation_forest_dummy_case(outliers_df_with_two_columns):
+    anomalies = get_anomalies_isolation_forest(
+        ts=outliers_df_with_two_columns, in_column="feature", ignore_missing=True
+    )
+    expected = {
+        "1": [np.datetime64("2021-01-08"), np.datetime64("2021-01-11")],
+        "2": [
+            np.datetime64("2021-01-09"),
+            np.datetime64("2021-01-16"),
+            np.datetime64("2021-01-26"),
+            np.datetime64("2021-01-27"),
+        ],
+    }
+    for key in expected:
+        assert key in anomalies
+        np.testing.assert_array_equal(anomalies[key], expected[key])
