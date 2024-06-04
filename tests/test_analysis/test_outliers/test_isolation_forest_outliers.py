@@ -206,7 +206,7 @@ def test_get_anomalies_isolation_forest_not_use_in_column(ts_with_features):
         "segment_1": pd.Series(
             data=[2.0],
             index=[np.datetime64("2000-01-04")],  # Does not have freq due to missing values
-        )
+        ),
     }
     anomalies = get_anomalies_isolation_forest(
         ts=ts_with_features, in_column="exog_1", features_to_use=["target"], ignore_missing=True, index_only=False
