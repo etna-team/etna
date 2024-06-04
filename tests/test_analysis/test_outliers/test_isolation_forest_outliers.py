@@ -195,3 +195,22 @@ def test_get_anomalies_isolation_forest_dummy_case(outliers_df_with_two_columns)
     for key in expected:
         assert key in anomalies
         np.testing.assert_array_equal(anomalies[key], expected[key])
+
+
+def test_get_anomalies_isolation_forest_not_use_in_column(ts_with_features):
+    expected_anomalies = {
+        "segment_0": pd.Series(
+            data=[1.0],
+            index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
+        ),
+        "segment_1": pd.Series(
+            data=[2.0],
+            index=[np.datetime64("2000-01-04")],  # Does not have freq due to missing values
+        )
+    }
+    anomalies = get_anomalies_isolation_forest(
+        ts=ts_with_features, in_column="exog_1", features_to_use=["target"], ignore_missing=True, index_only=False
+    )
+    assert sorted(expected_anomalies.keys()) == sorted(anomalies.keys())
+    for segment in expected_anomalies.keys():
+        pd.testing.assert_series_equal(anomalies[segment], expected_anomalies[segment], check_names=False)

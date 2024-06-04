@@ -78,7 +78,6 @@ def get_anomalies_isolation_forest(
     n_jobs: Optional[int] = None,
     random_state: Optional[Union[int, RandomState]] = None,
     verbose: int = 0,
-    warm_start: bool = False,
     index_only: bool = True,
 ) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
     """
@@ -134,9 +133,6 @@ def get_anomalies_isolation_forest(
         each branching step and each tree in the forest.
     verbose:
         Controls the verbosity of the tree building process.
-    warm_start:
-        When set to True, reuse the solution of the previous call to fit and add more estimators to the ensemble,
-        otherwise, just fit a whole new forest. See the Glossary.
     index_only:
         whether to return only outliers indices. If `False` will return outliers series
 
@@ -157,7 +153,7 @@ def get_anomalies_isolation_forest(
         n_jobs=n_jobs,
         random_state=random_state,
         verbose=verbose,
-        warm_start=warm_start,
+        warm_start=False,
     )
 
     use_in_column = True
