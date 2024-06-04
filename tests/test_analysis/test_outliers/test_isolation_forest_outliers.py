@@ -14,7 +14,7 @@ from etna.datasets import generate_ar_df
 @pytest.fixture
 def ts_with_features():
     df = generate_ar_df(n_segments=2, periods=5, start_time="2000-01-01")
-    df["target"] = [np.NAN, np.NAN, 1, 2, 3] + [np.NAN, 10, np.NAN, 30, 40]
+    df["target"] = [np.NAN, np.NAN, 1, 20, 3] + [np.NAN, 10, np.NAN, 300, 40]
     df["exog_1"] = [1.0] * 5 + [2.0] * 5
     ts = TSDataset(df=df.drop(columns=["exog_1"]), freq="D", df_exog=df.drop(columns=["target"]))
     return ts
@@ -26,7 +26,7 @@ def df_segment_0():
         {
             "timestamp": [pd.Timestamp("2000-01-03"), pd.Timestamp("2000-01-04"), pd.Timestamp("2000-01-05")],
             "segment": "segment_0",
-            "target": [1.0, 2.0, 3.0],
+            "target": [1.0, 20.0, 3.0],
             "exog_1": [1.0, 1.0, 1.0],
         }
     )
@@ -40,7 +40,7 @@ def df_segment_1():
         {
             "timestamp": [pd.Timestamp("2000-01-02"), pd.Timestamp("2000-01-04"), pd.Timestamp("2000-01-05")],
             "segment": "segment_1",
-            "target": [10.0, 30.0, 40.0],
+            "target": [10.0, 300.0, 40.0],
             "exog_1": [2.0, 2.0, 2.0],
         }
     )
@@ -113,12 +113,13 @@ def test_prepare_segment_df_fails(ts_with_features):
         _ = _prepare_segment_df(df=ts_with_features.to_pandas(), segment="segment_1", ignore_missing=False)
 
 
-@pytest.mark.parametrize("use_in_column", [True, False])
 @pytest.mark.parametrize(
-    "in_column, expected_anomalies",
+    "in_column, use_in_column, expected_anomalies",
     [
-        ("target", [np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")]),
-        ("exog_1", [np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")]),
+        ("target", True, [np.datetime64("2000-01-04")]),
+        ("target", False, []),
+        ("exog_1", True, [np.datetime64("2000-01-04")]),
+        ("exog_1", False, [np.datetime64("2000-01-04")]),
     ],
 )
 def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_column, use_in_column, expected_anomalies):
@@ -129,22 +130,36 @@ def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_colu
     assert anomalies == expected_anomalies
 
 
-@pytest.mark.parametrize("use_in_column", [True, False])
 @pytest.mark.parametrize(
-    "in_column,expected_anomalies",
+    "in_column,use_in_column,expected_anomalies",
     [
         (
             "target",
+            True,
             pd.Series(
-                data=[1.0, 2.0, 3.0],
-                index=[np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")],
+                data=[20.0],
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
+            ),
+        ),
+        (
+            "target",
+            False,
+            pd.Series(data=[], index=pd.DatetimeIndex([], freq="D"), dtype=float),
+        ),
+        (
+            "exog_1",
+            True,
+            pd.Series(
+                data=[1.0],
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
             ),
         ),
         (
             "exog_1",
+            False,
             pd.Series(
-                data=[1, 1, 1],
-                index=[np.datetime64("2000-01-03"), np.datetime64("2000-01-04"), np.datetime64("2000-01-05")],
+                data=[1.0],
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
             ),
         ),
     ],
