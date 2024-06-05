@@ -23,13 +23,10 @@ SOFTWARE.
 """
 # Note: Copied from ts-tcc repository (https://github.com/emadeldeen24/TS-TCC/tree/main)
 
-from etna import SETTINGS
-
-if SETTINGS.torch_required:
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
-    from einops import rearrange, repeat
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from einops import rearrange, repeat
 
 
 class Residual(nn.Module):

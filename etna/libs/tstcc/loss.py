@@ -23,12 +23,8 @@ SOFTWARE.
 """
 # Note: Copied from ts-tcc repository (https://github.com/emadeldeen24/TS-TCC/tree/main)
 
+import torch
 import numpy as np
-
-from etna import SETTINGS
-
-if SETTINGS.torch_required:
-    import torch
 
 
 class NTXentLoss(torch.nn.Module):

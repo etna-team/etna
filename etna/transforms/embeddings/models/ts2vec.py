@@ -6,8 +6,11 @@ from typing import Optional
 
 import numpy as np
 
+from etna import SETTINGS
 from etna.transforms.embeddings.models import BaseEmbeddingModel
-from etna.libs.ts2vec import TS2Vec
+
+if SETTINGS.torch_required:
+    from etna.libs.ts2vec import TS2Vec
 
 
 class TS2VecEmbeddingModel(BaseEmbeddingModel):

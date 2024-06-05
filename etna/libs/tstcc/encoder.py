@@ -27,10 +27,7 @@ SOFTWARE.
 # Added ignoring warning about even kernel lengths and odd dilation in nn.Conv1d blocks.
 import warnings
 
-from etna import SETTINGS
-
-if SETTINGS.torch_required:
-    from torch import nn
+from torch import nn
 
 
 class ConvEncoder(nn.Module):

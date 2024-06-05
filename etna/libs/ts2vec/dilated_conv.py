@@ -23,11 +23,10 @@ SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
 
-from etna import SETTINGS
-
-if SETTINGS.torch_required:
-    from torch import nn
-    import torch.nn.functional as F
+import torch
+from torch import nn
+import torch.nn.functional as F
+import numpy as np
 
 
 class SamePadConv(nn.Module):

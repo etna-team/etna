@@ -5,9 +5,11 @@ from typing import Literal
 
 import numpy as np
 
+from etna import SETTINGS
 from etna.transforms.embeddings.models import BaseEmbeddingModel
 
-from etna.libs.tstcc import TSTCC
+if SETTINGS.torch_required:
+    from etna.libs.tstcc import TSTCC
 
 
 class TSTCCEmbeddingModel(BaseEmbeddingModel):

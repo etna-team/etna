@@ -22,11 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
-from etna import SETTINGS
 
-if SETTINGS.torch_required:
-    import torch
-    import torch.nn.functional as F
+import torch
+from torch import nn
+import torch.nn.functional as F
 
 
 def hierarchical_contrastive_loss(z1, z2, alpha=0.5, temporal_unit=0):
