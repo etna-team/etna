@@ -25,15 +25,18 @@ SOFTWARE.
 # Removed skipping training loop when model is already pretrained. Removed "multiscale" encode option.
 # Move lr parameter to fit method
 
-import torch
-import torch.nn.functional as F
-from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 from etna.libs.ts2vec.encoder import TSEncoder
-from etna.loggers import tslogger, ConsoleLogger
+from etna.loggers import tslogger
 from etna.libs.ts2vec.losses import  hierarchical_contrastive_loss
 from etna.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, AveragedModel
-import math
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    import torch.nn.functional as F
+    from torch.utils.data import TensorDataset, DataLoader
 
 
 class TS2Vec:

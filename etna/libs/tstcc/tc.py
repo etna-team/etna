@@ -26,10 +26,13 @@ SOFTWARE.
 
 import warnings
 
-import torch
-import torch.nn as nn
 import numpy as np
 from etna.libs.tstcc.attention import Seq_Transformer
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    import torch.nn as nn
 
 
 class TC(nn.Module):

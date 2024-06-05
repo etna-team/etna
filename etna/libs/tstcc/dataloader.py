@@ -23,11 +23,13 @@ SOFTWARE.
 """
 # Note: Copied from ts-tcc repository (https://github.com/emadeldeen24/TS-TCC/tree/main)
 
-import torch
-from torch.utils.data import Dataset
-
 from etna.libs.tstcc.augmentations import DataTransform
 
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    from torch.utils.data import Dataset
 
 class Load_Dataset(Dataset):
     # Initialize your data, download, etc.

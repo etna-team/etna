@@ -25,7 +25,11 @@ SOFTWARE.
 # Fix numpy warning in `permutation` function
 
 import numpy as np
-import torch
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
 
 
 def DataTransform(sample, jitter_scale_ratio, max_seg, jitter_ratio):

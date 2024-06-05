@@ -24,11 +24,12 @@ SOFTWARE.
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
 
 import numpy as np
-import pickle
-import torch
-import random
-from datetime import datetime
 from copy import deepcopy
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
 
 
 def torch_pad_nan(arr, left=0, right=0, dim=0):

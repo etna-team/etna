@@ -23,11 +23,14 @@ SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
 
-import torch
-from torch import nn
-import torch.nn.functional as F
 import numpy as np
 from etna.libs.ts2vec.dilated_conv import DilatedConvEncoder
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    from torch import nn
 
 
 def generate_continuous_mask(B, T, n=5, l=0.1):

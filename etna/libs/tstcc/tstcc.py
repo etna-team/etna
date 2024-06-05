@@ -30,10 +30,13 @@ from etna.libs.tstcc.tc import TC
 from etna.libs.tstcc.dataloader import Load_Dataset
 from etna.libs.tstcc.loss import NTXentLoss
 from etna.loggers import tslogger
-import numpy as np
-import torch
-import torch.nn.functional as F
-from torch.utils.data import DataLoader
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    import torch.nn.functional as F
+    from torch.utils.data import DataLoader
 
 
 class TSTCC:
