@@ -19,6 +19,7 @@ from tests.test_models.utils import assert_sampling_is_valid
 @pytest.mark.parametrize(
     "horizon",
     [
+        1,
         8,
         13,
         15,

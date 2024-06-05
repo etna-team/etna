@@ -7,16 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add `TS2VecEmbeddingModel` model ([#253](https://github.com/etna-team/etna/pull/253))
-- Add `EmbeddingSegmentTransform` ([#265](https://github.com/etna-team/etna/pull/265))
-- Add `EmbeddingWindowTransform` ([#265](https://github.com/etna-team/etna/pull/265))
-- Add `TSTCCEmbeddingModel` ([#294](https://github.com/etna-team/etna/pull/294))
-- Add `210-embedding_models` example notebook ([#304](https://github.com/etna-team/etna/pull/304))
-- Add parameter `drop_zero` into `MRMRFeatureSelectionTransform` ([#308](https://github.com/etna-team/etna/issues/308))
 - Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
-- 
-- 
-- 
 - 
 - 
 - 
@@ -25,15 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Changed
-- Allow `RNNModel` to work with categorical features ([#334](https://github.com/etna-team/etna/pull/334))
-- Allow `DeepARNativeModel` and `MLPModel` to work with categorical features ([#336](https://github.com/etna-team/etna/pull/336))
-- Allow `DeepState` to work with categorical features ([#342](https://github.com/etna-team/etna/pull/342))
-- Allow encoders to return numeric features ([#352](https://github.com/etna-team/etna/pull/352))
 - 
 - 
 - 
-- 
-- Enable cancelling old CI/CD runs after changes in a branch ([#339](https://github.com/etna-team/etna/pull/339))
 - 
 - 
 - 
@@ -43,21 +28,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [2.7.0] - 2024-06-04
+### Added
+- Add `TS2VecEmbeddingModel` model ([#253](https://github.com/etna-team/etna/pull/253))
+- Add `EmbeddingSegmentTransform` ([#265](https://github.com/etna-team/etna/pull/265))
+- Add `EmbeddingWindowTransform` ([#265](https://github.com/etna-team/etna/pull/265))
+- Add `TSTCCEmbeddingModel` ([#294](https://github.com/etna-team/etna/pull/294))
+- Add `210-embedding_models` example notebook ([#304](https://github.com/etna-team/etna/pull/304))
+- Add parameter `drop_zero` into `MRMRFeatureSelectionTransform` ([#308](https://github.com/etna-team/etna/issues/308))
+
+### Changed
+- Allow `RNNModel` to work with categorical features ([#334](https://github.com/etna-team/etna/pull/334))
+- Allow `DeepARNativeModel` and `MLPModel` to work with categorical features ([#336](https://github.com/etna-team/etna/pull/336))
+- Allow `DeepState` to work with categorical features ([#342](https://github.com/etna-team/etna/pull/342))
+- Allow encoders to return numeric features ([#352](https://github.com/etna-team/etna/pull/352))
+- Enable cancelling old CI/CD runs after changes in a branch ([#339](https://github.com/etna-team/etna/pull/339))
+
+### Fixed
 - Fix FordA download url in classification notebook ([#309](https://github.com/etna-team/etna/pull/309))
 - Allow `seaborn` dependency to have higher version ([#319](https://github.com/etna-team/etna/pull/319))
 - Fix `MRMRFeatureSelectionTransform` to correctly handle less-is-better `relevance_table` ([#308](https://github.com/etna-team/etna/issues/308))
 - Fix `PatchTSModel` fails when using additional features ([#376](https://github.com/etna-team/etna/issues/376))
-- 
-- 
 - Fix `101-get-started` notebook to be rendered correctly ([#340](https://github.com/etna-team/etna/pull/340))
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
+- Fix `DeepStateModel` forecasting problem with horizon=1 ([#377](https://github.com/etna-team/etna/pull/377))
 
 ## [2.6.0] - 2024-04-11
 ### Added
