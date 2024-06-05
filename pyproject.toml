@@ -246,7 +246,8 @@ filterwarnings = [
     "ignore: Implicitly cleaning up <TemporaryDirectory",
     "ignore: Call to deprecated class DeepARModel.",
     "ignore: dropout option adds dropout after all but last recurrent layer",
-    "ignore: Call to deprecated class TFTModel."
+    "ignore: Call to deprecated class TFTModel.",
+    "ignore: X does not have valid feature names, but IsolationForest was fitted with feature names" # fixed here https://github.com/scikit-learn/scikit-learn/issues/25844
 ]
 markers = [
     "smoke"
