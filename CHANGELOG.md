@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
-- 
+- Fix errors when importing modules without `torch` extras ([#382](https://github.com/etna-team/etna/pull/382))
 - 
 - 
 - 
