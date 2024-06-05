@@ -451,3 +451,11 @@ def test_advance_usage_data_in_transform_nonregressor(transform, outliers_solid_
     ts = outliers_solid_tsds_non_regressor_holiday
     transform.fit(ts)
     _ = transform.transform(ts)
+
+
+def test_isolation_forest_with_features_from_transforms(outliers_solid_tsds):
+    ts = outliers_solid_tsds
+    anomaly_detection = IForestOutlierTransform(in_column="target")
+    holiday_transform = HolidayTransform(iso_code="RUS", mode="binary", out_column="is_holiday")
+    pipeline = Pipeline(NaiveModel(lag=1), transforms=[holiday_transform, anomaly_detection], horizon=3)
+    pipeline.fit(ts)
