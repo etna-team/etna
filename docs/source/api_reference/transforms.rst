@@ -97,6 +97,7 @@ Transforms to detect outliers:
    DensityOutliersTransform
    MedianOutliersTransform
    PredictionIntervalOutliersTransform
+   IForestOutlierTransform
 
 Transforms to work with time-related features:
 
