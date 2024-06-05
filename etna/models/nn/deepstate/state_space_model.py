@@ -293,7 +293,7 @@ class SeasonalitySSM(LevelSSM):
         :
             Emission coefficient matrix.
         """
-        emission_coeff = one_hot(datetime_index.squeeze(-1), num_classes=self.latent_dim())
+        emission_coeff = one_hot(datetime_index, num_classes=self.latent_dim())
         return emission_coeff.float()
 
     def generate_datetime_index(self, timestamps: np.ndarray) -> np.ndarray:

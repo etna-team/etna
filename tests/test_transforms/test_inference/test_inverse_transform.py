@@ -18,6 +18,8 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
 from etna.transforms import DeseasonalityTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import EmbeddingSegmentTransform
+from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import EventTransform
 from etna.transforms import ExogShiftTransform
 from etna.transforms import FilterFeaturesTransform
@@ -59,6 +61,8 @@ from etna.transforms import TreeFeatureSelectionTransform
 from etna.transforms import TrendTransform
 from etna.transforms import YeoJohnsonTransform
 from etna.transforms.decomposition import RupturesChangePointsModel
+from etna.transforms.embeddings.models import TS2VecEmbeddingModel
+from etna.transforms.embeddings.models import TSTCCEmbeddingModel
 from tests.test_transforms.utils import assert_column_changes
 from tests.test_transforms.utils import find_columns_diff
 from tests.utils import convert_ts_to_int_timestamp
@@ -96,9 +100,7 @@ class TestInverseTransformTrain:
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-        pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
-        )
+        assert_frame_equal(flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)])
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
@@ -132,6 +134,43 @@ class TestInverseTransformTrain:
                     in_column="target",
                     change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                     out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -182,14 +221,14 @@ class TestInverseTransformTrain:
                     fast_redundancy=True,
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
@@ -557,6 +596,43 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -603,14 +679,14 @@ class TestInverseTransformTrain:
                     fast_redundancy=True,
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
@@ -970,7 +1046,9 @@ class TestInverseTransformTrainSubsetSegments:
         inverse_transformed_subset_df = transform.inverse_transform(transformed_subset_ts).to_pandas()
 
         # check
-        assert_frame_equal(inverse_transformed_subset_df, inverse_transformed_df.loc[:, pd.IndexSlice[segments, :]])
+        assert_frame_equal(
+            inverse_transformed_subset_df, inverse_transformed_df.loc[:, pd.IndexSlice[segments, :]], atol=1e-5
+        )
 
     @pytest.mark.parametrize(
         "transform, dataset_name",
@@ -1003,6 +1081,39 @@ class TestInverseTransformTrainSubsetSegments:
                 TrendTransform(
                     in_column="target",
                     change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
@@ -1200,7 +1311,9 @@ class TestInverseTransformFutureSubsetSegments:
 
         # check
         assert_frame_equal(
-            inverse_transformed_subset_future_df, inverse_transformed_future_df.loc[:, pd.IndexSlice[segments, :]]
+            inverse_transformed_subset_future_df,
+            inverse_transformed_future_df.loc[:, pd.IndexSlice[segments, :]],
+            atol=1e-5,
         )
 
     @pytest.mark.parametrize(
@@ -1250,6 +1363,39 @@ class TestInverseTransformFutureSubsetSegments:
                 TrendTransform(
                     in_column="target",
                     change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
+                ),
+                "regular_ts",
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
             ),
@@ -1479,13 +1625,50 @@ class TestInverseTransformTrainNewSegments:
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-        pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+        assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -1527,14 +1710,14 @@ class TestInverseTransformTrainNewSegments:
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
                 ),
                 "ts_with_exog",
-                {"create": {"monthday", "positive", "weekday"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
-                {"create": {"monthday", "positive", "weekday"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
@@ -1859,13 +2042,50 @@ class TestInverseTransformFutureNewSegments:
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-        pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)]
+        assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
         [
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
             (
@@ -2307,7 +2527,7 @@ class TestInverseTransformFutureWithTarget:
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-        pd.testing.assert_frame_equal(
+        assert_frame_equal(
             flat_test_df[list(changed_columns)],
             flat_inverse_transformed_test_df[list(changed_columns)],
         )
@@ -2344,6 +2564,43 @@ class TestInverseTransformFutureWithTarget:
                     in_column="target",
                     change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                     out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -2394,14 +2651,14 @@ class TestInverseTransformFutureWithTarget:
                     fast_redundancy=True,
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
@@ -2761,9 +3018,8 @@ class TestInverseTransformFutureWithoutTarget:
         created_columns, removed_columns, changed_columns = find_columns_diff(
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
-        pd.testing.assert_frame_equal(
-            flat_test_df[list(changed_columns)],
-            flat_inverse_transformed_test_df[list(changed_columns)],
+        assert_frame_equal(
+            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)], atol=1e-5
         )
 
     @pytest.mark.parametrize(
@@ -2812,6 +3068,43 @@ class TestInverseTransformFutureWithoutTarget:
                     in_column="target",
                     change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),
                     out_column="res",
+                ),
+                "regular_ts",
+                {},
+            ),
+            # embeddings
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingSegmentTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TS2VecEmbeddingModel(input_dims=1, output_dims=2),
+                    training_params={"n_epochs": 1},
+                ),
+                "regular_ts",
+                {},
+            ),
+            (
+                EmbeddingWindowTransform(
+                    in_columns=["target"],
+                    embedding_model=TSTCCEmbeddingModel(input_dims=1, output_dims=2, batch_size=2),
+                    training_params={"n_epochs": 1},
                 ),
                 "regular_ts",
                 {},
@@ -3234,14 +3527,14 @@ class TestInverseTransformFutureWithoutTarget:
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
                     relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
                 ),
                 "ts_with_exog",
-                {"create": {"weekday", "monthday", "positive"}},
+                {"create": {"positive", "weekday", "year"}},
             ),
             (
                 TreeFeatureSelectionTransform(

@@ -102,3 +102,4 @@ Outliers analysis utilities:
    get_anomalies_median
    get_anomalies_prediction_interval
    get_anomalies_iqr
+   get_anomalies_isolation_forest

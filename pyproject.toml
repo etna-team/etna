@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "2.5.0"
+version = "2.7.0"
 repository = "https://github.com/etna-team/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -47,7 +47,7 @@ pandas = "^1.1"
 catboost = ">=0.21"
 ruptures = "^1.1.5"
 numba = ">=0.53.1"
-seaborn = "^0.11.1"
+seaborn = ">=0.11.1,<1"
 statsmodels = ">=0.12,<0.14"
 pmdarima = ">=1.8.0"
 dill = "^0.3.4"
@@ -76,6 +76,7 @@ prophet = {version = "^1.0", optional = true}
 torch = {version = ">=1.8.0,<3", optional = true}
 pytorch-forecasting = {version = "^0.9.0", optional = true}
 pytorch-lightning = {version = "*", optional = true}
+einops = {version = "*", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
 
@@ -121,7 +122,7 @@ types-setuptools = {version = "^65.7.0", optional = true}
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
-torch = ["torch", "pytorch-forecasting", "pytorch-lightning"]
+torch = ["torch", "pytorch-forecasting", "pytorch-lightning", "einops"]
 wandb = ["wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
@@ -135,7 +136,7 @@ style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
 
 all = [
     "prophet",
-    "torch", "pytorch-forecasting", "pytorch-lightning",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
     "wandb",
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
@@ -144,7 +145,7 @@ all = [
 
 all-dev = [
     "prophet",
-    "torch", "pytorch-forecasting", "pytorch-lightning",
+    "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
     "wandb",
     "optuna", "sqlalchemy",
     "click", "semver",
@@ -230,7 +231,6 @@ filterwarnings = [
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
-    "ignore: The register_cmap function was deprecated in Matplotlib 3.7 and will be removed", # seaborn
     "ignore: Jupyter is migrating its paths to use standard platformdirs",
     "ignore::sqlalchemy.exc.MovedIn20Warning",
     "ignore: Argument `closed` is deprecated in favor of `inclusive`",
@@ -247,7 +247,6 @@ filterwarnings = [
     "ignore: Call to deprecated class DeepARModel.",
     "ignore: dropout option adds dropout after all but last recurrent layer",
     "ignore: Call to deprecated class TFTModel."
-
 ]
 markers = [
     "smoke"

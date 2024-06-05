@@ -152,6 +152,24 @@ def test_label_encoder_simple(dtype):
         assert df_transformed.equals(df_expected)
 
 
+@pytest.mark.parametrize("return_type, expected_type", [("categorical", "category"), ("numeric", "float64")])
+def test_label_encoder_return_type(return_type, expected_type):
+    """Test that LabelEncoderTransform return column with correct dtype."""
+    ts, _ = get_ts_for_label_encoding()
+    le = LabelEncoderTransform(in_column=f"regressor_0", out_column="test", return_type=return_type)
+    le.fit(ts)
+    df_transformed = le.transform(deepcopy(ts)).to_pandas()["segment_0"]["test"]
+    type_transformed = df_transformed.dtypes.name
+    assert type_transformed == expected_type
+
+
+@pytest.mark.parametrize("return_type", ["int", "all"])
+def test_wrong_mode_type(return_type):
+    """Check that Exception raises when passed wrong return_type"""
+    with pytest.raises(NotImplementedError, match=f"{return_type} is not a valid ImputerType."):
+        _ = LabelEncoderTransform(in_column=f"regressor_0", out_column="test", return_type=return_type)
+
+
 @pytest.mark.parametrize("dtype", ["float", "int", "str", "category"])
 def test_ohe_encoder_simple(dtype):
     """Test that OneHotEncoderTransform works correct in a simple case."""
@@ -165,13 +183,31 @@ def test_ohe_encoder_simple(dtype):
         assert df_transformed.equals(df_expected)
 
 
+@pytest.mark.parametrize("return_type, expected_type", [("categorical", "category"), ("numeric", "float64")])
+def test_ohe_encoder_return_type(return_type, expected_type):
+    """Test that OneHotEncoderTransform return columns with correct dtype."""
+    ts, _ = get_ts_for_label_encoding()
+    ohe = OneHotEncoderTransform(in_column=f"regressor_0", out_column="test", return_type=return_type)
+    ohe.fit(ts)
+    cols = ohe._get_out_column_names()
+    df_transformed = ohe.transform(deepcopy(ts)).to_pandas()["segment_0"][cols]
+    for col in df_transformed.columns:
+        type_transformed = df_transformed[col].dtypes.name
+        assert type_transformed == expected_type
+
+
+@pytest.mark.parametrize("return_type", ["int", "all"])
+def test_wrong_mode_type(return_type):
+    """Check that Exception raises when passed wrong return_type"""
+    with pytest.raises(NotImplementedError, match=f"{return_type} is not a valid ReturnType."):
+        _ = OneHotEncoderTransform(in_column=f"regressor_0", out_column="test", return_type=return_type)
+
+
 def test_value_error_label_encoder(ts_for_label_encoding):
     """Test LabelEncoderTransform with wrong strategy."""
     ts, _ = ts_for_label_encoding
-    with pytest.raises(ValueError, match="The strategy"):
+    with pytest.raises(ValueError, match="The strategy 'fake_strategy' doesn't exist"):
         le = LabelEncoderTransform(in_column="target", strategy="fake_strategy")
-        le.fit(ts)
-        le.transform(ts)
 
 
 @pytest.mark.parametrize(
