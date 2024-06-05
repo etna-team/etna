@@ -211,6 +211,31 @@ def test_iqr_outliers_with_trend(window_size, iqr_scale, stride, period, right_a
     assert res == right_anomal
 
 
+@pytest.mark.parametrize(
+    "window_size, iqr_scale, stride, right_anomal",
+    (
+        (
+            15,
+            3.5,
+            1,
+            {"1": [np.datetime64("2021-01-11")], "2": [np.datetime64("2021-01-09"), np.datetime64("2021-01-27")]},
+        ),
+    ),
+)
+@pytest.mark.parametrize("period", (4,))
+def test_iqr_outliers_full_stl(window_size, iqr_scale, stride, period, right_anomal, outliers_df_with_two_columns):
+    res = get_anomalies_iqr(
+        ts=outliers_df_with_two_columns,
+        window_size=window_size,
+        stride=stride,
+        iqr_scale=iqr_scale,
+        period=period,
+        trend=True,
+        seasonality=True,
+    )
+    assert res == right_anomal
+
+
 @pytest.mark.parametrize("true_params", (["1", "2"],))
 @pytest.mark.parametrize("index_only", (True, False))
 def test_interface_correct_args(true_params, index_only, outliers_df_with_two_columns):
