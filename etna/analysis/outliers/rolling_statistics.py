@@ -97,7 +97,7 @@ def _stl_decompose(
     seasonality:
         whether to remove seasonality from the series
     **kwargs:
-        other parameters for decompositions. See https://www.statsmodels.org/devel/generated/statsmodels.tsa.seasonal.STL.html
+        other parameters for decompositions. See :py:class:`statsmodels.tsa.seasonal.STL`
 
     Returns
     -------
@@ -182,7 +182,7 @@ def iqr_method(
     seasonality:
         whether to remove seasonality from the series
     stl_params:
-        other parameters for STL. See https://www.statsmodels.org/devel/generated/statsmodels.tsa.seasonal.STL.html
+        other parameters for STL. See :py:class:`statsmodels.tsa.seasonal.STL`
 
     Returns
     -------
@@ -251,7 +251,7 @@ def get_anomalies_iqr(
     period:
         periodicity of the sequence for STL.
     stl_params:
-        other parameters for STL. See https://www.statsmodels.org/devel/generated/statsmodels.tsa.seasonal.STL.html
+        other parameters for STL. See :py:class:`statsmodels.tsa.seasonal.STL`
     index_only:
         whether to return only outliers indices. If `False` will return outliers series
 
