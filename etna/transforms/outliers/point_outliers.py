@@ -1,6 +1,5 @@
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Type
@@ -60,7 +59,7 @@ class MedianOutliersTransform(OutliersTransform):
         self.alpha = alpha
         super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
 
-    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
         """Call :py:func:`~etna.analysis.outliers.median_outliers.get_anomalies_median` function with self parameters.
 
         Parameters
@@ -135,7 +134,7 @@ class DensityOutliersTransform(OutliersTransform):
         self.distance_func = distance_func
         super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
 
-    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
         """Call :py:func:`~etna.analysis.outliers.density_outliers.get_anomalies_density` function with self parameters.
 
         Parameters
@@ -220,7 +219,7 @@ class PredictionIntervalOutliersTransform(OutliersTransform):
                 return SARIMAXModel
         return model
 
-    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
         """Call :py:func:`~etna.analysis.outliers.prediction_interval_outliers.get_anomalies_prediction_interval` function with self parameters.
 
         Parameters
@@ -284,7 +283,7 @@ class IForestOutlierTransform(OutliersTransform):
         in_column:
             Name of the column in which the anomaly is searching
         ignore_flag_column:
-            column name for skipping values from outlier check
+            Column name for skipping values from outlier check
         features_to_use:
             List of feature column names to use for anomaly detection
         features_to_ignore:
@@ -347,18 +346,18 @@ class IForestOutlierTransform(OutliersTransform):
         self.verbose = verbose
         super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
 
-    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
         """Call :py:func:`~etna.analysis.outliers.isolation_forest_outliers.get_anomalies_isolation_forest` function with self parameters.
 
         Parameters
         ----------
         ts:
-            dataset to process
+            Dataset to process
 
         Returns
         -------
         :
-            dict of outliers in format {segment: [outliers_timestamps]}
+            Dict of outliers in format {segment: [outliers_timestamps]}
         """
         return get_anomalies_isolation_forest(
             ts=ts,

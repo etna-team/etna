@@ -14,8 +14,11 @@ from etna.models import NaiveModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.pipeline import Pipeline
+from etna.transforms import DateFlagsTransform
 from etna.transforms import DensityOutliersTransform
+from etna.transforms import FourierTransform
 from etna.transforms import HolidayTransform
+from etna.transforms import LagTransform
 from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
 from etna.transforms.outliers import IForestOutlierTransform
@@ -453,9 +456,20 @@ def test_advance_usage_data_in_transform_nonregressor(transform, outliers_solid_
     _ = transform.transform(ts)
 
 
-def test_isolation_forest_with_features_from_transforms(outliers_solid_tsds):
+@pytest.mark.parametrize(
+    "features",
+    [
+        (
+            [
+                HolidayTransform(iso_code="RUS", mode="binary", out_column="is_holiday"),
+                LagTransform(in_column="target", lags=[7, 8, 9], out_column="lag"),
+            ]
+        ),
+        ([DateFlagsTransform(out_column="df"), FourierTransform(period=30, order=4, out_column="fourier")]),
+    ],
+)
+def test_isolation_forest_with_features_from_transforms(outliers_solid_tsds, features):
     ts = outliers_solid_tsds
     anomaly_detection = IForestOutlierTransform(in_column="target")
-    holiday_transform = HolidayTransform(iso_code="RUS", mode="binary", out_column="is_holiday")
-    pipeline = Pipeline(NaiveModel(lag=1), transforms=[holiday_transform, anomaly_detection], horizon=3)
+    pipeline = Pipeline(NaiveModel(lag=1), transforms=features + [anomaly_detection], horizon=3)
     pipeline.fit(ts)

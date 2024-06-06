@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add `get_anomalies_iqr` function for anomaly detection ([#374](https://github.com/etna-team/etna/pull/374))
 - Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
-- 
+- Add `IForestOutlierTransform` ([#381](https://github.com/etna-team/etna/pull/381))
 - 
 - 
 - 
