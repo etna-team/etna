@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 
+## [2.7.1] - 2024-06-05
+### Fixed
+- Fix errors when importing modules without `torch` extras ([#382](https://github.com/etna-team/etna/pull/382))
+
 ## [2.7.0] - 2024-06-04
 ### Added
 - Add `TS2VecEmbeddingModel` model ([#253](https://github.com/etna-team/etna/pull/253))

@@ -13,13 +13,13 @@ from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
 from etna.models.base import DeepBaseModel
 from etna.models.base import DeepBaseNet
-from etna.models.nn.deepstate import LDS
-from etna.models.nn.deepstate import CompositeSSM
 
 if SETTINGS.torch_required:
     import torch
     import torch.nn as nn
 
+    from etna.models.nn.deepstate import LDS
+    from etna.models.nn.deepstate import CompositeSSM
     from etna.models.nn.utils import MultiEmbedding
 
 

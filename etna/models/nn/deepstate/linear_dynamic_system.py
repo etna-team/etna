@@ -1,9 +1,12 @@
 from typing import Tuple
 
-import torch
-from torch import Tensor
-from torch.distributions.multivariate_normal import MultivariateNormal
-from torch.distributions.normal import Normal
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    from torch import Tensor
+    from torch.distributions.multivariate_normal import MultivariateNormal
+    from torch.distributions.normal import Normal
 
 from etna.core import BaseMixin
 
