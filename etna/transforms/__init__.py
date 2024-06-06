@@ -55,6 +55,7 @@ from etna.transforms.math import YeoJohnsonTransform
 from etna.transforms.missing_values import ResampleWithDistributionTransform
 from etna.transforms.missing_values import TimeSeriesImputerTransform
 from etna.transforms.outliers import DensityOutliersTransform
+from etna.transforms.outliers import IForestOutlierTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.outliers import PredictionIntervalOutliersTransform
 from etna.transforms.timestamp import DateFlagsTransform
