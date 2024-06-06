@@ -7,9 +7,13 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-import torch
-from torch import Tensor
-from torch.nn.functional import one_hot
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    from torch import Tensor
+    from torch.nn.functional import one_hot
 
 from etna.core import BaseMixin
 

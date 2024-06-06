@@ -5,6 +5,8 @@ import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import duplicate_data
+from tests.utils import convert_ts_index_to_freq
+from tests.utils import convert_ts_to_int_timestamp
 
 
 @pytest.fixture(autouse=True)
@@ -41,3 +43,13 @@ def exog_and_target_dfs():
     df["no_cast"] = df["no_cast"].astype("category")
     df_exog = duplicate_data(df, segments=["a", "b"])
     return ts, df_exog
+
+
+@pytest.fixture
+def outliers_df_with_two_columns_int_timestamp(outliers_df_with_two_columns):
+    return convert_ts_to_int_timestamp(ts=outliers_df_with_two_columns)
+
+
+@pytest.fixture
+def outliers_df_with_two_columns_minute_freq(outliers_df_with_two_columns):
+    return convert_ts_index_to_freq(ts=outliers_df_with_two_columns, freq="T")

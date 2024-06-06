@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Add `get_anomalies_iqr` function for anomaly detection ([#374](https://github.com/etna-team/etna/pull/374))
 - Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
-- 
 - 
 - 
 - 
@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
+
+## [2.7.1] - 2024-06-05
+### Fixed
+- Fix errors when importing modules without `torch` extras ([#382](https://github.com/etna-team/etna/pull/382))
 
 ## [2.7.0] - 2024-06-04
 ### Added
@@ -72,6 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `TSDataset.create_from_misaligned` constructor ([#269](https://github.com/etna-team/etna/pull/269))
 - Add tutorial about working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
 - Add in `OutliersTransform` possibilities use `ignore_flag_column` to skip values use ignore ([#291](https://github.com/etna-team/etna/pull/291))
+- Add `get_anomalies_iqr` function for anomaly detection ([#374](https://github.com/etna-team/etna/pull/374))
 
 ### Changed
 - Update glossary with terms related to working with misaligned data ([#288](https://github.com/etna-team/etna/pull/288))
