@@ -197,7 +197,7 @@ class OutliersTransform(ReversibleTransform, ABC):
         return df
 
     @abstractmethod
-    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
         """Call function for detection outliers with self parameters.
 
         Parameters
