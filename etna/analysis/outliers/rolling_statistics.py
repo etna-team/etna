@@ -192,7 +192,7 @@ def iqr_method(
     if iqr_scale <= 0:
         raise ValueError("Scaling parameter must be positive!")
 
-    window = series[indices]
+    window = series.iloc[indices]
 
     if trend or seasonality:
         if stl_params is None:
