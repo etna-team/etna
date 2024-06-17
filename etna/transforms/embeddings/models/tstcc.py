@@ -118,7 +118,6 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             heads=self.heads,
             depth=self.depth,
             n_seq_steps=self.n_seq_steps,
-            device=self.device,
             num_workers=self.num_workers,
             batch_size=self.batch_size,
             jitter_scale_ratio=self.jitter_scale_ratio,
@@ -182,6 +181,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
                 lambda1=lambda1,
                 lambda2=lambda2,
                 verbose=verbose,
+                device=self.device,
             )
         return self
 
@@ -197,7 +197,9 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         :
             array with embeddings of shape (n_segments, output_dim)
         """
-        embeddings = self.embedding_model.encode(data=x, encode_full_series=True)  # (n_segments, output_dim)
+        embeddings = self.embedding_model.encode(
+            data=x, encode_full_series=True, device=self.device
+        )  # (n_segments, output_dim)
 
         return embeddings
 
@@ -215,7 +217,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             array with embeddings of shape (n_segments, n_timestamps, output_dim)
         """
         embeddings = self.embedding_model.encode(
-            data=x, encode_full_series=False
+            data=x, encode_full_series=False, device=self.device
         )  # (n_segments, n_timestamps, output_dim)
         return embeddings
 
@@ -264,7 +266,6 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             depth=obj.depth,
             hidden_dim=obj.tc_hidden_dim,
             n_seq_steps=obj.n_seq_steps,
-            device=obj.device,
             num_workers=obj.num_workers,
             batch_size=obj.batch_size,
             jitter_scale_ratio=obj.jitter_scale_ratio,

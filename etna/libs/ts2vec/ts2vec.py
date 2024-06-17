@@ -45,7 +45,6 @@ class TS2Vec:
             output_dims=320,
             hidden_dims=64,
             depth=10,
-            device='cuda',
             batch_size=16,
             max_train_length=None,
             temporal_unit=0,
@@ -68,13 +67,11 @@ class TS2Vec:
         '''
 
         super().__init__()
-        self.device = device
         self.batch_size = batch_size
         self.max_train_length = max_train_length
         self.temporal_unit = temporal_unit
 
-        self._net = TSEncoder(input_dims=input_dims, output_dims=output_dims, hidden_dims=hidden_dims, depth=depth).to(
-            self.device)
+        self._net = TSEncoder(input_dims=input_dims, output_dims=output_dims, hidden_dims=hidden_dims, depth=depth)
         self.net = AveragedModel(self._net)
         self.net.update_parameters(self._net)
 
@@ -84,7 +81,7 @@ class TS2Vec:
         self.n_epochs = 0
         self.n_iters = 0
 
-    def fit(self, train_data, lr=0.001, n_epochs=None, n_iters=None, verbose=False):
+    def fit(self, train_data, lr=0.001, n_epochs=None, n_iters=None, verbose=False, device="cpu"):
         ''' Training the TS2Vec model.
 
         Args:
@@ -124,6 +121,8 @@ class TS2Vec:
 
         cur_epoch = 0
         cur_iter = 0
+
+        self._net.to(device)
         while True:
             if n_epochs is not None and cur_epoch >= n_epochs:
                 break
@@ -141,7 +140,7 @@ class TS2Vec:
                 if self.max_train_length is not None and x.size(1) > self.max_train_length:
                     window_offset = np.random.randint(x.size(1) - self.max_train_length + 1)
                     x = x[:, window_offset: window_offset + self.max_train_length]
-                x = x.to(self.device)
+                x = x.to(device)
 
                 ts_l = x.size(1)
                 crop_l = np.random.randint(low=2 ** (self.temporal_unit + 1), high=ts_l + 1)
@@ -191,8 +190,8 @@ class TS2Vec:
 
         return loss_log
 
-    def _eval_with_pooling(self, x, mask=None, slicing=None, encoding_window=None):
-        out = self.net(x.to(self.device, non_blocking=True), mask)
+    def _eval_with_pooling(self, x, mask=None, slicing=None, encoding_window=None, device="cpu"):
+        out = self.net(x.to(device, non_blocking=True), mask)
         if encoding_window == 'full_series':
             if slicing is not None:
                 out = out[:, slicing]
@@ -220,7 +219,7 @@ class TS2Vec:
         return out.cpu()
 
     def encode(self, data, mask=None, encoding_window=None, causal=False, sliding_length=None, sliding_padding=0,
-               batch_size=None):
+               batch_size=None, device="cpu"):
         ''' Compute representations using the model.
 
         Args:
@@ -242,6 +241,7 @@ class TS2Vec:
         n_samples, ts_l, _ = data.shape
 
         org_training = self.net.training
+        self._net.to(device=device)
         self.net.eval()
 
         dataset = TensorDataset(torch.from_numpy(data).to(torch.float))
@@ -271,7 +271,8 @@ class TS2Vec:
                                     torch.cat(calc_buffer, dim=0),
                                     mask,
                                     slicing=slice(sliding_padding, sliding_padding + sliding_length),
-                                    encoding_window=encoding_window
+                                    encoding_window=encoding_window,
+                                    device=device
                                 )
                                 reprs += torch.split(out, n_samples)
                                 calc_buffer = []
@@ -283,7 +284,8 @@ class TS2Vec:
                                 x_sliding,
                                 mask,
                                 slicing=slice(sliding_padding, sliding_padding + sliding_length),
-                                encoding_window=encoding_window
+                                encoding_window=encoding_window,
+                                device=device
                             )
                             reprs.append(out)
 
@@ -293,7 +295,8 @@ class TS2Vec:
                                 torch.cat(calc_buffer, dim=0),
                                 mask,
                                 slicing=slice(sliding_padding, sliding_padding + sliding_length),
-                                encoding_window=encoding_window
+                                encoding_window=encoding_window,
+                                device=device
                             )
                             reprs += torch.split(out, n_samples)
                             calc_buffer = []
@@ -306,7 +309,7 @@ class TS2Vec:
                             kernel_size=out.size(1),
                         ).squeeze(1)
                 else:
-                    out = self._eval_with_pooling(x, mask, encoding_window=encoding_window)
+                    out = self._eval_with_pooling(x, mask, encoding_window=encoding_window, device=device)
                     if encoding_window == 'full_series':
                         out = out.squeeze(1)
 
@@ -333,5 +336,5 @@ class TS2Vec:
         Args:
             fn (str): filename.
         '''
-        state_dict = torch.load(fn, map_location=self.device)
+        state_dict = torch.load(fn, map_location=torch.device("cpu"))
         self.net.load_state_dict(state_dict)

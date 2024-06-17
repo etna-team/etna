@@ -54,7 +54,6 @@ class TSTCC:
             jitter_ratio,
             use_cosine_similarity,
             batch_size,
-            device,
             num_workers,
     ):
         """
@@ -102,7 +101,6 @@ class TSTCC:
         self.input_dims = input_dims
         self.batch_size = batch_size
 
-        self.device = device
         self.num_workers = num_workers
 
         self.n_seq_steps = n_seq_steps
@@ -120,10 +118,9 @@ class TSTCC:
                     hidden_dim=hidden_dim,
                     heads=heads,
                     depth=depth,
-                    device=self.device,
                     n_seq_steps=self.n_seq_steps
                 )
-        }).to(device=self.device)
+        })
 
         self.jitter_scale_ratio = jitter_scale_ratio
         self.max_seg = max_seg
@@ -158,7 +155,7 @@ class TSTCC:
             )
         return data_loader
 
-    def fit(self, train_data, n_epochs, lr, temperature, lambda1, lambda2, verbose):
+    def fit(self, train_data, n_epochs, lr, temperature, lambda1, lambda2, verbose, device):
         """
         Fit model
 
@@ -182,13 +179,14 @@ class TSTCC:
         train_loader = self.prepare_data(data=train_data, mode="train")
         model_optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, betas=(0.9, 0.99),
                                            weight_decay=3e-4)
+        self.model.to(device=device)
         self.model.train()
         for epoch in range(n_epochs):
 
             total_loss = []
             for batch_idx, (aug1, aug2) in enumerate(train_loader):
                 # send to device
-                aug1, aug2 = aug1.to(self.device), aug2.to(self.device)
+                aug1, aug2 = aug1.to(device), aug2.to(device)
 
                 # optimizer
                 model_optimizer.zero_grad()
@@ -200,8 +198,8 @@ class TSTCC:
                 features1 = F.normalize(features1, dim=1)
                 features2 = F.normalize(features2, dim=1)
 
-                temp_cont_loss1, temp_cont_lstm_feat1 = self.model.temporal_contr_model(features1, features2)
-                temp_cont_loss2, temp_cont_lstm_feat2 = self.model.temporal_contr_model(features2, features1)
+                temp_cont_loss1, temp_cont_lstm_feat1 = self.model.temporal_contr_model(features1, features2, device)
+                temp_cont_loss2, temp_cont_lstm_feat2 = self.model.temporal_contr_model(features2, features1, device)
 
                 # normalize projection feature vectors
                 zis = temp_cont_lstm_feat1
@@ -209,7 +207,7 @@ class TSTCC:
 
                 # compute loss
                 nt_xent_criterion = NTXentLoss(
-                    device=self.device,
+                    device=device,
                     batch_size=self.batch_size,
                     temperature=temperature,
                     use_cosine_similarity=self.use_cosine_similarity
@@ -224,7 +222,7 @@ class TSTCC:
             if verbose:
                 tslogger.log(f"Epoch {epoch}: loss={train_loss:.4f}")
 
-    def encode(self, data, encode_full_series):
+    def encode(self, data, encode_full_series, device):
         """
         Encode data
 
@@ -237,12 +235,13 @@ class TSTCC:
         """
         data_loader = self.prepare_data(data=data, mode="encode")
 
+        self.model.to(device=device)
         self.model.eval()
 
         embeddings = []
         with torch.no_grad():
             for data in data_loader:
-                data = data.to(self.device)
+                data = data.to(device)
                 features = self.model.encoder(data)
 
                 # normalize projection feature vectors
@@ -271,5 +270,5 @@ class TSTCC:
         Args:
             fn_enc (str): filename
         '''
-        state_dict = torch.load(fn, map_location=self.device)
+        state_dict = torch.load(fn, map_location=torch.device("cpu"))
         self.model.load_state_dict(state_dict)

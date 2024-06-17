@@ -79,7 +79,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             depth=self.depth,
             max_train_length=self.max_train_length,
             temporal_unit=self.temporal_unit,
-            device=self.device,
             batch_size=self.batch_size,
         )
 
@@ -125,7 +124,9 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             Whether to print the training loss after each epoch.
         """
         if not self._is_freezed:
-            self.embedding_model.fit(train_data=x, lr=lr, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
+            self.embedding_model.fit(
+                train_data=x, lr=lr, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose, device=self.device
+            )
         return self
 
     def encode_segment(
@@ -167,6 +168,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             sliding_length=sliding_length,
             sliding_padding=sliding_padding,
             batch_size=self.batch_size,
+            device=self.device,
         )
 
         return embeddings
@@ -214,6 +216,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             sliding_length=sliding_length,
             sliding_padding=sliding_padding,
             batch_size=self.batch_size,
+            device=self.device,
         )
         return embeddings
 
@@ -259,7 +262,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             depth=obj.depth,
             max_train_length=obj.max_train_length,
             temporal_unit=obj.temporal_unit,
-            device=obj.device,
             batch_size=obj.batch_size,
         )
 
