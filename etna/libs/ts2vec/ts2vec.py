@@ -123,6 +123,7 @@ class TS2Vec:
         cur_iter = 0
 
         self._net.to(device)
+        self.net.to(device)
         while True:
             if n_epochs is not None and cur_epoch >= n_epochs:
                 break
@@ -241,7 +242,9 @@ class TS2Vec:
         n_samples, ts_l, _ = data.shape
 
         org_training = self.net.training
-        self._net.to(device=device)
+
+        self._net.to(device)
+        self.net.to(device)
         self.net.eval()
 
         dataset = TensorDataset(torch.from_numpy(data).to(torch.float))
