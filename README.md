@@ -204,7 +204,16 @@ ETNA documentation is available [here](https://docs.etna.ai/stable/).
 
 ## Community
 
-To ask the questions or discuss the library you can join our [telegram chat](https://t.me/etna_support). 
+Questions and feedback are welcome! Our channels for communication:
+- [Discussions](https://github.com/etna-team/etna/discussions)
+  - Suggestions with ideas and drawbacks
+  - Q&A, e.g. usage questions
+  - General discussions
+- [Issue tracker](https://github.com/etna-team/etna/issues)
+  - Bug reports
+  - Tasks
+- [Telegram chat](https://t.me/etna_support)
+  - Useful for any other form of communication
 
 ## Resources
 

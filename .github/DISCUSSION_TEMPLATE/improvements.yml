@@ -1,0 +1,23 @@
+labels: ["improvement/idea", "improvement/drawback"]
+body:
+  - type: textarea
+    attributes:
+      label: Description
+      description: |
+        Description of the suggested improvement.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Thoughts
+      description: |
+        Thoughts about the improvement: benefits, drawbacks, alternatives, possible implementations, etc.
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Related
+      description: |
+        Related issues, pull requests, or other discussions.
+    validations:
+      required: false
