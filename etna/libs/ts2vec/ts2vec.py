@@ -23,7 +23,8 @@ SOFTWARE.
 """
 # Note: Copied from ts2vec repository (https://github.com/yuezhihan/ts2vec/tree/main)
 # Removed skipping training loop when model is already pretrained. Removed "multiscale" encode option.
-# Move lr parameter to fit method
+# Move lr, device, batch_size parameters to fit method
+# Move device, batch_size parameters to encode method
 
 import torch
 import torch.nn.functional as F
@@ -45,7 +46,6 @@ class TS2Vec:
             output_dims=320,
             hidden_dims=64,
             depth=10,
-            batch_size=16,
             max_train_length=None,
             temporal_unit=0,
             after_iter_callback=None,
@@ -58,8 +58,6 @@ class TS2Vec:
             output_dims (int): The representation dimension.
             hidden_dims (int): The hidden dimension of the encoder.
             depth (int): The number of hidden residual blocks in the encoder.
-            device (str): The gpu used for training and inference.
-            batch_size (int): The batch size.
             max_train_length (Union[int, NoneType]): The maximum allowed sequence length for training. For sequence with a length greater than <max_train_length>, it would be cropped into some sequences, each of which has a length less than <max_train_length>.
             temporal_unit (int): The minimum unit to perform temporal contrast. When training on a very long sequence, this param helps to reduce the cost of time and memory.
             after_iter_callback (Union[Callable, NoneType]): A callback function that would be called after each iteration.
@@ -67,7 +65,6 @@ class TS2Vec:
         '''
 
         super().__init__()
-        self.batch_size = batch_size
         self.max_train_length = max_train_length
         self.temporal_unit = temporal_unit
 
@@ -81,7 +78,7 @@ class TS2Vec:
         self.n_epochs = 0
         self.n_iters = 0
 
-    def fit(self, train_data, lr=0.001, n_epochs=None, n_iters=None, verbose=False, device="cpu"):
+    def fit(self, train_data, lr=0.001, n_epochs=None, n_iters=None, verbose=False, device="cpu", batch_size=16, num_workers=0):
         ''' Training the TS2Vec model.
 
         Args:
@@ -90,6 +87,9 @@ class TS2Vec:
             n_epochs (Union[int, NoneType]): The number of epochs. When this reaches, the training stops.
             n_iters (Union[int, NoneType]): The number of iterations. When this reaches, the training stops. If both n_epochs and n_iters are not specified, a default setting would be used that sets n_iters to 200 for a dataset with size <= 100000, 600 otherwise.
             verbose (bool): Whether to print the training loss after each epoch.
+            device (str): The gpu used for training and inference.
+            batch_size (int): The batch size.
+            num_workers (int): How many subprocesses to use for data loading
 
         Returns:
             loss_log: a list containing the training losses on each epoch.
@@ -112,8 +112,8 @@ class TS2Vec:
         train_data = train_data[~np.isnan(train_data).all(axis=2).all(axis=1)]
 
         train_dataset = TensorDataset(torch.from_numpy(train_data).to(torch.float))
-        train_loader = DataLoader(train_dataset, batch_size=min(self.batch_size, len(train_dataset)), shuffle=True,
-                                  drop_last=True)
+        train_loader = DataLoader(train_dataset, batch_size=min(batch_size, len(train_dataset)), shuffle=True,
+                                  drop_last=True, num_workers=num_workers)
 
         optimizer = torch.optim.AdamW(self._net.parameters(), lr=lr)
 
@@ -220,7 +220,7 @@ class TS2Vec:
         return out.cpu()
 
     def encode(self, data, mask=None, encoding_window=None, causal=False, sliding_length=None, sliding_padding=0,
-               batch_size=None, device="cpu"):
+               batch_size=None, device="cpu", num_workers=0):
         ''' Compute representations using the model.
 
         Args:
@@ -231,6 +231,8 @@ class TS2Vec:
             sliding_length (Union[int, NoneType]): The length of sliding window. When this param is specified, a sliding inference would be applied on the time series.
             sliding_padding (int): This param specifies the contextual data length used for inference every sliding windows.
             batch_size (Union[int, NoneType]): The batch size used for inference. If not specified, this would be the same batch size as training.
+            device (str): The gpu used for training and inference.
+            num_workers (int): How many subprocesses to use for data loading
 
         Returns:
             repr: The representations for data.
@@ -248,7 +250,7 @@ class TS2Vec:
         self.net.eval()
 
         dataset = TensorDataset(torch.from_numpy(data).to(torch.float))
-        loader = DataLoader(dataset, batch_size=batch_size)
+        loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
 
         with torch.no_grad():
             output = []
