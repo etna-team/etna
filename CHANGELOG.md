@@ -11,12 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
 - Add `IForestOutlierTransform` ([#381](https://github.com/etna-team/etna/pull/381))
 - Add `IQROutlierTransform` ([#387](https://github.com/etna-team/etna/pull/387))
-- 
+- Add `num_workers` parameter to `TS2VecEmbeddingModel` ([#396](https://github.com/etna-team/etna/pull/396))
 - 
 - 
 
 ### Changed
-- 
+- Allow to change `device`, `batch_size` and `num_workers` of embedding models ([#396](https://github.com/etna-team/etna/pull/396))
 - 
 - 
 - 
