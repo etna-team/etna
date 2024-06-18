@@ -84,7 +84,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         batch_size:
             The batch size (number of segments in a batch). To swap batch_size, change this attribute.
         num_workers:
-            How many subprocesses to use for data loading. To swap num_workers, change this attribute.
+            How many subprocesses to use for data loading. See (api reference :py:class:`torch.utils.data.DataLoader`). To swap num_workers, change this attribute.
         """
         super().__init__(output_dims=output_dims)
         self.input_dims = input_dims

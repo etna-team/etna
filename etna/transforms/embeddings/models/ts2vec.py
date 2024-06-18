@@ -53,7 +53,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         batch_size:
             The batch size. To swap batch_size, change this attribute.
         num_workers:
-            How many subprocesses to use for data loading. To swap num_workers, change this attribute.
+            How many subprocesses to use for data loading. See (api reference :py:class:`torch.utils.data.DataLoader`). To swap num_workers, change this attribute.
         max_train_length:
             The maximum allowed sequence length for training. For sequence with a length greater than ``max_train_length``,
             it would be cropped into some sequences, each of which has a length less than ``max_train_length``.
