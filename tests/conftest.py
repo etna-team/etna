@@ -259,6 +259,12 @@ def outliers_tsds():
     return tsds
 
 
+@pytest.fixture()
+def outliers_tsds_without_missing(outliers_tsds):
+    tsds = TSDataset(df=outliers_tsds[..., "target"].dropna(), freq="1d", df_exog=outliers_tsds.df_exog.dropna())
+    return tsds
+
+
 @pytest.fixture
 def outliers_df_with_two_columns() -> TSDataset:
     timestamp1 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-10"))
