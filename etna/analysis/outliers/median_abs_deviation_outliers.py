@@ -190,10 +190,7 @@ def mad_method(
     mad = median_abs_deviation(window)
     median = np.median(window)
 
-    anom_mask = (
-            (window > median + mad_scale * mad)
-            | (window < median - mad_scale * mad)
-    )
+    anom_mask = (window > median + mad_scale * mad) | (window < median - mad_scale * mad)
 
     return anom_mask
 
