@@ -1,5 +1,4 @@
 import functools
-import math
 import typing
 from typing import Any
 from typing import Callable
@@ -16,8 +15,8 @@ from scipy.stats import median_abs_deviation
 from statsmodels.tsa._stl import STL
 from statsmodels.tsa.tsatools import freq_to_period
 
-# if typing.TYPE_CHECKING:
-from etna.datasets import TSDataset
+if typing.TYPE_CHECKING:
+    from etna.datasets import TSDataset
 
 
 def _sliding_window(x: np.ndarray, window_size: int, stride: int = 1) -> np.ndarray:
@@ -220,16 +219,6 @@ def get_anomalies_mad(
     -------
     :
        dict of outliers in format {segment: [outliers_timestamps]}
-    """
-    """
-    Remove leading NaNs from the series.
-    If there are some missing values after the previous step, raise an appropriate error.
-    Use STL from statsmodels if parameters are set
-       4.1. Subtract trend if the parameter set
-       4.2. Subtract seasonality if the parameter set
-    Estimate MAD for each window.
-    Set an observation as anomalous if it falls from the interval at least in one window.
-    Return detected anomalies in a similar format to the other anomaly detection methods.
     """
     df = ts[..., in_column]
     df = df.droplevel(level="feature", axis=1)
