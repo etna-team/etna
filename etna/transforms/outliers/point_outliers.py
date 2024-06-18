@@ -1,3 +1,4 @@
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
@@ -11,9 +12,10 @@ from typing_extensions import Literal
 
 from etna import SETTINGS
 from etna.analysis import get_anomalies_density
+from etna.analysis import get_anomalies_iqr
+from etna.analysis import get_anomalies_isolation_forest
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
-from etna.analysis.outliers import get_anomalies_isolation_forest
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
@@ -379,7 +381,8 @@ class IForestOutlierTransform(OutliersTransform):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
 
-        This grid tunes parameters: ``interval_width``, ``model``. Other parameters are expected to be set by the user.
+        This grid tunes parameters: ``n_estimators``, ``max_samples``, ``contamination``, ``max_features``, ``bootstrap``.
+        Other parameters are expected to be set by the user.
 
         Returns
         -------
@@ -395,9 +398,101 @@ class IForestOutlierTransform(OutliersTransform):
         }
 
 
+class IQROutlierTransform(OutliersTransform):
+    """Transform that uses :py:func:`~etna.analysis.outliers.rolling_statistics.get_anomalies_iqr` to find anomalies in data."""
+
+    def __init__(
+        self,
+        in_column: str = "target",
+        ignore_flag_column: Optional[str] = None,
+        window_size: int = 10,
+        stride: int = 1,
+        iqr_scale: float = 1.5,
+        trend: bool = False,
+        seasonality: bool = False,
+        period: Optional[int] = None,
+        stl_params: Optional[Dict[str, Any]] = None,
+    ):
+        """Create instance of ``PredictionIntervalOutliersTransform``.
+
+        Parameters
+        ----------
+        in_column:
+            Name of the column in which the anomaly is searching
+        ignore_flag_column:
+            Column name for skipping values from outlier check
+        window_size:
+            Number of points in the window
+        stride:
+            Offset between neighboring windows
+        iqr_scale:
+            Scaling parameter of the estimated interval
+        trend:
+            Whether to remove trend from the series
+        seasonality:
+            Whether to remove seasonality from the series
+        period:
+            Periodicity of the sequence for STL
+        stl_params:
+            Other parameters for STL. See :py:class:`statsmodels.tsa.seasonal.STL`
+        """
+        self.window_size = window_size
+        self.stride = stride
+        self.iqr_scale = iqr_scale
+        self.trend = trend
+        self.seasonality = seasonality
+        self.period = period
+        self.stl_params = stl_params
+        super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
+
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
+        """Call :py:func:`~etna.analysis.outliers.rolling_statistics.get_anomalies_iqr` function with self parameters.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to process
+
+        Returns
+        -------
+        :
+            Dict of outliers in format {segment: [outliers_timestamps]}
+        """
+        return get_anomalies_iqr(
+            ts=ts,
+            in_column=self.in_column,
+            window_size=self.window_size,
+            stride=self.stride,
+            iqr_scale=self.iqr_scale,
+            trend=self.trend,
+            seasonality=self.seasonality,
+            period=self.period,
+            stl_params=self.stl_params,
+            index_only=False,
+        )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``iqr_scale``, ``trend``, ``seasonality``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "iqr_scale": FloatDistribution(low=0.5, high=10),
+            "trend": CategoricalDistribution([True, False]),
+            "seasonality": CategoricalDistribution([True, False]),
+        }
+
+
 __all__ = [
     "MedianOutliersTransform",
     "DensityOutliersTransform",
     "PredictionIntervalOutliersTransform",
     "IForestOutlierTransform",
+    "IQROutlierTransform",
 ]

@@ -27,6 +27,7 @@ from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
 from etna.transforms import HolidayTransform
 from etna.transforms import IForestOutlierTransform
+from etna.transforms import IQROutlierTransform
 from etna.transforms import LabelEncoderTransform
 from etna.transforms import LagTransform
 from etna.transforms import LambdaTransform
@@ -428,6 +429,7 @@ class TestTransformTrain:
                 {"change": {"target"}},
             ),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),
@@ -868,6 +870,7 @@ class TestTransformTrain:
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
@@ -1191,6 +1194,7 @@ class TestTransformTrainSubsetSegments:
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (
@@ -1484,6 +1488,7 @@ class TestTransformFutureSubsetSegments:
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (
@@ -1900,6 +1905,7 @@ class TestTransformTrainNewSegments:
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
             (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp"),
@@ -2334,6 +2340,7 @@ class TestTransformFutureNewSegments:
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
             (
@@ -2694,6 +2701,7 @@ class TestTransformFutureWithTarget:
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {}),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers", {}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),
@@ -3191,6 +3199,7 @@ class TestTransformFutureWithoutTarget:
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {}),
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {}),
+            (IQROutlierTransform(in_column="target"), "ts_with_outliers", {}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),
