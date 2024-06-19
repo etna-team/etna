@@ -28,7 +28,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
     -----
 
     - This model cannot be fitted with `batch_size=1`. So, it cannot be fitted on a dataset with 1 segment.
-    - Model's weights are transfered to cpu during loading.
+    - Model's weights are transferred to cpu during loading.
     """
 
     def __init__(
@@ -253,7 +253,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
 
     @classmethod
     def load(cls, path: pathlib.Path) -> "TSTCCEmbeddingModel":
-        """Load an object. Model's weights are transfered to cpu during loading.
+        """Load an object. Model's weights are transferred to cpu during loading.
 
         Parameters
         ----------
