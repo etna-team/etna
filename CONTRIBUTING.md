@@ -18,6 +18,7 @@ Let's look at the possible ways to contribute to the project:
   - Otherwise, add new problem to [GitHub Discussions](https://github.com/etna-team/etna/discussions/categories/improvements)
   - You could continue this step by taking part in discussion
 - Making a pull request
+  - If there is a feature you want to add or bug you want to fix
   - Follow a [step-by-step guide](##step-by-step-guide-for-making-a-pull-request)
 
 ## Step-by-step guide for making a pull request
