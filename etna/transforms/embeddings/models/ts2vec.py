@@ -258,7 +258,9 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
     @classmethod
     def load(cls, path: pathlib.Path) -> "TS2VecEmbeddingModel":
-        """Load an object. Model's weights are transferred to cpu during loading.
+        """Load an object.
+
+        Model's weights are transferred to cpu during loading.
 
         Parameters
         ----------

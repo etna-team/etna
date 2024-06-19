@@ -253,7 +253,9 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
 
     @classmethod
     def load(cls, path: pathlib.Path) -> "TSTCCEmbeddingModel":
-        """Load an object. Model's weights are transferred to cpu during loading.
+        """Load an object.
+
+        Model's weights are transferred to cpu during loading.
 
         Parameters
         ----------
