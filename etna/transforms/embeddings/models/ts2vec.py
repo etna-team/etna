@@ -22,6 +22,10 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
     For more details read the
     `paper <https://arxiv.org/abs/2106.10466>`_.
+
+    Notes
+    -----
+    Model's weights are transferred to cpu during loading.
     """
 
     def __init__(
@@ -32,6 +36,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         depth: int = 10,
         device: Literal["cpu", "cuda"] = "cpu",
         batch_size: int = 16,
+        num_workers: int = 0,
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
     ):
@@ -48,9 +53,11 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         depth:
             The number of hidden residual blocks in the encoder.
         device:
-            The device used for training and inference.
+            The device used for training and inference. To swap device, change this attribute.
         batch_size:
-            The batch size.
+            The batch size. To swap batch_size, change this attribute.
+        num_workers:
+            How many subprocesses to use for data loading. See (api reference :py:class:`torch.utils.data.DataLoader`). To swap num_workers, change this attribute.
         max_train_length:
             The maximum allowed sequence length for training. For sequence with a length greater than ``max_train_length``,
             it would be cropped into some sequences, each of which has a length less than ``max_train_length``.
@@ -71,6 +78,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
 
         self.device = device
         self.batch_size = batch_size
+        self.num_workers = num_workers
 
         self.embedding_model = TS2Vec(
             input_dims=self.input_dims,
@@ -79,8 +87,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             depth=self.depth,
             max_train_length=self.max_train_length,
             temporal_unit=self.temporal_unit,
-            device=self.device,
-            batch_size=self.batch_size,
         )
 
         self._is_freezed: bool = False
@@ -125,7 +131,16 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             Whether to print the training loss after each epoch.
         """
         if not self._is_freezed:
-            self.embedding_model.fit(train_data=x, lr=lr, n_epochs=n_epochs, n_iters=n_iters, verbose=verbose)
+            self.embedding_model.fit(
+                train_data=x,
+                lr=lr,
+                n_epochs=n_epochs,
+                n_iters=n_iters,
+                verbose=verbose,
+                device=self.device,
+                batch_size=self.batch_size,
+                num_workers=self.num_workers,
+            )
         return self
 
     def encode_segment(
@@ -167,6 +182,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             sliding_length=sliding_length,
             sliding_padding=sliding_padding,
             batch_size=self.batch_size,
+            device=self.device,
+            num_workers=self.num_workers,
         )
 
         return embeddings
@@ -214,6 +231,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             sliding_length=sliding_length,
             sliding_padding=sliding_padding,
             batch_size=self.batch_size,
+            device=self.device,
+            num_workers=self.num_workers,
         )
         return embeddings
 
@@ -241,6 +260,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
     def load(cls, path: pathlib.Path) -> "TS2VecEmbeddingModel":
         """Load an object.
 
+        Model's weights are transferred to cpu during loading.
+
         Parameters
         ----------
         path:
@@ -259,8 +280,6 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             depth=obj.depth,
             max_train_length=obj.max_train_length,
             temporal_unit=obj.temporal_unit,
-            device=obj.device,
-            batch_size=obj.batch_size,
         )
 
         with zipfile.ZipFile(path, "r") as archive:
