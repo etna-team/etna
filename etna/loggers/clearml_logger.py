@@ -45,8 +45,6 @@ class ClearMLLogger(BaseLogger):
         table: bool = True,
         config: Optional[Dict[str, Any]] = None,
     ):
-        # TODO: Is it enough?
-        # TODO: Do we want same logic for PL, there is no ClearML Logger
         """
         Create instance of ClearMLLogger.
 
@@ -80,7 +78,7 @@ class ClearMLLogger(BaseLogger):
 
         Notes
         -----
-        For more details see <https://clear.ml/docs/latest/docs/references/sdk/task#taskinit>
+        For more details see <https://clear.ml/docs/latest/docs/references/sdk/task/#taskinit>
 
         """
         super().__init__()
@@ -184,17 +182,29 @@ class ClearMLLogger(BaseLogger):
         for metric, value in metrics_dict.items():
             self.task.logger.report_single_value(name=metric, value=value)
 
-    def start_task(self, task_type: Optional[str] = None, *args, **kwargs):
+
+    def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
         """Start Task.
 
         Complete logger initialization or reinitialize it before the next experiment with the same name.
 
         Parameters
         ----------
-        task_type:
-            Specify the type of Task
+        job_type:
+            Specify the type of task, which is useful when you're grouping runs together
+            into larger experiments using group.
+        group:
+            Specify a group to organize individual tasks into a larger experiment.
         """
-        self.task_type = task_type
+
+        if job_type == "training":
+            self.task_type = TaskTypes.training
+        elif job_type == "forecasting":
+            self.task_type = TaskTypes.inference
+        elif job_type == "crossval":
+            self.task_type = TaskTypes.testing
+        elif job_type == "crossval_results":
+            self.task_type = TaskTypes.custom
         self.reinit_task()
 
     def reinit_task(self):
@@ -208,11 +218,12 @@ class ClearMLLogger(BaseLogger):
             auto_connect_frameworks=self.auto_connect_frameworks,
             auto_resource_monitoring=self.auto_resource_monitoring,
             auto_connect_streams=self.auto_connect_streams,
+            reuse_last_task_id=False,
         )
         if self.config is not None:
             self._task.connect(mutable=self.config)
 
-    def finish_task(self):
+    def finish_experiment(self, *args, **kwargs):
         """Finish Task."""
         self._task.close()
 

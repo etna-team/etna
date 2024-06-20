@@ -23,5 +23,7 @@ from etna.loggers.file_logger import S3FileLogger
 
 if SETTINGS.wandb_required:
     from etna.loggers.wandb_logger import WandbLogger
+if SETTINGS.clearml_required:
+    from etna.loggers.clearml_logger import ClearMLLogger
 
 tslogger = _Logger()
