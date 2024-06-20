@@ -138,15 +138,15 @@ class ClearMLLogger(BaseLogger):
         from etna.metrics.utils import aggregate_metrics_df
 
         if self.table:
-            self.task.logger.report_table(title="Metrics", series="Metrics", table_plot=metrics_df)
+            self.task.logger.report_table(title="Metrics", series=self.job_type, table_plot=metrics_df)
             self.task.logger.report_table(
-                title="Forecast", series="Forecast", table_plot=TSDataset.to_flatten(forecast_df)
+                title="Forecast", series=self.job_type, table_plot=TSDataset.to_flatten(forecast_df)
             )
-            self.task.logger.report_table(title="Fold info", series="Fold info", table_plot=fold_info_df)
+            self.task.logger.report_table(title="Fold info", series=self.job_type, table_plot=fold_info_df)
 
         if self.plot:
             fig = plot_backtest_interactive(forecast_df, ts, history_len=100)
-            self.task.logger.report_plotly(title="Plot backtest forecast", series="Plot backtest forecast", figure=fig)
+            self.task.logger.report_plotly(title="Plot backtest forecast", series=self.job_type, figure=fig)
 
         metrics_dict = aggregate_metrics_df(metrics_df)
         for metric, value in metrics_dict.items():
@@ -172,15 +172,15 @@ class ClearMLLogger(BaseLogger):
         metrics = metrics.reset_index()
         metrics.columns = ["segment"] + columns_name
         if self.table:
-            self.task.logger.report_table(title="Metrics", series="Metrics", table_plot=metrics)
+            self.task.logger.report_table(title="Metrics", series=self.job_type, iteration=self.fold_id, table_plot=metrics)
             self.task.logger.report_table(
-                title="Forecast", series="Forecast", table_plot=TSDataset.to_flatten(forecast)
+                title="Forecast", series=self.job_type, iteration=self.fold_id, table_plot=TSDataset.to_flatten(forecast)
             )
-            self.task.logger.report_table(title="Test", series="Test", table_plot=TSDataset.to_flatten(test))
+            self.task.logger.report_table(title="Test", series=self.job_type, iteration=self.fold_id, table_plot=TSDataset.to_flatten(test))
 
         metrics_dict = aggregate_metrics_df(metrics)
         for metric, value in metrics_dict.items():
-            self.task.logger.report_single_value(name=metric, value=value)
+            self.task.logger.report_scalar(title=metric, series=self.job_type, iteration=self.fold_id, value=value)
 
 
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
@@ -197,15 +197,12 @@ class ClearMLLogger(BaseLogger):
             Specify a group to organize individual tasks into a larger experiment.
         """
 
-        if job_type == "training":
-            self.task_type = TaskTypes.training
-        elif job_type == "forecasting":
-            self.task_type = TaskTypes.inference
-        elif job_type == "crossval":
-            self.task_type = TaskTypes.testing
-        elif job_type == "crossval_results":
-            self.task_type = TaskTypes.custom
-        self.reinit_task()
+        self.job_type = job_type
+        try:
+            self.fold_id = int(group)
+        except:
+            self.fold_id = group
+        #self.reinit_task()
 
     def reinit_task(self):
         """Reinit Task."""
@@ -225,7 +222,7 @@ class ClearMLLogger(BaseLogger):
 
     def finish_experiment(self, *args, **kwargs):
         """Finish Task."""
-        self._task.close()
+        #self._task.close()
 
     @property
     def task(self):
