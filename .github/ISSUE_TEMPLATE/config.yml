@@ -6,5 +6,5 @@ contact_links:
     about: Describe a drawback of the library using GitHub Discussions
     url: https://github.com/etna-team/etna/discussions/categories/improvements
   - name: Ask a question
-    about: Ask a question about usage of the library using GitHub Discussions
+    about: Ask a question about the library using GitHub Discussions
     url: https://github.com/etna-team/etna/discussions/categories/q-a
