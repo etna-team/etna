@@ -26,7 +26,9 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
 
     Notes
     -----
-    This model cannot be fitted with `batch_size=1`. So, it cannot be fitted on a dataset with 1 segment.
+
+    - This model cannot be fitted with `batch_size=1`. So, it cannot be fitted on a dataset with 1 segment.
+    - Model's weights are transferred to cpu during loading.
     """
 
     def __init__(
@@ -80,11 +82,11 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         use_cosine_similarity:
             If True NTXentLoss uses cosine similarity, if False NTXentLoss uses dot product.
         device:
-            The device used for training and inference.
+            The device used for training and inference. To swap device, change this attribute.
         batch_size:
-            The batch size (number of segments in a batch).
+            The batch size (number of segments in a batch). To swap batch_size, change this attribute.
         num_workers:
-            How many subprocesses to use for data loading.
+            How many subprocesses to use for data loading. See (api reference :py:class:`torch.utils.data.DataLoader`). To swap num_workers, change this attribute.
         """
         super().__init__(output_dims=output_dims)
         self.input_dims = input_dims
@@ -110,17 +112,14 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
 
         self.embedding_model = TSTCC(
             input_dims=self.input_dims,
-            encoder_output_dim=self.output_dims,
+            output_dims=self.output_dims,
             kernel_size=self.kernel_size,
             dropout=self.dropout,
             timesteps=self.timesteps,
-            hidden_dim=self.tc_hidden_dim,
+            tc_hidden_dim=self.tc_hidden_dim,
             heads=self.heads,
             depth=self.depth,
             n_seq_steps=self.n_seq_steps,
-            device=self.device,
-            num_workers=self.num_workers,
-            batch_size=self.batch_size,
             jitter_scale_ratio=self.jitter_scale_ratio,
             max_seg=self.max_seg,
             jitter_ratio=self.jitter_ratio,
@@ -182,6 +181,9 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
                 lambda1=lambda1,
                 lambda2=lambda2,
                 verbose=verbose,
+                device=self.device,
+                num_workers=self.num_workers,
+                batch_size=self.batch_size,
             )
         return self
 
@@ -197,7 +199,13 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         :
             array with embeddings of shape (n_segments, output_dim)
         """
-        embeddings = self.embedding_model.encode(data=x, encode_full_series=True)  # (n_segments, output_dim)
+        embeddings = self.embedding_model.encode(
+            data=x,
+            encode_full_series=True,
+            device=self.device,
+            num_workers=self.num_workers,
+            batch_size=self.batch_size,
+        )  # (n_segments, output_dim)
 
         return embeddings
 
@@ -215,7 +223,11 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             array with embeddings of shape (n_segments, n_timestamps, output_dim)
         """
         embeddings = self.embedding_model.encode(
-            data=x, encode_full_series=False
+            data=x,
+            encode_full_series=False,
+            device=self.device,
+            num_workers=self.num_workers,
+            batch_size=self.batch_size,
         )  # (n_segments, n_timestamps, output_dim)
         return embeddings
 
@@ -243,6 +255,8 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
     def load(cls, path: pathlib.Path) -> "TSTCCEmbeddingModel":
         """Load an object.
 
+        Model's weights are transferred to cpu during loading.
+
         Parameters
         ----------
         path:
@@ -256,17 +270,14 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         obj: TSTCCEmbeddingModel = super().load(path=path)
         obj.embedding_model = TSTCC(
             input_dims=obj.input_dims,
-            encoder_output_dim=obj.output_dims,
+            output_dims=obj.output_dims,
             kernel_size=obj.kernel_size,
             dropout=obj.dropout,
             timesteps=obj.timesteps,
             heads=obj.heads,
             depth=obj.depth,
-            hidden_dim=obj.tc_hidden_dim,
+            tc_hidden_dim=obj.tc_hidden_dim,
             n_seq_steps=obj.n_seq_steps,
-            device=obj.device,
-            num_workers=obj.num_workers,
-            batch_size=obj.batch_size,
             jitter_scale_ratio=obj.jitter_scale_ratio,
             max_seg=obj.max_seg,
             jitter_ratio=obj.jitter_ratio,

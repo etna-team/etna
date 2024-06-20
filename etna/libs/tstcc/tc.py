@@ -40,7 +40,6 @@ class TC(nn.Module):
             hidden_dim,
             heads,
             depth,
-            device,
             n_seq_steps
     ):
         super(TC, self).__init__()
@@ -51,7 +50,6 @@ class TC(nn.Module):
         self.depth = depth
         self.Wk = nn.ModuleList([nn.Linear(hidden_dim, self.num_channels) for i in range(self.timestep)])
         self.lsoftmax = nn.LogSoftmax(dim=1)
-        self.device = device
         self.n_seq_steps = n_seq_steps
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -65,7 +63,7 @@ class TC(nn.Module):
         self.seq_transformer = Seq_Transformer(patch_size=self.num_channels, dim=self.hidden_dim, depth=self.depth,
                                                heads=self.heads, mlp_dim=64)
 
-    def forward(self, features_aug1, features_aug2):
+    def forward(self, features_aug1, features_aug2, device):
         z_aug1 = features_aug1  # features are (batch_size, #channels, seq_len)
         seq_len = z_aug1.shape[2]
         z_aug1 = z_aug1.transpose(1, 2)
@@ -75,10 +73,10 @@ class TC(nn.Module):
 
         batch = z_aug1.shape[0]
         t_samples = torch.randint(seq_len - self.timestep, size=(1,)).long().to(
-            self.device)  # randomly pick time stamps
+            device)  # randomly pick time stamps
 
         score = 0  # average over timestep and batch
-        encode_samples = torch.empty((self.timestep, batch, self.num_channels)).float().to(self.device)
+        encode_samples = torch.empty((self.timestep, batch, self.num_channels)).float().to(device)
 
         for i in np.arange(1, self.timestep + 1):
             encode_samples[i - 1] = z_aug2[:, t_samples + i, :].view(batch, self.num_channels)
@@ -87,7 +85,7 @@ class TC(nn.Module):
 
         c_t = self.seq_transformer(forward_seq)
 
-        pred = torch.empty((self.timestep, batch, self.num_channels)).float().to(self.device)
+        pred = torch.empty((self.timestep, batch, self.num_channels)).float().to(device)
         for i in np.arange(0, self.timestep):
             linear = self.Wk[i]
             pred[i] = linear(c_t)
