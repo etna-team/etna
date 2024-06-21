@@ -34,7 +34,7 @@ def test_create_ts_by_column_interface(outliers_tsds, column):
     new_ts = create_ts_by_column(outliers_tsds, column)
     assert isinstance(new_ts, TSDataset)
     assert outliers_tsds.segments == new_ts.segments
-    assert new_ts.columns.get_level_values("feature").unique().tolist() == ["target"]
+    assert new_ts.features == ["target"]
 
 
 @pytest.mark.parametrize("column", ["exog"])

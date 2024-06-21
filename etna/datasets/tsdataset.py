@@ -679,6 +679,25 @@ class TSDataset:
         """
         return self._regressors
 
+    # TODO: is it ok that it includes target components and prediction intervals?
+    # TODO: don't we want to rename it into "variables" or smth like this for example?
+    # TODO: what about adding this into ts.describe/ts.info?
+    @property
+    def features(self) -> List[str]:
+        """Get list of all features across all segments in dataset.
+
+        All features include exogenous data, generated features, target, target components, prediction intervals.
+        The order of features in returned list isn't specified.
+
+        If different segments have different subset of features, then the union of features is returned.
+
+        Returns
+        -------
+        :
+            List of features.
+        """
+        return self.df.columns.get_level_values("feature").unique().tolist()
+
     @property
     def target_components_names(self) -> Tuple[str, ...]:
         """Get tuple with target components names. Components sum up to target. Return the empty tuple in case of components absence."""

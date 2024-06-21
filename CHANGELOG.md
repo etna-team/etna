@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `IForestOutlierTransform` ([#381](https://github.com/etna-team/etna/pull/381))
 - Add `IQROutlierTransform` ([#387](https://github.com/etna-team/etna/pull/387))
 - Add `num_workers` parameter to `TS2VecEmbeddingModel` ([#396](https://github.com/etna-team/etna/pull/396))
-- 
+- Add `TSDataset.features` property to get list of all features in a dataset ([]())
 - 
 
 ### Changed

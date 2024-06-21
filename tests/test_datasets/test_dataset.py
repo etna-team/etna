@@ -327,6 +327,14 @@ def ts_with_prediction_intervals(ts_without_target_components, prediction_interv
     return ts
 
 
+@pytest.fixture()
+def ts_after_transform(example_tsds):
+    ts = example_tsds
+    transform = AddConstTransform(in_column="target", value=0, inplace=False, out_column="add_target")
+    ts.fit_transform(transforms=[transform])
+    return ts
+
+
 def test_create_ts_with_datetime_timestamp():
     freq = "D"
     df = generate_ar_df(periods=10, freq=freq, n_segments=3)
@@ -469,7 +477,7 @@ def test_create_segment_conversion_during_init(df_segments_int):
     with pytest.warns(UserWarning, match="Segment values doesn't have string type"):
         ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
 
-    assert np.all(ts.columns.get_level_values("segment") == ["1", "1", "2", "2"])
+    assert np.all(ts.segments == ["1", "1", "2", "2"])
 
 
 def test_create_from_long_format_with_exog():
@@ -1925,3 +1933,16 @@ def test_create_from_misaligned_fail_name_intersection(
             future_steps=future_steps,
             known_future=known_future,
         )
+
+
+@pytest.mark.parametrize("ts_name, expected_features", [
+    ("example_tsds", ["target"]),
+    ("tsdf_with_exog", ["target", "exog"]),
+    ("ts_after_transform", ["target", "add_target"]),
+    ("ts_with_prediction_intervals", ["target", "target_0.1", "target_0.9"]),
+    ("ts_with_target_components", ["target", "target_component_a", "target_component_b"]),
+])
+def test_features(ts_name, expected_features, request):
+    ts = request.getfixturevalue(ts_name)
+    features = ts.features
+    assert sorted(features) == sorted(expected_features)

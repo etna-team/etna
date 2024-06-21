@@ -30,7 +30,7 @@ def test_fit(ts, request):
         in_column="regressor_exog", inplace=True, distribution_column="target", out_column=None
     )
     resampler.fit(ts)
-    segments = ts.df.columns.get_level_values("segment").unique()
+    segments = ts.segments
     for segment in segments:
         assert (resampler.segment_transforms[segment].distribution == expected_distribution[segment]).all().all()
 

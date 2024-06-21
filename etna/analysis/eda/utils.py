@@ -47,7 +47,7 @@ def get_correlation_matrix(
     if segments is None:
         segments = sorted(ts.segments)
     if columns is None:
-        columns = list(set(ts.df.columns.get_level_values("feature")))
+        columns = ts.features
 
     correlation_matrix = ts[:, segments, columns].corr(method=method).values
     return correlation_matrix

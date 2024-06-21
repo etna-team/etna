@@ -16,7 +16,7 @@ def test_segment_encoder_transform(simple_ts):
     ), "Number of columns not the same as segments"
     assert len(simple_ts.to_pandas()) == len(transformed_df), "Row missing"
     codes = set()
-    for segment in simple_ts.columns.get_level_values("segment").unique():
+    for segment in simple_ts.segments:
         column = transformed_df.loc[:, pd.IndexSlice[segment, "segment_code"]]
         assert column.dtype == "category", "Column type is not category"
         assert np.all(column == column.iloc[0]), "Values are not the same for the whole column"

@@ -81,7 +81,7 @@ def plot_feature_relevance(
     if segments is None:
         segments = sorted(ts.segments)
     border_value = None
-    features = list(set(ts.columns.get_level_values("feature")) - {"target"})
+    features = list(set(ts.features) - {"target"})
     relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
     if relevance_aggregation_mode == "per-segment":
         _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
