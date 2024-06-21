@@ -1935,13 +1935,16 @@ def test_create_from_misaligned_fail_name_intersection(
         )
 
 
-@pytest.mark.parametrize("ts_name, expected_features", [
-    ("example_tsds", ["target"]),
-    ("tsdf_with_exog", ["target", "exog"]),
-    ("ts_after_transform", ["target", "add_target"]),
-    ("ts_with_prediction_intervals", ["target", "target_0.1", "target_0.9"]),
-    ("ts_with_target_components", ["target", "target_component_a", "target_component_b"]),
-])
+@pytest.mark.parametrize(
+    "ts_name, expected_features",
+    [
+        ("example_tsds", ["target"]),
+        ("tsdf_with_exog", ["target", "exog"]),
+        ("ts_after_transform", ["target", "add_target"]),
+        ("ts_with_prediction_intervals", ["target", "target_0.1", "target_0.9"]),
+        ("ts_with_target_components", ["target", "target_component_a", "target_component_b"]),
+    ],
+)
 def test_features(ts_name, expected_features, request):
     ts = request.getfixturevalue(ts_name)
     features = ts.features
