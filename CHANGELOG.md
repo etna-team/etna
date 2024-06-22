@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Update pipelines documentation ([#372](https://github.com/etna-team/etna/issues/372))
 - 
 - Update documentation to explain how to contribute and work with discussions, update templates for issues ([#395](https://github.com/etna-team/etna/pull/395))
 - Remove "Other issue" template, update links to discussions in issue creation menu ([#401](https://github.com/etna-team/etna/pull/401))

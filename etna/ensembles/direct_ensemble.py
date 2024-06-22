@@ -24,6 +24,13 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     Ensemble expects several pipelines during init. These pipelines are expected to have different forecasting horizons.
     For each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
     which covers this point.
+    
+    See Also
+    --------
+    Pipeline:
+        Pipeline that forecasts values in one iteration using a model.
+    AutoRegressivePipeline:
+        Pipeline that forecasts values in several iterations using a model.    
 
     Examples
     --------
