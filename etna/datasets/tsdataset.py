@@ -679,7 +679,6 @@ class TSDataset:
         """
         return self._regressors
 
-    # TODO: is it ok that it includes target components and prediction intervals?
     # TODO: don't we want to rename it into "variables" or smth like this for example?
     # TODO: what about adding this into ts.describe/ts.info?
     @property
@@ -905,7 +904,7 @@ class TSDataset:
                 if features == "all":
                     return self.df.copy()
                 raise ValueError("The only possible literal is 'all'")
-            segments = self.columns.get_level_values("segment").unique().tolist()
+            segments = self.segments
             return self.df.loc[:, self.idx[segments, features]].copy()
         return self.to_flatten(self.df, features=features)
 
@@ -1609,9 +1608,10 @@ class TSDataset:
 
     def _gather_common_data(self) -> Dict[str, Any]:
         """Gather information about dataset in general."""
+        features = set(self.features)
         common_dict: Dict[str, Any] = {
             "num_segments": len(self.segments),
-            "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
+            "num_exogs": len(features.difference({"target"})),
             "num_regressors": len(self.regressors),
             "num_known_future": len(self.known_future),
             "freq": self.freq,
