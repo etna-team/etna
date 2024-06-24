@@ -121,10 +121,9 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             raise ValueError("Invalid format of weights is passed!")
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
         """Get forecasts from backtest for given pipeline."""
         forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 
     def _process_weights(self, ts: TSDataset) -> List[float]:
@@ -138,7 +137,7 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
 
             x = pd.concat(
                 [
-                    forecast[:, :, "target"].rename({"target": f"target_{i}"}, axis=1)
+                    forecast.loc[:, pd.IndexSlice[:, "target"]].rename({"target": f"target_{i}"}, axis=1)
                     for i, forecast in enumerate(forecasts)
                 ],
                 axis=1,
