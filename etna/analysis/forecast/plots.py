@@ -151,7 +151,7 @@ def plot_forecast(
         for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
-            segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
+            segment_forecast_df = forecast[:, segment, :][segment]
             line = ax[i].plot(
                 segment_forecast_df.index.values,
                 segment_forecast_df.target.values,
@@ -919,7 +919,7 @@ def plot_forecast_decomposition(
         else:
             segment_test_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
-        segment_forecast_df = forecast_ts[:, segment, :][segment].sort_values(by="timestamp")
+        segment_forecast_df = forecast_ts[:, segment, :][segment]
 
         ax_array[i].set_title(segment)
 
