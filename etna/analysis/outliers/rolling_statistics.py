@@ -325,7 +325,7 @@ def mad_method(
     mad = median_abs_deviation(window)
     median = np.median(window)
 
-    anom_mask = np.abs(window - median) >  mad * mad_scale
+    anom_mask = np.abs(window - median) > mad * mad_scale
 
     return anom_mask
 
@@ -344,8 +344,7 @@ def get_anomalies_mad(
 ) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
     """
     Get point outliers in time series using median absolute deviation.
-    Outliers are all points deviating from the median by more than mad_scale * median absolute deviation,
-    where median absolute deviation is the median of the absolute deviations from the median in the window.
+    Detects outliers in a row that fall out of range: [median - mad_scale * mad; median + mad_scale * mad]
 
     Parameters
     ----------
