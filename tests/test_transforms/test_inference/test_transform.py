@@ -37,6 +37,7 @@ from etna.transforms import LogTransform
 from etna.transforms import MADTransform
 from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import MaxTransform
+from etna.transforms import MeanEncoderTransform
 from etna.transforms import MeanSegmentEncoderTransform
 from etna.transforms import MeanTransform
 from etna.transforms import MedianOutliersTransform
@@ -173,6 +174,11 @@ class TestTransformTrain:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
@@ -589,6 +595,11 @@ class TestTransformTrain:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
@@ -1243,6 +1254,18 @@ class TestTransformTrainSubsetSegments:
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_train_subset_segments(ts, transform, segments=["segment_2"])
 
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
+        ],
+    )
+    def test_transform_train_subset_segments_fails(self, transform, dataset_name, request):
+        # This transform can transform during fit phase only once.
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_transform_train_subset_segments(ts, transform, segments=["segment_2"])
+
 
 class TestTransformFutureSubsetSegments:
     """Test transform on future part of subset of segments.
@@ -1539,6 +1562,18 @@ class TestTransformFutureSubsetSegments:
     def test_transform_future_subset_segments(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_subset_segments(ts, transform, segments=["segment_2"])
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
+        ],
+    )
+    def test_transform_train_subset_segments_fails(self, transform, dataset_name, request):
+        # This transform can transform during predict phase only after transform in fit phase.
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_transform_future_subset_segments(ts, transform, segments=["segment_2"])
 
 
 class TestTransformTrainNewSegments:
@@ -1867,6 +1902,7 @@ class TestTransformTrainNewSegments:
                 "regular_ts",
             ),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -2295,6 +2331,7 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
             ),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -2460,6 +2497,11 @@ class TestTransformFutureWithTarget:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
@@ -2898,6 +2940,11 @@ class TestTransformFutureWithoutTarget:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),

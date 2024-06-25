@@ -37,6 +37,7 @@ from etna.transforms import LogTransform
 from etna.transforms import MADTransform
 from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import MaxTransform
+from etna.transforms import MeanEncoderTransform
 from etna.transforms import MeanSegmentEncoderTransform
 from etna.transforms import MeanTransform
 from etna.transforms import MedianOutliersTransform
@@ -184,6 +185,7 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -644,6 +646,7 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -1295,6 +1298,18 @@ class TestInverseTransformTrainSubsetSegments:
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_train_subset_segments(ts, transform, segments=["segment_2"])
 
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
+        ],
+    )
+    def test_inverse_transform_train_subset_segments_fails(self, transform, dataset_name, request):
+        # This transform can transform dataset during fit phase only once.
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_inverse_transform_train_subset_segments(ts, transform, segments=["segment_2"])
+
 
 class TestInverseTransformFutureSubsetSegments:
     """Test inverse transform on future part of subset of segments.
@@ -1601,6 +1616,18 @@ class TestInverseTransformFutureSubsetSegments:
     def test_inverse_transform_future_subset_segments(self, transform, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_future_subset_segments(ts, transform, segments=["segment_2"])
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name",
+        [
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
+        ],
+    )
+    def test_inverse_transform_future_subset_segments_fails(self, transform, dataset_name, request):
+        # This transform can transform during predict phase only after transform in fit phase.
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_inverse_transform_future_subset_segments(ts, transform, segments=["segment_2"])
 
 
 class TestInverseTransformTrainNewSegments:
@@ -1964,6 +1991,7 @@ class TestInverseTransformTrainNewSegments:
                 "regular_ts",
             ),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -2402,6 +2430,7 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
             ),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -2626,6 +2655,7 @@ class TestInverseTransformFutureWithTarget:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -3132,6 +3162,7 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
