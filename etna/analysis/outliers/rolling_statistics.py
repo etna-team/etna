@@ -350,6 +350,26 @@ def get_anomalies_mad(
 
     Parameters
     ----------
+    ts:
+        TSDataset with timeseries data
+    in_column:
+        name of the column in which the anomaly is searching
+    window_size:
+        number of points in the window
+    stride:
+        offset between neighboring windows.
+    mad_scale:
+        scaling parameter of the estimated interval.
+    trend:
+        whether to remove trend from the series.
+    seasonality:
+        whether to remove seasonality from the series
+    period:
+        periodicity of the sequence for STL.
+    stl_params:
+        other parameters for STL. See :py:class:`statsmodels.tsa.seasonal.STL`
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------
