@@ -280,7 +280,13 @@ def get_anomalies_iqr(
 
 @sliding_window_decorator
 def mad_method(
-    series: pd.Series, indices: np.ndarray, mad_scale=1.5, period=None, trend=False, seasonality=False, stl_params=None
+    series: pd.Series,
+    indices: np.ndarray,
+    mad_scale=1.5,
+    period=None,
+    trend=False,
+    seasonality=False,
+    stl_params=None
 ):
     """
     Estimate anomalies using MAD statistics.
