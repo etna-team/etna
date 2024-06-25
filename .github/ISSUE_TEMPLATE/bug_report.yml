@@ -1,5 +1,5 @@
 ---
-name: "Bug report"
+name: Bug report
 title: "[BUG] "
 description: If something isn't working as expected 🤔
 labels: bug
@@ -43,7 +43,7 @@ body:
   attributes:
     label: Environment
     description: |
-      OS, version of library, etc.
+      OS, version of Python, version of library, version of all Python packages, etc.
   validations:
     required: false
 

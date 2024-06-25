@@ -1,22 +1,38 @@
 # Contribution guide
 
-## How to start?
+Let's look at the possible ways to contribute to the project:
+- Voting for suggestions
+  - Vote for the suggestion you are interested in on [GitHub Discussions](https://github.com/etna-team/etna/discussions/categories/improvements)
+- Taking part in discussions
+  - Take part in discussions on [GitHub Discussions](https://github.com/etna-team/etna/discussions)
+- Improving documentation
+  - Create an [issue about improving documentation](https://github.com/etna-team/etna/issues/new/choose)
+- Sending bug report
+  - Create an [issue about bug](https://github.com/etna-team/etna/issues/new/choose)
+- Suggesting an idea
+  - If there is suggestion with very similar idea on [GitHub Discussions](https://github.com/etna-team/etna/discussions/categories/improvements), vote for it
+  - Otherwise, add new idea to [GitHub Discussions](https://github.com/etna-team/etna/discussions/categories/improvements)
+  - You could continue this step by taking part in discussion
+- Pointing out a problem
+  - If there is suggestion with very similar problem on [GitHub Discussions](https://github.com/etna-team/etna/discussions/categories/improvements), vote for it
+  - Otherwise, add new problem to [GitHub Discussions](https://github.com/etna-team/etna/discussions/categories/improvements)
+  - You could continue this step by taking part in discussion
+- Making a pull request
+  - If there is a feature you want to add or bug you want to fix
+  - Follow a [step-by-step guide](##step-by-step-guide-for-making-a-pull-request)
 
-Contributing is quite easy: suggest ideas and make them done.
-We use [GitHub issues](https://github.com/etna-team/etna/issues) for bug reports and feature requests.
+## Step-by-step guide for making a pull request
 
 Every good PR usually consists of:
 - feature implementation :)
 - documentation to describe this feature to other people
-- tests to ensure everything is implemented correctly
-
-## Step-by-step guide
+- tests to ensure everything is implemented correctly.
 
 ### 1. Before the PR
 Please ensure that you have read the following docs:
-- [documentation](https://docs.etna.ai/stable/)
-- [tutorials](https://github.com/etna-team/etna/tree/master/examples)
-- [changelog](https://github.com/etna-team/etna/blob/master/CHANGELOG.md)
+- [documentation](https://docs.etna.ai/stable/),
+- [tutorials](https://github.com/etna-team/etna/tree/master/examples),
+- [changelog](https://github.com/etna-team/etna/blob/master/CHANGELOG.md).
 
 ### 2. Setting up your development environment
 
@@ -37,22 +53,23 @@ poetry shell
 
 To connect virtual environment interpreter to IDE the `which python` command can be useful.
 
-### 3. Suggesting a feature (optional)
+### 3. Choosing a task
 
-This is an optional step, you could skip it if you want to take some of the existing tasks.
+Ready to do tasks are present at [GitHub Issues](https://github.com/etna-team/etna/issues):
+- Pick an issue with status "Todo" on a [board](https://github.com/orgs/etna-team/projects/1);
+- Pay attention for the label "good first issue" if you are new to the project.
 
-1. Make an issue with your feature description;
-2. We shall discuss the design and its implementation details;
-3. Once we agree that the plan looks good, go ahead and implement it.
+If there aren't interesting tasks go to [GitHub Discussions with improvements](https://github.com/etna-team/etna/discussions/categories/improvements):
+1. Pick an improvement you want to work with;
+2. Leave a comment in the discussion that you want to work on this;
+3. Take part in discussion about the implementation details;
+4. Wait for the issue to be created based on this discussion.
 
-### 4. Choosing a task
+After you picked your issue to work with:
+1. Leave a comment in the issue that you want to work on this task;
+2. If you need more context on a specific issue, please ask, and we will discuss the details.
 
-1. Goto [GitHub issues](https://github.com/etna-team/etna/issues);
-2. Pick an issue with status "Todo" on a [board](https://github.com/orgs/etna-team/projects/1)
-3. Leave a comment in the issue that you want to work on this task;
-4. If you need more context on a specific issue, please ask, and we will discuss the details.
-
-### 5. Doing a task
+### 4. Doing a task
 
 You can also join our [ETNA Community telegram chat](https://t.me/etna_support) to make it easier to discuss.
 Once you finish implementing a feature or bugfix, please send a Pull Request.
@@ -61,7 +78,7 @@ If you are not familiar with creating a Pull Request, here are some guides:
 - [Creating a pull request](https://help.github.com/articles/creating-a-pull-request/);
 - [Creating a pull request from a fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
 
-### 6. Writing tests
+### 5. Writing tests
 
 Do not forget to check that your code passes the unit tests.
 ```bash
@@ -77,7 +94,7 @@ make format
 
 If any of checks fails, the CI will fail and your Pull Request won't be merged.
 
-### 7. Writing a documentation
+### 6. Writing a documentation
 
 If you update the code, the documentation should be updated accordingly. 
 ETNA uses [Numpydoc style](https://numpydoc.readthedocs.io/en/latest/format.html) for formatting docstrings. 
@@ -105,7 +122,7 @@ Useful links:
 The simplest way to check how documentation is rendered is to make a pull request. 
 CI will build it, publish and attach a link to the pull request.
 
-#### 7.1 Standard scenarios
+#### 6.1 Standard scenarios
 
 **Adding a new method to the class**
 - Update the docstrings of the class / method.
@@ -135,7 +152,7 @@ CI will build it, publish and attach a link to the pull request.
 - Create a new page in a [`source`](https://github.com/etna-team/etna/tree/master/docs/source) directory.
 - Add a link to the new page to [`user_guide.rst`](https://github.com/etna-team/etna/blob/master/docs/source/user_guide.rst) or any other page responsible for the documentation sections.
 
-#### 7.2 Building locally (optional)
+#### 6.2 Building locally (optional)
 
 You can also build the documentation locally.
 Before building the documentation you may need to install a pandoc package ([pandoc installation guide](https://pandoc.org/installing.html)):

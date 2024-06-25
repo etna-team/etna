@@ -463,7 +463,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return predictions
 
     @staticmethod
-    def _validate_residuals_for_interval_estimation(backtest_forecasts: TSDataset, residuals: pd.DataFrame):
+    def _validate_residuals_for_interval_estimation(backtest_forecasts: pd.DataFrame, residuals: pd.DataFrame):
         len_backtest, num_segments = residuals.shape
         min_timestamp = backtest_forecasts.index.min()
         max_timestamp = backtest_forecasts.index.max()
@@ -485,11 +485,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
     ) -> None:
         """Estimate prediction intervals and add to the forecasts."""
-        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=ts.freq)
-        residuals = (
-            backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
-        )
+        target = ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
+        if not backtest_forecasts.index.equals(target.index):
+            raise ValueError("Historical backtest timestamps must match with the original dataset timestamps!")
+
+        residuals = backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]] - target
 
         self._validate_residuals_for_interval_estimation(backtest_forecasts=backtest_forecasts, residuals=residuals)
         sigma = np.nanstd(residuals.values, axis=0)
