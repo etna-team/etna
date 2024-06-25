@@ -3,9 +3,6 @@ import pandas as pd
 import pytest
 
 from etna.analysis.outliers import get_anomalies_mad
-from etna.analysis.outliers.rolling_statistics import _sliding_window
-from etna.analysis.outliers.rolling_statistics import _stl_decompose
-from etna.analysis.outliers.rolling_statistics import sliding_window_decorator
 
 
 def test_mad_outliers_missing_values(outliers_tsds):
