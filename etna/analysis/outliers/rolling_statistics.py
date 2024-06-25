@@ -286,7 +286,7 @@ def mad_method(
     period: Optional[int] = None,
     trend: bool = False,
     seasonality: bool = False,
-    stl_params: Optional[Dict[str, Any]] = None
+    stl_params: Optional[Dict[str, Any]] = None,
 ) -> np.ndarray:
     """
     Estimate anomalies using MAD statistics.
