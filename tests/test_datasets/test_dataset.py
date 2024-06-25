@@ -96,6 +96,38 @@ def ts_info() -> TSDataset:
 
 
 @pytest.fixture
+def ts_info_with_components_and_quantiles() -> TSDataset:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
+    df_3 = pd.DataFrame({"timestamp": timestamp, "target": 13, "segment": "3"})
+    df = pd.concat([df_1, df_2, df_3], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    ts = TSDataset(df=df, freq="D")
+
+    intervals_df = pd.concat(
+        [
+            df.rename({"target": "target_0.025"}, axis=1, level="feature") - 1,
+            df.rename({"target": "target_0.975"}, axis=1, level="feature") + 1,
+        ],
+        axis=1,
+    )
+    ts.add_prediction_intervals(intervals_df)
+
+    components_df = pd.concat(
+        [
+            df.rename({"target": "target_a"}, axis=1, level="feature") / 2,
+            df.rename({"target": "target_b"}, axis=1, level="feature") / 2,
+        ],
+        axis=1,
+    )
+    ts.add_target_components(components_df)
+
+    return ts
+
+
+@pytest.fixture
 def df_update_add_column() -> pd.DataFrame:
     timestamp = pd.date_range("2021-01-01", "2021-02-12")
     df_1 = pd.DataFrame({"timestamp": timestamp, "new_column": 100, "segment": "1"})
@@ -1345,14 +1377,25 @@ def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
         ts_diff_endings.fit_transform([])
 
 
-def test_gather_common_data(ts_info):
+@pytest.mark.parametrize(
+    "ts_name, expected_answer",
+    [
+        ("ts_info", {"num_segments": 3, "num_exogs": 2, "num_regressors": 2, "num_known_future": 2, "freq": "D"}),
+        (
+            "ts_info_with_components_and_quantiles",
+            {"num_segments": 3, "num_exogs": 0, "num_regressors": 0, "num_known_future": 0, "freq": "D"},
+        ),
+    ],
+)
+def test_gather_common_data(ts_name, expected_answer, request):
     """Check that TSDataset._gather_common_data correctly finds common data for info/describe methods."""
-    common_data = ts_info._gather_common_data()
-    assert common_data["num_segments"] == 3
-    assert common_data["num_exogs"] == 2
-    assert common_data["num_regressors"] == 2
-    assert common_data["num_known_future"] == 2
-    assert common_data["freq"] == "D"
+    ts = request.getfixturevalue(ts_name)
+    common_data = ts._gather_common_data()
+    assert common_data["num_segments"] == expected_answer["num_segments"]
+    assert common_data["num_exogs"] == expected_answer["num_exogs"]
+    assert common_data["num_regressors"] == expected_answer["num_regressors"]
+    assert common_data["num_known_future"] == expected_answer["num_known_future"]
+    assert common_data["freq"] == expected_answer["freq"]
 
 
 def test_gather_segments_data(ts_info):

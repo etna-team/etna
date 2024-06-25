@@ -679,13 +679,11 @@ class TSDataset:
         """
         return self._regressors
 
-    # TODO: don't we want to rename it into "variables" or smth like this for example?
-    # TODO: what about adding this into ts.describe/ts.info?
     @property
     def features(self) -> List[str]:
         """Get list of all features across all segments in dataset.
 
-        All features include exogenous data, generated features, target, target components, prediction intervals.
+        All features include initial exogenous data, generated features, target, target components, prediction intervals.
         The order of features in returned list isn't specified.
 
         If different segments have different subset of features, then the union of features is returned.
@@ -1609,9 +1607,14 @@ class TSDataset:
     def _gather_common_data(self) -> Dict[str, Any]:
         """Gather information about dataset in general."""
         features = set(self.features)
+        exogs = (
+            features.difference({"target"})
+            .difference(self.prediction_intervals_names)
+            .difference(self.target_components_names)
+        )
         common_dict: Dict[str, Any] = {
             "num_segments": len(self.segments),
-            "num_exogs": len(features.difference({"target"})),
+            "num_exogs": len(exogs),
             "num_regressors": len(self.regressors),
             "num_known_future": len(self.known_future),
             "freq": self.freq,
