@@ -305,7 +305,7 @@ def mad_method(
     seasonality:
         whether to remove seasonality from the series
     stl_params:
-        other parameters for STL. See https://www.statsmodels.org/devel/generated/statsmodels.tsa.seasonal.STL.html
+        other parameters for STL. See :py:class:`statsmodels.tsa.seasonal.STL`
     Returns
     -------
     :
