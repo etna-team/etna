@@ -343,8 +343,7 @@ def get_anomalies_mad(
     index_only: bool = True,
 ) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
     """
-    Get point outliers in time series using median absolute deviation model (estimation model-based method).
-
+    Get point outliers in time series using median absolute deviation.
     Outliers are all points deviating from the median by more than mad_scale * median absolute deviation,
     where median absolute deviation is the median of the absolute deviations from the median in the window.
 
