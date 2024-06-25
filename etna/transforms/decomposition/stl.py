@@ -75,7 +75,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
                     model_kwargs = {"trend": "add"}
             else:
                 raise ValueError(f"Not a valid option for model: {model}")
-        elif isinstance(model, TimeSeriesModel):
+        elif isinstance(model, type) and issubclass(model, TimeSeriesModel):
             self.model = model
         else:
             raise ValueError("Model should be a string or TimeSeriesModel")

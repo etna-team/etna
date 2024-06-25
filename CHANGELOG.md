@@ -29,8 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix rendering in 210 tutorial ([#386](https://github.com/etna-team/etna/pull/386))
-- 
-- 
+- Remove sorting of `ts.df` ([#389](https://github.com/etna-team/etna/issues/389))
+- Fix can't pass custom model to `STLTransform` ([#279](https://github.com/etna-team/etna/issues/279))
 - 
 - 
 - 
