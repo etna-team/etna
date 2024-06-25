@@ -11,6 +11,7 @@ from typing import Union
 import numpy as np
 import pandas as pd
 from numpy.lib.stride_tricks import sliding_window_view
+from scipy.stats import median_abs_deviation
 from statsmodels.tsa.seasonal import STL
 from statsmodels.tsa.tsatools import freq_to_period
 
@@ -268,6 +269,95 @@ def get_anomalies_iqr(
         window_size=window_size,
         stride=stride,
         iqr_scale=iqr_scale,
+        trend=trend,
+        seasonality=seasonality,
+        period=period,
+        stl_params=stl_params,
+    )
+
+    return _outliers_per_segment(df=df, func=detection_func, index_only=index_only)
+
+
+@sliding_window_decorator
+def mad_method(
+    series: pd.Series, indices: np.ndarray, mad_scale=1.5, period=None, trend=False, seasonality=False, stl_params=None
+):
+    """
+    Estimate anomalies using MAD statistics.
+    Parameters
+    ----------
+    series:
+        original series for the estimation.
+    indices:
+        which observations use for the estimation.
+    mad_scale:
+        scaling parameter of the estimated interval.
+    period:
+        periodicity of the sequence for STL.
+    trend:
+        whether to remove trend from the series.
+    seasonality:
+        whether to remove seasonality from the series
+    stl_params:
+        other parameters for STL. See https://www.statsmodels.org/devel/generated/statsmodels.tsa.seasonal.STL.html
+    Returns
+    -------
+    :
+        binary mask for each observation, indicating if it was estimated as an anomaly.
+    """
+    if mad_scale <= 0:
+        raise ValueError("Scaling parameter must be positive!")
+
+    window = series[indices]
+
+    if trend or seasonality:
+        if stl_params is None:
+            stl_params = {}
+
+        window = _stl_decompose(series=window, period=period, trend=trend, seasonality=seasonality, **stl_params)
+
+    mad = median_abs_deviation(window)
+    median = np.median(window)
+
+    anom_mask = (window > median + mad_scale * mad) | (window < median - mad_scale * mad)
+
+    return anom_mask
+
+
+def get_anomalies_mad(
+    ts: TSDataset,
+    in_column: str = "target",
+    window_size: int = 10,
+    stride: int = 1,
+    mad_scale: float = 3,
+    trend: bool = False,
+    seasonality: bool = False,
+    period: Optional[int] = None,
+    stl_params: Optional[Dict[str, Any]] = None,
+    index_only: bool = True,
+) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
+    """
+    Get point outliers in time series using median absolute deviation model (estimation model-based method).
+
+    Outliers are all points deviating from the median by more than mad_scale * median absolute deviation,
+    where median absolute deviation is the median of the absolute deviations from the median in the window.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    :
+       dict of outliers in format {segment: [outliers_timestamps]}
+    """
+    df = ts[..., in_column]
+    df = df.droplevel(level="feature", axis=1)
+
+    detection_func = functools.partial(
+        mad_method,
+        window_size=window_size,
+        stride=stride,
+        mad_scale=mad_scale,
         trend=trend,
         seasonality=seasonality,
         period=period,

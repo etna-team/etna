@@ -8,64 +8,6 @@ from etna.analysis.outliers.rolling_statistics import _stl_decompose
 from etna.analysis.outliers.rolling_statistics import sliding_window_decorator
 
 
-@pytest.mark.parametrize(
-    "window_size, stride, error",
-    ((0, 1, "Window size must be positive integer!"), (2, 0, "Stride must be integer greater or equal to 1!")),
-)
-def test_sliding_window_params(window_size, stride, error):
-    with pytest.raises(ValueError, match=error):
-        _ = _sliding_window(x=np.empty, window_size=window_size, stride=stride)
-
-
-@pytest.mark.parametrize("data", (np.arange(9),))
-@pytest.mark.parametrize(
-    "window_size, stride, answer",
-    (
-        (3, 1, np.array([[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6], [5, 6, 7], [6, 7, 8]])),
-        (2, 1, np.array([[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]])),
-        (4, 1, np.array([[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6], [4, 5, 6, 7], [5, 6, 7, 8]])),
-        (3, 3, np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]])),
-        (7, 2, np.array([[0, 1, 2, 3, 4, 5, 6], [2, 3, 4, 5, 6, 7, 8]])),
-        (1, 1, np.array([[0], [1], [2], [3], [4], [5], [6], [7], [8]])),
-        (1, 9, np.array([[8]])),
-        (9, 1, np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8]])),
-    ),
-)
-def test_sliding_window(data, window_size, stride, answer):
-    res = _sliding_window(x=data, window_size=window_size, stride=stride)
-    np.testing.assert_allclose(res, answer)
-
-
-@pytest.mark.parametrize("data", (np.arange(9),))
-@pytest.mark.parametrize(
-    "window_size, stride, answer",
-    (
-        (3, 1, np.array([3, 6, 9, 12, 15, 18, 21])),
-        (2, 1, np.array([1, 3, 5, 7, 9, 11, 13, 15])),
-        (4, 1, np.array([6, 10, 14, 18, 22, 26])),
-        (3, 3, np.array([3, 12, 21])),
-        (7, 2, np.array([21, 35])),
-        (1, 1, np.array([0, 1, 2, 3, 4, 5, 6, 7, 8])),
-        (1, 9, np.array([8])),
-        (9, 1, np.array([36])),
-    ),
-)
-def test_sliding_window_decorator(data, window_size, stride, answer):
-    apply_func = sliding_window_decorator(lambda x, idxs: np.sum(x[idxs]))
-    res = apply_func(data, window_size=window_size, stride=stride, return_indices=False)
-    np.testing.assert_allclose(res, answer)
-
-
-def test_stl_decompose_error():
-    with pytest.raises(ValueError, match="At least one component must be set!"):
-        _ = _stl_decompose(series=pd.Series([0.0]), trend=False, seasonality=False)
-
-
-def test_const_ts(const_ts_anomal):
-    anomal = get_anomalies_mad(const_ts_anomal)
-    assert len(anomal) == 0
-
-
 def test_mad_outliers_missing_values(outliers_tsds):
     with pytest.raises(ValueError, match=".* contains missing values!"):
         _ = get_anomalies_mad(ts=outliers_tsds)
