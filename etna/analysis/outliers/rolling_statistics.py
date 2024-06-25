@@ -282,12 +282,12 @@ def get_anomalies_iqr(
 def mad_method(
     series: pd.Series,
     indices: np.ndarray,
-    mad_scale=1.5,
-    period=None,
-    trend=False,
-    seasonality=False,
-    stl_params=None
-):
+    mad_scale: float = 1.5,
+    period: Optional[int] = None,
+    trend: bool = False,
+    seasonality: bool = False,
+    stl_params: Optional[Dict[str, Any]] = None
+) -> np.ndarray:
     """
     Estimate anomalies using MAD statistics.
     Parameters
@@ -331,7 +331,7 @@ def mad_method(
 
 
 def get_anomalies_mad(
-    ts: TSDataset,
+    ts: "TSDataset",
     in_column: str = "target",
     window_size: int = 10,
     stride: int = 1,
