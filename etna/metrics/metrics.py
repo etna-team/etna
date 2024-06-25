@@ -19,7 +19,7 @@ class MAE(Metric):
     """Mean absolute error metric with multi-segment computation support.
 
     .. math::
-        MAE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}{\\mid y\_true_i - y\_pred_i \\mid}}{n}
+        MAE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{\\mid y\_true_i - y\_pred_i \\mid}}{n}
 
     Notes
     -----
@@ -49,7 +49,7 @@ class MSE(Metric):
     """Mean squared error metric with multi-segment computation support.
 
     .. math::
-        MSE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{n}
+        MSE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
 
     Notes
     -----
@@ -79,7 +79,7 @@ class RMSE(Metric):
     """Root mean squared error metric with multi-segment computation support.
 
     .. math::
-        RMSE(y\_true, y\_pred) = \\sqrt\\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{n}
+        RMSE(y\_true, y\_pred) = \\sqrt\\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
 
     Notes
     -----
@@ -109,7 +109,7 @@ class R2(Metric):
     """Coefficient of determination metric with multi-segment computation support.
 
     .. math::
-        R^2(y\_true, y\_pred) = 1 - \\frac{\\sum_{i=0}^{n-1}{(y\_true_i - y\_pred_i)^2}}{\\sum_{i=0}^{n-1}{(y\_true_i - \\overline{y\_true})^2}}
+        R^2(y\_true, y\_pred) = 1 - \\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{\\sum_{i=1}^{n}{(y\_true_i - \\overline{y\_true})^2}}
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
@@ -138,7 +138,7 @@ class MAPE(Metric):
     """Mean absolute percentage error metric with multi-segment computation support.
 
     .. math::
-       MAPE(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\frac{\\sum_{i=0}^{n-1}{\\mid y\_true_i - y\_pred_i\\mid}}{\\mid y\_true_i \\mid + \epsilon}
+       MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
 
     Notes
     -----
@@ -168,7 +168,7 @@ class SMAPE(Metric):
     """Symmetric mean absolute percentage error metric with multi-segment computation support.
 
     .. math::
-       SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n}\\cdot\\frac{\\sum_{i=0}^{n-1}{\\mid y\_true_i - y\_pred_i\\mid}}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
+       SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
 
     Notes
     -----
@@ -228,7 +228,7 @@ class MSLE(Metric):
     """Mean squared logarithmic error metric with multi-segment computation support.
 
     .. math::
-       MSLE(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=0}^{n - 1}{(ln(1 + y\_true_i) - ln(1 + y\_pred_i))^2}
+       MSLE(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{(ln(1 + y\_true_i) - ln(1 + y\_pred_i))^2}
 
     Notes
     -----
@@ -259,7 +259,7 @@ class Sign(Metric):
     """Sign error metric with multi-segment computation support.
 
     .. math::
-        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=0}^{n - 1}{sign(y\_true_i - y\_pred_i)}
+        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{sign(y\_true_i - y\_pred_i)}
 
     Notes
     -----
@@ -289,7 +289,7 @@ class MaxDeviation(Metric):
     """Max Deviation metric with multi-segment computation support (maximum deviation value of cumulative sums).
 
     .. math::
-        MaxDeviation(y\_true, y\_pred) = \\max_{j} | y_j |, where \\, y_j = \\sum_{i=1}^{j}{y\_pred_i - y\_true_i}
+        MaxDeviation(y\_true, y\_pred) = \\max_{1 \\le j \\le n} | y_j |, where \\, y_j = \\sum_{i=1}^{j}{y\_pred_i - y\_true_i}
 
     Notes
     -----
@@ -319,7 +319,7 @@ class WAPE(Metric):
     """Weighted average percentage Error metric with multi-segment computation support.
 
     .. math::
-        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=0}^{n}|y\\_true_i|}
+        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=1}^{n}|y\\_true_i|}
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.

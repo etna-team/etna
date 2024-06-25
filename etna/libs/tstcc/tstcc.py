@@ -23,6 +23,7 @@ SOFTWARE.
 """
 # Note: Copied from ts-tcc repository (https://github.com/emadeldeen24/TS-TCC/tree/main)
 # Moved training and encoding parameters from __init__ to fit and encode, respectively
+# Moved device, batch_size, num_workers parameters from __init__ to fit and encode methods
 # Changed input and output data shapes
 
 from etna.libs.tstcc.encoder import ConvEncoder
@@ -41,21 +42,18 @@ class TSTCC:
     def __init__(
             self,
             input_dims,
-            encoder_output_dim,
+            output_dims,
             kernel_size,
             dropout,
             timesteps,
-            hidden_dim,
+            tc_hidden_dim,
             heads,
             depth,
             n_seq_steps,
             jitter_scale_ratio,
             max_seg,
             jitter_ratio,
-            use_cosine_similarity,
-            batch_size,
-            device,
-            num_workers,
+            use_cosine_similarity
     ):
         """
         Init TSTCC model
@@ -64,7 +62,7 @@ class TSTCC:
         ----------
         input_dims:
             The input dimension. For a univariate time series, this should be set to 1.
-        encoder_output_dim:
+        output_dims:
             The output dimension after encoder.
         kernel_size:
             Kernel size of first convolution in encoder.
@@ -72,7 +70,7 @@ class TSTCC:
             Dropout rate in first convolution block in encoder.
         timesteps:
             The number of timestamps to predict in temporal contrasting model.
-        hidden_dim:
+        tc_hidden_dim:
             The output dimension after temporal_contr_model.
         heads:
             Number of heads in attention block in temporal contrasting model. Parameter output_dims must be a multiple
@@ -89,21 +87,11 @@ class TSTCC:
             Jitter ratio in strong augmentation.
         use_cosine_similarity:
             If True NTXentLoss uses cosine similarity, if False NTXentLoss uses dot product.
-        batch_size:
-            The batch size.
-        device:
-            The device used for training and inference.
-        num_workers:
-            How many subprocesses to use for data loading.
         """
 
         super().__init__()
 
         self.input_dims = input_dims
-        self.batch_size = batch_size
-
-        self.device = device
-        self.num_workers = num_workers
 
         self.n_seq_steps = n_seq_steps
 
@@ -112,18 +100,17 @@ class TSTCC:
                     input_dims=self.input_dims,
                     kernel_size=kernel_size,
                     dropout=dropout,
-                    output_dims=encoder_output_dim
+                    output_dims=output_dims
                 ),
                 "temporal_contr_model": TC(
-                    input_dims=encoder_output_dim,
+                    input_dims=output_dims,
                     timesteps=timesteps,
-                    hidden_dim=hidden_dim,
+                    hidden_dim=tc_hidden_dim,
                     heads=heads,
                     depth=depth,
-                    device=self.device,
                     n_seq_steps=self.n_seq_steps
                 )
-        }).to(device=self.device)
+        })
 
         self.jitter_scale_ratio = jitter_scale_ratio
         self.max_seg = max_seg
@@ -131,7 +118,7 @@ class TSTCC:
 
         self.use_cosine_similarity = use_cosine_similarity
 
-    def prepare_data(self, data, mode):
+    def prepare_data(self, data, mode, num_workers, batch_size):
         data = data.transpose(0, 2, 1)
         dataset = Load_Dataset(
             dataset=data,
@@ -143,22 +130,22 @@ class TSTCC:
         if mode == "train":
             data_loader = DataLoader(
                 dataset=dataset,
-                batch_size=self.batch_size,
+                batch_size=batch_size,
                 shuffle=True,
                 drop_last=True,
-                num_workers=self.num_workers
+                num_workers=num_workers
             )
         else:
             data_loader = DataLoader(
                 dataset=dataset,
-                batch_size=self.batch_size,
+                batch_size=batch_size,
                 shuffle=False,
                 drop_last=False,
-                num_workers=self.num_workers
+                num_workers=num_workers
             )
         return data_loader
 
-    def fit(self, train_data, n_epochs, lr, temperature, lambda1, lambda2, verbose):
+    def fit(self, train_data, n_epochs, lr, temperature, lambda1, lambda2, verbose, device, num_workers, batch_size):
         """
         Fit model
 
@@ -178,17 +165,24 @@ class TSTCC:
             The relative weight of the second item in the loss (contextual contrasting loss).
         verbose:
             Whether to print the training loss after each epoch.
+        device:
+            The device used for training and inference.
+        num_workers:
+            How many subprocesses to use for data loading.
+        batch_size:
+            The batch size.
         """
-        train_loader = self.prepare_data(data=train_data, mode="train")
+        train_loader = self.prepare_data(data=train_data, mode="train", num_workers=num_workers, batch_size=batch_size)
         model_optimizer = torch.optim.Adam(self.model.parameters(), lr=lr, betas=(0.9, 0.99),
                                            weight_decay=3e-4)
+        self.model.to(device=device)
         self.model.train()
         for epoch in range(n_epochs):
 
             total_loss = []
             for batch_idx, (aug1, aug2) in enumerate(train_loader):
                 # send to device
-                aug1, aug2 = aug1.to(self.device), aug2.to(self.device)
+                aug1, aug2 = aug1.to(device), aug2.to(device)
 
                 # optimizer
                 model_optimizer.zero_grad()
@@ -200,8 +194,8 @@ class TSTCC:
                 features1 = F.normalize(features1, dim=1)
                 features2 = F.normalize(features2, dim=1)
 
-                temp_cont_loss1, temp_cont_lstm_feat1 = self.model.temporal_contr_model(features1, features2)
-                temp_cont_loss2, temp_cont_lstm_feat2 = self.model.temporal_contr_model(features2, features1)
+                temp_cont_loss1, temp_cont_lstm_feat1 = self.model.temporal_contr_model(features1, features2, device)
+                temp_cont_loss2, temp_cont_lstm_feat2 = self.model.temporal_contr_model(features2, features1, device)
 
                 # normalize projection feature vectors
                 zis = temp_cont_lstm_feat1
@@ -209,8 +203,8 @@ class TSTCC:
 
                 # compute loss
                 nt_xent_criterion = NTXentLoss(
-                    device=self.device,
-                    batch_size=self.batch_size,
+                    device=device,
+                    batch_size=batch_size,
                     temperature=temperature,
                     use_cosine_similarity=self.use_cosine_similarity
                 )
@@ -224,7 +218,7 @@ class TSTCC:
             if verbose:
                 tslogger.log(f"Epoch {epoch}: loss={train_loss:.4f}")
 
-    def encode(self, data, encode_full_series):
+    def encode(self, data, encode_full_series, device, num_workers, batch_size):
         """
         Encode data
 
@@ -234,15 +228,22 @@ class TSTCC:
             data to encode
         encode_full_series:
             if True the entire segment will be encoded.
+        device:
+            The device used for training and inference.
+        num_workers:
+            How many subprocesses to use for data loading.
+        batch_size:
+            The batch size.
         """
-        data_loader = self.prepare_data(data=data, mode="encode")
+        data_loader = self.prepare_data(data=data, mode="encode", num_workers=num_workers, batch_size=batch_size)
 
+        self.model.to(device=device)
         self.model.eval()
 
         embeddings = []
         with torch.no_grad():
             for data in data_loader:
-                data = data.to(self.device)
+                data = data.to(device)
                 features = self.model.encoder(data)
 
                 # normalize projection feature vectors
@@ -271,5 +272,5 @@ class TSTCC:
         Args:
             fn_enc (str): filename
         '''
-        state_dict = torch.load(fn, map_location=self.device)
+        state_dict = torch.load(fn, map_location=torch.device("cpu"))
         self.model.load_state_dict(state_dict)

@@ -336,6 +336,23 @@ def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, 
         _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
 
 
+@pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
+@pytest.mark.parametrize("model", (MovingAverageModel(),))
+@pytest.mark.parametrize("stride", (1, 4, 6))
+def test_add_forecast_borders_overlapping_timestamps(example_tsds, model, stride):
+    example_tsds.df.loc[example_tsds.index[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+
+    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
+    pipeline.fit(example_tsds)
+
+    forecasts = pipeline.get_historical_forecasts(ts=example_tsds, stride=stride)
+
+    with pytest.raises(ValueError, match="Historical backtest timestamps must match"):
+        pipeline._add_forecast_borders(
+            ts=example_tsds, backtest_forecasts=forecasts, quantiles=[0.025, 0.975], predictions=None
+        )
+
+
 def test_forecast_prediction_interval_correct_values(splited_piecewise_constant_ts):
     """Test that the prediction interval for piecewise-constant dataset is correct."""
     train, test = splited_piecewise_constant_ts
