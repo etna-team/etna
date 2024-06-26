@@ -173,3 +173,27 @@ def test_in_column(outliers_df_with_two_columns):
     for key in expected:
         assert key in outliers
         np.testing.assert_array_equal(outliers[key], expected[key])
+
+
+@pytest.mark.parametrize(
+    "window_size, mad_scale, stride, right_anomal",
+    (
+        (
+            30,
+            5,
+            1,
+            {"1": [np.datetime64("2021-01-11")], "2": [np.datetime64("2021-01-09"), np.datetime64("2021-01-27")]},
+        ),
+    ),
+)
+@pytest.mark.parametrize("period", (4,))
+def test_mad_outliers_full_stl(window_size, mad_scale, stride, period, right_anomal, outliers_df_with_two_columns):
+    res = get_anomalies_mad(
+        ts=outliers_df_with_two_columns,
+        window_size=window_size,
+        stride=stride,
+        mad_scale=mad_scale,
+        period=period,
+        seasonality=True,
+    )
+    assert res == right_anomal
