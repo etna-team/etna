@@ -140,7 +140,7 @@ def test_transform_request_correct_columns(remove_columns_ts, required_features)
 )
 def test_transform_request_update_dataset(remove_columns_ts, required_features):
     ts, _ = remove_columns_ts
-    columns_before = set(ts.columns.get_level_values("feature"))
+    columns_before = set(ts.features)
     ts.to_pandas = Mock(return_value=ts.df)
 
     transform = TransformMock(required_features=required_features)
@@ -164,7 +164,7 @@ def test_inverse_transform_add_target_quantiles(remove_columns_ts, in_column, ex
 
 def test_inverse_transform_request_update_dataset(remove_columns_ts):
     ts, _ = remove_columns_ts
-    columns_before = set(ts.columns.get_level_values("feature"))
+    columns_before = set(ts.features)
     ts.to_pandas = Mock(return_value=ts.df)
 
     transform = ReversibleTransformMock(required_features="all")

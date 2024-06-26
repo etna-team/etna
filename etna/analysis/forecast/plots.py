@@ -893,9 +893,9 @@ def plot_forecast_decomposition(
     components_mode = ComponentsMode(mode)
 
     if segments is None:
-        segments = list(forecast_ts.columns.get_level_values("segment").unique())
+        segments = forecast_ts.segments
 
-    column_names = set(forecast_ts.columns.get_level_values("feature"))
+    column_names = set(forecast_ts.features)
     components = list(match_target_components(column_names))
 
     if len(components) == 0:

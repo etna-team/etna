@@ -75,7 +75,7 @@ def plot_correlation_matrix(
     if segments is None:
         segments = sorted(ts.segments)
     if columns is None:
-        columns = list(set(ts.df.columns.get_level_values("feature")))
+        columns = ts.features
     if "vmin" not in heatmap_kwargs:
         heatmap_kwargs["vmin"] = -1
     if "vmax" not in heatmap_kwargs:

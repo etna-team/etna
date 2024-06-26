@@ -658,7 +658,7 @@ def test_right_number_features_with_integer_division(ts_with_exog_galeshapley):
     transform.fit(ts_with_exog_galeshapley)
     ts = transform.transform(ts_with_exog_galeshapley)
 
-    remaining_columns = ts.columns.get_level_values("feature").unique().tolist()
+    remaining_columns = ts.features
     assert len(remaining_columns) == top_k + 1
 
 
