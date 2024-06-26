@@ -3,6 +3,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+from typing import Type
 
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
@@ -26,7 +27,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         self,
         in_column: str,
         period: int,
-        model: Union[str, type[TimeSeriesModel]] = "arima",
+        model: Union[str, Type[TimeSeriesModel]] = "arima",
         robust: bool = False,
         model_kwargs: Optional[Dict[str, Any]] = None,
         stl_kwargs: Optional[Dict[str, Any]] = None,
@@ -201,7 +202,7 @@ class STLTransform(ReversiblePerSegmentWrapper):
         self,
         in_column: str,
         period: int,
-        model: Union[str, type[TimeSeriesModel]] = "arima",
+        model: Union[str, Type[TimeSeriesModel]] = "arima",
         robust: bool = False,
         model_kwargs: Optional[Dict[str, Any]] = None,
         stl_kwargs: Optional[Dict[str, Any]] = None,
