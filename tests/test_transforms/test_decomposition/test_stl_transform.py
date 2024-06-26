@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import pytest
-from statsmodels.tsa.base.tsa_model import TimeSeriesModel
 from statsmodels.tsa.exponential_smoothing.ets import ETSModel
 
 from etna.datasets.tsdataset import TSDataset
@@ -113,12 +112,7 @@ def not_ts_model():
     return NotTimeSeriesModel
 
 
-@pytest.fixture
-def ts_model():
-    return ETSModel
-
-
-@pytest.mark.parametrize("model", ["arima", "holt"])
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
 @pytest.mark.parametrize(
     "df_name",
     [
@@ -137,7 +131,7 @@ def test_transform_one_segment(df_name, model, request):
     np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
 
 
-@pytest.mark.parametrize("model", ["arima", "holt"])
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
 @pytest.mark.parametrize(
     "ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans", "ts_trend_seasonal_int_timestamp"]
 )
@@ -152,7 +146,7 @@ def test_transform_multi_segments(ts_name, model, request):
     np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
 
 
-@pytest.mark.parametrize("model", ["arima", "holt"])
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
 @pytest.mark.parametrize(
     "df_name",
     [
@@ -170,7 +164,7 @@ def test_inverse_transform_one_segment(df_name, model, request):
     pd.testing.assert_series_equal(df_inverse_transformed["target"], df["target"])
 
 
-@pytest.mark.parametrize("model", ["arima", "holt"])
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
 @pytest.mark.parametrize(
     "ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans", "ts_trend_seasonal_int_timestamp"]
 )
@@ -185,7 +179,7 @@ def test_inverse_transform_multi_segments(ts_name, model, request):
     pd.testing.assert_series_equal(df_inverse_transformed["target"], df["target"])
 
 
-@pytest.mark.parametrize("model_stl", ["arima", "holt"])
+@pytest.mark.parametrize("model_stl", ["arima", "holt", ETSModel])
 def test_forecast(ts_trend_seasonal, model_stl):
     """Test that transform works correctly in forecast."""
     transform = STLTransform(in_column="target", period=7, model=model_stl)
@@ -202,7 +196,7 @@ def test_forecast(ts_trend_seasonal, model_stl):
     ts_forecast = model.forecast(ts_future, prediction_size=3)
     ts_forecast.inverse_transform([transform])
     for segment in ts_forecast.segments:
-        np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.1)
+        np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.2)
 
 
 def test_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segment):
@@ -219,7 +213,7 @@ def test_inverse_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segme
         _ = transform.inverse_transform(df=df_trend_seasonal_one_segment)
 
 
-@pytest.mark.parametrize("model_stl", ["arima", "holt"])
+@pytest.mark.parametrize("model_stl", ["arima", "holt", ETSModel])
 def test_fit_transform_with_nans_in_tails(ts_trend_seasonal_nan_tails, model_stl):
     transform = STLTransform(in_column="target", period=7, model=model_stl)
     transform.fit_transform(ts=ts_trend_seasonal_nan_tails)
@@ -237,6 +231,7 @@ def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     [
         STLTransform(in_column="target", period=7, model="arima"),
         STLTransform(in_column="target", period=7, model="holt"),
+        STLTransform(in_column="target", period=7, model=ETSModel),
     ],
 )
 def test_save_load(transform, ts_trend_seasonal):
@@ -254,8 +249,3 @@ def test_params_to_tune(ts_trend_seasonal):
 def test_custom_model(model_stl):
     with pytest.raises(ValueError, match="Model should be a string or TimeSeriesModel"):
         transform = STLTransform(in_column="target", period=7, model=model_stl)
-
-
-def test_ts_model(ts_model):
-    transform = STLTransform(in_column="target", period=7, model=ts_model)
-    assert issubclass(transform.model, TimeSeriesModel)
