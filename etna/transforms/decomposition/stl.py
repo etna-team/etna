@@ -2,8 +2,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union
 from typing import Type
+from typing import Union
 
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
