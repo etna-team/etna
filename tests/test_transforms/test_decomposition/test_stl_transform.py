@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
+from statsmodels.tsa.base.tsa_model import TimeSeriesModel
+from statsmodels.tsa.exponential_smoothing.ets import ETSModel
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models import NaiveModel
@@ -109,6 +111,11 @@ def not_ts_model():
         pass
 
     return NotTimeSeriesModel
+
+
+@pytest.fixture
+def ts_model():
+    return ETSModel
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
@@ -247,3 +254,8 @@ def test_params_to_tune(ts_trend_seasonal):
 def test_custom_model(model_stl):
     with pytest.raises(ValueError, match="Model should be a string or TimeSeriesModel"):
         transform = STLTransform(in_column="target", period=7, model=model_stl)
+
+
+def test_ts_model(ts_model):
+    transform = STLTransform(in_column="target", period=7, model=ts_model)
+    assert issubclass(transform.model, TimeSeriesModel)
