@@ -102,15 +102,16 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             self.joblib_params = joblib_params
         super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
-    def _make_same_level(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
+    def _make_same_level(self, ts: TSDataset, forecasts: List[pd.DataFrame]) -> TSDataset:
         if ts.has_hierarchy():
-            if ts.current_df_level != forecasts[0].current_df_level:
-                ts = ts.get_level_dataset(forecasts[0].current_df_level)  # type: ignore
+            current_df_level = ts._get_dataframe_level(df=forecasts[0])
+            if ts.current_df_level != current_df_level:
+                ts = ts.get_level_dataset(current_df_level)  # type: ignore
         return ts
 
-    def _filter_features_to_use(self, forecasts: List[TSDataset]) -> Union[None, Set[str]]:
+    def _filter_features_to_use(self, forecasts: List[pd.DataFrame]) -> Union[None, Set[str]]:
         """Return all the features from ``features_to_use`` which can be obtained from base models' forecasts."""
-        features_df = pd.concat([forecast.df for forecast in forecasts], axis=1)
+        features_df = pd.concat(forecasts, axis=1)
         available_features = set(features_df.columns.get_level_values("feature")) - {"fold_number"}
         features_to_use = self.features_to_use
         if features_to_use is None:
@@ -134,10 +135,9 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             )
             return None
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
         """Get forecasts from backtest for given pipeline."""
         forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq, hierarchical_structure=ts.hierarchical_structure)
         return forecasts
 
     def fit(self, ts: TSDataset, save_ts: bool = True) -> "StackingEnsemble":
@@ -176,14 +176,16 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         return self
 
     def _make_features(
-        self, ts: TSDataset, forecasts: List[TSDataset], train: bool = False
+        self, ts: TSDataset, forecasts: List[pd.DataFrame], train: bool = False
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Prepare features for the ``final_model``."""
         ts = self._make_same_level(ts=ts, forecasts=forecasts)
 
         # Stack targets from the forecasts
         targets = [
-            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, level="feature", axis=1)
+            forecast.loc[:, pd.IndexSlice[:, "target"]].rename(
+                {"target": f"regressor_target_{i}"}, level="feature", axis=1
+            )
             for i, forecast in enumerate(forecasts)
         ]
         targets = pd.concat(targets, axis=1)
@@ -200,7 +202,8 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
                 for forecast in forecasts
             ]
             features = pd.concat(
-                [forecast[:, :, features_in_forecasts[i]] for i, forecast in enumerate(forecasts)], axis=1
+                [forecast.loc[:, pd.IndexSlice[:, features_in_forecasts[i]]] for i, forecast in enumerate(forecasts)],
+                axis=1,
             )
             features = features.loc[:, ~features.columns.duplicated()]
         features_df = pd.concat([features, targets], axis=1)
@@ -216,7 +219,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             return x, None
 
-    def _process_forecasts(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
+    def _process_forecasts(self, ts: TSDataset, forecasts: List[pd.DataFrame]) -> TSDataset:
         ts = self._make_same_level(ts=ts, forecasts=forecasts)
 
         x, _ = self._make_features(ts=ts, forecasts=forecasts, train=False)

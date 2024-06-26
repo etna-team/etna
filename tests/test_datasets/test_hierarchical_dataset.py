@@ -256,7 +256,7 @@ def test_init_df_same_level_df_exog(
 ):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
-    df_columns = set(ts.columns.get_level_values("feature"))
+    df_columns = set(ts.features)
     assert df_columns == expected_columns
 
 
@@ -265,7 +265,7 @@ def test_init_df_different_level_df_exog(
 ):
     df, df_exog = product_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
-    df_columns = set(ts.columns.get_level_values("feature"))
+    df_columns = set(ts.features)
     assert df_columns == expected_columns
 
 
