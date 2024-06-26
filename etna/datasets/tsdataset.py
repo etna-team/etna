@@ -680,6 +680,22 @@ class TSDataset:
         return self._regressors
 
     @property
+    def features(self) -> List[str]:
+        """Get list of all features across all segments in dataset.
+
+        All features include initial exogenous data, generated features, target, target components, prediction intervals.
+        The order of features in returned list isn't specified.
+
+        If different segments have different subset of features, then the union of features is returned.
+
+        Returns
+        -------
+        :
+            List of features.
+        """
+        return self.df.columns.get_level_values("feature").unique().tolist()
+
+    @property
     def target_components_names(self) -> Tuple[str, ...]:
         """Get tuple with target components names. Components sum up to target. Return the empty tuple in case of components absence."""
         return self._target_components_names
@@ -886,7 +902,7 @@ class TSDataset:
                 if features == "all":
                     return self.df.copy()
                 raise ValueError("The only possible literal is 'all'")
-            segments = self.columns.get_level_values("segment").unique().tolist()
+            segments = self.segments
             return self.df.loc[:, self.idx[segments, features]].copy()
         return self.to_flatten(self.df, features=features)
 
@@ -1590,9 +1606,15 @@ class TSDataset:
 
     def _gather_common_data(self) -> Dict[str, Any]:
         """Gather information about dataset in general."""
+        features = set(self.features)
+        exogs = (
+            features.difference({"target"})
+            .difference(self.prediction_intervals_names)
+            .difference(self.target_components_names)
+        )
         common_dict: Dict[str, Any] = {
             "num_segments": len(self.segments),
-            "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
+            "num_exogs": len(exogs),
             "num_regressors": len(self.regressors),
             "num_known_future": len(self.known_future),
             "freq": self.freq,

@@ -86,7 +86,7 @@ class OutliersTransform(ReversibleTransform, ABC):
             The fitted transform instance.
         """
         if self.ignore_flag_column is not None:
-            if self.ignore_flag_column not in ts.columns.get_level_values("feature"):
+            if self.ignore_flag_column not in ts.features:
                 raise ValueError(f'Name ignore_flag_column="{self.ignore_flag_column}" not find.')
             types_ignore_flag = ts[..., self.ignore_flag_column].isin([0, 1]).all(axis=0)
             if not all(types_ignore_flag):

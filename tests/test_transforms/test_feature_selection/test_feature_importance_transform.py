@@ -133,7 +133,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
     selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
     selector.fit_transform(ts)
 
-    selected_regressors = set(ts.columns.get_level_values("feature")).difference({"target"})
+    selected_regressors = set(ts.features).difference({"target"})
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
 
