@@ -29,10 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix rendering in 210 tutorial ([#386](https://github.com/etna-team/etna/pull/386))
+- 
+- 
+- 
 - Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))
-- 
-- 
-- 
 - 
 - 
 - 
