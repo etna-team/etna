@@ -104,11 +104,11 @@ def ts_trend_seasonal_nan_tails() -> TSDataset:
 
 
 @pytest.fixture
-def custom_model():
-    class CustomModelNotFromTS:
+def not_ts_model():
+    class NotTimeSeriesModel:
         pass
 
-    return CustomModelNotFromTS
+    return NotTimeSeriesModel
 
 
 @pytest.mark.parametrize("model", ["arima", "holt"])
@@ -243,7 +243,7 @@ def test_params_to_tune(ts_trend_seasonal):
     assert_sampling_is_valid(transform=transform, ts=ts)
 
 
-@pytest.mark.parametrize("model_stl", [10, custom_model])
+@pytest.mark.parametrize("model_stl", [10, not_ts_model])
 def test_custom_model(model_stl):
     with pytest.raises(ValueError, match="Model should be a string or TimeSeriesModel"):
         transform = STLTransform(in_column="target", period=7, model=model_stl)
