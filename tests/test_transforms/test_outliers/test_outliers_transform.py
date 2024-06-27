@@ -24,6 +24,7 @@ from etna.transforms import MedianOutliersTransform
 from etna.transforms import PredictionIntervalOutliersTransform
 from etna.transforms.outliers import IForestOutlierTransform
 from etna.transforms.outliers import IQROutlierTransform
+from etna.transforms.outliers import MADOutlierTransform
 from tests.test_transforms.utils import assert_column_changes
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
@@ -146,6 +147,7 @@ def test_density_outliers_deprecated_store_attributes(outliers_solid_tsds, attri
         (PredictionIntervalOutliersTransform, dict(model=ProphetModel)),
         (IForestOutlierTransform, {}),
         (IQROutlierTransform, {}),
+        (MADOutlierTransform, {}),
     ],
 )
 def test_interface(transform_constructor, constructor_kwargs, outliers_solid_tsds: TSDataset, in_column):
