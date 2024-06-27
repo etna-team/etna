@@ -11,9 +11,10 @@ from numpy.random import RandomState
 from typing_extensions import Literal
 
 from etna import SETTINGS
-from etna.analysis import get_anomalies_density, get_anomalies_mad
+from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_iqr
 from etna.analysis import get_anomalies_isolation_forest
+from etna.analysis import get_anomalies_mad
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
 from etna.datasets import TSDataset

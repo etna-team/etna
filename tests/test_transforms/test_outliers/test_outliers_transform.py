@@ -5,9 +5,10 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from etna.analysis import get_anomalies_density, get_anomalies_mad
+from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_iqr
 from etna.analysis import get_anomalies_isolation_forest
+from etna.analysis import get_anomalies_mad
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
 from etna.datasets.tsdataset import TSDataset
