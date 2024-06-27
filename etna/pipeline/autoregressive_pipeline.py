@@ -22,10 +22,10 @@ class AutoRegressivePipeline(
 ):
     """
     Pipeline that make regressive models autoregressive.
-    
+
     Makes forecast in several iterations, on each of them applies transforms and
-    predict step values by using forecast method of model.
-    
+    predict ``step`` values by using forecast method of model.
+
     See Also
     --------
     Pipeline:

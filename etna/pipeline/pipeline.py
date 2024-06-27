@@ -20,13 +20,13 @@ from etna.transforms.base import Transform
 class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveModelPipelineMixin, BasePipeline):
     """
     Pipeline of transforms with a final estimator.
-    
-    Makes forecast in one iteration, during which applies transforms and makes 
+
+    Makes forecast in one iteration, during which applies transforms and makes
     call for forecast method for model.
-    
+
     See Also
     --------
-    AutoRegressivePipeline: 
+    AutoRegressivePipeline:
         Makes forecast in several iterations.
     DirectEnsemble:
         Makes forecast by merging the forecasts of base pipelines.
