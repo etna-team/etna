@@ -38,11 +38,7 @@ class MedianOutliersTransform(OutliersTransform):
     """
 
     def __init__(
-        self,
-        in_column: str,
-        window_size: int = 10,
-        alpha: float = 3,
-        ignore_flag_column: Optional[str] = None,
+        self, in_column: str, window_size: int = 10, alpha: float = 3, ignore_flag_column: Optional[str] = None,
     ):
         """Create instance of MedianOutliersTransform.
 
@@ -493,16 +489,16 @@ class MADOutlierTransform(OutliersTransform):
     """Transform that uses :py:func:`~etna.analysis.outliers.rolling_statistics.get_anomalies_mad` to find anomalies in data."""
 
     def __init__(
-            self,
-            in_column: str = "target",
-            ignore_flag_column: Optional[str] = None,
-            window_size: int = 10,
-            stride: int = 1,
-            mad_scale: float = 3,
-            trend: bool = False,
-            seasonality: bool = False,
-            period: Optional[int] = None,
-            stl_params: Optional[Dict[str, Any]] = None,
+        self,
+        in_column: str = "target",
+        ignore_flag_column: Optional[str] = None,
+        window_size: int = 10,
+        stride: int = 1,
+        mad_scale: float = 3,
+        trend: bool = False,
+        seasonality: bool = False,
+        period: Optional[int] = None,
+        stl_params: Optional[Dict[str, Any]] = None,
     ):
         """Create instance of ``PredictionIntervalOutliersTransform``.
 
