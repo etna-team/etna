@@ -4,3 +4,4 @@ from etna.transforms.outliers.point_outliers import IForestOutlierTransform
 from etna.transforms.outliers.point_outliers import IQROutlierTransform
 from etna.transforms.outliers.point_outliers import MedianOutliersTransform
 from etna.transforms.outliers.point_outliers import PredictionIntervalOutliersTransform
+from etna.transforms.outliers.point_outliers import MADOutlierTransform
