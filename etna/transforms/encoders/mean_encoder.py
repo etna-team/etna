@@ -4,7 +4,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
-
+from typing import Set
+from pandas._libs.tslibs.timestamps import Timestamp
 import numpy as np
 import pandas as pd
 from bottleneck import nanmean
@@ -84,8 +85,8 @@ class MeanEncoderTransform(IrreversibleTransform):
         self.smoothing = smoothing
 
         self.global_means: Optional[Union[float, Dict[str, float]]] = None
-        self.known_values: Optional[Union[List[str], Dict[str, List[str]]]] = None
-        self.last_values: Optional[Union[Dict[str, float], Dict[str, Dict[str, float]]]] = None
+        self.global_means_category: Optional[Union[Dict[str, float], Dict[str, Dict[str, float]]]] = None
+        self.timestamps: Optional[Set[Timestamp]]
 
     def _fit(self, df: pd.DataFrame) -> "MeanEncoderTransform":
         """
@@ -101,26 +102,31 @@ class MeanEncoderTransform(IrreversibleTransform):
         :
             Fitted transform
         """
+        self.timestamps = set(df.index)
+
         if self.mode is ImputerMode.micro:
             axis = 0
             segments = df.columns.get_level_values("segment").unique().tolist()
-            mean_values = nanmean(df.loc[:, self.idx[:, "target"]], axis=axis)
-            mean_values = dict(zip(segments, mean_values))
+            global_means = nanmean(df.loc[:, self.idx[:, "target"]], axis=axis)
+            global_means = dict(zip(segments, global_means))
 
-            known_values = {}
+            global_means_category = {}
             for segment in segments:
-                known_values[segment] = set(df.loc[:, self.idx[segment, self.in_column]].unique())
+                segment_df = TSDataset.to_flatten(df.loc[:, pd.IndexSlice[segment, :]])
+                global_means_category[segment] = segment_df.groupby("regressor", dropna=False).mean().to_dict()["target"]
                 if self.handle_missing is MissingMode.global_mean:
-                    known_values[segment].discard(np.NaN)
+                    global_means_category[segment].discard(np.NaN)
         else:
             axis = None
-            mean_values = nanmean(df.loc[:, self.idx[:, "target"]], axis=axis)
+            global_means = nanmean(df.loc[:, self.idx[:, "target"]], axis=axis)
 
-            known_values = set(pd.unique(df.loc[:, self.idx[:, self.in_column]].values.ravel("K")))
+            segment_df = TSDataset.to_flatten(df)
+            global_means_category = segment_df.groupby("regressor").mean().to_dict()["target"]
             if self.handle_missing is MissingMode.global_mean:
-                known_values.discard(np.NaN)
-        self.global_means = mean_values
-        self.known_values = known_values
+                global_means_category.discard(np.NaN)
+
+        self.global_means = global_means
+        self.global_means_category = global_means_category
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
