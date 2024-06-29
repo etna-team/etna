@@ -58,7 +58,7 @@ class SeasonalMovingAverageModel(
         return self
 
     def _check_not_used_columns(self, ts: TSDataset):
-        columns = set(ts.columns.get_level_values("feature"))
+        columns = set(ts.features)
         columns_not_used = columns.difference({"target"})
         if columns_not_used:
             warnings.warn(
