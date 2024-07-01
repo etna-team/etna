@@ -28,9 +28,9 @@ class AutoRegressivePipeline(
 
     See Also
     --------
-    Pipeline:
+    Pipeline -> etna.pipeline.Pipeline:
         Makes forecast in one iteration.
-    DirectEnsemble:
+    DirectEnsemble -> etna.ensembles.DirectEnsemble:
         Makes forecast by merging the forecasts of base pipelines.
 
     Examples

@@ -26,9 +26,9 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
 
     See Also
     --------
-    AutoRegressivePipeline:
+    AutoRegressivePipeline -> etna.pipeline.AutoRegressivePipeline:
         Makes forecast in several iterations.
-    DirectEnsemble:
+    DirectEnsemble -> etna.ensembles.DirectEnsemble:
         Makes forecast by merging the forecasts of base pipelines.
     """
 
