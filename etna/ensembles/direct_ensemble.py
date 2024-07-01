@@ -25,6 +25,13 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     For each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
     which covers this point.
 
+    See Also
+    --------
+    etna.pipeline.Pipeline:
+        Pipeline that forecasts values in one iteration using a model.
+    etna.pipeline.AutoRegressivePipeline:
+        Pipeline that forecasts values in several iterations using a model.
+
     Examples
     --------
     >>> from etna.datasets import generate_ar_df

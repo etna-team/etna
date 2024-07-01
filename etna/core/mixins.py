@@ -164,7 +164,7 @@ class BaseMixin:
         >>> from etna.pipeline import Pipeline
         >>> from etna.models import NaiveModel
         >>> from etna.transforms import AddConstTransform
-        >>> model = model=NaiveModel(lag=1)
+        >>> model = NaiveModel(lag=1)
         >>> transforms = [AddConstTransform(in_column="target", value=1)]
         >>> pipeline = Pipeline(model, transforms=transforms, horizon=3)
         >>> pipeline.set_params(**{"model.lag": 3, "transforms.0.value": 2})

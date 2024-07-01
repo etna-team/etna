@@ -21,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+-
+- Update pipelines documentation ([#408](https://github.com/etna-team/etna/pull/408))
 - Update formulas for metrics in documentation ([#406](https://github.com/etna-team/etna/pull/406))
 - 
 - Update documentation to explain how to contribute and work with discussions, update templates for issues ([#395](https://github.com/etna-team/etna/pull/395))
@@ -30,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix rendering in 210 tutorial ([#386](https://github.com/etna-team/etna/pull/386))
+- Fix typo in 103 tutorial ([#408](https://github.com/etna-team/etna/pull/408))
 - Remove sorting of `ts.df` by timestamps in `plot_forecast` and `plot_forecast_decomposition` ([#410](https://github.com/etna-team/etna/pull/410))
 - 
 - 
