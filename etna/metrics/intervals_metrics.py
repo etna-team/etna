@@ -44,7 +44,7 @@ class Coverage(Metric, _IntervalsMetricMixin):
     """Coverage metric for prediction intervals - precenteage of samples in the interval ``[lower quantile, upper quantile]``.
 
     .. math::
-        Coverage(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}{[ y\_true_i \\ge y\_pred_i^{lower\_quantile}] * [y\_true_i \\le y\_pred_i^{upper\_quantile}] }}{n}
+        Coverage(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{[ y\_true_i \\ge y\_pred_i^{lower\_quantile}] * [y\_true_i \\le y\_pred_i^{upper\_quantile}] }}{n}
 
     Notes
     -----
@@ -157,7 +157,7 @@ class Width(Metric, _IntervalsMetricMixin):
     """Mean width of prediction intervals.
 
     .. math::
-        Width(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n-1}\\mid y\_pred_i^{upper\_quantile} - y\_pred_i^{lower\_quantile} \\mid}{n}
+        Width(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}\\mid y\_pred_i^{upper\_quantile} - y\_pred_i^{lower\_quantile} \\mid}{n}
 
     Notes
     -----

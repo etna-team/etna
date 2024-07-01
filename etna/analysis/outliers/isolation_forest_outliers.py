@@ -15,7 +15,7 @@ from etna.datasets import TSDataset
 def _select_features(
     ts: TSDataset, in_column: str, features_to_use: Optional[Sequence[str]], features_to_ignore: Optional[Sequence[str]]
 ) -> pd.DataFrame:
-    features = ts.columns.get_level_values("feature")
+    features = ts.features
     if in_column not in features:
         raise ValueError(f"Feature {in_column} is not present in the dataset.")
 

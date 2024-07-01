@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
 - Add `IForestOutlierTransform` ([#381](https://github.com/etna-team/etna/pull/381))
 - Add `IQROutlierTransform` ([#387](https://github.com/etna-team/etna/pull/387))
-- Add `num_workers` parameter to `TS2VecEmbeddingModel` ([#396](https://github.com/etna-team/etna/pull/396))
-- 
+- Add `num_workers` parameter to `TS2VecEmbeddingModel` ([#396](https://github.com/etna-team/etna/pull/396)) 
+- Add `get_anomalies_mad` function for anomaly detection ([#398](https://github.com/etna-team/etna/pull/398))
+- Add `TSDataset.features` property to get list of all features in a dataset ([#405](https://github.com/etna-team/etna/pull/405))
 - 
 
 ### Changed
@@ -21,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Update formulas for metrics in documentation ([#406](https://github.com/etna-team/etna/pull/406))
 - 
 - Update documentation to explain how to contribute and work with discussions, update templates for issues ([#395](https://github.com/etna-team/etna/pull/395))
 - Remove "Other issue" template, update links to discussions in issue creation menu ([#401](https://github.com/etna-team/etna/pull/401))
@@ -29,12 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix rendering in 210 tutorial ([#386](https://github.com/etna-team/etna/pull/386))
+- Remove sorting of `ts.df` by timestamps in `plot_forecast` and `plot_forecast_decomposition` ([#410](https://github.com/etna-team/etna/pull/410))
 - 
 - 
 - 
+- Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))
 - 
-- 
-- 
+- Update `TSDataset.describe`, `TSDataset.info` to exclude target intervals and target components in `num_exogs` ([#405](https://github.com/etna-team/etna/pull/405))
 - 
 - 
 - 

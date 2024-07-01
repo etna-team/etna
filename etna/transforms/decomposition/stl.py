@@ -2,6 +2,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
 from typing import Union
 
 import pandas as pd
@@ -26,7 +27,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         self,
         in_column: str,
         period: int,
-        model: Union[str, TimeSeriesModel] = "arima",
+        model: Union[str, Type[TimeSeriesModel]] = "arima",
         robust: bool = False,
         model_kwargs: Optional[Dict[str, Any]] = None,
         stl_kwargs: Optional[Dict[str, Any]] = None,
@@ -75,7 +76,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
                     model_kwargs = {"trend": "add"}
             else:
                 raise ValueError(f"Not a valid option for model: {model}")
-        elif isinstance(model, TimeSeriesModel):
+        elif isinstance(model, type) and issubclass(model, TimeSeriesModel):
             self.model = model
         else:
             raise ValueError("Model should be a string or TimeSeriesModel")
@@ -201,7 +202,7 @@ class STLTransform(ReversiblePerSegmentWrapper):
         self,
         in_column: str,
         period: int,
-        model: Union[str, TimeSeriesModel] = "arima",
+        model: Union[str, Type[TimeSeriesModel]] = "arima",
         robust: bool = False,
         model_kwargs: Optional[Dict[str, Any]] = None,
         stl_kwargs: Optional[Dict[str, Any]] = None,
