@@ -27,9 +27,9 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
 
     See Also
     --------
-    Pipeline -> etna.pipeline.Pipeline:
+    etna.pipeline.Pipeline:
         Pipeline that forecasts values in one iteration using a model.
-    AutoRegressivePipeline -> etna.pipeline.AutoRegressivePipeline:
+    etna.pipeline.AutoRegressivePipeline:
         Pipeline that forecasts values in several iterations using a model.
 
     Examples
