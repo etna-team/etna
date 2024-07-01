@@ -104,8 +104,16 @@ class TestTransformTrain:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
@@ -513,8 +521,16 @@ class TestTransformTrain:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
@@ -610,7 +626,11 @@ class TestTransformTrain:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}},),
+            (
+                AddConstTransform(in_column="target", value=1, inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (
                 BinaryOperationTransform(
                     left_column="positive", right_column="target", operator="+", out_column="target"
@@ -663,24 +683,56 @@ class TestTransformTrain:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}},),
-            (MADTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}},),
-            (MaxTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}},),
-            (MeanTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}},),
-            (MedianTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}},),
+            (
+                DifferencingTransform(in_column="target", inplace=True),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                MADTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
+            (
+                MaxTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
+            (
+                MeanTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
+            (
+                MedianTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             (
                 MinMaxDifferenceTransform(in_column="target", window=14, out_column="res"),
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (MinTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}},),
+            (
+                MinTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             (
                 QuantileTransform(in_column="target", quantile=0.9, window=14, out_column="res"),
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (StdTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}},),
-            (SumTransform(in_column="target", window=14, out_column="res"), "regular_ts", {"create": {"res"}},),
+            (
+                StdTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
+            (
+                SumTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {"create": {"res"}},
+            ),
             (
                 BoxCoxTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
                 "positive_ts",
@@ -979,7 +1031,12 @@ class TestTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target",), "regular_ts",),
+            (
+                ChangePointsTrendTransform(
+                    in_column="target",
+                ),
+                "regular_ts",
+            ),
             (ChangePointsLevelTransform(in_column="target"), "regular_ts"),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
@@ -1063,7 +1120,10 @@ class TestTransformTrainSubsetSegments:
             ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
             (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift"),
-            (LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False), "regular_ts",),
+            (
+                LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
+                "regular_ts",
+            ),
             (
                 LambdaTransform(
                     in_column="target",
@@ -1114,7 +1174,9 @@ class TestTransformTrainSubsetSegments:
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False,
+                    in_column="regressor_exog",
+                    distribution_column="target",
+                    inplace=False,
                 ),
                 "ts_to_resample",
             ),
@@ -1139,7 +1201,10 @@ class TestTransformTrainSubsetSegments:
             (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
@@ -1167,7 +1232,10 @@ class TestTransformTrainSubsetSegments:
             (SpecialDaysTransform(), "regular_ts"),
             (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp"),
             (TimeFlagsTransform(), "regular_ts"),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -1217,10 +1285,22 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts",),
-            (ChangePointsTrendTransform(in_column="positive"), "ts_with_exog",),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts",),
-            (ChangePointsLevelTransform(in_column="positive"), "ts_with_exog",),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsTrendTransform(in_column="positive"),
+                "ts_with_exog",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="positive"),
+                "ts_with_exog",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (LinearTrendTransform(in_column="positive"), "ts_with_exog"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
@@ -1307,8 +1387,14 @@ class TestTransformFutureSubsetSegments:
                 "ts_with_exog",
             ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift",),
-            (LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False), "regular_ts",),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+            ),
+            (
+                LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
+                "regular_ts",
+            ),
             (
                 LambdaTransform(
                     in_column="target",
@@ -1383,7 +1469,9 @@ class TestTransformFutureSubsetSegments:
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False,
+                    in_column="regressor_exog",
+                    distribution_column="target",
+                    inplace=False,
                 ),
                 "ts_to_resample",
             ),
@@ -1408,7 +1496,10 @@ class TestTransformFutureSubsetSegments:
             (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
@@ -1434,9 +1525,15 @@ class TestTransformFutureSubsetSegments:
                 "ts_with_external_timestamp_one_month",
             ),
             (SpecialDaysTransform(), "regular_ts"),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (TimeFlagsTransform(), "regular_ts"),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -1755,8 +1852,14 @@ class TestTransformTrainNewSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts",),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts",),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
@@ -1798,7 +1901,10 @@ class TestTransformTrainNewSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill",),
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -2026,7 +2132,11 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 MaxAbsScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2037,7 +2147,11 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MinMaxScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 MinMaxScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2048,7 +2162,11 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 RobustScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2059,7 +2177,11 @@ class TestTransformFutureNewSegments:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 StandardScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2159,8 +2281,14 @@ class TestTransformFutureNewSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts",),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts",),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
@@ -2209,7 +2337,10 @@ class TestTransformFutureNewSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill",),
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -2219,7 +2350,10 @@ class TestTransformFutureNewSegments:
             (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -2263,8 +2397,16 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
@@ -2680,10 +2822,26 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {},),
-            (ChangePointsTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {},),
-            (ChangePointsLevelTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsTrendTransform(in_column="positive"),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="positive"),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {}),
             (LinearTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {}),
@@ -2906,7 +3064,11 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 MaxAbsScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2928,7 +3090,11 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MinMaxScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 MinMaxScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2950,7 +3116,11 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 RobustScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2972,7 +3142,11 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {"create": {"res_target"}},
             ),
-            (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 StandardScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",

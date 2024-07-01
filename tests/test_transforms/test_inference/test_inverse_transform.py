@@ -118,8 +118,16 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
@@ -172,7 +180,11 @@ class TestInverseTransformTrain:
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
-            (OneHotEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {},),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -206,7 +218,10 @@ class TestInverseTransformTrain:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True,
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
                 ),
                 "ts_with_exog",
                 {"create": {"positive", "weekday", "year"}},
@@ -218,7 +233,11 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {"create": {"positive", "weekday", "year"}},
             ),
-            (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog", {},),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
             (
                 TreeFeatureSelectionTransform(
                     model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
@@ -227,7 +246,11 @@ class TestInverseTransformTrain:
                 {"create": {"year", "month", "monthday"}},
             ),
             # math
-            (AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
                 BinaryOperationTransform(
@@ -243,8 +266,16 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {},
             ),
-            (LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"), "regular_ts", {},),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift", {},),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
@@ -264,15 +295,27 @@ class TestInverseTransformTrain:
             (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
-            (DifferencingTransform(in_column="target", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
             (MADTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MaxTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MeanTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MedianTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"), "regular_ts", {},),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MinTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"), "regular_ts", {},),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (StdTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (SumTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (
@@ -285,7 +328,11 @@ class TestInverseTransformTrain:
                 "positive_ts",
                 {"change": {"target"}},
             ),
-            (BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "positive_ts", {},),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {"change": {"target"}}),
             (
                 MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
@@ -379,7 +426,11 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
             # missing_values
             (
@@ -419,9 +470,21 @@ class TestInverseTransformTrain:
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (MADOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             # timestamp
-            (DateFlagsTransform(out_column="res"), "regular_ts", {},),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts", {},),
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -451,9 +514,21 @@ class TestInverseTransformTrain:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (TimeFlagsTransform(out_column="res"), "regular_ts", {},),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -504,8 +579,16 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
@@ -558,7 +641,11 @@ class TestInverseTransformTrain:
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
-            (OneHotEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {},),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -592,7 +679,10 @@ class TestInverseTransformTrain:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True,
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
                 ),
                 "ts_with_exog",
                 {"create": {"positive", "weekday", "year"}},
@@ -604,7 +694,11 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {"create": {"positive", "weekday", "year"}},
             ),
-            (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog", {},),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
             (
                 TreeFeatureSelectionTransform(
                     model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
@@ -613,7 +707,11 @@ class TestInverseTransformTrain:
                 {"create": {"year", "month", "monthday"}},
             ),
             # math
-            (AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
                 BinaryOperationTransform(
@@ -629,8 +727,16 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {},
             ),
-            (LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"), "regular_ts", {},),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift", {},),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
@@ -650,15 +756,27 @@ class TestInverseTransformTrain:
             (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
-            (DifferencingTransform(in_column="target", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {"change": {"target"}}),
             (MADTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MaxTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MeanTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MedianTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"), "regular_ts", {},),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MinTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"), "regular_ts", {},),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (StdTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (SumTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (
@@ -671,7 +789,11 @@ class TestInverseTransformTrain:
                 "positive_ts",
                 {"change": {"target"}},
             ),
-            (BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "positive_ts", {},),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {"change": {"target"}}),
             (
                 MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
@@ -765,7 +887,11 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
             # missing_values
             (TimeSeriesImputerTransform(in_column="target", strategy="constant"), "ts_to_fill", {"change": {"target"}}),
@@ -793,8 +919,16 @@ class TestInverseTransformTrain:
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (MADOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             # timestamp
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts", {},),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -820,8 +954,16 @@ class TestInverseTransformTrain:
                 "ts_with_external_timestamp_one_month",
                 {},
             ),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -928,8 +1070,18 @@ class TestInverseTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target",), "regular_ts",),
-            (ChangePointsLevelTransform(in_column="target",), "regular_ts",),
+            (
+                ChangePointsTrendTransform(
+                    in_column="target",
+                ),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(
+                    in_column="target",
+                ),
+                "regular_ts",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
@@ -990,7 +1142,9 @@ class TestInverseTransformTrainSubsetSegments:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, fast_redundancy=False,
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    fast_redundancy=False,
                 ),
                 "ts_with_exog",
             ),
@@ -1011,8 +1165,14 @@ class TestInverseTransformTrainSubsetSegments:
                 "ts_with_exog",
             ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift",),
-            (LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False), "regular_ts",),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+            ),
+            (
+                LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
+                "regular_ts",
+            ),
             (
                 LambdaTransform(
                     in_column="target",
@@ -1063,7 +1223,9 @@ class TestInverseTransformTrainSubsetSegments:
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False,
+                    in_column="regressor_exog",
+                    distribution_column="target",
+                    inplace=False,
                 ),
                 "ts_to_resample",
             ),
@@ -1088,7 +1250,10 @@ class TestInverseTransformTrainSubsetSegments:
             (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
@@ -1114,9 +1279,15 @@ class TestInverseTransformTrainSubsetSegments:
                 "ts_with_external_timestamp_one_month",
             ),
             (SpecialDaysTransform(), "regular_ts"),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (TimeFlagsTransform(), "regular_ts"),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -1168,10 +1339,30 @@ class TestInverseTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target",), "regular_ts",),
-            (ChangePointsTrendTransform(in_column="positive",), "ts_with_exog",),
-            (ChangePointsLevelTransform(in_column="target",), "regular_ts",),
-            (ChangePointsLevelTransform(in_column="positive",), "ts_with_exog",),
+            (
+                ChangePointsTrendTransform(
+                    in_column="target",
+                ),
+                "regular_ts",
+            ),
+            (
+                ChangePointsTrendTransform(
+                    in_column="positive",
+                ),
+                "ts_with_exog",
+            ),
+            (
+                ChangePointsLevelTransform(
+                    in_column="target",
+                ),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(
+                    in_column="positive",
+                ),
+                "ts_with_exog",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (LinearTrendTransform(in_column="positive"), "ts_with_exog"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
@@ -1258,8 +1449,14 @@ class TestInverseTransformFutureSubsetSegments:
                 "ts_with_exog",
             ),
             (LagTransform(in_column="target", lags=[1, 2, 3]), "regular_ts"),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift",),
-            (LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False), "regular_ts",),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+            ),
+            (
+                LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False),
+                "regular_ts",
+            ),
             (
                 LambdaTransform(
                     in_column="target",
@@ -1334,7 +1531,9 @@ class TestInverseTransformFutureSubsetSegments:
             # missing_values
             (
                 ResampleWithDistributionTransform(
-                    in_column="regressor_exog", distribution_column="target", inplace=False,
+                    in_column="regressor_exog",
+                    distribution_column="target",
+                    inplace=False,
                 ),
                 "ts_to_resample",
             ),
@@ -1359,7 +1558,10 @@ class TestInverseTransformFutureSubsetSegments:
             (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (FourierTransform(period=7, order=2, out_column="res"), "regular_ts"),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
@@ -1385,9 +1587,15 @@ class TestInverseTransformFutureSubsetSegments:
                 "ts_with_external_timestamp_one_month",
             ),
             (SpecialDaysTransform(), "regular_ts"),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (TimeFlagsTransform(), "regular_ts"),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog"),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -1478,7 +1686,11 @@ class TestInverseTransformTrainNewSegments:
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
-            (OneHotEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {},),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
             (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
@@ -1522,7 +1734,11 @@ class TestInverseTransformTrainNewSegments:
                 "ts_with_exog",
                 {"create": {"positive", "weekday", "year"}},
             ),
-            (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog", {},),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
             (
                 TreeFeatureSelectionTransform(
                     model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
@@ -1531,7 +1747,11 @@ class TestInverseTransformTrainNewSegments:
                 {"create": {"month", "year", "weekday"}},
             ),
             # math
-            (AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
                 BinaryOperationTransform(
@@ -1547,8 +1767,16 @@ class TestInverseTransformTrainNewSegments:
                 "ts_with_exog",
                 {},
             ),
-            (LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"), "regular_ts", {},),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift", {},),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
@@ -1568,17 +1796,33 @@ class TestInverseTransformTrainNewSegments:
             (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
-            (DifferencingTransform(in_column="target", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MADTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MaxTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MeanTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MedianTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"), "regular_ts", {},),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MinTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"), "regular_ts", {},),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (StdTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (SumTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "positive_ts", {},),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {"change": {"target"}}),
             (
                 MaxAbsScalerTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
@@ -1620,12 +1864,28 @@ class TestInverseTransformTrainNewSegments:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
             # timestamp
-            (DateFlagsTransform(out_column="res"), "regular_ts", {},),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts", {},),
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -1654,8 +1914,16 @@ class TestInverseTransformTrainNewSegments:
                 "ts_with_external_timestamp_one_month",
                 {},
             ),
-            (TimeFlagsTransform(out_column="res"), "regular_ts", {},),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -1681,8 +1949,14 @@ class TestInverseTransformTrainNewSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts",),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts",),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
@@ -1724,7 +1998,10 @@ class TestInverseTransformTrainNewSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill",),
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -1734,7 +2011,10 @@ class TestInverseTransformTrainNewSegments:
             (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_inverse_transform_train_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -1826,7 +2106,11 @@ class TestInverseTransformFutureNewSegments:
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
-            (OneHotEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {},),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
             (
@@ -1848,9 +2132,17 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_exog",
                 {},
             ),
-            (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog", {},),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
             # math
-            (AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
@@ -1867,8 +2159,16 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_exog",
                 {},
             ),
-            (LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"), "regular_ts", {},),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift", {},),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
@@ -1905,17 +2205,33 @@ class TestInverseTransformFutureNewSegments:
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {}),
             (LogTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
-            (DifferencingTransform(in_column="target", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MADTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (MaxTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (MeanTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (MedianTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
-            (MinMaxDifferenceTransform(in_column="target", window=14, out_column="res"), "regular_ts", {},),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MinTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
-            (QuantileTransform(in_column="target", quantile=0.9, window=14, out_column="res"), "regular_ts", {},),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=14, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (StdTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (SumTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
-            (BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "positive_ts", {},),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {}),
             (
                 BoxCoxTransform(in_column="positive", mode="macro", inplace=True),
@@ -1927,7 +2243,11 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
-            (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 MaxAbsScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -1938,7 +2258,11 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
-            (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MinMaxScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 MinMaxScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -1949,7 +2273,11 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
-            (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 RobustScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -1960,13 +2288,21 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
                 {},
             ),
-            (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 StandardScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
-            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {}),
             (
                 YeoJohnsonTransform(in_column="positive", mode="macro", inplace=True),
@@ -1974,9 +2310,21 @@ class TestInverseTransformFutureNewSegments:
                 {"change": {"positive"}},
             ),
             # timestamp
-            (DateFlagsTransform(out_column="res"), "regular_ts", {},),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts", {},),
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -2005,8 +2353,16 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_external_timestamp_one_month",
                 {},
             ),
-            (TimeFlagsTransform(out_column="res"), "regular_ts", {},),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -2032,8 +2388,14 @@ class TestInverseTransformFutureNewSegments:
                 ),
                 "regular_ts",
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts",),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts",),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts"),
             (TheilSenTrendTransform(in_column="target"), "regular_ts"),
             (STLTransform(in_column="target", period=7), "regular_ts"),
@@ -2082,7 +2444,10 @@ class TestInverseTransformFutureNewSegments:
                 ),
                 "ts_to_resample",
             ),
-            (TimeSeriesImputerTransform(in_column="target"), "ts_to_fill",),
+            (
+                TimeSeriesImputerTransform(in_column="target"),
+                "ts_to_fill",
+            ),
             # outliers
             (DensityOutliersTransform(in_column="target"), "ts_with_outliers"),
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers"),
@@ -2092,7 +2457,10 @@ class TestInverseTransformFutureNewSegments:
             (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp",),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+            ),
         ],
     )
     def test_inverse_transform_future_new_segments_not_implemented(self, transform, dataset_name, request):
@@ -2181,7 +2549,8 @@ class TestInverseTransformFutureWithTarget:
             flat_transformed_test_df, flat_inverse_transformed_test_df
         )
         assert_frame_equal(
-            flat_test_df[list(changed_columns)], flat_inverse_transformed_test_df[list(changed_columns)],
+            flat_test_df[list(changed_columns)],
+            flat_inverse_transformed_test_df[list(changed_columns)],
         )
 
     @pytest.mark.parametrize(
@@ -2197,8 +2566,16 @@ class TestInverseTransformFutureWithTarget:
                 "regular_ts",
                 {},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {"change": {"target"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {"change": {"target"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {"change": {"target"}}),
             (STLTransform(in_column="target", period=7), "regular_ts", {"change": {"target"}}),
@@ -2251,7 +2628,11 @@ class TestInverseTransformFutureWithTarget:
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
-            (OneHotEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {},),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -2285,7 +2666,10 @@ class TestInverseTransformFutureWithTarget:
             ),
             (
                 MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True,
+                    relevance_table=StatisticsRelevanceTable(),
+                    top_k=2,
+                    return_features=True,
+                    fast_redundancy=True,
                 ),
                 "ts_with_exog",
                 {"create": {"positive", "weekday", "year"}},
@@ -2297,7 +2681,11 @@ class TestInverseTransformFutureWithTarget:
                 "ts_with_exog",
                 {"create": {"positive", "weekday", "year"}},
             ),
-            (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog", {},),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
             (
                 TreeFeatureSelectionTransform(
                     model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
@@ -2306,7 +2694,11 @@ class TestInverseTransformFutureWithTarget:
                 {"create": {"year", "month", "weekday"}},
             ),
             # math
-            (AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {"change": {"target"}}),
             (
                 BinaryOperationTransform(
@@ -2322,8 +2714,16 @@ class TestInverseTransformFutureWithTarget:
                 "ts_with_exog",
                 {},
             ),
-            (LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"), "regular_ts", {},),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift", {},),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
@@ -2343,14 +2743,26 @@ class TestInverseTransformFutureWithTarget:
             (LimitTransform(in_column="target", lower_bound=-50, upper_bound=50), "regular_ts", {"change": {"target"}}),
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {"change": {"target"}}),
-            (DifferencingTransform(in_column="target", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MADTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MaxTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MeanTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (MedianTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"), "regular_ts", {},),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MinTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
-            (QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"), "regular_ts", {},),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=7, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (StdTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (SumTransform(in_column="target", window=7, out_column="res"), "regular_ts", {}),
             (
@@ -2363,7 +2775,11 @@ class TestInverseTransformFutureWithTarget:
                 "positive_ts",
                 {"change": {"target"}},
             ),
-            (BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "positive_ts", {},),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {"change": {"target"}}),
             (
                 MaxAbsScalerTransform(in_column="target", mode="per-segment", inplace=False, out_column="res"),
@@ -2457,7 +2873,11 @@ class TestInverseTransformFutureWithTarget:
                 "regular_ts",
                 {"change": {"target"}},
             ),
-            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {"change": {"target"}}),
             # missing_values
             (
@@ -2482,9 +2902,21 @@ class TestInverseTransformFutureWithTarget:
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {}),
             (MADOutlierTransform(in_column="target"), "ts_with_outliers", {}),
             # timestamp
-            (DateFlagsTransform(out_column="res"), "regular_ts", {},),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts", {},),
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -2514,9 +2946,21 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (TimeFlagsTransform(out_column="res"), "regular_ts", {},),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),
@@ -2531,7 +2975,9 @@ class TestInverseTransformFutureWithTarget:
 
     @pytest.mark.parametrize(
         "transform, dataset_name, expected_changes",
-        [(DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),],
+        [
+            (DifferencingTransform(in_column="target", inplace=True), "regular_ts", {}),
+        ],
     )
     def test_inverse_transform_future_with_target_fail_difference(
         self, transform, dataset_name, expected_changes, request
@@ -2613,10 +3059,26 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
-            (ChangePointsTrendTransform(in_column="target"), "regular_ts", {},),
-            (ChangePointsTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}},),
-            (ChangePointsLevelTransform(in_column="target"), "regular_ts", {},),
-            (ChangePointsLevelTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}},),
+            (
+                ChangePointsTrendTransform(in_column="target"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsTrendTransform(in_column="positive"),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="target"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ChangePointsLevelTransform(in_column="positive"),
+                "ts_with_exog",
+                {"change": {"positive"}},
+            ),
             (LinearTrendTransform(in_column="target"), "regular_ts", {}),
             (LinearTrendTransform(in_column="positive"), "ts_with_exog", {"change": {"positive"}}),
             (TheilSenTrendTransform(in_column="target"), "regular_ts", {}),
@@ -2673,7 +3135,11 @@ class TestInverseTransformFutureWithoutTarget:
             ),
             # encoders
             (LabelEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {}),
-            (OneHotEncoderTransform(in_column="weekday", out_column="res"), "ts_with_exog", {},),
+            (
+                OneHotEncoderTransform(in_column="weekday", out_column="res"),
+                "ts_with_exog",
+                {},
+            ),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -2697,9 +3163,17 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_with_exog",
                 {},
             ),
-            (TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2), "ts_with_exog", {},),
+            (
+                TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
+                "ts_with_exog",
+                {},
+            ),
             # math
-            (AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                AddConstTransform(in_column="target", value=1, inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (AddConstTransform(in_column="target", value=1, inplace=True), "regular_ts", {}),
             (AddConstTransform(in_column="positive", value=1, inplace=True), "ts_with_exog", {"change": {"positive"}}),
             (
@@ -2716,8 +3190,16 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_with_exog",
                 {},
             ),
-            (LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"), "regular_ts", {},),
-            (ExogShiftTransform(lag="auto", horizon=7), "ts_with_exog_to_shift", {},),
+            (
+                LagTransform(in_column="target", lags=[1, 2, 3], out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                ExogShiftTransform(lag="auto", horizon=7),
+                "ts_with_exog_to_shift",
+                {},
+            ),
             (
                 LambdaTransform(in_column="target", transform_func=lambda x: x + 1, inplace=False, out_column="res"),
                 "regular_ts",
@@ -2754,14 +3236,26 @@ class TestInverseTransformFutureWithoutTarget:
             (LogTransform(in_column="target", inplace=False, out_column="res"), "positive_ts", {}),
             (LogTransform(in_column="target", inplace=True), "positive_ts", {}),
             (LogTransform(in_column="positive", inplace=True), "ts_with_exog", {"change": {"positive"}}),
-            (DifferencingTransform(in_column="target", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                DifferencingTransform(in_column="target", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MADTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (MaxTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (MeanTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (MedianTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
-            (MinMaxDifferenceTransform(in_column="target", window=14, out_column="res"), "regular_ts", {},),
+            (
+                MinMaxDifferenceTransform(in_column="target", window=14, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (MinTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
-            (QuantileTransform(in_column="target", quantile=0.9, window=14, out_column="res"), "regular_ts", {},),
+            (
+                QuantileTransform(in_column="target", quantile=0.9, window=14, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (StdTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (SumTransform(in_column="target", window=14, out_column="res"), "regular_ts", {}),
             (
@@ -2775,7 +3269,11 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
-            (BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "positive_ts", {},),
+            (
+                BoxCoxTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "positive_ts",
+                {},
+            ),
             (BoxCoxTransform(in_column="target", mode="macro", inplace=True), "positive_ts", {}),
             (
                 BoxCoxTransform(in_column="positive", mode="macro", inplace=True),
@@ -2798,7 +3296,11 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
-            (MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MaxAbsScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 MaxAbsScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2821,7 +3323,11 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
-            (MinMaxScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                MinMaxScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 # setting clip=False is important
                 MinMaxScalerTransform(in_column="positive", mode="macro", clip=False, inplace=True),
@@ -2844,7 +3350,11 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
-            (RobustScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                RobustScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 RobustScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2866,7 +3376,11 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
-            (StandardScalerTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {},),
+            (
+                StandardScalerTransform(in_column="target", mode="macro", inplace=True),
+                "regular_ts",
+                {},
+            ),
             (
                 StandardScalerTransform(in_column="positive", mode="macro", inplace=True),
                 "ts_with_exog",
@@ -2883,7 +3397,11 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_with_exog",
                 {"change": {"positive"}},
             ),
-            (YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"), "regular_ts", {},),
+            (
+                YeoJohnsonTransform(in_column="target", mode="macro", inplace=False, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (YeoJohnsonTransform(in_column="target", mode="macro", inplace=True), "regular_ts", {}),
             (
                 YeoJohnsonTransform(in_column="positive", mode="macro", inplace=True),
@@ -2913,9 +3431,21 @@ class TestInverseTransformFutureWithoutTarget:
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {}),
             (MADOutlierTransform(in_column="target"), "ts_with_outliers", {}),
             # timestamp
-            (DateFlagsTransform(out_column="res"), "regular_ts", {},),
-            (DateFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (FourierTransform(period=7, order=2, out_column="res"), "regular_ts", {},),
+            (
+                DateFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                DateFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                FourierTransform(period=7, order=2, out_column="res"),
+                "regular_ts",
+                {},
+            ),
             (
                 FourierTransform(period=7, order=2, out_column="res", in_column="external_timestamp"),
                 "ts_with_external_timestamp",
@@ -2945,9 +3475,21 @@ class TestInverseTransformFutureWithoutTarget:
                 {},
             ),
             (SpecialDaysTransform(), "regular_ts", {}),
-            (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp", {},),
-            (TimeFlagsTransform(out_column="res"), "regular_ts", {},),
-            (TimeFlagsTransform(out_column="res", in_column="external_timestamp"), "ts_with_external_timestamp", {},),
+            (
+                SpecialDaysTransform(in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res"),
+                "regular_ts",
+                {},
+            ),
+            (
+                TimeFlagsTransform(out_column="res", in_column="external_timestamp"),
+                "ts_with_external_timestamp",
+                {},
+            ),
             (EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1), "ts_with_binary_exog", {}),
             (
                 EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1, mode="distance"),

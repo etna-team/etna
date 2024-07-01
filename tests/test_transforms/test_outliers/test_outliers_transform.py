@@ -35,7 +35,15 @@ from tests.utils import select_segments_subset
 
 def insert_column(ts, info_col, timestamp, segment):
     return ts.add_columns_from_pandas(
-        TSDataset.to_dataset(pd.DataFrame({"is_holiday": info_col, "timestamp": timestamp, "segment": segment,}))
+        TSDataset.to_dataset(
+            pd.DataFrame(
+                {
+                    "is_holiday": info_col,
+                    "timestamp": timestamp,
+                    "segment": segment,
+                }
+            )
+        )
     )
 
 
@@ -88,7 +96,10 @@ def outliers_solid_tsds():
     df_exog = df.copy()
     df_exog.columns = ["timestamp", "regressor_1", "segment"]
     ts = TSDataset(
-        df=TSDataset.to_dataset(df).iloc[:-10], df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all",
+        df=TSDataset.to_dataset(df).iloc[:-10],
+        df_exog=TSDataset.to_dataset(df_exog),
+        freq="D",
+        known_future="all",
     )
     return ts
 

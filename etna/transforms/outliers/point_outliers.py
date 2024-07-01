@@ -39,7 +39,11 @@ class MedianOutliersTransform(OutliersTransform):
     """
 
     def __init__(
-        self, in_column: str, window_size: int = 10, alpha: float = 3, ignore_flag_column: Optional[str] = None,
+        self,
+        in_column: str,
+        window_size: int = 10,
+        alpha: float = 3,
+        ignore_flag_column: Optional[str] = None,
     ):
         """Create instance of MedianOutliersTransform.
 
