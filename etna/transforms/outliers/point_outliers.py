@@ -538,7 +538,7 @@ class MADOutlierTransform(OutliersTransform):
         super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
 
     def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
-        """Call :py:func:`~etna.analysis.outliers.rolling_statistics.get_anomalies_iqr` function with self parameters.
+        """Call :py:func:`~etna.analysis.outliers.rolling_statistics.get_anomalies_mad` function with self parameters.
 
         Parameters
         ----------
