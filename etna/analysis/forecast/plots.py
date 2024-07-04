@@ -124,11 +124,6 @@ def plot_forecast(
     if prediction_intervals:
         prediction_intervals_names = _select_prediction_intervals_names(forecast_results, quantiles)
 
-    if train_ts is not None:
-        train_ts.df.sort_values(by="timestamp", inplace=True)
-    if test_ts is not None:
-        test_ts.df.sort_values(by="timestamp", inplace=True)
-
     for i, segment in enumerate(segments):
         if train_ts is not None:
             segment_train_df = train_ts[:, segment, :][segment]
@@ -156,7 +151,7 @@ def plot_forecast(
         for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
-            segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
+            segment_forecast_df = forecast[:, segment, :][segment]
             line = ax[i].plot(
                 segment_forecast_df.index.values,
                 segment_forecast_df.target.values,
@@ -914,9 +909,6 @@ def plot_forecast_decomposition(
 
     _, ax = _prepare_axes(num_plots=num_plots, columns_num=columns_num, figsize=figsize, set_grid=show_grid)
 
-    if test_ts is not None:
-        test_ts.df.sort_values(by="timestamp", inplace=True)
-
     alpha = 0.5 if components_mode == ComponentsMode.joint else 1.0
     ax_array = np.asarray(ax).reshape(-1, columns_num).T.ravel()
 
@@ -927,7 +919,7 @@ def plot_forecast_decomposition(
         else:
             segment_test_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
-        segment_forecast_df = forecast_ts[:, segment, :][segment].sort_values(by="timestamp")
+        segment_forecast_df = forecast_ts[:, segment, :][segment]
 
         ax_array[i].set_title(segment)
 
