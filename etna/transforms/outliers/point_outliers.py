@@ -587,4 +587,5 @@ __all__ = [
     "PredictionIntervalOutliersTransform",
     "IForestOutlierTransform",
     "IQROutlierTransform",
+    "MADOutlierTransform",
 ]
