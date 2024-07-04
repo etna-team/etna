@@ -505,7 +505,7 @@ class MADOutlierTransform(OutliersTransform):
         period: Optional[int] = None,
         stl_params: Optional[Dict[str, Any]] = None,
     ):
-        """Create instance of ``PredictionIntervalOutliersTransform``.
+        """Create instance of ``MADOutlierTransform``.
 
         Parameters
         ----------
