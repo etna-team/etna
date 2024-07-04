@@ -367,7 +367,11 @@ def test_fit_transform_with_nans(transform, ts_diff_endings):
 
 @pytest.mark.parametrize(
     "transform",
-    (IForestOutlierTransform(in_column="target", ignore_missing=False), IQROutlierTransform(in_column="target")),
+    (
+        IForestOutlierTransform(in_column="target", ignore_missing=False),
+        IQROutlierTransform(in_column="target"),
+        MADOutlierTransform(in_column="target"),
+    ),
 )
 def test_fit_transform_with_nans_error(transform, ts_diff_endings):
     with pytest.raises(ValueError):
