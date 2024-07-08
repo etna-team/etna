@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `num_workers` parameter to `TS2VecEmbeddingModel` ([#396](https://github.com/etna-team/etna/pull/396)) 
 - Add `get_anomalies_mad` function for anomaly detection ([#398](https://github.com/etna-team/etna/pull/398))
 - Add `TSDataset.features` property to get list of all features in a dataset ([#405](https://github.com/etna-team/etna/pull/405))
-- 
+- Add `MeanEncoderTransform` ([#413](https://github.com/etna-team/etna/pull/413))
 
 ### Changed
 - Allow to change `device`, `batch_size` and `num_workers` of embedding models ([#396](https://github.com/etna-team/etna/pull/396))

@@ -17,7 +17,7 @@ from tests.utils import select_segments_subset
 @pytest.fixture
 def category_ts() -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
-    df["target"] = [1, 2, 8, 4, 5, np.NaN] + [6, 7, 8, 9, 10, 11]
+    df["target"] = [1, 2, 8, 4, np.NaN, 5] + [6, 7, 8, 9, 10, 11]
 
     df_exog = generate_ar_df(start_time="2001-01-01", periods=8, n_segments=2)
     df_exog.rename(columns={"target": "regressor"}, inplace=True)
@@ -31,7 +31,7 @@ def category_ts() -> TSDataset:
 def expected_micro_category_ts(category_ts) -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
-    df["mean_encoded_regressor"] = [4, 4, 4, 2.5, 6, np.NaN] + [8.5, 8.5, 7.25, 7.5, 7.875, 8.5]
+    df["mean_encoded_regressor"] = [4, 4, 4, 2.5, np.NaN, 3] + [8.5, 8.5, 7.25, 7.5, 7.875, 8.5]
 
     ts = TSDataset(df, freq="D")
     return ts
@@ -41,17 +41,47 @@ def expected_micro_category_ts(category_ts) -> TSDataset:
 def expected_micro_global_mean_ts(category_ts) -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
-    df["mean_encoded_regressor"] = [4, 4, 4, 2.5, 4, np.NaN] + [8.5, 8.5, 7.25, 7.5, 7.875, 8.5]
+    df["mean_encoded_regressor"] = [4, 4, 1.5, 2.5, 3.75, 3] + [8.5, 8.5, 7.25, 7.5, 7.875, 8]
 
     ts = TSDataset(df, freq="D")
     return ts
 
 
 @pytest.fixture
-def expected_micro_make_future_ts(category_ts) -> TSDataset:
+def expected_micro_category_make_future_ts(category_ts) -> TSDataset:
     df = generate_ar_df(start_time="2001-01-07", periods=2, n_segments=2)
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
-    df["mean_encoded_regressor"] = [4, 2.5] + [7.875, 8.5]
+    df["mean_encoded_regressor"] = [4, 2.5] + [8.25, 8.5]
+
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def expected_macro_category_ts(category_ts) -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
+    df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
+    df["mean_encoded_regressor"] = [6.45, 6.45, 6.45, 5.36, np.NaN, 5.15] + [6.45, 6.45, 4.48, 5.36, 5.74, 7.22]
+
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def expected_macro_global_mean_ts(category_ts) -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
+    df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
+    df["mean_encoded_regressor"] = [6.45, 6.45, 4, 5.36, np.NaN, 5.15] + [6.45, 6.45, 4.48, 5.36, 5.74, 6.1]
+
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def expected_macro_category_make_future_ts(category_ts) -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-07", periods=2, n_segments=2)
+    df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
+    df["mean_encoded_regressor"] = [6.45, 6.33] + [6.33, 6.45]
 
     ts = TSDataset(df, freq="D")
     return ts
@@ -116,7 +146,7 @@ def test_pipeline(category_ts, mode, handle_missing, smoothing):
         out_column="mean_encoded_regressor",
     )
     filter_transform = FilterFeaturesTransform(exclude=["regressor"])
-    pipeline = Pipeline(model=LinearMultiSegmentModel(), transforms=[mean_encoder, filter_transform], horizon=2)
+    pipeline = Pipeline(model=LinearMultiSegmentModel(), transforms=[mean_encoder, filter_transform], horizon=1)
     pipeline.backtest(category_ts, n_folds=1, metrics=[MSE()])
 
 
@@ -160,14 +190,54 @@ def test_transform_micro_global_mean_expected(category_ts, expected_micro_global
     )
 
 
-def test_transform_micro_make_future_expected(category_ts, expected_micro_make_future_ts):
+def test_transform_micro_make_future_expected(category_ts, expected_micro_category_make_future_ts):
     mean_encoder = MeanEncoderTransform(
         in_column="regressor", mode="micro", handle_missing="category", smoothing=1, out_column="mean_encoded_regressor"
     )
     mean_encoder.fit_transform(category_ts)
     future = category_ts.make_future(future_steps=2, transforms=[mean_encoder])
 
-    assert_frame_equal(future.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_make_future_ts.df)
+    assert_frame_equal(
+        future.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_category_make_future_ts.df
+    )
+
+
+def test_transform_macro_category_expected(category_ts, expected_macro_category_ts):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor", mode="macro", handle_missing="category", smoothing=1, out_column="mean_encoded_regressor"
+    )
+    mean_encoder.fit_transform(category_ts)
+    assert_frame_equal(
+        category_ts.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_macro_category_ts.df, atol=0.01
+    )
+
+
+def test_transform_macro_global_mean_expected(category_ts, expected_macro_global_mean_ts):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor",
+        mode="macro",
+        handle_missing="global_mean",
+        smoothing=1,
+        out_column="mean_encoded_regressor",
+    )
+    mean_encoder.fit_transform(category_ts)
+    assert_frame_equal(
+        category_ts.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_macro_global_mean_ts.df, atol=0.02
+    )
+
+
+def test_transform_macro_make_future_expected(category_ts, expected_macro_category_make_future_ts):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor", mode="macro", handle_missing="category", smoothing=1, out_column="mean_encoded_regressor"
+    )
+    mean_encoder.fit_transform(category_ts)
+    future = category_ts.make_future(future_steps=2, transforms=[mean_encoder])
+
+    assert_frame_equal(
+        future.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
+        expected_macro_category_make_future_ts.df,
+        atol=0.01,
+    )
 
 
 def test_save_load(category_ts):

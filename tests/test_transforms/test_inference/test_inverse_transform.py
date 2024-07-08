@@ -1129,6 +1129,7 @@ class TestInverseTransformTrainSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
@@ -1298,18 +1299,6 @@ class TestInverseTransformTrainSubsetSegments:
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_train_subset_segments(ts, transform, segments=["segment_2"])
 
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
-        ],
-    )
-    def test_inverse_transform_train_subset_segments_fails(self, transform, dataset_name, request):
-        # This transform can transform dataset during fit phase only once.
-        ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(AssertionError):
-            self._test_inverse_transform_train_subset_segments(ts, transform, segments=["segment_2"])
-
 
 class TestInverseTransformFutureSubsetSegments:
     """Test inverse transform on future part of subset of segments.
@@ -1425,6 +1414,7 @@ class TestInverseTransformFutureSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
@@ -1617,18 +1607,6 @@ class TestInverseTransformFutureSubsetSegments:
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_future_subset_segments(ts, transform, segments=["segment_2"])
 
-    @pytest.mark.parametrize(
-        "transform, dataset_name",
-        [
-            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
-        ],
-    )
-    def test_inverse_transform_future_subset_segments_fails(self, transform, dataset_name, request):
-        # This transform can transform during predict phase only after transform in fit phase.
-        ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(AssertionError):
-            self._test_inverse_transform_future_subset_segments(ts, transform, segments=["segment_2"])
-
 
 class TestInverseTransformTrainNewSegments:
     """Test inverse transform on train part of new segments.
@@ -1713,6 +1691,7 @@ class TestInverseTransformTrainNewSegments:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder", mode="macro"), "ts_with_exog", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
             (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
@@ -2133,6 +2112,7 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder", mode="macro"), "ts_with_exog", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
             (
