@@ -88,7 +88,7 @@ def expected_macro_category_make_future_ts(category_ts) -> TSDataset:
 
 
 @pytest.mark.smoke
-@pytest.mark.parametrize("mode", ["micro", "macro"])
+@pytest.mark.parametrize("mode", ["per-segment", "macro"])
 @pytest.mark.parametrize("handle_missing", ["category", "global_mean"])
 @pytest.mark.parametrize("smoothing", [1, 2])
 def test_fit(category_ts, mode, handle_missing, smoothing):
@@ -103,7 +103,7 @@ def test_fit(category_ts, mode, handle_missing, smoothing):
 
 
 @pytest.mark.smoke
-@pytest.mark.parametrize("mode", ["micro", "macro"])
+@pytest.mark.parametrize("mode", ["per-segment", "macro"])
 @pytest.mark.parametrize("handle_missing", ["category", "global_mean"])
 @pytest.mark.parametrize("smoothing", [1, 2])
 def test_fit_transform(category_ts, mode, handle_missing, smoothing):
@@ -118,7 +118,7 @@ def test_fit_transform(category_ts, mode, handle_missing, smoothing):
 
 
 @pytest.mark.smoke
-@pytest.mark.parametrize("mode", ["micro", "macro"])
+@pytest.mark.parametrize("mode", ["per-segment", "macro"])
 @pytest.mark.parametrize("handle_missing", ["category", "global_mean"])
 @pytest.mark.parametrize("smoothing", [1, 2])
 def test_make_future(category_ts, mode, handle_missing, smoothing):
@@ -134,7 +134,7 @@ def test_make_future(category_ts, mode, handle_missing, smoothing):
 
 
 @pytest.mark.smoke
-@pytest.mark.parametrize("mode", ["micro", "macro"])
+@pytest.mark.parametrize("mode", ["per-segment", "macro"])
 @pytest.mark.parametrize("handle_missing", ["category", "global_mean"])
 @pytest.mark.parametrize("smoothing", [1, 2])
 def test_pipeline(category_ts, mode, handle_missing, smoothing):
@@ -170,7 +170,7 @@ def test_new_segments_error(category_ts):
 
 def test_transform_micro_category_expected(category_ts, expected_micro_category_ts):
     mean_encoder = MeanEncoderTransform(
-        in_column="regressor", mode="micro", handle_missing="category", smoothing=1, out_column="mean_encoded_regressor"
+        in_column="regressor", mode="per-segment", handle_missing="category", smoothing=1, out_column="mean_encoded_regressor"
     )
     mean_encoder.fit_transform(category_ts)
     assert_frame_equal(category_ts.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_category_ts.df)
@@ -179,7 +179,7 @@ def test_transform_micro_category_expected(category_ts, expected_micro_category_
 def test_transform_micro_global_mean_expected(category_ts, expected_micro_global_mean_ts):
     mean_encoder = MeanEncoderTransform(
         in_column="regressor",
-        mode="micro",
+        mode="per-segment",
         handle_missing="global_mean",
         smoothing=1,
         out_column="mean_encoded_regressor",
@@ -192,7 +192,7 @@ def test_transform_micro_global_mean_expected(category_ts, expected_micro_global
 
 def test_transform_micro_make_future_expected(category_ts, expected_micro_category_make_future_ts):
     mean_encoder = MeanEncoderTransform(
-        in_column="regressor", mode="micro", handle_missing="category", smoothing=1, out_column="mean_encoded_regressor"
+        in_column="regressor", mode="per-segment", handle_missing="category", smoothing=1, out_column="mean_encoded_regressor"
     )
     mean_encoder.fit_transform(category_ts)
     future = category_ts.make_future(future_steps=2, transforms=[mean_encoder])
