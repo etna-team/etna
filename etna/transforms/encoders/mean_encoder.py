@@ -139,8 +139,6 @@ class MeanEncoderTransform(IrreversibleTransform):
                     .mean()
                     .to_dict()["target"]
                 )
-                if self.handle_missing is MissingMode.global_mean:
-                    global_means_category[segment].pop(np.NaN, None)
         else:
             axis = None
             global_means = nanmean(df.loc[:, self.idx[:, "target"]], axis=axis)
@@ -149,8 +147,6 @@ class MeanEncoderTransform(IrreversibleTransform):
             global_means_category = (
                 segment_df[[self.in_column, "target"]].groupby(self.in_column, dropna=False).mean().to_dict()["target"]
             )
-            if self.handle_missing is MissingMode.global_mean:
-                global_means_category.pop(np.NaN, None)
 
         self._global_means = global_means
         self._global_means_category = global_means_category
@@ -165,6 +161,7 @@ class MeanEncoderTransform(IrreversibleTransform):
         timestamp_sum = y.groupby(df["timestamp"]).transform("sum")
         expanding_mean = timestamp_sum.iloc[::n_segments].cumsum() / timestamp_count.iloc[::n_segments].cumsum()
         expanding_mean = expanding_mean.repeat(n_segments)
+        # first timestamp is NaN
         expanding_mean = pd.Series(index=df.index, data=expanding_mean.values).shift(n_segments)
         return expanding_mean
 
@@ -213,8 +210,11 @@ class MeanEncoderTransform(IrreversibleTransform):
                 for segment in segments:
                     segment_df = TSDataset.to_flatten(intersected_df.loc[:, self.idx[segment, :]])
                     y = segment_df["target"]
+                    # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
+                    # cumcount not including current timestamp
                     cumcount = y.groupby(segment_df[self.in_column].astype(str)).agg("cumcount")
+                    # cumsum not including current timestamp
                     cumsum = (
                         y.groupby(segment_df[self.in_column].astype(str))
                         .transform(lambda x: x.shift().cumsum())
@@ -237,24 +237,30 @@ class MeanEncoderTransform(IrreversibleTransform):
                 categories = pd.unique(df.loc[:, self.idx[:, self.in_column]].values.ravel())
 
                 cumstats = pd.DataFrame(data={"sum": 0, "count": 0, self.in_column: categories})
-                start_index = np.arange(0, len(timestamps) * n_segments, len(timestamps))
+                cur_timestamp_idx = np.arange(0, len(timestamps) * n_segments, len(timestamps))
                 for timestamp in timestamps:
+                    # .loc[timestamp] returns series and .to_flatten fails.
                     timestamp_df = TSDataset.to_flatten(intersected_df.loc[timestamp:timestamp, self.idx[:, :]])
-
+                    # statistics from previous timestamp
                     cumsum_dict = dict(cumstats[[self.in_column, "sum"]].values)
                     cumcount_dict = dict(cumstats[[self.in_column, "count"]].values)
-
-                    temp.loc[start_index, "cumsum"] = flatten.loc[start_index, self.in_column].map(cumsum_dict)
-                    temp.loc[start_index, "cumcount"] = flatten.loc[start_index, self.in_column].map(cumcount_dict)
-
+                    # map categories for current timestamp to statistics
+                    temp.loc[cur_timestamp_idx, "cumsum"] = flatten.loc[cur_timestamp_idx, self.in_column].map(
+                        cumsum_dict
+                    )
+                    temp.loc[cur_timestamp_idx, "cumcount"] = flatten.loc[cur_timestamp_idx, self.in_column].map(
+                        cumcount_dict
+                    )
+                    # count statistics for current timestamp
                     stats = (
                         timestamp_df["target"]
                         .groupby(timestamp_df[self.in_column], dropna=False)
                         .agg(["count", "sum"])
                         .reset_index()
                     )
+                    # sum current and previous statistics
                     cumstats = pd.concat([cumstats, stats]).groupby(self.in_column, as_index=False, dropna=False).sum()
-                    start_index += 1
+                    cur_timestamp_idx += 1
 
                 feature = (temp["cumsum"] + running_mean * self.smoothing) / (temp["cumcount"] + self.smoothing)
                 if self.handle_missing is MissingMode.global_mean:
