@@ -9,7 +9,6 @@ from typing import cast
 import numpy as np
 import pandas as pd
 from bottleneck import nanmean
-from pandas import Timestamp
 
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
@@ -52,14 +51,14 @@ class MeanEncoderTransform(IrreversibleTransform):
 
     where
 
-        * TargetSum is the sum of target up to the current timestamp for the current category, not including the current timestamp
-        * RunningMean is target mean up to the current timestamp, not including the current timestamp
-        * FeatureCount is the number of categories with the same value as in the current timestamp, not including the current timestamp
+    * TargetSum is the sum of target up to the current timestamp for the current category, not including the current timestamp
+    * RunningMean is target mean up to the current timestamp, not including the current timestamp
+    * FeatureCount is the number of categories with the same value as in the current timestamp, not including the current timestamp
 
     For future timestamps:
 
-        * for known categories encoding are filled with global mean of target for these categories calculated during ``fit``
-        * for unknown categories encoding are filled with global mean of target in the whole dataset calculated during ``fit``
+    * for known categories encoding are filled with global mean of target for these categories calculated during ``fit``
+    * for unknown categories encoding are filled with global mean of target in the whole dataset calculated during ``fit``
 
     All types of NaN values are considering as one category.
     """
@@ -107,7 +106,7 @@ class MeanEncoderTransform(IrreversibleTransform):
 
         self._global_means: Optional[Union[float, Dict[str, float]]] = None
         self._global_means_category: Optional[Union[Dict[str, float], Dict[str, Dict[str, float]]]] = None
-        self._last_timestamp: Optional[Timestamp] = None
+        self._last_timestamp: Union[pd.Timestamp, int, None]
 
     def _fit(self, df: pd.DataFrame) -> "MeanEncoderTransform":
         """

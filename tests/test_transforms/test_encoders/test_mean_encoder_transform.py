@@ -87,6 +87,39 @@ def expected_macro_category_make_future_ts() -> TSDataset:
     return ts
 
 
+@pytest.fixture
+def ts_begin_nan() -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=1)
+    df["target"] = [np.NaN, 1, 2, 3, 4, 5]
+
+    df_exog = generate_ar_df(start_time="2001-01-01", periods=8, n_segments=1)
+    df_exog.rename(columns={"target": "regressor"}, inplace=True)
+    df_exog["regressor"] = ["A", "B", "A", "A", "B", "B", "C", "A"]
+
+    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+    return ts
+
+
+@pytest.fixture
+def expected_ts_begin_nan_smooth_1() -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=1)
+    df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
+    df["mean_encoded_regressor"] = [np.NaN, np.NaN, 0.5, 1.16, 1.5, 2.5]
+
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def expected_ts_begin_nan_smooth_2() -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=1)
+    df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
+    df["mean_encoded_regressor"] = [np.NaN, np.NaN, 2 / 3, 5 / 4, 5 / 3, 2.5]
+
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
 @pytest.mark.smoke
 @pytest.mark.parametrize("mode", ["per-segment", "macro"])
 @pytest.mark.parametrize("handle_missing", ["category", "global_mean"])
@@ -247,6 +280,34 @@ def test_transform_macro_make_future_expected(category_ts, expected_macro_catego
         future.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
         expected_macro_category_make_future_ts.df,
         atol=0.01,
+    )
+
+
+def test_ts_begin_nan_smooth_1(ts_begin_nan, expected_ts_begin_nan_smooth_1):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor",
+        mode="per-segment",
+        handle_missing="category",
+        smoothing=1,
+        out_column="mean_encoded_regressor",
+    )
+    mean_encoder.fit_transform(ts_begin_nan)
+    assert_frame_equal(
+        ts_begin_nan.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_ts_begin_nan_smooth_1.df, atol=0.01
+    )
+
+
+def test_ts_begin_nan_smooth_2(ts_begin_nan, expected_ts_begin_nan_smooth_2):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor",
+        mode="per-segment",
+        handle_missing="category",
+        smoothing=2,
+        out_column="mean_encoded_regressor",
+    )
+    mean_encoder.fit_transform(ts_begin_nan)
+    assert_frame_equal(
+        ts_begin_nan.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_ts_begin_nan_smooth_2.df, atol=0.01
     )
 
 
