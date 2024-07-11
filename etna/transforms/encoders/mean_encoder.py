@@ -1,13 +1,18 @@
 import reprlib
 from enum import Enum
+from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Union
 
 import numpy as np
 import pandas as pd
 from bottleneck import nanmean
+from pandas import Timestamp
 
 from etna.datasets import TSDataset
+from etna.distributions import BaseDistribution
+from etna.distributions import FloatDistribution
 from etna.transforms import IrreversibleTransform
 
 
@@ -39,20 +44,23 @@ class MeanEncoderTransform(IrreversibleTransform):
     """
     Makes encoding of categorical feature.
 
-    For timestamps that were seen in ``fit`` transformations are made using the formula below:
+    For timestamps that are before the last timestamp seen in ``fit`` transformations are made using the formula below:
 
     .. math::
-        \\frac{TargetSum + GlobalMean * Smoothing}{FeatureCount + Smoothing}
+       \\frac{TargetSum + RunningMean * Smoothing}{FeatureCount + Smoothing}
+
     where
-        - TargetSum is the sum of target up to the current index for the current category, not including the current index
-        - GlobalMean is target mean in the whole dataset
-        - FeatureCount is the number of categories with the same value as in the current index, not including the current index
+
+        * TargetSum is the sum of target up to the current timestamp for the current category, not including the current timestamp
+        * RunningMean is target mean up to the current timestamp, not including the current timestamp
+        * FeatureCount is the number of categories with the same value as in the current timestamp, not including the current timestamp
 
     For future timestamps:
-        - for known categories encoding are filled with global mean of target for these categories calculated during ``fit``
-        - for unknown categories encoding are filled with global mean of target in the whole dataset calculated during ``fit``
 
-    NaNs in ``target`` are skipped.
+        * for known categories encoding are filled with global mean of target for these categories calculated during ``fit``
+        * for unknown categories encoding are filled with global mean of target in the whole dataset calculated during ``fit``
+
+    All types of NaN values are considering as one category.
     """
 
     idx = pd.IndexSlice
@@ -96,6 +104,10 @@ class MeanEncoderTransform(IrreversibleTransform):
         self.handle_missing = MissingMode(handle_missing)
         self.smoothing = smoothing
 
+        self._global_means: Optional[Union[float, Dict[str, float]]] = None
+        self._global_means_category: Optional[Union[Dict[str, float], Dict[str, Dict[str, float]]]] = None
+        self._last_timestamp: Optional[Timestamp] = None
+
     def _fit(self, df: pd.DataFrame) -> "MeanEncoderTransform":
         """
         Fit encoder.
@@ -110,7 +122,7 @@ class MeanEncoderTransform(IrreversibleTransform):
         :
             Fitted transform
         """
-        self.timestamps = set(df.index)
+        df.loc[:, pd.IndexSlice[:, self.in_column]] = df.loc[:, pd.IndexSlice[:, self.in_column]].fillna(np.NaN)
 
         if self.mode is EncoderMode.per_segment:
             axis = 0
@@ -140,9 +152,21 @@ class MeanEncoderTransform(IrreversibleTransform):
             if self.handle_missing is MissingMode.global_mean:
                 global_means_category.pop(np.NaN, None)
 
-        self.global_means = global_means
-        self.global_means_category = global_means_category
+        self._global_means = global_means
+        self._global_means_category = global_means_category
+        self._last_timestamp = df.index[-1]
+
         return self
+
+    @staticmethod
+    def _count_macro_running_mean(df, n_segments):
+        y = df["target"]
+        timestamp_count = y.groupby(df["timestamp"]).transform("count")
+        timestamp_sum = y.groupby(df["timestamp"]).transform("sum")
+        expanding_mean = timestamp_sum.iloc[::n_segments].cumsum() / timestamp_count.iloc[::n_segments].cumsum()
+        expanding_mean = expanding_mean.repeat(n_segments)
+        expanding_mean = pd.Series(index=df.index, data=expanding_mean.values).shift(n_segments)
+        return expanding_mean
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -165,60 +189,63 @@ class MeanEncoderTransform(IrreversibleTransform):
         NotImplementedError:
             If there are segments that weren't present during training.
         """
-        if self.global_means is None:
+        if self._global_means is None:
             raise ValueError("The transform isn't fitted!")
 
         segments = df.columns.get_level_values("segment").unique().tolist()
         n_segments = len(segments)
         if self.mode is EncoderMode.per_segment:
-            new_segments = set(segments) - self.global_means.keys()
+            new_segments = set(segments) - self._global_means.keys()
             if len(new_segments) > 0:
                 raise NotImplementedError(
                     f"This transform can't process segments that weren't present on train data: {reprlib.repr(new_segments)}"
                 )
-        current_timestamps = set(df.index)
-        intersected_timestamps = self.timestamps.intersection(current_timestamps)
-        future_timestamps = current_timestamps - self.timestamps
+        df.loc[:, self.idx[:, self.in_column]] = df.loc[:, self.idx[:, self.in_column]].fillna(np.NaN)
 
-        intersected_df = TSDataset.to_flatten(df.loc[list(intersected_timestamps)])
-        intersected_df = intersected_df.sort_values(["timestamp", "segment"])
-        intersected_df[self.out_column] = np.NaN
+        future_timestamps = df.index[df.index > self._last_timestamp]
+        intersected_timestamps = df.index[df.index <= self._last_timestamp]
 
-        future_df = TSDataset.to_flatten(df.loc[list(future_timestamps)])
-        future_df = future_df.sort_values(["timestamp", "segment"])
-        future_df[self.out_column] = np.NaN
+        intersected_df = df.loc[intersected_timestamps, self.idx[:, :]]
+        future_df = df.loc[future_timestamps, self.idx[:, :]]
 
         if len(intersected_df) > 0:
             if self.mode is EncoderMode.per_segment:
                 for segment in segments:
-                    segment_df = intersected_df[intersected_df.segment == segment]
+                    segment_df = TSDataset.to_flatten(intersected_df.loc[:, self.idx[segment, :]])
                     y = segment_df["target"]
-                    temp = y.groupby(segment_df[self.in_column].astype(str)).agg(["cumsum", "cumcount"])
-                    feature = (temp["cumsum"] - y + self.global_means[segment] * self.smoothing) / (
-                        temp["cumcount"] + self.smoothing
+                    expanding_mean = y.expanding().mean().shift()
+                    cumcount = y.groupby(segment_df[self.in_column].astype(str)).agg("cumcount")
+                    cumsum = (
+                        y.groupby(segment_df[self.in_column].astype(str))
+                        .transform(lambda x: x.shift().cumsum())
+                        .fillna(0)
                     )
-                    intersected_df.loc[segment_df.index, self.out_column] = feature
+                    feature = (cumsum + expanding_mean * self.smoothing) / (cumcount + self.smoothing)
                     if self.handle_missing is MissingMode.global_mean:
-                        nan_index = segment_df[segment_df[self.in_column].isnull()].index
-                        expanding_mean = y.expanding().mean().shift().fillna(0)
-                        intersected_df.loc[nan_index, self.out_column] = expanding_mean.loc[nan_index]
-            else:
-                temp = pd.DataFrame(index=intersected_df.index, columns=["cumsum", "cumcount"], dtype=float)
+                        nan_feature_index = segment_df[segment_df[self.in_column].isnull()].index
+                        feature.loc[nan_feature_index] = expanding_mean.loc[nan_feature_index]
+                    intersected_df.loc[:, self.idx[segment, self.out_column]] = feature.values
 
-                timestamps = intersected_df["timestamp"].unique()
-                categories = intersected_df[self.in_column].unique()
+            else:
+                flatten = TSDataset.to_flatten(intersected_df)
+                flatten = flatten.sort_values(["timestamp", "segment"])
+                running_mean = self._count_macro_running_mean(flatten, n_segments)
+
+                temp = pd.DataFrame(index=flatten.index, columns=["cumsum", "cumcount"], dtype=float)
+
+                timestamps = intersected_df.index
+                categories = pd.unique(df.loc[:, self.idx[:, self.in_column]].values.ravel())
+
                 cumstats = pd.DataFrame(data={"sum": 0, "count": 0, self.in_column: categories})
+                start_index = np.arange(0, len(timestamps) * n_segments, len(timestamps))
                 for timestamp in timestamps:
-                    timestamp_df = intersected_df[intersected_df["timestamp"] == timestamp]
-                    timestamp_index = timestamp_df.index
+                    timestamp_df = TSDataset.to_flatten(intersected_df.loc[timestamp:timestamp, self.idx[:, :]])
+
                     cumsum_dict = dict(cumstats[[self.in_column, "sum"]].values)
                     cumcount_dict = dict(cumstats[[self.in_column, "count"]].values)
-                    temp.loc[timestamp_index, "cumsum"] = intersected_df.loc[timestamp_index, self.in_column].map(
-                        cumsum_dict
-                    )
-                    temp.loc[timestamp_index, "cumcount"] = intersected_df.loc[timestamp_index, self.in_column].map(
-                        cumcount_dict
-                    )
+
+                    temp.loc[start_index, "cumsum"] = flatten.loc[start_index, self.in_column].map(cumsum_dict)
+                    temp.loc[start_index, "cumcount"] = flatten.loc[start_index, self.in_column].map(cumcount_dict)
 
                     stats = (
                         timestamp_df["target"]
@@ -227,43 +254,56 @@ class MeanEncoderTransform(IrreversibleTransform):
                         .reset_index()
                     )
                     cumstats = pd.concat([cumstats, stats]).groupby(self.in_column, as_index=False, dropna=False).sum()
+                    start_index += 1
 
-                feature = (temp["cumsum"] + self.global_means * self.smoothing) / (temp["cumcount"] + self.smoothing)
-                intersected_df[self.out_column] = feature
-
+                feature = (temp["cumsum"] + running_mean * self.smoothing) / (temp["cumcount"] + self.smoothing)
                 if self.handle_missing is MissingMode.global_mean:
-                    y = intersected_df["target"]
-                    nan_index = intersected_df[intersected_df[self.in_column].isnull()].index
-                    timestamp_count = y.groupby(intersected_df["timestamp"]).transform("count")
-                    timestamp_sum = y.groupby(intersected_df["timestamp"]).transform("sum")
-                    expanding_mean = (
-                        timestamp_sum.iloc[::n_segments].cumsum() / timestamp_count.iloc[::n_segments].cumsum()
-                    )
-                    expanding_mean = expanding_mean.repeat(n_segments)
-                    expanding_mean = (
-                        pd.Series(index=intersected_df.index, data=expanding_mean.values).shift(n_segments).fillna(0)
-                    )
-                    intersected_df.loc[nan_index, self.out_column] = expanding_mean.loc[nan_index]
-                nan_target_index = intersected_df[intersected_df["target"].isnull()].index
-                intersected_df.loc[nan_target_index, self.out_column] = np.NaN
+                    nan_feature_index = flatten[flatten[self.in_column].isnull()].index
+                    feature.loc[nan_feature_index] = running_mean.loc[nan_feature_index]
+
+                feature = pd.DataFrame(
+                    feature.values.reshape(len(timestamps), n_segments),
+                    columns=pd.MultiIndex.from_product([segments, [self.out_column]]),
+                    index=intersected_df.index,
+                )
+                intersected_df = pd.concat([intersected_df, feature], axis=1)
 
         if len(future_df) > 0:
+            n_timestamps = len(future_df.index)
             if self.mode is EncoderMode.per_segment:
                 for segment in segments:
-                    segment_df = future_df[future_df.segment == segment]
-                    future_df.loc[segment_df.index, self.out_column] = segment_df.loc[
-                        segment_df.index, self.in_column
-                    ].map(self.global_means_category[segment])
-                    future_df.loc[segment_df.index, self.out_column] = future_df.loc[
-                        segment_df.index, self.out_column
-                    ].fillna(self.global_means[segment])
+                    segment_df = TSDataset.to_flatten(future_df.loc[:, self.idx[segment, :]])
+                    feature = segment_df[self.in_column].map(self._global_means_category[segment])
+                    feature = feature.fillna(self._global_means[segment])
+                    future_df.loc[:, self.idx[segment, self.out_column]] = feature.values
             else:
-                future_df[self.out_column] = future_df[self.in_column].map(self.global_means_category)
-                future_df[self.out_column] = future_df[self.out_column].fillna(self.global_means)
-        transformed_df = pd.concat((intersected_df, future_df))
-        transformed_df = TSDataset.to_dataset(transformed_df)
+                flatten = TSDataset.to_flatten(future_df)
+                feature = flatten[self.in_column].map(self._global_means_category)
+                feature = feature.fillna(self._global_means)
+                feature = pd.DataFrame(
+                    feature.values.reshape(len(segments), n_timestamps).T,
+                    columns=pd.MultiIndex.from_product([segments, [self.out_column]]),
+                    index=future_df.index,
+                )
+                future_df = pd.concat([future_df, feature], axis=1)
+
+        intersected_df = intersected_df.sort_index(axis=1)
+        future_df = future_df.sort_index(axis=1)
+        transformed_df = pd.concat((intersected_df, future_df), axis=0)
         return transformed_df
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
         return [self.out_column]
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes ``smoothing`` parameter. Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {"smoothing": FloatDistribution(low=0, high=2)}
