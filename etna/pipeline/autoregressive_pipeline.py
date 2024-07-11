@@ -20,7 +20,18 @@ from etna.transforms import Transform
 class AutoRegressivePipeline(
     ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveModelPipelineMixin, BasePipeline
 ):
-    """Pipeline that make regressive models autoregressive.
+    """
+    Pipeline that make regressive models autoregressive.
+
+    Makes forecast in several iterations, on each of them applies transforms and
+    predict ``step`` values by using forecast method of model.
+
+    See Also
+    --------
+    etna.pipeline.Pipeline:
+        Makes forecast in one iteration.
+    etna.ensembles.DirectEnsemble:
+        Makes forecast by merging the forecasts of base pipelines.
 
     Examples
     --------
