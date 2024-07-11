@@ -4,6 +4,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -192,6 +193,7 @@ class MeanEncoderTransform(IrreversibleTransform):
         segments = df.columns.get_level_values("segment").unique().tolist()
         n_segments = len(segments)
         if self.mode is EncoderMode.per_segment:
+            self._global_means = cast(Dict[str, float], self._global_means)
             new_segments = set(segments) - self._global_means.keys()
             if len(new_segments) > 0:
                 raise NotImplementedError(
@@ -277,6 +279,8 @@ class MeanEncoderTransform(IrreversibleTransform):
         if len(future_df) > 0:
             n_timestamps = len(future_df.index)
             if self.mode is EncoderMode.per_segment:
+                self._global_means_category = cast(Dict[str, Dict[str, float]], self._global_means_category)
+                self._global_means = cast(Dict[str, float], self._global_means)
                 for segment in segments:
                     segment_df = TSDataset.to_flatten(future_df.loc[:, self.idx[segment, :]])
                     feature = segment_df[self.in_column].map(self._global_means_category[segment])
