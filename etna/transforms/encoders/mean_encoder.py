@@ -245,12 +245,8 @@ class MeanEncoderTransform(IrreversibleTransform):
                     cumsum_dict = dict(cumstats[[self.in_column, "sum"]].values)
                     cumcount_dict = dict(cumstats[[self.in_column, "count"]].values)
                     # map categories for current timestamp to statistics
-                    temp.loc[cur_timestamp_idx, "cumsum"] = flatten.loc[cur_timestamp_idx, self.in_column].map(
-                        cumsum_dict
-                    )
-                    temp.loc[cur_timestamp_idx, "cumcount"] = flatten.loc[cur_timestamp_idx, self.in_column].map(
-                        cumcount_dict
-                    )
+                    temp.loc[cur_timestamp_idx, "cumsum"] = timestamp_df[self.in_column].map(cumsum_dict)
+                    temp.loc[cur_timestamp_idx, "cumcount"] = timestamp_df[self.in_column].map(cumcount_dict)
                     # count statistics for current timestamp
                     stats = (
                         timestamp_df["target"]
