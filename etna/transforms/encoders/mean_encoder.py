@@ -239,9 +239,8 @@ class MeanEncoderTransform(IrreversibleTransform):
 
                 cumstats = pd.DataFrame(data={"sum": 0, "count": 0, self.in_column: categories})
                 cur_timestamp_idx = np.arange(0, len(timestamps) * n_segments, len(timestamps))
-                for timestamp in timestamps:
-                    # .loc[timestamp] returns series and .to_flatten fails.
-                    timestamp_df = TSDataset.to_flatten(intersected_df.loc[timestamp:timestamp, self.idx[:, :]])
+                for _ in range(len(timestamps)):
+                    timestamp_df = flatten.loc[cur_timestamp_idx]
                     # statistics from previous timestamp
                     cumsum_dict = dict(cumstats[[self.in_column, "sum"]].values)
                     cumcount_dict = dict(cumstats[[self.in_column, "count"]].values)
