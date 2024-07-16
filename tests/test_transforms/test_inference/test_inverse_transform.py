@@ -7,6 +7,7 @@ from ruptures import Binseg
 from sklearn.tree import DecisionTreeRegressor
 
 from etna.analysis import StatisticsRelevanceTable
+from etna.models import HoltWintersModel
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
 from etna.transforms import BinaryOperationTransform
@@ -45,6 +46,7 @@ from etna.transforms import MedianTransform
 from etna.transforms import MinMaxDifferenceTransform
 from etna.transforms import MinMaxScalerTransform
 from etna.transforms import MinTransform
+from etna.transforms import ModelDecomposeTransform
 from etna.transforms import MRMRFeatureSelectionTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms import PredictionIntervalOutliersTransform
@@ -141,6 +143,7 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
+            (ModelDecomposeTransform(model=ProphetModel(), in_column="target", residuals=True), "regular_ts", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -602,6 +605,7 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1093,6 +1097,7 @@ class TestInverseTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1378,6 +1383,8 @@ class TestInverseTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="positive", residuals=True), "ts_with_exog"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1968,6 +1975,7 @@ class TestInverseTransformTrainNewSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=ProphetModel(), in_column="target", residuals=True), "regular_ts"),
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
@@ -2407,6 +2415,7 @@ class TestInverseTransformFutureNewSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=ProphetModel(), in_column="target", residuals=True), "regular_ts"),
             # encoders
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
@@ -3096,6 +3105,8 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
+            (ModelDecomposeTransform(model=ProphetModel(), in_column="target", residuals=True), "regular_ts", {}),
+            (ModelDecomposeTransform(model=ProphetModel(), in_column="positive", residuals=True), "ts_with_exog", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
