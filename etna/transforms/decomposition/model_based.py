@@ -92,7 +92,7 @@ class ModelDecomposeTransform(IrreversibleTransform):
             raise KeyError(self.in_column)
 
         df = ts.df.loc[:, pd.IndexSlice[:, self.in_column]]
-        df = df.rename(columns={self.in_column: "target"}, level="feature", errors="raise")
+        df = df.rename(columns={self.in_column: "target"}, level="feature")
 
         return TSDataset(df=df, freq=ts.freq)
 
