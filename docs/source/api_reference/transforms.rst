@@ -44,6 +44,7 @@ Decomposition transforms and their utilities:
    decomposition.MedianPerIntervalModel
    decomposition.SklearnPreprocessingPerIntervalModel
    decomposition.SklearnRegressionPerIntervalModel
+   decomposition.ModelDecomposeTransform
 
 Categorical encoding transforms:
 
