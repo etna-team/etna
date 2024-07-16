@@ -16,4 +16,5 @@ from etna.transforms.decomposition.change_points_based import TrendTransform
 from etna.transforms.decomposition.deseasonal import DeseasonalityTransform
 from etna.transforms.decomposition.detrend import LinearTrendTransform
 from etna.transforms.decomposition.detrend import TheilSenTrendTransform
+from etna.transforms.decomposition.model_based import ModelDecomposeTransform
 from etna.transforms.decomposition.stl import STLTransform
