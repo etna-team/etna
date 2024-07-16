@@ -143,20 +143,27 @@ def plot_forecast(
             plot_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
         if (train_ts is not None) and (n_train_samples != 0):
-            ax[i].plot(plot_df.index.values, plot_df.target.values, label="train")
+            marker = None if len(plot_df) > 1 else "o"
+            ax[i].plot(plot_df.index.values, plot_df.target.values, label="train", marker=marker)
         if test_ts is not None:
-            ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test")
+            marker = None if len(segment_test_df) > 1 else "o"
+            ax[i].plot(
+                segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test", marker=marker
+            )
 
         # plot forecast plot for each of given forecasts
         for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
             segment_forecast_df = forecast[:, segment, :][segment]
+            marker = None if len(segment_forecast_df) > 1 else "o"
+
             line = ax[i].plot(
                 segment_forecast_df.index.values,
                 segment_forecast_df.target.values,
                 linewidth=1,
                 label=f"{legend_prefix}forecast",
+                marker=marker,
             )
             forecast_color = line[0].get_color()
 
@@ -182,7 +189,7 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_low,
                             values_high,
-                            facecolor=forecast_color,
+                            color=forecast_color,
                             alpha=alpha[interval_idx],
                             label=f"{legend_prefix}{low_border}-{high_border}",
                         )
@@ -196,7 +203,7 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_low,
                             values_next,
-                            facecolor=forecast_color,
+                            color=forecast_color,
                             alpha=alpha[interval_idx],
                             label=f"{legend_prefix}{low_border}-{high_border}",
                         )
@@ -205,7 +212,7 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_high,
                             values_prev,
-                            facecolor=forecast_color,
+                            color=forecast_color,
                             alpha=alpha[interval_idx],
                         )
                 # when we can't find pair for border, we plot it separately
