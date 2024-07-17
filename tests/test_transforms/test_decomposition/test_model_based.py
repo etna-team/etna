@@ -29,7 +29,7 @@ def simple_pipeline_with_decompose(in_column, horizon):
 
 
 @pytest.fixture()
-def ts_with_exog() -> TSDataset:
+def ts_with_exogs() -> TSDataset:
     periods = 100
     periods_exog = periods + 10
     df = generate_ar_df(start_time="2020-01-01", periods=periods, freq="D", n_segments=2)
@@ -44,17 +44,17 @@ def ts_with_exog() -> TSDataset:
 
 
 @pytest.fixture()
-def ts_with_exog_train_test(ts_with_exog):
-    return ts_with_exog.train_test_split(test_size=20)
+def ts_with_exogs_train_test(ts_with_exogs):
+    return ts_with_exogs.train_test_split(test_size=20)
 
 
 @pytest.fixture()
-def forward_stride_datasets(ts_with_exog):
-    train_df = ts_with_exog.df.iloc[:-10]
-    test_df = ts_with_exog.df.iloc[-20:]
+def forward_stride_datasets(ts_with_exogs):
+    train_df = ts_with_exogs.df.iloc[:-10]
+    test_df = ts_with_exogs.df.iloc[-20:]
 
-    train_ts = TSDataset(df=train_df, freq=ts_with_exog.freq)
-    test_ts = TSDataset(df=test_df, freq=ts_with_exog.freq)
+    train_ts = TSDataset(df=train_df, freq=ts_with_exogs.freq)
+    test_ts = TSDataset(df=test_df, freq=ts_with_exogs.freq)
 
     return train_ts, test_ts
 
@@ -84,8 +84,8 @@ def test_is_not_fitted(simple_tsdf):
         transform.transform(ts=simple_tsdf)
 
 
-def test_prepare_ts_in_column_target(ts_with_exog):
-    ts = ts_with_exog
+def test_prepare_ts_in_column_target(ts_with_exogs):
+    ts = ts_with_exogs
 
     transform = ModelDecomposeTransform(model=HoltWintersModel(), in_column="target")
     prepared_ts = transform._prepare_ts(ts=ts)
@@ -99,8 +99,8 @@ def test_prepare_ts_in_column_target(ts_with_exog):
     "ts_name,in_column",
     (
         ("outliers_df_with_two_columns", "feature"),
-        ("ts_with_exog", "exog"),
-        ("ts_with_exog", "holiday"),
+        ("ts_with_exogs", "exog"),
+        ("ts_with_exogs", "holiday"),
     ),
 )
 def test_prepare_ts_in_column_feature(ts_name, in_column, request):
@@ -122,9 +122,9 @@ def test_prepare_ts_in_column_feature(ts_name, in_column, request):
     (
         ("outliers_df_with_two_columns", "target"),
         ("outliers_df_with_two_columns", "feature"),
-        ("ts_with_exog", "target"),
-        ("ts_with_exog", "exog"),
-        ("ts_with_exog", "holiday"),
+        ("ts_with_exogs", "target"),
+        ("ts_with_exogs", "exog"),
+        ("ts_with_exogs", "holiday"),
         ("example_tsds_int_timestamp", "target"),
     ),
 )
@@ -139,8 +139,8 @@ def test_fit(ts_name, in_column, request):
 
 @pytest.mark.parametrize("residuals", (True, False))
 @pytest.mark.parametrize("in_column", ("target", "exog"))
-def test_add_residulas(ts_with_exog, residuals, in_column):
-    ts = ts_with_exog
+def test_add_residulas(ts_with_exogs, residuals, in_column):
+    ts = ts_with_exogs
 
     transform = ModelDecomposeTransform(model=HoltWintersModel(), in_column=in_column, residuals=residuals)
     transformed = transform.fit_transform(ts=ts)
@@ -148,8 +148,8 @@ def test_add_residulas(ts_with_exog, residuals, in_column):
     assert (f"{in_column}_residuals" in transformed.features) is residuals
 
 
-def test_timestamp_from_future(ts_with_exog_train_test):
-    train, test = ts_with_exog_train_test
+def test_timestamp_from_future(ts_with_exogs_train_test):
+    train, test = ts_with_exogs_train_test
     transform = ModelDecomposeTransform(model=HoltWintersModel())
     transform.fit_transform(train)
 
@@ -157,8 +157,8 @@ def test_timestamp_from_future(ts_with_exog_train_test):
         transform.transform(test)
 
 
-def test_timestamp_from_history(ts_with_exog_train_test):
-    test, train = ts_with_exog_train_test
+def test_timestamp_from_history(ts_with_exogs_train_test):
+    test, train = ts_with_exogs_train_test
     transform = ModelDecomposeTransform(model=HoltWintersModel())
     transform.fit_transform(train)
 
@@ -175,8 +175,8 @@ def test_timestamp_from_history(ts_with_exog_train_test):
     ),
 )
 @pytest.mark.parametrize("horizon", (1, 5))
-def test_simple_pipeline_forecast(ts_with_exog, in_column, horizon):
-    ts = ts_with_exog
+def test_simple_pipeline_forecast(ts_with_exogs, in_column, horizon):
+    ts = ts_with_exogs
 
     pipeline = simple_pipeline_with_decompose(in_column=in_column, horizon=horizon)
 
@@ -196,8 +196,8 @@ def test_simple_pipeline_forecast(ts_with_exog, in_column, horizon):
     ),
 )
 @pytest.mark.parametrize("horizon", (1, 5))
-def test_simple_pipeline_predict(ts_with_exog, in_column, horizon):
-    ts = ts_with_exog
+def test_simple_pipeline_predict(ts_with_exogs, in_column, horizon):
+    ts = ts_with_exogs
 
     pipeline = simple_pipeline_with_decompose(in_column=in_column, horizon=horizon)
 
@@ -217,8 +217,8 @@ def test_simple_pipeline_predict(ts_with_exog, in_column, horizon):
     ),
 )
 @pytest.mark.parametrize("horizon", (1, 5))
-def test_simple_pipeline_predict_components(ts_with_exog, in_column, horizon):
-    ts = ts_with_exog
+def test_simple_pipeline_predict_components(ts_with_exogs, in_column, horizon):
+    ts = ts_with_exogs
 
     pipeline = simple_pipeline_with_decompose(in_column=in_column, horizon=horizon)
 
@@ -238,8 +238,8 @@ def test_simple_pipeline_predict_components(ts_with_exog, in_column, horizon):
     ),
 )
 @pytest.mark.parametrize("horizon", (1, 5))
-def test_simple_pipeline_backtest(ts_with_exog, in_column, horizon):
-    ts = ts_with_exog
+def test_simple_pipeline_backtest(ts_with_exogs, in_column, horizon):
+    ts = ts_with_exogs
 
     pipeline = simple_pipeline_with_decompose(in_column=in_column, horizon=horizon)
 
@@ -254,8 +254,8 @@ def test_simple_pipeline_backtest(ts_with_exog, in_column, horizon):
     (
         ("outliers_df_with_two_columns", "target"),
         ("outliers_df_with_two_columns", "feature"),
-        ("ts_with_exog", "target"),
-        ("ts_with_exog", "exog"),
+        ("ts_with_exogs", "target"),
+        ("ts_with_exogs", "exog"),
     ),
 )
 @pytest.mark.parametrize(
@@ -294,14 +294,14 @@ def test_pipeline_models(ts_name, in_column, decompose_model, forecast_model, re
         TBATSModel(use_arma_errors=False),
     ),
 )
-def test_decompose_models(ts_with_exog, decompose_model):
+def test_decompose_models(ts_with_exogs, decompose_model):
     pipeline = Pipeline(
         transforms=[ModelDecomposeTransform(model=decompose_model, in_column="exog")],
         model=CatBoostPerSegmentModel(iterations=10),
         horizon=3,
     )
 
-    pipeline.fit(ts_with_exog)
+    pipeline.fit(ts_with_exogs)
     forecast = pipeline.forecast()
 
     assert forecast.size()[0] == 3
