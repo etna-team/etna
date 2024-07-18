@@ -189,6 +189,7 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_low,
                             values_high,
+                            linewidth=3,
                             color=forecast_color,
                             alpha=alpha[interval_idx],
                             label=f"{legend_prefix}{low_border}-{high_border}",
@@ -203,6 +204,7 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_low,
                             values_next,
+                            linewidth=3,
                             color=forecast_color,
                             alpha=alpha[interval_idx],
                             label=f"{legend_prefix}{low_border}-{high_border}",
@@ -212,6 +214,7 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_high,
                             values_prev,
+                            linewidth=3,
                             color=forecast_color,
                             alpha=alpha[interval_idx],
                         )
@@ -219,10 +222,11 @@ def plot_forecast(
                 if len(prediction_intervals_names) % 2 != 0:
                     remaining_border = prediction_intervals_names[len(prediction_intervals_names) // 2]
                     values = segment_borders_df[remaining_border].values
+                    marker = "--" if len(values) > 1 else "d"
                     ax[i].plot(
                         segment_borders_df.index.values,
                         values,
-                        "--",
+                        marker,
                         color=forecast_color,
                         label=f"{legend_prefix}{remaining_border}",
                     )
