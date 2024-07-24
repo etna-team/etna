@@ -97,8 +97,7 @@ class ModelDecomposeTransform(IrreversibleTransform):
         return TSDataset(df=df, freq=ts.freq)
 
     def fit(self, ts: TSDataset) -> "ModelDecomposeTransform":
-        """
-        Fit the transform and the decomposition model.
+        """Fit the transform and the decomposition model.
 
         Parameters
         ----------
