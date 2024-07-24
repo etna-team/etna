@@ -67,7 +67,7 @@ def test_init(in_column):
     assert transform._last_timestamp is None
 
 
-def test_usupported_model():
+def test_unsupported_model():
     with pytest.raises(ValueError, match=".* is not supported! Supported models are:"):
         ModelDecomposeTransform(model=CatBoostPerSegmentModel())
 
@@ -139,7 +139,7 @@ def test_fit(ts_name, in_column, request):
 
 @pytest.mark.parametrize("residuals", (True, False))
 @pytest.mark.parametrize("in_column", ("target", "exog"))
-def test_add_residulas(ts_with_exogs, residuals, in_column):
+def test_add_residuals(ts_with_exogs, residuals, in_column):
     ts = ts_with_exogs
 
     transform = ModelDecomposeTransform(model=HoltWintersModel(), in_column=in_column, residuals=residuals)
