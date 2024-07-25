@@ -12,6 +12,7 @@ from etna.transforms.decomposition import ChangePointsLevelTransform
 from etna.transforms.decomposition import ChangePointsSegmentationTransform
 from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition import DeseasonalityTransform
+from etna.transforms.decomposition import FourierDecomposeTransform
 from etna.transforms.decomposition import IrreversibleChangePointsTransform
 from etna.transforms.decomposition import LinearTrendTransform
 from etna.transforms.decomposition import ReversibleChangePointsTransform
