@@ -23,6 +23,7 @@ from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import EventTransform
 from etna.transforms import ExogShiftTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import FourierDecomposeTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
 from etna.transforms import HolidayTransform
@@ -126,6 +127,11 @@ class TestTransformTrain:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
+            ),
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
             ),
             # embeddings
             (
@@ -543,6 +549,11 @@ class TestTransformTrain:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
+            ),
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
             ),
             # embeddings
             (
@@ -1049,6 +1060,7 @@ class TestTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1316,6 +1328,8 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts"),
+            (FourierDecomposeTransform(in_column="positive", k=2, residuals=True), "ts_with_exog"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -2420,6 +2434,7 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"create": {"res"}},
             ),
+            # (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts",             {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -2858,6 +2873,16 @@ class TestTransformFutureWithoutTarget:
                 ),
                 "regular_ts",
                 {"create": {"res"}},
+            ),
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+            (
+                FourierDecomposeTransform(in_column="positive", k=2, residuals=True),
+                "ts_with_exog",
+                {"create": {"positive_dft_0", "positive_dft_1", "positive_dft_residuals"}},
             ),
             # embeddings
             (

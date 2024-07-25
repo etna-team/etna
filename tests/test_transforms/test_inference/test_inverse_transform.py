@@ -23,6 +23,7 @@ from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import EventTransform
 from etna.transforms import ExogShiftTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import FourierDecomposeTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
 from etna.transforms import HolidayTransform
@@ -141,6 +142,7 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -602,6 +604,7 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1093,6 +1096,7 @@ class TestInverseTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1378,6 +1382,8 @@ class TestInverseTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts"),
+            (FourierDecomposeTransform(in_column="positive", k=5, residuals=True), "ts_with_exog"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -2589,6 +2595,7 @@ class TestInverseTransformFutureWithTarget:
                 "regular_ts",
                 {},
             ),
+            # (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -3096,6 +3103,8 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
+            (FourierDecomposeTransform(in_column="positive", k=5, residuals=True), "ts_with_exog", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
