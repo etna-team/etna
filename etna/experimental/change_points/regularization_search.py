@@ -71,9 +71,9 @@ def _get_next_value(
         next value and its bounds
     """
     if need_greater:
-        return np.mean([now_value, lower_bound]), lower_bound, now_value
+        return float(np.mean([now_value, lower_bound])), lower_bound, now_value
     else:
-        return np.mean([now_value, upper_bound]), now_value, upper_bound
+        return float(np.mean([now_value, upper_bound])), now_value, upper_bound
 
 
 def bin_search(
@@ -121,7 +121,7 @@ def bin_search(
         raise ValueError("Impossible number of changepoints. Please, increase max_value or increase n_bkps value.")
 
     lower_bound, upper_bound = 0.0, max_value
-    now_value = np.mean([lower_bound, upper_bound])
+    now_value = float(np.mean([lower_bound, upper_bound]))
     now_n_bkps = _get_n_bkps(series, change_point_model, **{opt_param: now_value})
     iters = 0
 

@@ -95,6 +95,7 @@ def test_cross_corr_normed(a, b, expected_result):
     np.testing.assert_almost_equal(result, expected_result)
 
 
+@pytest.mark.filterwarnings("ignore: invalid value encountered in scalar divide")
 @pytest.mark.parametrize(
     "a, b, normed, expected_result",
     [
