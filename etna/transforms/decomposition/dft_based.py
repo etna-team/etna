@@ -160,7 +160,7 @@ class FourierDecomposeTransform(IrreversibleTransform):
 
         if ts.index.min() < self._first_timestamp:
             raise ValueError(
-                f"First index of the dataset to be transformed must be larger or equal then {self._first_timestamp}!"
+                f"First index of the dataset to be transformed must be larger or equal than {self._first_timestamp}!"
             )
 
         if ts.index.min() > self._last_timestamp:

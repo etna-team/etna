@@ -32,8 +32,6 @@ def ts_with_exogs() -> TSDataset:
     df_exog.rename(columns={"target": "exog"}, inplace=True)
     df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 2)
 
-    df = TSDataset.to_dataset(df)
-    df_exog = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
     return ts
 
@@ -120,7 +118,7 @@ def test_check_segments_ok(ts_with_exogs):
         pd.Series([np.nan] * 2 + list(range(5)) + [np.nan] * 3),
     ),
 )
-def test_fft_components_out_forma(series):
+def test_fft_components_out_format(series):
     expected_columns = ["dft_0", "dft_1", "dft_2", "dft_residuals"]
     transform = FourierDecomposeTransform(k=3, residuals=True)
 
@@ -281,7 +279,7 @@ def test_simple_pipeline_backtest(ts_with_exogs, in_column, horizon):
 )
 @pytest.mark.parametrize("k", (1, 5, 10, 40, 51))
 @pytest.mark.parametrize("forecast_model", (ProphetModel(), CatBoostPerSegmentModel(iterations=10)))
-def test_pipeline_ks(ts_name, in_column, forecast_model, k, request):
+def test_pipeline_parameter_k(ts_name, in_column, forecast_model, k, request):
     ts = request.getfixturevalue(ts_name)
 
     pipeline = Pipeline(
