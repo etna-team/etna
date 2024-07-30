@@ -117,6 +117,7 @@ class FourierDecomposeTransform(IrreversibleTransform):
         if self.residuals:
             components_df["dft_residuals"] = series.values - np.sum(components, axis=0)
 
+        # return trailing and leading nans to the series if any existed initially
         if not components_df.index.equals(initial_index):
             components_df = components_df.reindex(index=initial_index, fill_value=np.nan)
 

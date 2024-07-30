@@ -97,9 +97,10 @@ def test_check_segments_missing_values(ts_with_missing):
         transform._check_segments(df=df)
 
 
-def test_check_segments_large_k(ts_with_exogs):
+@pytest.mark.parametrize("k", (52, 100))
+def test_check_segments_large_k(ts_with_exogs, k):
     df = ts_with_exogs[..., "target"]
-    transform = FourierDecomposeTransform(k=100)
+    transform = FourierDecomposeTransform(k=k)
     with pytest.raises(ValueError, match=f"Parameter `k` must not be greater then"):
         transform._check_segments(df=df)
 
