@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove sorting of `ts.df` by timestamps in `plot_forecast` and `plot_forecast_decomposition` ([#410](https://github.com/etna-team/etna/pull/410))
 - Fix forecast visualization with `horizon=1` ([#426](https://github.com/etna-team/etna/pull/426))
 - 
-- 
+- Fix `VotingEnsemble`, `StackingEnsemble`, `DirectEnsemble` have a valid `params_to_tune` that returns empty dict ([]())
 - Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))
 - 
 - Update `TSDataset.describe`, `TSDataset.info` to exclude target intervals and target components in `num_exogs` ([#405](https://github.com/etna-team/etna/pull/405))
