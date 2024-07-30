@@ -453,6 +453,6 @@ def test_ts_with_segment_named_target(
         assert isinstance(df, pd.DataFrame)
 
 
-def test_params_to_tune_not_implemented(stacking_ensemble_pipeline):
-    with pytest.raises(NotImplementedError, match="StackingEnsemble doesn't support this method"):
-        _ = stacking_ensemble_pipeline.params_to_tune()
+def test_params_to_tune(stacking_ensemble_pipeline):
+    result = stacking_ensemble_pipeline.params_to_tune()
+    assert result == {}

@@ -176,11 +176,11 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
-        Not implemented for this class.
+        Currently, returns empty dict, but could have a proper implementation in the future.
 
         Returns
         -------
         :
             Grid with hyperparameters.
         """
-        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")
+        return {}
