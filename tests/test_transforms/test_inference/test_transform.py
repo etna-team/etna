@@ -2434,7 +2434,6 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"create": {"res"}},
             ),
-            # (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts",             {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -2800,6 +2799,23 @@ class TestTransformFutureWithTarget:
     def test_transform_future_with_target(self, transform, dataset_name, expected_changes, request):
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_with_target(ts, transform, expected_changes=expected_changes)
+
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        (
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+        ),
+    )
+    def test_transform_future_with_target_fail_require_history(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(ValueError, match="Dataset to be transformed must contain historical observations"):
+            self._test_transform_future_with_target(ts, transform, expected_changes=expected_changes)
 
 
 class TestTransformFutureWithoutTarget:
