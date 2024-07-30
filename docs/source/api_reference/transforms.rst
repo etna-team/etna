@@ -53,6 +53,7 @@ Categorical encoding transforms:
    :template: class.rst
 
    SegmentEncoderTransform
+   MeanEncoderTransform
    MeanSegmentEncoderTransform
    LabelEncoderTransform
    OneHotEncoderTransform

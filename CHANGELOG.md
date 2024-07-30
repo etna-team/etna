@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `get_anomalies_mad` function for anomaly detection ([#398](https://github.com/etna-team/etna/pull/398))
 - Add `TSDataset.features` property to get list of all features in a dataset ([#405](https://github.com/etna-team/etna/pull/405))
 - Add `MADOutlierTransform` class for anomaly detection ([#415](https://github.com/etna-team/etna/pull/415))
+- Add `MeanEncoderTransform` ([#413](https://github.com/etna-team/etna/pull/413))
 - Add `FourierDecomposeTransform` transform for series decomposition using DFT ([#430](https://github.com/etna-team/etna/pull/430))
 
 ### Changed
@@ -34,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix rendering in 210 tutorial ([#386](https://github.com/etna-team/etna/pull/386))
 - Fix typo in 103 tutorial ([#408](https://github.com/etna-team/etna/pull/408))
 - Remove sorting of `ts.df` by timestamps in `plot_forecast` and `plot_forecast_decomposition` ([#410](https://github.com/etna-team/etna/pull/410))
-- 
+- Fix forecast visualization with `horizon=1` ([#426](https://github.com/etna-team/etna/pull/426))
 - 
 - 
 - Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))

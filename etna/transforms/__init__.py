@@ -22,6 +22,7 @@ from etna.transforms.decomposition import TrendTransform
 from etna.transforms.embeddings import EmbeddingSegmentTransform
 from etna.transforms.embeddings import EmbeddingWindowTransform
 from etna.transforms.encoders import LabelEncoderTransform
+from etna.transforms.encoders import MeanEncoderTransform
 from etna.transforms.encoders import MeanSegmentEncoderTransform
 from etna.transforms.encoders import OneHotEncoderTransform
 from etna.transforms.encoders import SegmentEncoderTransform

@@ -39,6 +39,7 @@ from etna.transforms import MADOutlierTransform
 from etna.transforms import MADTransform
 from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import MaxTransform
+from etna.transforms import MeanEncoderTransform
 from etna.transforms import MeanSegmentEncoderTransform
 from etna.transforms import MeanTransform
 from etna.transforms import MedianOutliersTransform
@@ -187,6 +188,7 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -649,6 +651,7 @@ class TestInverseTransformTrain:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -1133,6 +1136,7 @@ class TestInverseTransformTrainSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
@@ -1420,6 +1424,7 @@ class TestInverseTransformFutureSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
@@ -1697,6 +1702,7 @@ class TestInverseTransformTrainNewSegments:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder", mode="macro"), "ts_with_exog", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
             (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
@@ -1975,6 +1981,7 @@ class TestInverseTransformTrainNewSegments:
                 "regular_ts",
             ),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -2117,6 +2124,7 @@ class TestInverseTransformFutureNewSegments:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder", mode="macro"), "ts_with_exog", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
             (
@@ -2414,6 +2422,7 @@ class TestInverseTransformFutureNewSegments:
                 "regular_ts",
             ),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -2639,6 +2648,7 @@ class TestInverseTransformFutureWithTarget:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
@@ -3161,6 +3171,7 @@ class TestInverseTransformFutureWithoutTarget:
                 "ts_with_exog",
                 {},
             ),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog", {}),
             (MeanSegmentEncoderTransform(), "regular_ts", {}),
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
