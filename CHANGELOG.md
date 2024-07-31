@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix typo in 103 tutorial ([#408](https://github.com/etna-team/etna/pull/408))
 - Remove sorting of `ts.df` by timestamps in `plot_forecast` and `plot_forecast_decomposition` ([#410](https://github.com/etna-team/etna/pull/410))
 - Fix forecast visualization with `horizon=1` ([#426](https://github.com/etna-team/etna/pull/426))
-- 
+- Set upper bound `<2` on numpy version ([#431](https://github.com/etna-team/etna/pull/431))
 - 
 - Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))
 - 
