@@ -3015,6 +3015,7 @@ class TestInverseTransformFutureWithTarget:
         "transform, dataset_name, expected_changes",
         [
             (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts", {}),
         ],
     )
     def test_inverse_transform_future_with_target_fail_require_history(

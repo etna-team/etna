@@ -2855,6 +2855,11 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
             ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
+            ),
         ),
     )
     def test_transform_future_with_target_fail_require_history(
