@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `MADOutlierTransform` class for anomaly detection ([#415](https://github.com/etna-team/etna/pull/415))
 - Add `MeanEncoderTransform` ([#413](https://github.com/etna-team/etna/pull/413))
 - Add `FourierDecomposeTransform` transform for series decomposition using DFT ([#430](https://github.com/etna-team/etna/pull/430))
+- Add `ModelDecomposeTransform` transform for series decomposition using ETNA models ([#427](https://github.com/etna-team/etna/pull/427))
+-
 
 ### Changed
 - Allow to change `device`, `batch_size` and `num_workers` of embedding models ([#396](https://github.com/etna-team/etna/pull/396))
