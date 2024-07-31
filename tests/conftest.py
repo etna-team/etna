@@ -910,7 +910,7 @@ def ts_with_binary_exog() -> TSDataset:
     return ts
 
 
-@pytest.fixture
+@pytest.fixture()
 def outliers_solid_tsds():
     """Create TSDataset with outliers and same last date."""
     timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")

@@ -44,6 +44,7 @@ Decomposition transforms and their utilities:
    decomposition.MedianPerIntervalModel
    decomposition.SklearnPreprocessingPerIntervalModel
    decomposition.SklearnRegressionPerIntervalModel
+   decomposition.FourierDecomposeTransform
    decomposition.ModelDecomposeTransform
 
 Categorical encoding transforms:
@@ -53,6 +54,7 @@ Categorical encoding transforms:
    :template: class.rst
 
    SegmentEncoderTransform
+   MeanEncoderTransform
    MeanSegmentEncoderTransform
    LabelEncoderTransform
    OneHotEncoderTransform
