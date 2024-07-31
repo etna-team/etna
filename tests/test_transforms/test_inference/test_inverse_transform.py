@@ -23,6 +23,7 @@ from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import EventTransform
 from etna.transforms import ExogShiftTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import FourierDecomposeTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
 from etna.transforms import HolidayTransform
@@ -142,6 +143,7 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -604,6 +606,7 @@ class TestInverseTransformTrain:
                 "regular_ts",
                 {},
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1096,6 +1099,7 @@ class TestInverseTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1382,6 +1386,8 @@ class TestInverseTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts"),
+            (FourierDecomposeTransform(in_column="positive", k=5, residuals=True), "ts_with_exog"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -2996,6 +3002,19 @@ class TestInverseTransformFutureWithTarget:
         with pytest.raises(ValueError, match="Test should go after the train without gaps"):
             self._test_inverse_transform_future_with_target(ts, transform, expected_changes=expected_changes)
 
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        [
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
+        ],
+    )
+    def test_inverse_transform_future_with_target_fail_require_history(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(ValueError, match="Dataset to be transformed must contain historical observations"):
+            self._test_inverse_transform_future_with_target(ts, transform, expected_changes=expected_changes)
+
     # It is the only transform that doesn't change values back during `inverse_transform`
     @to_be_fixed(raises=AssertionError)
     @pytest.mark.parametrize(
@@ -3106,6 +3125,8 @@ class TestInverseTransformFutureWithoutTarget:
                 "regular_ts",
                 {},
             ),
+            (FourierDecomposeTransform(in_column="target", k=5, residuals=True), "regular_ts", {}),
+            (FourierDecomposeTransform(in_column="positive", k=5, residuals=True), "ts_with_exog", {}),
             # embeddings
             (
                 EmbeddingSegmentTransform(
