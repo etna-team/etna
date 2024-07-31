@@ -44,6 +44,7 @@ Decomposition transforms and their utilities:
    decomposition.MedianPerIntervalModel
    decomposition.SklearnPreprocessingPerIntervalModel
    decomposition.SklearnRegressionPerIntervalModel
+   decomposition.FourierDecomposeTransform
 
 Categorical encoding transforms:
 
@@ -52,6 +53,7 @@ Categorical encoding transforms:
    :template: class.rst
 
    SegmentEncoderTransform
+   MeanEncoderTransform
    MeanSegmentEncoderTransform
    LabelEncoderTransform
    OneHotEncoderTransform
@@ -99,6 +101,7 @@ Transforms to detect outliers:
    PredictionIntervalOutliersTransform
    IForestOutlierTransform
    IQROutlierTransform
+   MADOutlierTransform
 
 Transforms to work with time-related features:
 

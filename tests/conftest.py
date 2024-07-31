@@ -908,3 +908,29 @@ def ts_with_binary_exog() -> TSDataset:
     df_exog = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
     return ts
+
+
+@pytest.fixture()
+def outliers_solid_tsds():
+    """Create TSDataset with outliers and same last date."""
+    timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")
+    target1 = [np.sin(i) for i in range(len(timestamp))]
+    target1[10] += 10
+
+    target2 = [np.sin(i) for i in range(len(timestamp))]
+    target2[8] += 8
+    target2[15] = 2
+    target2[26] -= 12
+
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": target1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": target2, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df_exog = df.copy()
+    df_exog.columns = ["timestamp", "regressor_1", "segment"]
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df).iloc[:-10],
+        df_exog=TSDataset.to_dataset(df_exog),
+        freq="D",
+        known_future="all",
+    )
+    return ts
