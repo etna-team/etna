@@ -55,6 +55,12 @@ class ModelDecomposeTransform(IrreversibleTransform):
 
             Currently, only the specified series itself is used for model fitting. There is no way to add additional features/regressors to the decomposition model.
 
+        Warning
+        -------
+        Options :py:class:`etna.models.BATSModel` and :py:class:`etna.models.TBATSModel` may result in different components set compared to the initialization parameters.
+        In such case, a corresponding warning would be raised.
+
+
         in_column:
             name of the processed column.
         residuals:
