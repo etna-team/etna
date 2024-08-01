@@ -41,7 +41,7 @@ def test_unsupported_model():
 
 def test_prepare_ts_invalid_feature(simple_tsdf):
     transform = ModelDecomposeTransform(model=HoltWintersModel(), in_column="feat")
-    with pytest.raises(KeyError, match="feat"):
+    with pytest.raises(KeyError, match="is not found in features"):
         _ = transform._prepare_ts(ts=simple_tsdf)
 
 

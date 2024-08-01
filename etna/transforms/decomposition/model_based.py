@@ -29,7 +29,7 @@ _SUPPORTED_MODELS = Union[
 
 
 class ModelDecomposeTransform(IrreversibleTransform):
-    """Transform that uses ETNA models estimate series decomposition.
+    """Transform that uses ETNA models to estimate series decomposition.
 
     Note
     ----
@@ -89,7 +89,7 @@ class ModelDecomposeTransform(IrreversibleTransform):
     def _prepare_ts(self, ts: TSDataset) -> TSDataset:
         """Prepare dataset for the decomposition model."""
         if self.in_column not in ts.features:
-            raise KeyError(self.in_column)
+            raise KeyError(f"Column {self.in_column} is not found in features!")
 
         df = ts.df.loc[:, pd.IndexSlice[:, self.in_column]]
         df = df.rename(columns={self.in_column: "target"}, level="feature")
