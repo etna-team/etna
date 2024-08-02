@@ -38,14 +38,14 @@ Decomposition transforms and their utilities:
    STLTransform
    TheilSenTrendTransform
    TrendTransform
+   FourierDecomposeTransform
+   ModelDecomposeTransform
    decomposition.RupturesChangePointsModel
    decomposition.StatisticsPerIntervalModel
    decomposition.MeanPerIntervalModel
    decomposition.MedianPerIntervalModel
    decomposition.SklearnPreprocessingPerIntervalModel
    decomposition.SklearnRegressionPerIntervalModel
-   decomposition.FourierDecomposeTransform
-   decomposition.ModelDecomposeTransform
 
 Categorical encoding transforms:
 
