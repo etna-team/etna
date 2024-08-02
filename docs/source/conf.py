@@ -29,8 +29,8 @@ import etna  # isort:skip
 # -- Project information -----------------------------------------------------
 
 project = 'ETNA Time Series Library'
-copyright = '2021 - present, etna-tech@tinkoff.ru (Apache 2.0 License)'
-author = 'etna-tech@tinkoff.ru'
+copyright = '2021 - present, etna-tech@tbank.ru (Apache 2.0 License)'
+author = 'etna-tech@tbank.ru'
 
 # The full version, including alpha/beta/rc tags
 

@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix forecast visualization with `horizon=1` ([#426](https://github.com/etna-team/etna/pull/426))
 - Set upper bound `<2` on numpy version ([#431](https://github.com/etna-team/etna/pull/431))
 - 
+- Fix `VotingEnsemble`, `StackingEnsemble`, `DirectEnsemble` have a valid `params_to_tune` that returns empty dict ([#432](https://github.com/etna-team/etna/pull/432))
 - Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))
 - 
 - Update `TSDataset.describe`, `TSDataset.info` to exclude target intervals and target components in `num_exogs` ([#405](https://github.com/etna-team/etna/pull/405))
