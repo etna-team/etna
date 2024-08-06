@@ -486,7 +486,14 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         """
         features_df = ts.to_pandas()
         result_list = list()
-        for segment, model in self._get_model().items():
+
+        models = self._get_model()
+
+        for segment in ts.segments:
+            if segment not in models:
+                raise NotImplementedError("Per-segment models can't estimate prediction components on new segments!")
+
+            model = models[segment]
             segment_predict = self._make_predictions_segment(
                 model=model, segment=segment, df=features_df, prediction_method=prediction_method, **kwargs
             )

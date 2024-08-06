@@ -7,6 +7,7 @@ from ruptures import Binseg
 from sklearn.tree import DecisionTreeRegressor
 
 from etna.analysis import StatisticsRelevanceTable
+from etna.models import HoltWintersModel
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
 from etna.transforms import BinaryOperationTransform
@@ -47,6 +48,7 @@ from etna.transforms import MedianTransform
 from etna.transforms import MinMaxDifferenceTransform
 from etna.transforms import MinMaxScalerTransform
 from etna.transforms import MinTransform
+from etna.transforms import ModelDecomposeTransform
 from etna.transforms import MRMRFeatureSelectionTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms import PredictionIntervalOutliersTransform
@@ -133,6 +135,11 @@ class TestTransformTrain:
                 FourierDecomposeTransform(in_column="target", k=2, residuals=True),
                 "regular_ts",
                 {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
             ),
             # embeddings
             (
@@ -560,6 +567,11 @@ class TestTransformTrain:
                 FourierDecomposeTransform(in_column="target", k=2, residuals=True),
                 "regular_ts",
                 {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
             ),
             # embeddings
             (
@@ -1072,6 +1084,7 @@ class TestTransformTrainSubsetSegments:
                 "regular_ts",
             ),
             (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts"),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1342,6 +1355,8 @@ class TestTransformFutureSubsetSegments:
             ),
             (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts"),
             (FourierDecomposeTransform(in_column="positive", k=2, residuals=True), "ts_with_exog"),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="positive", residuals=True), "ts_with_exog"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1903,6 +1918,7 @@ class TestTransformTrainNewSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
             # encoders
             (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
@@ -2338,6 +2354,7 @@ class TestTransformFutureNewSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
             # encoders
             (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
@@ -2838,6 +2855,11 @@ class TestTransformFutureWithTarget:
                 "regular_ts",
                 {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
             ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
+            ),
         ),
     )
     def test_transform_future_with_target_fail_require_history(
@@ -2929,6 +2951,11 @@ class TestTransformFutureWithoutTarget:
                 FourierDecomposeTransform(in_column="positive", k=2, residuals=True),
                 "ts_with_exog",
                 {"create": {"positive_dft_0", "positive_dft_1", "positive_dft_residuals"}},
+            ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
             ),
             # embeddings
             (

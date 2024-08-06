@@ -3,7 +3,7 @@ name = "etna"
 version = "2.7.1"
 repository = "https://github.com/etna-team/etna"
 readme = "README.md"
-description = "ETNA is the first python open source framework of Tinkoff.ru AI Center. It is designed to make working with time series simple, productive, and fun."
+description = "ETNA is the first python open source framework of T-Bank AI Center. It is designed to make working with time series simple, productive, and fun."
 license = "Apache-2.0"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -29,15 +29,15 @@ packages = [
 
 authors = [
     "Andrey Alekseev <ilekseev@gmail.com>",
-    "Julia Shenshina <y.a.shenshina@tinkoff.ru>",
-    "Martin Gabdushev <m.gabdushev@tinkoff.ru>",
-    "Albina Munirova <a.i.munirova@tinkoff.ru>",
+    "Julia Shenshina <y.a.shenshina@tbank.ru>",
+    "Martin Gabdushev <m.gabdushev@tbank.ru>",
+    "Albina Munirova <a.i.munirova@tbank.ru>",
     "Artem Levashov <levashov.as@phystech.edu>",
     "Alexey Podkidyshev <podkidyshev.as@phystech.edu>",
-    "Nikita Barinov <n.barinov@tinkoff.ru>",
-    "Dmitry Bunin <d.a.bunin@tinkoff.ru>",
-    "Alexander Chikov <a.p.chikov@tinkoff.ru>",
-    "Artem Makhin <a.makhin@tinkoff.ru>"
+    "Nikita Barinov <n.barinov@tbank.ru>",
+    "Dmitry Bunin <d.a.bunin@tbank.ru>",
+    "Alexander Chikov <a.p.chikov@tbank.ru>",
+    "Artem Makhin <a.makhin@tbank.ru>"
 ]
 
 [tool.poetry.dependencies]
