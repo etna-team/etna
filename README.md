@@ -273,8 +273,8 @@ Former team members:
 [Konstantin Vedernikov](https://github.com/scanhex12),
 [Nikolai Romantsov](https://github.com/WinstonDovlatov),
 [Sergei Zhuravlev](https://github.com/malodetz),
-[Grigory Zlotin](https://github.com/yellowssnake),
 [Alexandr Kuznetsov](https://github.com/Alexander76Kuznetsov),
+[Grigory Zlotin](https://github.com/yellowssnake),
 [Dmitriy Sablin](https://github.com/Polzovat123),
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen)
