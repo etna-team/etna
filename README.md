@@ -263,7 +263,7 @@ Current team members:
 [Maxim Zherelo](https://github.com/brsnw250)
 [Yakov Malyshev](https://github.com/ostreech1997)
 [Egor Baturin](https://github.com/egoriyaa)
-[Alexandr Kuznetsov](https://github.com/Alexander76Kuznetsov),
+[Mikhail Bolev](https://github.com/kenshi777),
 
 Former team members:
 [Andrey Alekseev](https://github.com/iKintosh),
@@ -273,18 +273,24 @@ Former team members:
 [Konstantin Vedernikov](https://github.com/scanhex12),
 [Nikolai Romantsov](https://github.com/WinstonDovlatov),
 [Sergei Zhuravlev](https://github.com/malodetz),
+[Grigory Zlotin](https://github.com/yellowssnake),
+[Alexandr Kuznetsov](https://github.com/Alexander76Kuznetsov),
+[Dmitriy Sablin](https://github.com/Polzovat123),
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ### ETNA.Contributors
 
 [GooseIt](https://github.com/GooseIt),
-[smetam](https://github.com/smetam),
-[aleksander43smith](https://github.com/aleksander43smith),
-[looopka](https://github.com/looopka),
 [mvakhmenin](https://github.com/mvakhmenin),
+[looopka](https://github.com/looopka),
+[aleksander43smith](https://github.com/aleksander43smith),
+[smetam](https://github.com/smetam),
+[Wapwolf](https://github.com/Wapwolf),
+[ArtemLiA](https://github.com/ArtemLiA),
 [Carlosbogo](https://github.com/Carlosbogo),
 [GoshaLetov](https://github.com/GoshaLetov),
+[LeorFinkelberg](https://github.com/LeorFinkelberg),
 [Pacman1984](https://github.com/Pacman1984),
 
 ## License
