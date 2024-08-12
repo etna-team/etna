@@ -81,7 +81,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-
   test-pandas-versions:
     runs-on: ubuntu-latest
     strategy:
