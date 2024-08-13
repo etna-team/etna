@@ -283,6 +283,8 @@ class CatBoostPerSegmentModel(
             * For GPU. The given value is used for reading the data from the hard drive and does
               not affect the training.
               During the training one main thread and one thread for each GPU are used.
+        **kwargs:
+            Additional parameters passed to `CatBoostRegressor` model.
         """
         self.iterations = iterations
         self.depth = depth
