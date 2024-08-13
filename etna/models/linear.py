@@ -72,6 +72,8 @@ class LinearPerSegmentModel(
         fit_intercept:
             Whether to calculate the intercept for this model. If set to False, no intercept will be used in
             calculations (i.e. data is expected to be centered).
+        **kwargs:
+            Additional parameters passed to `LinearRegression` model.
         """
         self.fit_intercept = fit_intercept
         self.kwargs = kwargs
