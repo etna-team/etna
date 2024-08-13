@@ -126,6 +126,8 @@ class ElasticPerSegmentModel(
         fit_intercept:
             Whether to calculate the intercept for this model. If set to False, no intercept will be used in
             calculations (i.e. data is expected to be centered).
+        **kwargs:
+            Additional parameters passed to `ElasticNet` model.
         """
         self.alpha = alpha
         self.l1_ratio = l1_ratio
