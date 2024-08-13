@@ -77,7 +77,9 @@ jobs:
           poetry run pytest etna -v --doctest-modules --ignore=etna/libs --durations=10
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-pandas-versions:
     runs-on: ubuntu-latest
@@ -116,6 +118,3 @@ jobs:
           poetry run pytest tests/test_datasets -v --cov=etna --cov-report=xml --durations=10
           poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml --durations=10
           poetry run pytest tests/test_models/test_utils.py -v --cov=etna --cov-report=xml --durations=10
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
