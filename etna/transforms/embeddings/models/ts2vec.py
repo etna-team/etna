@@ -1,8 +1,10 @@
 import pathlib
 import tempfile
 import zipfile
-from typing import Literal
+from urllib import request
+from typing import Literal, List
 from typing import Optional
+from pathlib import Path
 
 import numpy as np
 
@@ -11,6 +13,8 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 if SETTINGS.torch_required:
     from etna.libs.ts2vec import TS2Vec
+
+_DOWNLOAD_PATH = Path.home() / ".etna" / "embeddings" / "ts2vec"
 
 
 class TS2VecEmbeddingModel(BaseEmbeddingModel):
@@ -257,7 +261,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
                 archive.write(model_save_path, "model.zip")
 
     @classmethod
-    def load(cls, path: pathlib.Path) -> "TS2VecEmbeddingModel":
+    def load(cls, path: Optional[pathlib.Path] = None, model_name: Optional[str] = None) -> "TS2VecEmbeddingModel":
         """Load an object.
 
         Model's weights are transferred to cpu during loading.
@@ -267,11 +271,31 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         path:
             Path to load object from.
 
+            - if `path` is not None and `model_name` is None - load the local model from `path`.
+            - if `path` is None and `model_name` is not None - save the external `model_name` model to the etna folder in the home directory and load it.
+            - if `path` is not  None and `model_name` is not None - save the external `model_name` model to `path` and load it.
+
+        model_name:
+            name of external model to load. To get list of available models use `list_models` method.
+
         Returns
         -------
         :
             Loaded object.
+
+        Raises
+        ------
+        ValueError:
+            If non of parameters path and model_name are set.
         """
+        if model_name is not None:
+            if path is None:
+                path = _DOWNLOAD_PATH / f"{model_name}.zip"
+            url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/ts2vec/{model_name}.zip"
+            request.urlretrieve(url=url, filename=path)
+        elif path is None and model_name is None:
+            raise ValueError("Both path and model_name are not specified. Specify one parameter at least.")
+
         obj: TS2VecEmbeddingModel = super().load(path=path)
         obj.embedding_model = TS2Vec(
             input_dims=obj.input_dims,
@@ -292,3 +316,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
                 obj.embedding_model.load(fn=str(model_path))
 
         return obj
+
+    @staticmethod
+    def list_models() -> List[str]:
+        return ["ts2vec_tiny"]
+
