@@ -284,7 +284,7 @@ class CatBoostPerSegmentModel(
               not affect the training.
               During the training one main thread and one thread for each GPU are used.
         **kwargs:
-            Additional parameters passed to `CatBoostRegressor` model.
+            Additional parameters passed to :py:class:`catboost.CatBoostRegressor` model.
         """
         self.iterations = iterations
         self.depth = depth
@@ -425,7 +425,7 @@ class CatBoostMultiSegmentModel(
               not affect the training.
               During the training one main thread and one thread for each GPU are used.
         **kwargs:
-            Additional parameters passed to `CatBoostRegressor` model.
+            Additional parameters passed to :py:class:`catboost.CatBoostRegressor` model.
         """
         self.iterations = iterations
         self.depth = depth
