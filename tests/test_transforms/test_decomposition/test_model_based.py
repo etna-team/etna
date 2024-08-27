@@ -6,10 +6,12 @@ from etna.metrics import MAE
 from etna.models import BATSModel
 from etna.models import CatBoostPerSegmentModel
 from etna.models import DeadlineMovingAverageModel
+from etna.models import HoltModel
 from etna.models import HoltWintersModel
 from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.models import SeasonalMovingAverageModel
+from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.pipeline import Pipeline
 from etna.transforms import IForestOutlierTransform
@@ -253,6 +255,9 @@ def test_pipeline_models(ts_name, in_column, decompose_model, forecast_model, re
     "decompose_model",
     (
         HoltWintersModel(),
+        HoltModel(),
+        SimpleExpSmoothingModel(),
+        HoltWintersModel(trend="add", seasonal="add"),
         ProphetModel(),
         SARIMAXModel(),
         DeadlineMovingAverageModel(),

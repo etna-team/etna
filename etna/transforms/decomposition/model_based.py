@@ -4,14 +4,16 @@ from typing import get_args
 
 import pandas as pd
 
+from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.datasets.utils import determine_num_steps
 from etna.models import BATSModel
 from etna.models import DeadlineMovingAverageModel
+from etna.models import HoltModel
 from etna.models import HoltWintersModel
-from etna.models import ProphetModel
 from etna.models import SARIMAXModel
 from etna.models import SeasonalMovingAverageModel
+from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.models.base import ContextRequiredModelType
 from etna.models.base import ModelType
@@ -19,13 +21,22 @@ from etna.transforms import IrreversibleTransform
 
 _SUPPORTED_MODELS = Union[
     HoltWintersModel,  # full
-    ProphetModel,  # full
+    HoltModel,  # full
+    SimpleExpSmoothingModel,  # full
     SARIMAXModel,  # full
     DeadlineMovingAverageModel,  # need to account context/prediction size
     SeasonalMovingAverageModel,  # need to account context/prediction size
     BATSModel,  # dynamic components, not reliable
     TBATSModel,  # dynamic components, not reliable
 ]
+
+if SETTINGS.prophet_required:
+    from etna.models import ProphetModel
+
+    _SUPPORTED_MODELS = Union[  # type: ignore
+        _SUPPORTED_MODELS,
+        ProphetModel,  # full
+    ]
 
 
 class ModelDecomposeTransform(IrreversibleTransform):
