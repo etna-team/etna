@@ -1,10 +1,14 @@
+import os
 import pathlib
 import tempfile
+import warnings
 import zipfile
-from urllib import request
-from typing import Literal, List
-from typing import Optional
 from pathlib import Path
+from typing import List
+from typing import Literal
+from typing import Optional
+from urllib import request
+from urllib.error import HTTPError
 
 import numpy as np
 
@@ -267,9 +271,11 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         path:
             Path to load object from.
 
-            - if `path` is not None and `model_name` is None - load the local model from `path`.
-            - if `path` is None and `model_name` is not None - save the external `model_name` model to the etna folder in the home directory and load it.
-            - if `path` is not  None and `model_name` is not None - save the external `model_name` model to `path` and load it.
+            - if `path` is not None and `model_name` is None, load the local model from `path`.
+            - if `path` is None and `model_name` is not None, save the external `model_name` model to the etna folder in the home directory and load it.
+            If `path` exists, external model will not be loaded.
+            - if `path` is not  None and `model_name` is not None, save the external `model_name` model to `path` and load it.
+            If `path` exists, external model will not be loaded.
 
         model_name:
             name of external model to load. To get list of available models use `list_models` method.
@@ -283,12 +289,29 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         ------
         ValueError:
             If non of parameters path and model_name are set.
+        NotImplementedError:
+            If model_name is not from list of available model names
         """
         if model_name is not None:
             if path is None:
                 path = _DOWNLOAD_PATH / f"{model_name}.zip"
-            url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/tstcc/{model_name}.zip"
-            request.urlretrieve(url=url, filename=path)
+            if os.path.exists(path):
+                warnings.warn(
+                    f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model."
+                )
+            else:
+                directory = os.path.dirname(path)
+                # If path not in current directory and it doesn't exist
+                if directory and not os.path.exists(directory):
+                    os.makedirs(directory)
+
+                try:
+                    url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/tstcc/{model_name}.zip"
+                    request.urlretrieve(url=url, filename=path)
+                except HTTPError:
+                    raise NotImplementedError(
+                        f"Model {model_name} is not available. To get list of available models use `list_models` method."
+                    )
         elif path is None and model_name is None:
             raise ValueError("Both path and model_name are not specified. Specify one parameter at least.")
 
@@ -321,4 +344,5 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
 
     @staticmethod
     def list_models() -> List[str]:
+        """Return a list of available pretrained models."""
         return ["tstcc_medium"]
