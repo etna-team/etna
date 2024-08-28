@@ -47,6 +47,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         num_workers: int = 0,
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
+        freezed: bool = False,
     ):
         """Init TS2VecEmbeddingModel.
 
@@ -72,6 +73,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         temporal_unit:
             The minimum unit to perform temporal contrast. When training on a very long sequence,
             this param helps to reduce the cost of time and memory.
+        freezed:
+            Whether to ``freeze`` model in constructor or not. For more details see ``freeze`` method.
         Notes
         -----
         In case of long series to reduce memory consumption it is recommended to use max_train_length parameter or manually break the series into smaller subseries.
@@ -96,13 +99,15 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             max_train_length=self.max_train_length,
             temporal_unit=self.temporal_unit,
         )
+        self.freezed = freezed
 
-        self._is_freezed: bool = False
+        if self.freezed:
+            self.freeze()
 
     @property
     def is_freezed(self):
         """Return whether to skip training during ``fit``."""
-        return self._is_freezed
+        return self.freezed
 
     def freeze(self, is_freezed: bool = True):
         """Enable or disable skipping training in ``fit``.
@@ -112,7 +117,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         is_freezed:
             whether to skip training during ``fit``.
         """
-        self._is_freezed = is_freezed
+        self.freezed = is_freezed
 
     def fit(
         self,

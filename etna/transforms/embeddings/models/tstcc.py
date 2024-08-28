@@ -58,6 +58,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         device: Literal["cpu", "cuda"] = "cpu",
         batch_size: int = 16,
         num_workers: int = 0,
+        freezed: bool = False,
     ):
         """Init TSTCCEmbeddingModel.
 
@@ -96,6 +97,8 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             The batch size (number of segments in a batch). To swap batch_size, change this attribute.
         num_workers:
             How many subprocesses to use for data loading. See (api reference :py:class:`torch.utils.data.DataLoader`). To swap num_workers, change this attribute.
+        freezed:
+            Whether to ``freeze`` model in constructor or not. For more details see ``freeze`` method.
         """
         super().__init__(output_dims=output_dims)
         self.input_dims = input_dims
@@ -134,13 +137,15 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             jitter_ratio=self.jitter_ratio,
             use_cosine_similarity=self.use_cosine_similarity,
         )
+        self.freezed = freezed
 
-        self._is_freezed: bool = False
+        if self.freezed:
+            self.freeze()
 
     @property
     def is_freezed(self):
         """Return whether to skip training during ``fit``."""
-        return self._is_freezed
+        return self.freezed
 
     def freeze(self, is_freezed: bool = True):
         """Enable or disable skipping training in ``fit``.
@@ -150,7 +155,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         is_freezed:
             whether to skip training during ``fit``.
         """
-        self._is_freezed = is_freezed
+        self.freezed = is_freezed
 
     def fit(
         self,
