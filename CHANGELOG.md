@@ -52,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Add lower limit for `typing_extension` versions ([#458](https://github.com/etna-team/etna/pull/458))
+- Fix `ModelDecomposeTransform` import without `prophet` module ([#459](https://github.com/etna-team/etna/pull/459))
 - 
 - 
 - 
