@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Add test on working without extras ([#463](https://github.com/etna-team/etna/pull/463))
 - 
 - 
 - 
