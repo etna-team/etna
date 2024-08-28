@@ -7,6 +7,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Add `**kwargs` argument description for models based on `LinearRegression`, `ElasticNet` and `CatBoostRegressor` ([#454](https://github.com/etna-team/etna/pull/454https://github.com/etna-team/etna/pull/454))  
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Changed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Fixed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+-
+
+## [2.8.0] - 2024-08-13
+### Added
 - Add `get_anomalies_iqr` function for anomaly detection ([#374](https://github.com/etna-team/etna/pull/374))
 - Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
 - Add `IForestOutlierTransform` ([#381](https://github.com/etna-team/etna/pull/381))
@@ -18,20 +85,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `MeanEncoderTransform` ([#413](https://github.com/etna-team/etna/pull/413))
 - Add `FourierDecomposeTransform` transform for series decomposition using DFT ([#430](https://github.com/etna-team/etna/pull/430))
 - Add `ModelDecomposeTransform` transform for series decomposition using ETNA models ([#427](https://github.com/etna-team/etna/pull/427))
--
 
 ### Changed
 - Allow to change `device`, `batch_size` and `num_workers` of embedding models ([#396](https://github.com/etna-team/etna/pull/396))
-- 
-- 
-- 
--
 - Update pipelines documentation ([#408](https://github.com/etna-team/etna/pull/408))
 - Update formulas for metrics in documentation ([#406](https://github.com/etna-team/etna/pull/406))
-- 
 - Update documentation to explain how to contribute and work with discussions, update templates for issues ([#395](https://github.com/etna-team/etna/pull/395))
 - Remove "Other issue" template, update links to discussions in issue creation menu ([#401](https://github.com/etna-team/etna/pull/401))
-- 
 
 ### Fixed
 - Fix rendering in 210 tutorial ([#386](https://github.com/etna-team/etna/pull/386))
@@ -39,14 +99,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove sorting of `ts.df` by timestamps in `plot_forecast` and `plot_forecast_decomposition` ([#410](https://github.com/etna-team/etna/pull/410))
 - Fix forecast visualization with `horizon=1` ([#426](https://github.com/etna-team/etna/pull/426))
 - Set upper bound `<2` on numpy version ([#431](https://github.com/etna-team/etna/pull/431))
-- 
 - Fix `VotingEnsemble`, `StackingEnsemble`, `DirectEnsemble` have a valid `params_to_tune` that returns empty dict ([#432](https://github.com/etna-team/etna/pull/432))
 - Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))
-- 
 - Update `TSDataset.describe`, `TSDataset.info` to exclude target intervals and target components in `num_exogs` ([#405](https://github.com/etna-team/etna/pull/405))
-- 
-- 
-- 
 
 ## [2.7.1] - 2024-06-05
 ### Fixed
