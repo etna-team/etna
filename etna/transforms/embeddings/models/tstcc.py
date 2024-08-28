@@ -271,14 +271,12 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         path:
             Path to load object from.
 
-            - if `path` is not None and `model_name` is None, load the local model from `path`.
-            - if `path` is None and `model_name` is not None, save the external `model_name` model to the etna folder in the home directory and load it.
-            If `path` exists, external model will not be loaded.
-            - if `path` is not  None and `model_name` is not None, save the external `model_name` model to `path` and load it.
-            If `path` exists, external model will not be loaded.
+            - if ``path`` is not None and ``model_name`` is None, load the local model from ``path``.
+            - if ``path`` is None and ``model_name`` is not None, save the external ``model_name`` model to the etna folder in the home directory and load it. If ``path`` exists, external model will not be downloaded.
+            - if ``path`` is not  None and ``model_name`` is not None, save the external ``model_name`` model to ``path`` and load it. If ``path`` exists, external model will not be downloaded.
 
         model_name:
-            name of external model to load. To get list of available models use `list_models` method.
+            name of external model to load. To get list of available models use ``list_models`` method.
 
         Returns
         -------
@@ -288,10 +286,16 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         Raises
         ------
         ValueError:
-            If non of parameters path and model_name are set.
+            If none of parameters ``path`` and ``model_name`` are set.
         NotImplementedError:
-            If model_name is not from list of available model names
+            If ``model_name`` isn't from list of available model names.
         """
+        warnings.filterwarnings(
+            "ignore",
+            message="The object was saved under etna version 2.7.1 but running version is",
+            category=UserWarning,
+        )
+
         if model_name is not None:
             if path is None:
                 path = _DOWNLOAD_PATH / f"{model_name}.zip"
@@ -313,7 +317,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
                         f"Model {model_name} is not available. To get list of available models use `list_models` method."
                     )
         elif path is None and model_name is None:
-            raise ValueError("Both path and model_name are not specified. Specify one parameter at least.")
+            raise ValueError("Both path and model_name are not specified. At least one parameter should be specified.")
 
         obj: TSTCCEmbeddingModel = super().load(path=path)
         obj.embedding_model = TSTCC(
@@ -344,5 +348,17 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
 
     @staticmethod
     def list_models() -> List[str]:
-        """Return a list of available pretrained models."""
+        """
+        Return a list of available pretrained models.
+
+        Main information about available models:
+            - tstcc_medium:
+                - Number of parameters - 234k
+                - Dimension of output embeddings - 16
+
+        Returns
+        -------
+        :
+            List of available pretrained models.
+        """
         return ["tstcc_medium"]

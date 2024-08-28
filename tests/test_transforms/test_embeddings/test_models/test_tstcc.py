@@ -1,5 +1,4 @@
 import os
-import warnings
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 
@@ -11,8 +10,6 @@ from etna.loggers import ConsoleLogger
 from etna.loggers import tslogger
 from etna.transforms.embeddings.models import TSTCCEmbeddingModel
 from tests.test_transforms.test_embeddings.test_models.utils import check_logged_loss
-
-warnings.filterwarnings("ignore")
 
 
 @pytest.mark.smoke
