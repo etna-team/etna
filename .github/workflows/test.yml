@@ -145,4 +145,4 @@ jobs:
 
       - name: Check without extras
         run: |
-          poetry run scripts/check_without_extras.py
+          poetry run python scripts/check_without_extras.py
