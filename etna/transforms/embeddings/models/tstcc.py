@@ -186,7 +186,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         verbose:
             Whether to print the training loss after each epoch.
         """
-        if not self._is_freezed:
+        if not self.freezed:
             self.embedding_model.fit(
                 train_data=x,
                 n_epochs=n_epochs,

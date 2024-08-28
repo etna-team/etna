@@ -143,7 +143,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         verbose:
             Whether to print the training loss after each epoch.
         """
-        if not self._is_freezed:
+        if not self.freezed:
             self.embedding_model.fit(
                 train_data=x,
                 lr=lr,
