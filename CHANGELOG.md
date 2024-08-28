@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
-- 
+- Fixed `ModelDecomposeTransform` import without `prophet` module ([#459](https://github.com/etna-team/etna/pull/459))
 - 
 - 
 - 
