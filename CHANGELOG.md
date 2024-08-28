@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
-- Added lower limit for `typing_extension` versions ([#458](https://github.com/etna-team/etna/pull/458))
+- Add lower limit for `typing_extension` versions ([#458](https://github.com/etna-team/etna/pull/458))
 - 
 - 
 - 
