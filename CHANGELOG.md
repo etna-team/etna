@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Add test on working without extras ([#463](https://github.com/etna-team/etna/pull/463))
 - 
 - 
 - 
@@ -56,7 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Fix holidays during loading datasets `traffic_2008_10T` and `traffic_2008_hourly` ([#462](https://github.com/etna-team/etna/pull/462))
 - 
 - 
 - 
