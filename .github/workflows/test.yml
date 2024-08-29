@@ -73,7 +73,7 @@ jobs:
 
       - name: PyTest with sharding
         run: |
-          poetry run pytest tests -v --shard-id=${{ matrix.shard-id }} --num-shards=3 --cov=etna --ignore=tests/test_experimental --cov-report=xml --durations=10
+          poetry run pytest tests -v --shard-id=${{ matrix.shard-id }} --num-shards=3 --cov=etna --cov-report=xml --durations=10
           poetry run pytest etna -v --doctest-modules --ignore=etna/libs --durations=10
 
       - name: Upload coverage
