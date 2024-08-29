@@ -8,7 +8,6 @@ from typing import List
 from typing import Literal
 from typing import Optional
 from urllib import request
-from urllib.error import HTTPError
 
 import numpy as np
 
