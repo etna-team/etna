@@ -46,7 +46,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         num_workers: int = 0,
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
-        freezed: bool = False,
+        is_freezed: bool = False,
     ):
         """Init TS2VecEmbeddingModel.
 
@@ -72,7 +72,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         temporal_unit:
             The minimum unit to perform temporal contrast. When training on a very long sequence,
             this param helps to reduce the cost of time and memory.
-        freezed:
+        is_freezed:
             Whether to ``freeze`` model in constructor or not. For more details see ``freeze`` method.
         Notes
         -----
@@ -98,15 +98,15 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             max_train_length=self.max_train_length,
             temporal_unit=self.temporal_unit,
         )
-        self.freezed = freezed
+        self._is_freezed = is_freezed
 
-        if self.freezed:
+        if self._is_freezed:
             self.freeze()
 
     @property
     def is_freezed(self):
         """Return whether to skip training during ``fit``."""
-        return self.freezed
+        return self._is_freezed
 
     def freeze(self, is_freezed: bool = True):
         """Enable or disable skipping training in ``fit``.
@@ -116,7 +116,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         is_freezed:
             whether to skip training during ``fit``.
         """
-        self.freezed = is_freezed
+        self._is_freezed = is_freezed
 
     def fit(
         self,
@@ -142,7 +142,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         verbose:
             Whether to print the training loss after each epoch.
         """
-        if not self.freezed:
+        if not self._is_freezed:
             self.embedding_model.fit(
                 train_data=x,
                 lr=lr,
@@ -312,10 +312,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
                     f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model."
                 )
             else:
-                directory = os.path.dirname(path)
-                # If path not in current directory and it doesn't exist
-                if directory and not os.path.exists(directory):
-                    os.makedirs(directory)
+                Path(path).parent.mkdir(exist_ok=True, parents=True)
 
                 if model_name in cls.list_models():
                     url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/ts2vec/{model_name}.zip"
@@ -354,9 +351,11 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         Return a list of available pretrained models.
 
         Main information about available models:
-            - ts2vec_tiny:
-                - Number of parameters - 40k
-                - Dimension of output embeddings - 16
+
+        - ts2vec_tiny:
+
+          - Number of parameters - 40k
+          - Dimension of output embeddings - 16
 
         Returns
         -------

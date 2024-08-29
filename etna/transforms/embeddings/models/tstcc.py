@@ -57,7 +57,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         device: Literal["cpu", "cuda"] = "cpu",
         batch_size: int = 16,
         num_workers: int = 0,
-        freezed: bool = False,
+        is_freezed: bool = False,
     ):
         """Init TSTCCEmbeddingModel.
 
@@ -96,7 +96,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             The batch size (number of segments in a batch). To swap batch_size, change this attribute.
         num_workers:
             How many subprocesses to use for data loading. See (api reference :py:class:`torch.utils.data.DataLoader`). To swap num_workers, change this attribute.
-        freezed:
+        is_freezed:
             Whether to ``freeze`` model in constructor or not. For more details see ``freeze`` method.
         """
         super().__init__(output_dims=output_dims)
@@ -136,15 +136,15 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             jitter_ratio=self.jitter_ratio,
             use_cosine_similarity=self.use_cosine_similarity,
         )
-        self.freezed = freezed
+        self._is_freezed = is_freezed
 
-        if self.freezed:
+        if self._is_freezed:
             self.freeze()
 
     @property
     def is_freezed(self):
         """Return whether to skip training during ``fit``."""
-        return self.freezed
+        return self._is_freezed
 
     def freeze(self, is_freezed: bool = True):
         """Enable or disable skipping training in ``fit``.
@@ -154,7 +154,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         is_freezed:
             whether to skip training during ``fit``.
         """
-        self.freezed = is_freezed
+        self._is_freezed = is_freezed
 
     def fit(
         self,
@@ -185,7 +185,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         verbose:
             Whether to print the training loss after each epoch.
         """
-        if not self.freezed:
+        if not self._is_freezed:
             self.embedding_model.fit(
                 train_data=x,
                 n_epochs=n_epochs,
@@ -308,10 +308,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
                     f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model."
                 )
             else:
-                directory = os.path.dirname(path)
-                # If path not in current directory and it doesn't exist
-                if directory and not os.path.exists(directory):
-                    os.makedirs(directory)
+                Path(path).parent.mkdir(exist_ok=True, parents=True)
 
                 if model_name in cls.list_models():
                     url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/tstcc/{model_name}.zip"
@@ -356,9 +353,11 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         Return a list of available pretrained models.
 
         Main information about available models:
-            - tstcc_medium:
-                - Number of parameters - 234k
-                - Dimension of output embeddings - 16
+
+        - tstcc_medium:
+
+          - Number of parameters - 234k
+          - Dimension of output embeddings - 16
 
         Returns
         -------
