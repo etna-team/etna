@@ -153,6 +153,7 @@ def test_correct_list_models():
 @pytest.mark.parametrize("model_name", ["ts2vec_tiny"])
 def test_load_pretrained_model_default_path(model_name):
     path = Path.home() / ".etna" / "embeddings" / "ts2vec" / f"{model_name}.zip"
+    path.unlink(missing_ok=True)
     _ = TS2VecEmbeddingModel.load(model_name=model_name)
     assert os.path.isfile(path)
 

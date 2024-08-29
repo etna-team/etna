@@ -159,6 +159,7 @@ def test_correct_list_models():
 @pytest.mark.parametrize("model_name", ["tstcc_medium"])
 def test_load_pretrained_model_default_path(model_name):
     path = Path.home() / ".etna" / "embeddings" / "tstcc" / f"{model_name}.zip"
+    path.unlink(missing_ok=True)
     _ = TSTCCEmbeddingModel.load(path=path, model_name=model_name)
     assert os.path.isfile(path)
 
