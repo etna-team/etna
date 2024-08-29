@@ -8,7 +8,6 @@ from typing import List
 from typing import Literal
 from typing import Optional
 from urllib import request
-from urllib.error import HTTPError
 
 import numpy as np
 
@@ -318,10 +317,10 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
                 if directory and not os.path.exists(directory):
                     os.makedirs(directory)
 
-                try:
+                if model_name in cls.list_models():
                     url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/ts2vec/{model_name}.zip"
                     request.urlretrieve(url=url, filename=path)
-                except HTTPError:
+                else:
                     raise NotImplementedError(
                         f"Model {model_name} is not available. To get list of available models use `list_models` method."
                     )
