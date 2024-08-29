@@ -171,12 +171,18 @@ def test_load_pretrained_model_exact_path(model_name, tmp_path):
 
 
 def test_load_unknown_pretrained_model():
-    with pytest.raises(NotImplementedError):
-        TSTCCEmbeddingModel.load(model_name="unknown_model")
+    model_name = "unknown_model"
+    with pytest.raises(
+        NotImplementedError,
+        match=f"Model {model_name} is not available. To get list of available models use `list_models` method.",
+    ):
+        TSTCCEmbeddingModel.load(model_name=model_name)
 
 
 def test_load_set_none_parameters():
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Both path and model_name are not specified. At least one parameter should be specified."
+    ):
         TSTCCEmbeddingModel.load()
 
 
@@ -185,5 +191,9 @@ def test_warning_existing_path(tmp_path):
     path = Path(tmp_path) / "tmp.zip"
     model.save(path)
 
-    with pytest.warns(UserWarning):
-        TSTCCEmbeddingModel.load(path=path, model_name="tstcc_medium")
+    model_name = "tstcc_medium"
+    with pytest.warns(
+        UserWarning,
+        match=f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model.",
+    ):
+        TSTCCEmbeddingModel.load(path=path, model_name=model_name)
