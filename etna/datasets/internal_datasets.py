@@ -347,6 +347,7 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     targets = np.concatenate([targets_train, targets_test], axis=0)
     targets = targets[np.argsort(ts_indecies)].reshape(-1, 963)
 
+    # federal holidays and days with anomalies
     drop_days = [
         date(2008, 1, 1),
         date(2008, 1, 21),
