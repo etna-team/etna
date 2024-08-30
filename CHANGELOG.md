@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
-- 
+- Fix `IForestOutlierTransform` failed with ignored `target` column ([#460](https://github.com/etna-team/etna/pull/460))
 - 
 - 
 - 
