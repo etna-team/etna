@@ -66,7 +66,7 @@ joblib = "*"
 plotly = "*"
 hydra_slayer = "*"
 matplotlib = "*"
-typing_extensions = "*"
+typing_extensions = "^4.1.0"
 tbats = "^1.1.0"
 Deprecated = "1.2.13"
 types-Deprecated = "1.2.9"
@@ -209,6 +209,7 @@ filterwarnings = [
     "ignore: Given top_k=.* is less than n_segments=.*. Algo will filter data without Gale-Shapley run.",
     "ignore: This model doesn't work with exogenous features",
     "ignore: Some of external objects in input parameters could be not",
+    "ignore: You haven't set all parameters inside class __init__ method.* 'is_freezed'",
     # external warnings
     "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",

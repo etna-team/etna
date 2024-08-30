@@ -7,13 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add `**kwargs` argument description for models based on `LinearRegression`, `ElasticNet` and `CatBoostRegressor` ([#454](https://github.com/etna-team/etna/pull/454https://github.com/etna-team/etna/pull/454))  
+- Add `**kwargs` argument description for models based on `LinearRegression`, `ElasticNet` and `CatBoostRegressor` ([#454](https://github.com/etna-team/etna/pull/454))  
+- Add possibility to load pretrained embedding models ([#461](https://github.com/etna-team/etna/pull/461))
+- Add `is_freezed` parameter to `TS2VecEmbeddingModel` and `TSTCCEmbeddingModel` ([#461](https://github.com/etna-team/etna/pull/461))
 - 
 - 
 - 
-- 
-- 
-- 
+- Add test on working without extras ([#463](https://github.com/etna-team/etna/pull/463))
 - 
 - 
 - 
@@ -52,10 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix `IForestOutlierTransform` failed with ignored `target` column ([#460](https://github.com/etna-team/etna/pull/460))
+- Add lower limit for `typing_extension` versions ([#458](https://github.com/etna-team/etna/pull/458))
+- Fix `ModelDecomposeTransform` import without `prophet` module ([#459](https://github.com/etna-team/etna/pull/459))
 - 
 - 
 - 
-- 
+- Fix holidays during loading datasets `traffic_2008_10T` and `traffic_2008_hourly` ([#462](https://github.com/etna-team/etna/pull/462))
 - 
 - 
 - 

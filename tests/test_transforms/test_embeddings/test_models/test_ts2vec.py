@@ -1,4 +1,5 @@
-import pathlib
+import os
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
@@ -33,7 +34,7 @@ def test_encode_window(ts_with_exog_nan_begin_numpy):
 def test_save(tmp_path):
     model = TS2VecEmbeddingModel(input_dims=3)
 
-    path = pathlib.Path(tmp_path) / "tmp.zip"
+    path = Path(tmp_path) / "tmp.zip"
     model.save(path=path)
 
 
@@ -41,9 +42,14 @@ def test_save(tmp_path):
 def test_load(tmp_path):
     model = TS2VecEmbeddingModel(input_dims=3)
 
-    path = pathlib.Path(tmp_path) / "tmp.zip"
+    path = Path(tmp_path) / "tmp.zip"
     model.save(path=path)
     TS2VecEmbeddingModel.load(path=path)
+
+
+@pytest.mark.smoke
+def test_list_models():
+    TS2VecEmbeddingModel.list_models()
 
 
 @pytest.mark.parametrize(
@@ -60,7 +66,7 @@ def test_encode_format(ts_with_exog_nan_begin_numpy, output_dims, segment_shape_
 def test_encode_pre_fitted(ts_with_exog_nan_begin_numpy, tmp_path):
     model = TS2VecEmbeddingModel(input_dims=3)
     model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
-    path = pathlib.Path(tmp_path) / "tmp.zip"
+    path = Path(tmp_path) / "tmp.zip"
     model.save(path=path)
 
     model_loaded = TS2VecEmbeddingModel.load(path=path)
@@ -77,7 +83,7 @@ def test_not_freeze_fit(ts_with_exog_nan_begin_numpy, tmp_path):
     model = TS2VecEmbeddingModel(input_dims=3)
     model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
     model.freeze(is_freezed=False)
-    path = pathlib.Path(tmp_path) / "tmp.zip"
+    path = Path(tmp_path) / "tmp.zip"
     model.save(path=path)
 
     model_loaded = TS2VecEmbeddingModel.load(path=path)
@@ -98,7 +104,7 @@ def test_freeze_fit(ts_with_exog_nan_begin_numpy, tmp_path):
     model = TS2VecEmbeddingModel(input_dims=3)
     model.fit(ts_with_exog_nan_begin_numpy, n_epochs=1)
     model.freeze(is_freezed=True)
-    path = pathlib.Path(tmp_path) / "tmp.zip"
+    path = Path(tmp_path) / "tmp.zip"
     model.save(path=path)
 
     model_loaded = TS2VecEmbeddingModel.load(path=path)
@@ -138,3 +144,51 @@ def test_logged_loss(ts_with_exog_nan_begin_numpy, verbose, n_epochs, n_lines_ex
     model.fit(ts_with_exog_nan_begin_numpy, n_epochs=n_epochs, verbose=verbose)
     check_logged_loss(log_file=file.name, n_lines_expected=n_lines_expected)
     tslogger.remove(idx)
+
+
+def test_correct_list_models():
+    assert TS2VecEmbeddingModel.list_models() == ["ts2vec_tiny"]
+
+
+@pytest.mark.parametrize("model_name", ["ts2vec_tiny"])
+def test_load_pretrained_model_default_path(model_name):
+    path = Path.home() / ".etna" / "embeddings" / "ts2vec" / f"{model_name}.zip"
+    path.unlink(missing_ok=True)
+    _ = TS2VecEmbeddingModel.load(model_name=model_name)
+    assert os.path.isfile(path)
+
+
+@pytest.mark.parametrize("model_name", ["ts2vec_tiny"])
+def test_load_pretrained_model_exact_path(model_name, tmp_path):
+    path = Path(tmp_path) / "tmp.zip"
+    _ = TS2VecEmbeddingModel.load(path=path, model_name=model_name)
+    assert os.path.isfile(path)
+
+
+def test_load_unknown_pretrained_model():
+    model_name = "unknown_model"
+    with pytest.raises(
+        NotImplementedError,
+        match=f"Model {model_name} is not available. To get list of available models use `list_models` method.",
+    ):
+        TS2VecEmbeddingModel.load(model_name=model_name)
+
+
+def test_load_set_none_parameters():
+    with pytest.raises(
+        ValueError, match="Both path and model_name are not specified. At least one parameter should be specified."
+    ):
+        TS2VecEmbeddingModel.load()
+
+
+def test_warning_existing_path(tmp_path):
+    model = TS2VecEmbeddingModel(input_dims=1)
+    path = Path(tmp_path) / "tmp.zip"
+    model.save(path)
+
+    model_name = "ts2vec_tiny"
+    with pytest.warns(
+        UserWarning,
+        match=f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model.",
+    ):
+        TS2VecEmbeddingModel.load(path=path, model_name=model_name)
