@@ -341,6 +341,12 @@ def test_stride_transform(forward_stride_datasets, decompose_model, context_size
 
 @pytest.mark.parametrize("features_to_ignore", (["target"], ["regressor_1"], ["target", "regressor_1"]))
 def test_repetitive_call_before_pipeline_with_ignore(outliers_solid_tsds, features_to_ignore):
+    """Problem arises when decomposition transform is applied the second time to the same `TSDataset`.
+    This test mimics behavior when we do analysis before building pipeline and want to apply results in pipeline
+    transforms without copying the dataset.
+
+    In such cases error `KeyError: '[] not found in axis'` may be raised by pandas.
+    """
     ts = outliers_solid_tsds
 
     ts.fit_transform(
