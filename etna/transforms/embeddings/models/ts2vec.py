@@ -1,8 +1,13 @@
+import os
 import pathlib
 import tempfile
+import warnings
 import zipfile
+from pathlib import Path
+from typing import List
 from typing import Literal
 from typing import Optional
+from urllib import request
 
 import numpy as np
 
@@ -11,6 +16,8 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 if SETTINGS.torch_required:
     from etna.libs.ts2vec import TS2Vec
+
+_DOWNLOAD_PATH = Path.home() / ".etna" / "embeddings" / "ts2vec"
 
 
 class TS2VecEmbeddingModel(BaseEmbeddingModel):
@@ -39,6 +46,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         num_workers: int = 0,
         max_train_length: Optional[int] = None,
         temporal_unit: int = 0,
+        is_freezed: bool = False,
     ):
         """Init TS2VecEmbeddingModel.
 
@@ -64,6 +72,8 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         temporal_unit:
             The minimum unit to perform temporal contrast. When training on a very long sequence,
             this param helps to reduce the cost of time and memory.
+        is_freezed:
+            Whether to ``freeze`` model in constructor or not. For more details see ``freeze`` method.
         Notes
         -----
         In case of long series to reduce memory consumption it is recommended to use max_train_length parameter or manually break the series into smaller subseries.
@@ -88,8 +98,10 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
             max_train_length=self.max_train_length,
             temporal_unit=self.temporal_unit,
         )
+        self._is_freezed = is_freezed
 
-        self._is_freezed: bool = False
+        if self._is_freezed:
+            self.freeze()
 
     @property
     def is_freezed(self):
@@ -257,7 +269,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
                 archive.write(model_save_path, "model.zip")
 
     @classmethod
-    def load(cls, path: pathlib.Path) -> "TS2VecEmbeddingModel":
+    def load(cls, path: Optional[pathlib.Path] = None, model_name: Optional[str] = None) -> "TS2VecEmbeddingModel":
         """Load an object.
 
         Model's weights are transferred to cpu during loading.
@@ -267,11 +279,51 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
         path:
             Path to load object from.
 
+            - if ``path`` is not None and ``model_name`` is None, load the local model from ``path``.
+            - if ``path`` is None and ``model_name`` is not None, save the external ``model_name`` model to the etna folder in the home directory and load it. If ``path`` exists, external model will not be downloaded.
+            - if ``path`` is not  None and ``model_name`` is not None, save the external ``model_name`` model to ``path`` and load it. If ``path`` exists, external model will not be downloaded.
+
+        model_name:
+            Name of external model to load. To get list of available models use ``list_models`` method.
+
         Returns
         -------
         :
             Loaded object.
+
+        Raises
+        ------
+        ValueError:
+            If none of parameters ``path`` and ``model_name`` are set.
+        NotImplementedError:
+            If ``model_name`` isn't from list of available model names.
         """
+        warnings.filterwarnings(
+            "ignore",
+            message="The object was saved under etna version 2.7.1 but running version is",
+            category=UserWarning,
+        )
+
+        if model_name is not None:
+            if path is None:
+                path = _DOWNLOAD_PATH / f"{model_name}.zip"
+            if os.path.exists(path):
+                warnings.warn(
+                    f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model."
+                )
+            else:
+                Path(path).parent.mkdir(exist_ok=True, parents=True)
+
+                if model_name in cls.list_models():
+                    url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/ts2vec/{model_name}.zip"
+                    request.urlretrieve(url=url, filename=path)
+                else:
+                    raise NotImplementedError(
+                        f"Model {model_name} is not available. To get list of available models use `list_models` method."
+                    )
+        elif path is None and model_name is None:
+            raise ValueError("Both path and model_name are not specified. At least one parameter should be specified.")
+
         obj: TS2VecEmbeddingModel = super().load(path=path)
         obj.embedding_model = TS2Vec(
             input_dims=obj.input_dims,
@@ -292,3 +344,22 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
                 obj.embedding_model.load(fn=str(model_path))
 
         return obj
+
+    @staticmethod
+    def list_models() -> List[str]:
+        """
+        Return a list of available pretrained models.
+
+        Main information about available models:
+
+        - ts2vec_tiny:
+
+          - Number of parameters - 40k
+          - Dimension of output embeddings - 16
+
+        Returns
+        -------
+        :
+            List of available pretrained models.
+        """
+        return ["ts2vec_tiny"]
