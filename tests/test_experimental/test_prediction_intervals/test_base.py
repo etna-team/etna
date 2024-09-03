@@ -208,6 +208,9 @@ def test_params_to_tune(pipeline, expected_params_to_tune):
             horizon=1,
             reconciliator=BottomUpReconciliator(target_level="market", source_level="product"),
         ),
+        DirectEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=2)]),
+        VotingEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=1)]),
+        StackingEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=1)]),
     ),
 )
 def test_valid_params_sampling(product_level_constant_hierarchical_ts, pipeline):
