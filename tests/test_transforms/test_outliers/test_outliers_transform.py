@@ -151,6 +151,12 @@ def test_interface(transform_constructor, constructor_kwargs, outliers_solid_tsd
             get_anomalies_isolation_forest,
             {"ignore_missing": True, "random_state": 42},
         ),
+        (
+            IForestOutlierTransform,
+            {"ignore_missing": True, "random_state": 42, "features_to_ignore": ["target"]},
+            get_anomalies_isolation_forest,
+            {"ignore_missing": True, "random_state": 42, "features_to_ignore": ["target"]},
+        ),
     ],
 )
 def test_outliers_detection(transform_constructor, constructor_kwargs, method, outliers_tsds, method_kwargs, in_column):
