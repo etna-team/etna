@@ -4,6 +4,7 @@ from etna.core import BaseMixin
 from etna.models import CatBoostMultiSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms import AddConstTransform
+from tests.test_core.conftest import Dummy
 
 
 def test_base_mixin_set_params_changes_params_estimator():
@@ -130,3 +131,11 @@ def test_update_nested_structure(nested_structure, keys, value, expected_result)
 def test_update_nested_structure_fail(nested_structure, keys, value):
     with pytest.raises(ValueError, match=f"Structure to update is .* with type .*"):
         _ = BaseMixin._update_nested_structure(nested_structure, keys, value)
+
+
+def test_to_dict_public_property_private_attribute():
+    dummy = Dummy()
+    dummy = dummy.set_params(**{"a": 10, "b": 20})
+    expected_dict = {"a": 10, "b": 20, "_target_": "tests.test_core.conftest.Dummy"}
+    obtained_dict = dummy.to_dict()
+    assert obtained_dict == expected_dict
