@@ -136,6 +136,6 @@ def test_update_nested_structure_fail(nested_structure, keys, value):
 def test_set_params_public_property_private_attribute():
     dummy = BaseDummy(a=1, b=2)
     dummy = dummy.set_params(**{"a": 10, "b": 20})
-    expected_dict = {"a": 10, "b": 20, "_target_": "tests.test_core.conftest.Dummy"}
+    expected_dict = {"a": 10, "b": 20, "_target_": "tests.test_core.conftest.BaseDummy"}
     obtained_dict = dummy.to_dict()
     assert obtained_dict == expected_dict

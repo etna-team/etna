@@ -210,4 +210,4 @@ def test_warnings():
 
 def test_to_dict_public_property_private_attribute():
     dummy = BaseDummy(a=1, b=2)
-    assert dummy.to_dict() == {"a": 1, "b": 2, "_target_": "tests.test_core.conftest.Dummy"}
+    assert dummy.to_dict() == {"a": 1, "b": 2, "_target_": "tests.test_core.conftest.BaseDummy"}
