@@ -29,7 +29,7 @@ from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
 from etna.transforms.decomposition.change_points_based import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based import SklearnRegressionPerIntervalModel
-from tests.test_core.conftest import Dummy
+from tests.test_core.conftest import BaseDummy
 
 
 def ensemble_samples():
@@ -209,5 +209,5 @@ def test_warnings():
 
 
 def test_to_dict_public_property_private_attribute():
-    dummy = Dummy()
+    dummy = BaseDummy(a=1, b=2)
     assert dummy.to_dict() == {"a": 1, "b": 2, "_target_": "tests.test_core.conftest.Dummy"}
