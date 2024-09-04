@@ -54,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `IForestOutlierTransform` failed with ignored `target` column ([#460](https://github.com/etna-team/etna/pull/460))
 - Add lower limit for `typing_extension` versions ([#458](https://github.com/etna-team/etna/pull/458))
 - Fix `ModelDecomposeTransform` import without `prophet` module ([#459](https://github.com/etna-team/etna/pull/459))
-- Fix `backtest` and `forecast` commands converts `segment` to integer ([#468](https://github.com/etna-team/etna/issues/468))
+- Fix `backtest` and `forecast` commands converts `segment` to integer ([#470](https://github.com/etna-team/etna/pull/470))
 - 
 - 
 - Fix holidays during loading datasets `traffic_2008_10T` and `traffic_2008_hourly` ([#462](https://github.com/etna-team/etna/pull/462))
