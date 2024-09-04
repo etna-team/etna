@@ -188,7 +188,7 @@ def test_backtest_with_numeric_segments(
     base_timeseries_numeric_segments_path,
 ):
     target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
-    segments = target.segments.unique()
+    segments = target["segment"].unique()
 
     tmp_output = TemporaryDirectory()
     tmp_output_path = Path(tmp_output.name)
@@ -204,8 +204,8 @@ def test_backtest_with_numeric_segments(
         ]
     )
     df_forecast = pd.read_csv(tmp_output_path / "forecast.csv", dtype={"segment": str})
-    output_segments = df_forecast.segment.unique()
-    assert segments == output_segments
+    output_segments = df_forecast["segment"].unique()
+    assert set(segments) == set(output_segments)
 
 
 def test_backtest_with_numeric_segments_with_exog(
@@ -215,7 +215,7 @@ def test_backtest_with_numeric_segments_with_exog(
     base_timeseries_numeric_segments_exog_path,
 ):
     target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
-    segments = target.segments.unique()
+    segments = target["segment"].unique()
 
     tmp_output = TemporaryDirectory()
     tmp_output_path = Path(tmp_output.name)
@@ -232,5 +232,5 @@ def test_backtest_with_numeric_segments_with_exog(
         ]
     )
     df_forecast = pd.read_csv(tmp_output_path / "forecast.csv", dtype={"segment": str})
-    output_segments = df_forecast.segment.unique()
-    assert segments == output_segments
+    output_segments = df_forecast["segment"].unique()
+    assert set(segments) == set(output_segments)

@@ -416,7 +416,7 @@ def test_forecast_with_numeric_segments(
     base_timeseries_numeric_segments_path,
 ):
     target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
-    segments = target.segments.unique()
+    segments = target["segment"].unique()
 
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
@@ -431,8 +431,8 @@ def test_forecast_with_numeric_segments(
         ],
     )
     df_output = pd.read_csv(tmp_output_path, dtype={"segment": str})
-    output_segments = df_output.segment.unique()
-    assert segments == output_segments
+    output_segments = df_output["segment"].unique()
+    assert set(segments) == set(output_segments)
 
 
 @pytest.mark.parametrize(
@@ -446,7 +446,7 @@ def test_forecast_with_numeric_segments_with_exog(
     request,
 ):
     target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
-    segments = target.segments.unique()
+    segments = target["segment"].unique()
 
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
@@ -463,5 +463,5 @@ def test_forecast_with_numeric_segments_with_exog(
         ],
     )
     df_output = pd.read_csv(tmp_output_path, dtype={"segment": str})
-    output_segments = df_output.segment.unique()
-    assert segments == output_segments
+    output_segments = df_output["segment"].unique()
+    assert set(segments) == set(output_segments)
