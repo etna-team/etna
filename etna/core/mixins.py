@@ -32,11 +32,11 @@ class BaseMixin:
             if param.kind == param.VAR_POSITIONAL:
                 continue
             elif param.kind == param.VAR_KEYWORD:
-                for arg_, value in self.__dict__[arg].items():
+                for arg_, value in getattr(self, arg).items():
                     args_str_representation += f"{arg_} = {repr(value)}, "
             else:
                 try:
-                    value = self.__dict__[arg]
+                    value = getattr(self, arg)
                 except KeyError as e:
                     value = None
                     warnings.warn(f"You haven't set all parameters inside class __init__ method: {e}")
@@ -90,7 +90,7 @@ class BaseMixin:
         init_parameters = self._get_init_parameters()
         params = {}
         for arg in init_parameters.keys():
-            value = self.__dict__[arg]
+            value = getattr(self, arg)
             if value is None:
                 continue
             params[arg] = BaseMixin._parse_value(value=value)
