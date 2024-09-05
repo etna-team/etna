@@ -238,10 +238,10 @@ def small_ts():
 def base_timeseries_numeric_segments_path():
     df = pd.DataFrame(
         {
-            "timestamp": list(pd.date_range("2021-06-01", periods=120)) * 2,
-            "target": np.arange(240),
+            "timestamp": list(pd.date_range("2021-06-01", periods=100)) * 2,
+            "target": np.arange(200),
             # segments with numeric names and leading zeros
-            "segment": ["01234"] * 120 + ["12345"] * 120,
+            "segment": ["01234"] * 100 + ["12345"] * 100,
         }
     )
     tmp = NamedTemporaryFile("w")
