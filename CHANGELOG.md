@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 
 - 
-- 
+- Update docstings of `WindowStatisticsTransform`'s parents ([#469](https://github.com/etna-team/etna/pull/474))
 - 
 - 
 - 
