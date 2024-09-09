@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC
 from abc import abstractmethod
 from typing import Dict
@@ -59,6 +60,10 @@ class WindowStatisticsTransform(IrreversibleTransform, ABC):
     def fit(self, ts: TSDataset) -> "WindowStatisticsTransform":
         """Fit the transform."""
         self.in_column_regressor = self.in_column in ts.regressors
+        if not self.in_column_regressor:
+            warnings.warn(
+                f"{self.in_column} column is not a regressor. The output column will not also be a regressor."
+            )
         super().fit(ts)
         return self
 
@@ -136,6 +141,12 @@ class MeanTransform(WindowStatisticsTransform):
 
     .. math::
        MeanTransform(x_t) = \\sum_{i=1}^{window}{x_{t - i}\\cdot\\alpha^{i - 1}}
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
     """
 
     def __init__(
@@ -235,6 +246,12 @@ class MeanTransform(WindowStatisticsTransform):
 class StdTransform(WindowStatisticsTransform):
     """StdTransform computes std value for given window.
 
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+
     Notes
     -----
     Note that ``pd.Series([1]).std()`` is ``np.nan``.
@@ -293,7 +310,14 @@ class StdTransform(WindowStatisticsTransform):
 
 
 class QuantileTransform(WindowStatisticsTransform):
-    """QuantileTransform computes quantile value for given window."""
+    """QuantileTransform computes quantile value for given window.
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+    """
 
     def __init__(
         self,
@@ -367,7 +391,14 @@ class QuantileTransform(WindowStatisticsTransform):
 
 
 class MinTransform(WindowStatisticsTransform):
-    """MinTransform computes min value for given window."""
+    """MinTransform computes min value for given window.
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+    """
 
     def __init__(
         self,
@@ -418,7 +449,14 @@ class MinTransform(WindowStatisticsTransform):
 
 
 class MaxTransform(WindowStatisticsTransform):
-    """MaxTransform computes max value for given window."""
+    """MaxTransform computes max value for given window.
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+    """
 
     def __init__(
         self,
@@ -469,7 +507,14 @@ class MaxTransform(WindowStatisticsTransform):
 
 
 class MedianTransform(WindowStatisticsTransform):
-    """MedianTransform computes median value for given window."""
+    """MedianTransform computes median value for given window.
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+    """
 
     def __init__(
         self,
@@ -520,7 +565,14 @@ class MedianTransform(WindowStatisticsTransform):
 
 
 class MADTransform(WindowStatisticsTransform):
-    """MADTransform computes Mean Absolute Deviation over the window."""
+    """MADTransform computes Mean Absolute Deviation over the window.
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+    """
 
     def __init__(
         self,
@@ -577,7 +629,14 @@ class MADTransform(WindowStatisticsTransform):
 
 
 class MinMaxDifferenceTransform(WindowStatisticsTransform):
-    """MinMaxDifferenceTransform computes difference between max and min values for given window."""
+    """MinMaxDifferenceTransform computes difference between max and min values for given window.
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+    """
 
     def __init__(
         self,
@@ -630,7 +689,14 @@ class MinMaxDifferenceTransform(WindowStatisticsTransform):
 
 
 class SumTransform(WindowStatisticsTransform):
-    """SumTransform computes sum of values over given window."""
+    """SumTransform computes sum of values over given window.
+
+    This transform, applied to non-regressor column, generates non-regressor column.
+    Apply it to regressor columns to get regressor columns too.
+    In the majority of cases you need to generate regressor to use them in the future.
+
+    For example, apply this transform to target lags, not to target directly.
+    """
 
     def __init__(
         self,
