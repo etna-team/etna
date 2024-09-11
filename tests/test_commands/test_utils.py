@@ -62,9 +62,9 @@ def pipeline_without_context(request):
 @pytest.fixture
 def pipeline_with_transforms():
     transforms = [
-        LagTransform(in_column="target", lags=[14, 17]),
+        LagTransform(in_column="target", lags=[14, 17], out_column="lag"),
         DifferencingTransform(in_column="target"),
-        MeanTransform(in_column="target", window=7),
+        MeanTransform(in_column="lag_14", window=7),
         DensityOutliersTransform(in_column="target"),
     ]
 
