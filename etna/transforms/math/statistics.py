@@ -60,10 +60,6 @@ class WindowStatisticsTransform(IrreversibleTransform, ABC):
     def fit(self, ts: TSDataset) -> "WindowStatisticsTransform":
         """Fit the transform."""
         self.in_column_regressor = self.in_column in ts.regressors
-        if not self.in_column_regressor:
-            warnings.warn(
-                f"{self.in_column} column is not a regressor. The output column will not also be a regressor."
-            )
         super().fit(ts)
         return self
 
@@ -142,6 +138,8 @@ class MeanTransform(WindowStatisticsTransform):
     .. math::
        MeanTransform(x_t) = \\sum_{i=1}^{window}{x_{t - i}\\cdot\\alpha^{i - 1}}
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -246,6 +244,8 @@ class MeanTransform(WindowStatisticsTransform):
 class StdTransform(WindowStatisticsTransform):
     """StdTransform computes std value for given window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -312,6 +312,8 @@ class StdTransform(WindowStatisticsTransform):
 class QuantileTransform(WindowStatisticsTransform):
     """QuantileTransform computes quantile value for given window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -393,6 +395,8 @@ class QuantileTransform(WindowStatisticsTransform):
 class MinTransform(WindowStatisticsTransform):
     """MinTransform computes min value for given window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -451,6 +455,8 @@ class MinTransform(WindowStatisticsTransform):
 class MaxTransform(WindowStatisticsTransform):
     """MaxTransform computes max value for given window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -509,6 +515,8 @@ class MaxTransform(WindowStatisticsTransform):
 class MedianTransform(WindowStatisticsTransform):
     """MedianTransform computes median value for given window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -567,6 +575,8 @@ class MedianTransform(WindowStatisticsTransform):
 class MADTransform(WindowStatisticsTransform):
     """MADTransform computes Mean Absolute Deviation over the window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -631,6 +641,8 @@ class MADTransform(WindowStatisticsTransform):
 class MinMaxDifferenceTransform(WindowStatisticsTransform):
     """MinMaxDifferenceTransform computes difference between max and min values for given window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
@@ -691,6 +703,8 @@ class MinMaxDifferenceTransform(WindowStatisticsTransform):
 class SumTransform(WindowStatisticsTransform):
     """SumTransform computes sum of values over given window.
 
+    Warning
+    -------
     This transform, applied to non-regressor column, generates non-regressor column.
     Apply it to regressor columns to get regressor columns too.
     In the majority of cases you need to generate regressor to use them in the future.
