@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from etna.transforms.base import Transform
 
 if SETTINGS.torch_required:
-    from torch.utils.data import Dataset
+    from torch.utils.data import Dataset, IterableDataset
 
 
 class TSDataset:
@@ -1828,6 +1828,17 @@ class TSDataset:
         # print the results
         result_string = "\n".join(lines)
         print(result_string)
+
+    def to_torch_generator_dataset(
+        self, make_samples: Callable[[pd.DataFrame], Union[Iterator[dict], Iterable[dict]]], dropna: bool = True
+    ) -> "Dataset":
+        df = self.to_pandas(flatten=True)
+        if dropna:
+            df = df.dropna()  # TODO: Fix this
+
+        # indexes = "generate indexes"
+
+        return _TorchGeneratorDataset(df=df, indexes=indexes, make_samples=make_samples)
 
     def to_torch_dataset(
         self, make_samples: Callable[[pd.DataFrame], Union[Iterator[dict], Iterable[dict]]], dropna: bool = True

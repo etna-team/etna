@@ -15,7 +15,7 @@ from scipy.sparse import csr_matrix
 from etna import SETTINGS
 
 if SETTINGS.torch_required:
-    from torch.utils.data import Dataset
+    from torch.utils.data import Dataset, IterableDataset
 else:
     from unittest.mock import Mock
 
@@ -193,6 +193,24 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
         return df_wide
 
     return df_long
+
+
+class _TorchGeneratorDataset(Dataset):
+    """In memory dataset for torch dataloader."""
+
+    def __init__(self, df, indexes, make_samples):
+        self.df = df
+        self.indexes = indexes
+        self.make_samples = make_samples
+
+    def __getitem__(self, index):
+        # choose segment dataframe by index
+        # choose slice of segment dataframe by index
+        sample = [sample for sample in self.make_samples(df_segment)]
+        return sample[0]
+
+    def __len__(self):
+        return len(self.indexes)
 
 
 class _TorchDataset(Dataset):

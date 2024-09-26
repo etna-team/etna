@@ -485,6 +485,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         decoder_length: int,
         train_batch_size: int,
         test_batch_size: int,
+        generate_running_samples: bool,
         trainer_params: Optional[dict],
         train_dataloader_params: Optional[dict],
         test_dataloader_params: Optional[dict],
@@ -527,6 +528,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         self.decoder_length = decoder_length
         self.train_batch_size = train_batch_size
         self.test_batch_size = test_batch_size
+        self.generate_running_samples = generate_running_samples
         self.train_dataloader_params = {} if train_dataloader_params is None else train_dataloader_params
         self.test_dataloader_params = {} if test_dataloader_params is None else test_dataloader_params
         self.val_dataloader_params = {} if val_dataloader_params is None else val_dataloader_params
@@ -553,12 +555,20 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Model after fit
         """
-        torch_dataset = ts.to_torch_dataset(
-            functools.partial(
-                self.net.make_samples, encoder_length=self.encoder_length, decoder_length=self.decoder_length
-            ),
-            dropna=True,
-        )
+        if self.generate_running_samples:
+            torch_dataset = ts.to_torch_generator_dataset(
+                functools.partial(
+                    self.net.make_samples, encoder_length=self.encoder_length, decoder_length=self.decoder_length
+                ),
+                dropna=True,
+            )
+        else:
+            torch_dataset = ts.to_torch_dataset(
+                functools.partial(
+                    self.net.make_samples, encoder_length=self.encoder_length, decoder_length=self.decoder_length
+                ),
+                dropna=True,
+            )
         self.raw_fit(torch_dataset)
         return self
 
