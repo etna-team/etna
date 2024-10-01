@@ -20,25 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
 
 ### Changed
 - 
 - 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
+- Add docstring warning about handling non-regressors (including target) to children of `WindowStatisticsTransform` ([#469](https://github.com/etna-team/etna/pull/474))
 - 
 - 
 - 
@@ -63,14 +49,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
 -
+
+## [2.9.0] - 2024-09-06
+### Added
+- Add `**kwargs` argument description for models based on `LinearRegression`, `ElasticNet` and `CatBoostRegressor` ([#454](https://github.com/etna-team/etna/pull/454))  
+- Add possibility to load pretrained embedding models ([#461](https://github.com/etna-team/etna/pull/461))
+- Add `is_freezed` parameter to `TS2VecEmbeddingModel` and `TSTCCEmbeddingModel` ([#461](https://github.com/etna-team/etna/pull/461))
+- Add test on working without extras ([#463](https://github.com/etna-team/etna/pull/463))
+
+### Changed
+- Add support of property attributes in `__repr__` and `to_dict` of `BaseMixin` ([#469](https://github.com/etna-team/etna/pull/469))
+
+### Fixed
+- Fix `IForestOutlierTransform` failed with ignored `target` column ([#460](https://github.com/etna-team/etna/pull/460))
+- Add lower limit for `typing_extension` versions ([#458](https://github.com/etna-team/etna/pull/458))
+- Fix `ModelDecomposeTransform` import without `prophet` module ([#459](https://github.com/etna-team/etna/pull/459))
+- Convert `segment` to string during reading csv in `backtest` and `forecast` commands ([#470](https://github.com/etna-team/etna/pull/470))
+- Fix holidays during loading datasets `traffic_2008_10T` and `traffic_2008_hourly` ([#462](https://github.com/etna-team/etna/pull/462))
 
 ## [2.8.0] - 2024-08-13
 ### Added

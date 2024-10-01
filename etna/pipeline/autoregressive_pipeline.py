@@ -139,6 +139,7 @@ class AutoRegressivePipeline(
                 freq=ts.freq,
                 df_exog=ts.df_exog,
                 known_future=ts.known_future,
+                hierarchical_structure=ts.hierarchical_structure,
             )
             with warnings.catch_warnings():
                 warnings.filterwarnings(
@@ -171,7 +172,13 @@ class AutoRegressivePipeline(
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         # construct dataset and add all features
-        prediction_ts = TSDataset(df=prediction_df, freq=ts.freq, df_exog=ts.df_exog, known_future=ts.known_future)
+        prediction_ts = TSDataset(
+            df=prediction_df,
+            freq=ts.freq,
+            df_exog=ts.df_exog,
+            known_future=ts.known_future,
+            hierarchical_structure=ts.hierarchical_structure,
+        )
         prediction_ts.transform(self.transforms)
         prediction_ts.inverse_transform(self.transforms)
 

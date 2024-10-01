@@ -129,14 +129,13 @@ def forecast(
         freq_init = freq
         parse_dates = ["timestamp"]
 
-    df_timeseries = pd.read_csv(target_path, parse_dates=parse_dates)
-
+    df_timeseries = pd.read_csv(target_path, parse_dates=parse_dates, dtype={"segment": str})
     df_timeseries = TSDataset.to_dataset(df_timeseries)
 
     df_exog = None
     k_f: Union[Literal["all"], Sequence[Any]] = ()
     if exog_path:
-        df_exog = pd.read_csv(exog_path, parse_dates=parse_dates)
+        df_exog = pd.read_csv(exog_path, parse_dates=parse_dates, dtype={"segment": str})
         df_exog = TSDataset.to_dataset(df_exog)
         k_f = "all" if not known_future else known_future
 

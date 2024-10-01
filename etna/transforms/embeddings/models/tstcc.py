@@ -1,7 +1,13 @@
+import os
 import pathlib
 import tempfile
+import warnings
 import zipfile
+from pathlib import Path
+from typing import List
 from typing import Literal
+from typing import Optional
+from urllib import request
 
 import numpy as np
 
@@ -10,6 +16,8 @@ from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 if SETTINGS.torch_required:
     from etna.libs.tstcc import TSTCC
+
+_DOWNLOAD_PATH = Path.home() / ".etna" / "embeddings" / "tstcc"
 
 
 class TSTCCEmbeddingModel(BaseEmbeddingModel):
@@ -49,6 +57,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         device: Literal["cpu", "cuda"] = "cpu",
         batch_size: int = 16,
         num_workers: int = 0,
+        is_freezed: bool = False,
     ):
         """Init TSTCCEmbeddingModel.
 
@@ -87,6 +96,8 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             The batch size (number of segments in a batch). To swap batch_size, change this attribute.
         num_workers:
             How many subprocesses to use for data loading. See (api reference :py:class:`torch.utils.data.DataLoader`). To swap num_workers, change this attribute.
+        is_freezed:
+            Whether to ``freeze`` model in constructor or not. For more details see ``freeze`` method.
         """
         super().__init__(output_dims=output_dims)
         self.input_dims = input_dims
@@ -125,8 +136,10 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
             jitter_ratio=self.jitter_ratio,
             use_cosine_similarity=self.use_cosine_similarity,
         )
+        self._is_freezed = is_freezed
 
-        self._is_freezed: bool = False
+        if self._is_freezed:
+            self.freeze()
 
     @property
     def is_freezed(self):
@@ -252,7 +265,7 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
                 archive.write(model_save_path, "model.zip")
 
     @classmethod
-    def load(cls, path: pathlib.Path) -> "TSTCCEmbeddingModel":
+    def load(cls, path: Optional[pathlib.Path] = None, model_name: Optional[str] = None) -> "TSTCCEmbeddingModel":
         """Load an object.
 
         Model's weights are transferred to cpu during loading.
@@ -262,11 +275,51 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         path:
             Path to load object from.
 
+            - if ``path`` is not None and ``model_name`` is None, load the local model from ``path``.
+            - if ``path`` is None and ``model_name`` is not None, save the external ``model_name`` model to the etna folder in the home directory and load it. If ``path`` exists, external model will not be downloaded.
+            - if ``path`` is not  None and ``model_name`` is not None, save the external ``model_name`` model to ``path`` and load it. If ``path`` exists, external model will not be downloaded.
+
+        model_name:
+            name of external model to load. To get list of available models use ``list_models`` method.
+
         Returns
         -------
         :
             Loaded object.
+
+        Raises
+        ------
+        ValueError:
+            If none of parameters ``path`` and ``model_name`` are set.
+        NotImplementedError:
+            If ``model_name`` isn't from list of available model names.
         """
+        warnings.filterwarnings(
+            "ignore",
+            message="The object was saved under etna version 2.7.1 but running version is",
+            category=UserWarning,
+        )
+
+        if model_name is not None:
+            if path is None:
+                path = _DOWNLOAD_PATH / f"{model_name}.zip"
+            if os.path.exists(path):
+                warnings.warn(
+                    f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model."
+                )
+            else:
+                Path(path).parent.mkdir(exist_ok=True, parents=True)
+
+                if model_name in cls.list_models():
+                    url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/tstcc/{model_name}.zip"
+                    request.urlretrieve(url=url, filename=path)
+                else:
+                    raise NotImplementedError(
+                        f"Model {model_name} is not available. To get list of available models use `list_models` method."
+                    )
+        elif path is None and model_name is None:
+            raise ValueError("Both path and model_name are not specified. At least one parameter should be specified.")
+
         obj: TSTCCEmbeddingModel = super().load(path=path)
         obj.embedding_model = TSTCC(
             input_dims=obj.input_dims,
@@ -293,3 +346,22 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
                 obj.embedding_model.load(fn=str(model_path))
 
         return obj
+
+    @staticmethod
+    def list_models() -> List[str]:
+        """
+        Return a list of available pretrained models.
+
+        Main information about available models:
+
+        - tstcc_medium:
+
+          - Number of parameters - 234k
+          - Dimension of output embeddings - 16
+
+        Returns
+        -------
+        :
+            List of available pretrained models.
+        """
+        return ["tstcc_medium"]

@@ -208,22 +208,14 @@ def test_params_to_tune(pipeline, expected_params_to_tune):
             horizon=1,
             reconciliator=BottomUpReconciliator(target_level="market", source_level="product"),
         ),
+        DirectEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=2)]),
+        VotingEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=1)]),
+        StackingEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=1)]),
     ),
 )
 def test_valid_params_sampling(product_level_constant_hierarchical_ts, pipeline):
     intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
     assert_sampling_is_valid(intervals_pipeline=intervals_pipeline, ts=product_level_constant_hierarchical_ts)
-
-
-@pytest.mark.parametrize(
-    "pipeline",
-    (VotingEnsemble(pipelines=[get_naive_pipeline(horizon=1), get_naive_pipeline_with_transforms(horizon=1)]),),
-)
-def test_default_params_to_tune_error(pipeline):
-    intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
-
-    with pytest.raises(NotImplementedError, match=f"{pipeline.__class__.__name__} doesn't support"):
-        _ = intervals_pipeline.params_to_tune()
 
 
 @pytest.mark.parametrize("load_ts", (True, False))
