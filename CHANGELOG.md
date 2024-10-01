@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add `**kwargs` argument description for models based on `LinearRegression`, `ElasticNet` and `CatBoostRegressor` ([#454](https://github.com/etna-team/etna/pull/454https://github.com/etna-team/etna/pull/454))  
+- Add `load_dataset` to public API ([#484](https://github.com/etna-team/etna/pull/484))
 - 
 - 
 - 
