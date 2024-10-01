@@ -108,14 +108,14 @@ def load_dataset(
     parts: Union[str, Tuple[str, ...]] = "full",
 ) -> Union[TSDataset, List[TSDataset]]:
     """
-    Load internal dataset.
+    Load internal dataset. Full list of available datasets you can see on :ref:internal_datasets page.
 
     Parameters
     ----------
     name:
         Name of the dataset.
     download_path:
-        The path for saving dataset locally.
+        The path for saving dataset locally. By default it is directory "~/.etna/internal_datasets".
     rebuild_dataset:
         Whether to rebuild the dataset from the original source. If ``rebuild_dataset=False`` and the dataset was saved
         locally, then it would be loaded from disk. If ``rebuild_dataset=True``, then the dataset will be downloaded and

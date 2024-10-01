@@ -45,3 +45,11 @@ Utilities for data manipulation:
    infer_alignment
    apply_alignment
    make_timestamp_df_from_alignment
+
+Utilities for working with internal datasets:
+
+.. autosummary::
+   :toctree: api/
+   :template: base.rst
+
+   load_dataset
