@@ -108,7 +108,7 @@ def load_dataset(
     parts: Union[str, Tuple[str, ...]] = "full",
 ) -> Union[TSDataset, List[TSDataset]]:
     """
-    Load internal dataset. Full list of available datasets you can see on :ref:internal_datasets page.
+    Load internal dataset. Full list of available datasets you can see on :ref:`internal datasets page <internal_datasets>`.
 
     Parameters
     ----------
