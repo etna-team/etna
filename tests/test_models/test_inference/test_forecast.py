@@ -3,7 +3,7 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.util.testing import assert_frame_equal
+from pandas.testing import assert_frame_equal
 from pytorch_forecasting.data import GroupNormalizer
 from pytorch_forecasting.data import NaNLabelEncoder
 from typing_extensions import get_args
@@ -34,6 +34,7 @@ from etna.models import StatsForecastAutoETSModel
 from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import DeepARModel
+from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
@@ -42,6 +43,7 @@ from etna.models.nn import PatchTSModel
 from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
+from etna.models.nn import TFTNativeModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import LagTransform
@@ -49,6 +51,7 @@ from etna.transforms import SegmentEncoderTransform
 from tests.test_models.test_inference.common import _test_prediction_in_sample_full
 from tests.test_models.test_inference.common import _test_prediction_in_sample_suffix
 from tests.test_models.test_inference.common import make_prediction
+from tests.utils import convert_ts_to_int_timestamp
 from tests.utils import select_segments_subset
 from tests.utils import to_be_fixed
 
@@ -65,14 +68,13 @@ class TestForecastInSampleFullNoTarget:
 
     @staticmethod
     def _test_forecast_in_sample_full_no_target(ts, model, transforms):
-        df = ts.to_pandas()
+        forecast_ts = deepcopy(ts)
 
         # fitting
         ts.fit_transform(transforms)
         model.fit(ts)
 
         # forecasting
-        forecast_ts = TSDataset(df, freq="D")
         forecast_ts.transform(transforms)
         forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
         prediction_size = len(forecast_ts.index)
@@ -83,43 +85,60 @@ class TestForecastInSampleFullNoTarget:
         assert not np.any(forecast_df["target"].isna())
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (AutoARIMAModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_full_no_target(self, model, transforms, example_tsds):
-        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+    def test_forecast_in_sample_full_no_target(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_in_sample_full_no_target(ts, model, transforms)
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_nans_sklearn(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_no_target_failed_nans_sklearn(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
-            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+            self._test_forecast_in_sample_full_no_target(ts, model, transforms)
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (MovingAverageModel(window=3), []),
-            (NaiveModel(lag=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
@@ -129,39 +148,49 @@ class TestForecastInSampleFullNoTarget:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_not_enough_context(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_no_target_failed_not_enough_context(
+        self, model, transforms, dataset_name, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(ValueError, match="Given context isn't big enough"):
-            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+            self._test_forecast_in_sample_full_no_target(ts, model, transforms)
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_nans_nn(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_no_target_failed_nans_nn(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(ValueError, match="There are NaNs in features"):
-            self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+            self._test_forecast_in_sample_full_no_target(ts, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -175,6 +204,7 @@ class TestForecastInSampleFullNoTarget:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -191,11 +221,15 @@ class TestForecastInSampleFullNoTarget:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        self._test_forecast_in_sample_full_no_target(example_tsds, model, transforms)
+    def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample(
+        self, model, transforms, dataset_name, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_in_sample_full_no_target(ts, model, transforms)
 
 
 class TestForecastInSampleFull:
@@ -205,56 +239,75 @@ class TestForecastInSampleFull:
     """
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (AutoARIMAModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_full(self, model, transforms, example_tsds):
-        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+    def test_forecast_in_sample_full(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_full_failed_nans_sklearn(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_failed_nans_sklearn(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
-            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+            _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_in_sample_full_failed_nans_nn(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_failed_nans_nn(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(ValueError, match="There are NaNs in features"):
-            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+            _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (MovingAverageModel(window=3), []),
-            (NaiveModel(lag=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
@@ -264,26 +317,32 @@ class TestForecastInSampleFull:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=1, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, example_tsds):
+    def test_forecast_in_sample_full_failed_not_enough_context(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(ValueError, match="Given context isn't big enough"):
-            _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+            _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
 
     @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -297,6 +356,7 @@ class TestForecastInSampleFull:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -313,11 +373,13 @@ class TestForecastInSampleFull:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_in_sample_full_not_implemented(self, model, transforms, example_tsds):
-        _test_prediction_in_sample_full(example_tsds, model, transforms, method_name="forecast")
+    def test_forecast_in_sample_full_not_implemented(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
 
 
 class TestForecastInSampleSuffixNoTarget:
@@ -328,14 +390,13 @@ class TestForecastInSampleSuffixNoTarget:
 
     @staticmethod
     def _test_forecast_in_sample_suffix_no_target(ts, model, transforms, num_skip_points):
-        df = ts.to_pandas()
+        forecast_ts = deepcopy(ts)
 
         # fitting
         ts.fit_transform(transforms)
         model.fit(ts)
 
         # forecasting
-        forecast_ts = TSDataset(df, freq="D")
         forecast_ts.transform(transforms)
         forecast_ts.df.loc[forecast_ts.index[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
         prediction_size = len(forecast_ts.index) - num_skip_points
@@ -347,29 +408,45 @@ class TestForecastInSampleSuffixNoTarget:
         assert not np.any(forecast_df["target"].isna())
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (AutoARIMAModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (MovingAverageModel(window=3), []),
-            (NaiveModel(lag=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
+                "example_tsds",
             ),
             (
                 DeepStateModel(
@@ -380,25 +457,31 @@ class TestForecastInSampleSuffixNoTarget:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_suffix_no_target(self, model, transforms, example_tsds):
-        self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
+    def test_forecast_in_sample_suffix_no_target(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_in_sample_suffix_no_target(ts, model, transforms, num_skip_points=50)
 
     @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -412,6 +495,7 @@ class TestForecastInSampleSuffixNoTarget:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -428,13 +512,15 @@ class TestForecastInSampleSuffixNoTarget:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
         ],
     )
     def test_forecast_in_sample_suffix_no_target_failed_not_implemented_in_sample(
-        self, model, transforms, example_tsds
+        self, model, transforms, dataset_name, request
     ):
-        self._test_forecast_in_sample_suffix_no_target(example_tsds, model, transforms, num_skip_points=50)
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_in_sample_suffix_no_target(ts, model, transforms, num_skip_points=50)
 
 
 class TestForecastInSampleSuffix:
@@ -444,29 +530,45 @@ class TestForecastInSampleSuffix:
     """
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])]),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (AutoARIMAModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (MovingAverageModel(window=3), []),
-            (NaiveModel(lag=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[2, 3])], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
+                "example_tsds",
             ),
             (
                 DeepStateModel(
@@ -477,25 +579,31 @@ class TestForecastInSampleSuffix:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_suffix(self, model, transforms, example_tsds):
-        _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
+    def test_forecast_in_sample_suffix(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        _test_prediction_in_sample_suffix(ts, model, transforms, method_name="forecast", num_skip_points=50)
 
     @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -509,6 +617,7 @@ class TestForecastInSampleSuffix:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -525,11 +634,263 @@ class TestForecastInSampleSuffix:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_in_sample_suffix_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        _test_prediction_in_sample_suffix(example_tsds, model, transforms, method_name="forecast", num_skip_points=50)
+    def test_forecast_in_sample_suffix_failed_not_implemented_in_sample(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        _test_prediction_in_sample_suffix(ts, model, transforms, method_name="forecast", num_skip_points=50)
+
+
+class TestForecastOutSample:
+    """Test forecast on of future dataset.
+
+    Expected that NaNs are filled after prediction.
+    """
+
+    @staticmethod
+    def _test_forecast_out_sample(ts, model, transforms, prediction_size=5):
+        # fitting
+        ts.fit_transform(transforms)
+        model.fit(ts)
+
+        # forecasting
+        forecast_ts = ts.make_future(future_steps=prediction_size, tail_steps=model.context_size, transforms=transforms)
+        forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
+
+        # checking
+        forecast_df = forecast_ts.to_pandas(flatten=True)
+        assert not np.any(forecast_df["target"].isna())
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
+            ),
+            (
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+                "example_tsds",
+            ),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_out_sample_datetime_timestamp(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_out_sample(ts, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (
+                MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
+            ),
+            (
+                DeepARModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=5,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        target_normalizer=GroupNormalizer(groups=["segment"]),
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTModel(
+                    dataset_builder=PytorchForecastingDatasetBuilder(
+                        max_encoder_length=21,
+                        min_encoder_length=21,
+                        max_prediction_length=5,
+                        time_varying_known_reals=["time_idx"],
+                        time_varying_unknown_reals=["target"],
+                        static_categoricals=["segment"],
+                        target_normalizer=None,
+                    ),
+                    trainer_params=dict(max_epochs=1),
+                    lr=0.01,
+                ),
+                [],
+                "example_tsds",
+            ),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_out_sample_int_timestamp(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
+        self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (ProphetModel(), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_out_sample_int_timestamp_not_supported(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
+        with pytest.raises(ValueError, match="Invalid timestamp! Only datetime type is supported."):
+            self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
+
+    @to_be_fixed(raises=Exception)
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                DeepStateModel(
+                    ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
+                    input_size=1,
+                    encoder_length=7,
+                    decoder_length=7,
+                    trainer_params=dict(max_epochs=1),
+                ),
+                [SegmentEncoderTransform()],
+                "example_tsds",
+            ),
+        ],
+    )
+    def test_forecast_out_sample_int_timestamp_failed(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
+        self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
 
 
 class TestForecastOutSamplePrefix:
@@ -565,36 +926,52 @@ class TestForecastOutSamplePrefix:
         assert_frame_equal(forecast_prefix_df, forecast_full_df.iloc[:prefix_prediction_size])
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (AutoARIMAModel(), []),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
             ),
             (
                 DeepARModel(
@@ -609,6 +986,7 @@ class TestForecastOutSamplePrefix:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -625,16 +1003,22 @@ class TestForecastOutSamplePrefix:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_out_sample_prefix(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
+    def test_forecast_out_sample_prefix(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_out_sample_prefix(ts, model, transforms)
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
             (
                 DeepStateModel(
@@ -645,13 +1029,15 @@ class TestForecastOutSamplePrefix:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             )
         ],
     )
-    def test_forecast_out_sample_prefix_failed_deep_state(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_prefix_failed_deep_state(self, model, transforms, dataset_name, request):
         """This test is expected to fail due to sampling procedure of DeepStateModel"""
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
-            self._test_forecast_out_sample_prefix(example_tsds, model, transforms)
+            self._test_forecast_out_sample_prefix(ts, model, transforms)
 
 
 class TestForecastOutSampleSuffix:
@@ -697,52 +1083,92 @@ class TestForecastOutSampleSuffix:
         assert_frame_equal(forecast_gap_df, forecast_full_df.iloc[prediction_size_diff:])
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (AutoARIMAModel(), []),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_out_sample_suffix(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+    def test_forecast_out_sample_suffix(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_out_sample_suffix(ts, model, transforms)
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
         ],
     )
-    def test_forecast_out_sample_suffix_failed_rnn(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_suffix_failed_rnn(self, model, transforms, dataset_name, request):
         """This test is expected to fail due to autoregression in RNN.
 
         More about it in issue: https://github.com/tinkoff-ai/etna/issues/1087
         """
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
-            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+            self._test_forecast_out_sample_suffix(ts, model, transforms)
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
+        [
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed_deepar(self, model, transforms, dataset_name, request):
+        """This test is expected to fail due to autoregression in DeepAR."""
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(ts, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed_tft(self, model, transforms, dataset_name, request):
+        """This test is expected to fail due to encoder-decoder structure of TFT."""
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(ts, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
         [
             (
                 DeepStateModel(
@@ -753,38 +1179,45 @@ class TestForecastOutSampleSuffix:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             )
         ],
     )
-    def test_forecast_out_sample_suffix_failed_deep_state(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_suffix_failed_deep_state(self, model, transforms, dataset_name, request):
         """This test is expected to fail due to sampling procedure of DeepStateModel"""
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
-            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+            self._test_forecast_out_sample_suffix(ts, model, transforms)
 
     @pytest.mark.parametrize(
-        "model,transforms",
+        "model, transforms, dataset_name",
         (
-            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ),
     )
-    def test_forecast_out_sample_suffix_failed_nbeats(self, model, transforms, example_tsds):
+    def test_forecast_out_sample_suffix_failed_nbeats(self, model, transforms, dataset_name, request):
         """This test is expected to fail due to windowed view on data in N-BEATS"""
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
-            self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+            self._test_forecast_out_sample_suffix(ts, model, transforms)
 
     @to_be_fixed(
         raises=NotImplementedError,
         match="This model can't make forecast on out-of-sample data that goes after training data with a gap",
     )
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -798,6 +1231,7 @@ class TestForecastOutSampleSuffix:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -814,11 +1248,13 @@ class TestForecastOutSampleSuffix:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_out_sample_suffix_failed_not_implemented(self, model, transforms, example_tsds):
-        self._test_forecast_out_sample_suffix(example_tsds, model, transforms)
+    def test_forecast_out_sample_suffix_failed_not_implemented(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_out_sample_suffix(ts, model, transforms)
 
 
 class TestForecastMixedInOutSample:
@@ -830,7 +1266,7 @@ class TestForecastMixedInOutSample:
     @staticmethod
     def _test_forecast_mixed_in_out_sample(ts, model, transforms, num_skip_points=50, future_prediction_size=5):
         # fitting
-        df = ts.to_pandas()
+        df = ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
         ts.fit_transform(transforms)
         model.fit(ts)
 
@@ -838,7 +1274,7 @@ class TestForecastMixedInOutSample:
         future_ts = ts.make_future(future_steps=future_prediction_size)
         future_df = future_ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
         df_full = pd.concat((df, future_df))
-        forecast_full_ts = TSDataset(df=df_full, freq=ts.freq)
+        forecast_full_ts = TSDataset(df=df_full, df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
         forecast_full_ts.transform(transforms)
         forecast_full_ts.df = forecast_full_ts.df.iloc[(num_skip_points - model.context_size) :]
         full_prediction_size = len(forecast_full_ts.index) - model.context_size
@@ -851,29 +1287,45 @@ class TestForecastMixedInOutSample:
         assert not forecast_full_df["target"].equals(original_target)
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (AutoARIMAModel(), []),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
             ),
             (
                 DeepStateModel(
@@ -884,25 +1336,31 @@ class TestForecastMixedInOutSample:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_mixed_in_out_sample(self, model, transforms, example_tsds):
-        self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
+    def test_forecast_mixed_in_out_sample(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_mixed_in_out_sample(ts, model, transforms)
 
     @to_be_fixed(raises=NotImplementedError, match="This model can't make forecast on history data")
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
                 DeepARModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -916,6 +1374,7 @@ class TestForecastMixedInOutSample:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -932,11 +1391,15 @@ class TestForecastMixedInOutSample:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(self, model, transforms, example_tsds):
-        self._test_forecast_mixed_in_out_sample(example_tsds, model, transforms)
+    def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(
+        self, model, transforms, dataset_name, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_mixed_in_out_sample(ts, model, transforms)
 
 
 class TestForecastSubsetSegments:
@@ -972,31 +1435,32 @@ class TestForecastSubsetSegments:
         assert_frame_equal(forecast_subset_df, forecast_full_df.loc[:, pd.IndexSlice[segments, :]])
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (AutoARIMAModel(), []),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
             (
                 TFTModel(
                     dataset_builder=PytorchForecastingDatasetBuilder(
@@ -1012,22 +1476,43 @@ class TestForecastSubsetSegments:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_subset_segments(self, model, transforms, example_tsds):
-        self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+    def test_forecast_subset_segments(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
             (
                 DeepStateModel(
@@ -1038,17 +1523,19 @@ class TestForecastSubsetSegments:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_subset_segments_failed_deep_state(self, model, transforms, example_tsds):
+    def test_forecast_subset_segments_failed_deep_state(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
-            self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+            self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])
 
     @to_be_fixed(raises=AssertionError)
     # issue with explanation: https://github.com/tinkoff-ai/etna/issues/1089
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
             (
                 DeepARModel(
@@ -1063,11 +1550,13 @@ class TestForecastSubsetSegments:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
         ],
     )
-    def test_forecast_subset_segments_failed_assertion_error(self, model, transforms, example_tsds):
-        self._test_forecast_subset_segments(example_tsds, model, transforms, segments=["segment_2"])
+    def test_forecast_subset_segments_failed_assertion_error(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])
 
 
 class TestForecastNewSegments:
@@ -1098,20 +1587,35 @@ class TestForecastNewSegments:
         assert not np.any(forecast_df["target"].isna())
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (MovingAverageModel(window=3), []),
-            (SeasonalMovingAverageModel(), []),
-            (NaiveModel(lag=3), []),
-            (DeadlineMovingAverageModel(window=1), []),
-            (RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), []),
+            (CatBoostMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticMultiSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (MovingAverageModel(window=3), [], "example_tsds"),
+            (SeasonalMovingAverageModel(), [], "example_tsds"),
+            (NaiveModel(lag=3), [], "example_tsds"),
+            (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
+            (
+                RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (
+                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
+                "example_tsds",
             ),
             (
                 DeepARModel(
@@ -1127,6 +1631,7 @@ class TestForecastNewSegments:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 TFTModel(
@@ -1144,6 +1649,7 @@ class TestForecastNewSegments:
                     lr=0.01,
                 ),
                 [],
+                "example_tsds",
             ),
             (
                 DeepStateModel(
@@ -1154,35 +1660,43 @@ class TestForecastNewSegments:
                     trainer_params=dict(max_epochs=1),
                 ),
                 [],
+                "example_tsds",
             ),
-            (NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
-            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), []),
+            (
+                NBeatsInterpretableModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)),
+                [],
+                "example_tsds",
+            ),
+            (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
         ],
     )
-    def test_forecast_new_segments(self, model, transforms, example_tsds):
-        self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+    def test_forecast_new_segments(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        self._test_forecast_new_segments(ts, model, transforms, train_segments=["segment_1"])
 
     @pytest.mark.parametrize(
-        "model, transforms",
+        "model, transforms, dataset_name",
         [
-            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])]),
-            (AutoARIMAModel(), []),
-            (ProphetModel(), []),
-            (SARIMAXModel(), []),
-            (HoltModel(), []),
-            (HoltWintersModel(), []),
-            (SimpleExpSmoothingModel(), []),
-            (BATSModel(use_trend=True), []),
-            (TBATSModel(use_trend=True), []),
-            (StatsForecastARIMAModel(), []),
-            (StatsForecastAutoARIMAModel(), []),
-            (StatsForecastAutoCESModel(), []),
-            (StatsForecastAutoETSModel(), []),
-            (StatsForecastAutoThetaModel(), []),
+            (CatBoostPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (LinearPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (ElasticPerSegmentModel(), [LagTransform(in_column="target", lags=[5, 6])], "example_tsds"),
+            (AutoARIMAModel(), [], "example_tsds"),
+            (ProphetModel(), [], "example_tsds"),
+            (ProphetModel(timestamp_column="external_timestamp"), [], "ts_with_external_timestamp"),
+            (SARIMAXModel(), [], "example_tsds"),
+            (HoltModel(), [], "example_tsds"),
+            (HoltWintersModel(), [], "example_tsds"),
+            (SimpleExpSmoothingModel(), [], "example_tsds"),
+            (BATSModel(use_trend=True), [], "example_tsds"),
+            (TBATSModel(use_trend=True), [], "example_tsds"),
+            (StatsForecastARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoARIMAModel(), [], "example_tsds"),
+            (StatsForecastAutoCESModel(), [], "example_tsds"),
+            (StatsForecastAutoETSModel(), [], "example_tsds"),
+            (StatsForecastAutoThetaModel(), [], "example_tsds"),
         ],
     )
-    def test_forecast_new_segments_failed_per_segment(self, model, transforms, example_tsds):
+    def test_forecast_new_segments_failed_per_segment(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
         with pytest.raises(NotImplementedError, match="Per-segment models can't make predictions on new segments"):
-            self._test_forecast_new_segments(example_tsds, model, transforms, train_segments=["segment_1"])
+            self._test_forecast_new_segments(ts, model, transforms, train_segments=["segment_1"])

@@ -40,19 +40,22 @@ def test_holt_winters_fit_with_exog_warning(model, example_reg_tsds):
         model.fit(ts)
 
 
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
 @pytest.mark.parametrize(
     "model",
     [
         HoltWintersModel(),
+        HoltWintersModel(seasonal="add", seasonal_periods=7),
         HoltModel(),
         SimpleExpSmoothingModel(),
     ],
 )
-def test_holt_winters_simple(model, example_tsds):
+def test_holt_winters_simple(ts_name, model, request):
     """Test that Holt-Winters' models make predictions in simple case."""
     horizon = 7
-    model.fit(example_tsds)
-    future_ts = example_tsds.make_future(future_steps=horizon)
+    ts = request.getfixturevalue(ts_name)
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
     res = model.forecast(future_ts)
     res = res.to_pandas(flatten=True)
 
@@ -64,6 +67,7 @@ def test_holt_winters_simple(model, example_tsds):
     "model",
     [
         HoltWintersModel(),
+        HoltWintersModel(seasonal="add", seasonal_periods=7),
         HoltModel(),
         SimpleExpSmoothingModel(),
     ],
@@ -171,6 +175,14 @@ def seasonal_dfs():
     return df.iloc[:-9], df.iloc[-9:]
 
 
+@pytest.fixture()
+def seasonal_dfs_int_timestamp(seasonal_dfs):
+    train_df, test_df = seasonal_dfs
+    train_df["timestamp"] = np.arange(len(train_df)) + 10
+    test_df["timestamp"] = np.arange(len(test_df)) + 10 + len(train_df)
+    return train_df, test_df
+
+
 def test_check_mul_components_not_fitted_error():
     model = _HoltWintersAdapter()
     with pytest.raises(ValueError, match="This model is not fitted!"):
@@ -236,17 +248,23 @@ def test_components_names(
 @pytest.mark.parametrize(
     "components_method_name,in_sample", (("predict_components", True), ("forecast_components", False))
 )
-@pytest.mark.parametrize("df_names", ("seasonal_dfs", "multi_trend_dfs"))
+@pytest.mark.parametrize("df_names", ("seasonal_dfs", "multi_trend_dfs", "seasonal_dfs_int_timestamp"))
 @pytest.mark.parametrize("trend,damped_trend", (("add", True), ("add", False), (None, False)))
-@pytest.mark.parametrize("seasonal", ("add", None))
+@pytest.mark.parametrize("seasonal, seasonal_periods", (("add", 7), (None, None)))
 @pytest.mark.parametrize("use_boxcox", (True, False))
 def test_components_sum_up_to_target(
-    df_names, trend, seasonal, damped_trend, use_boxcox, components_method_name, in_sample, request
+    df_names, trend, seasonal, seasonal_periods, damped_trend, use_boxcox, components_method_name, in_sample, request
 ):
     dfs = request.getfixturevalue(df_names)
     train, test = dfs
 
-    model = _HoltWintersAdapter(trend=trend, seasonal=seasonal, damped_trend=damped_trend, use_boxcox=use_boxcox)
+    model = _HoltWintersAdapter(
+        trend=trend,
+        seasonal=seasonal,
+        seasonal_periods=seasonal_periods,
+        damped_trend=damped_trend,
+        use_boxcox=use_boxcox,
+    )
     model.fit(train, [])
 
     components_method = getattr(model, components_method_name)
@@ -264,10 +282,7 @@ def test_components_sum_up_to_target(
 )
 @pytest.mark.parametrize(
     "df_names",
-    (
-        "seasonal_dfs",
-        "multi_trend_dfs",
-    ),
+    ("seasonal_dfs", "multi_trend_dfs", "seasonal_dfs_int_timestamp"),
 )
 def test_components_of_subset_sum_up_to_target(df_names, components_method_name, in_sample, request):
     dfs = request.getfixturevalue(df_names)
@@ -321,11 +336,12 @@ def test_prediction_decomposition(outliers_tsds, model):
     assert_prediction_components_are_present(model=model, train=train, test=test)
 
 
+@pytest.mark.filterwarnings("ignore: overflow encountered in matmul")
 @pytest.mark.parametrize(
     "model, expected_length",
     [
         (HoltWintersModel(), 3),
-        (HoltWintersModel(seasonal="add"), 4),
+        (HoltWintersModel(seasonal="add", seasonal_periods=7), 4),
         (HoltModel(), 2),
         (SimpleExpSmoothingModel(), 0),
     ],

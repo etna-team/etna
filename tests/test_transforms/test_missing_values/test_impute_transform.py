@@ -32,14 +32,18 @@ def test_wrong_init():
         _ = TimeSeriesImputerTransform(strategy="wrong_strategy")
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_transform_not_fitted(fill_strategy, ts_all_date_present_two_segments):
     transform = TimeSeriesImputerTransform(strategy=fill_strategy)
     with pytest.raises(ValueError, match="Transform is not fitted"):
         _ = transform.transform(ts_all_date_present_two_segments)
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_inverse_transform_not_fitted(fill_strategy, ts_all_date_present_two_segments):
     transform = TimeSeriesImputerTransform(strategy=fill_strategy)
     with pytest.raises(ValueError, match="Transform is not fitted"):
@@ -47,7 +51,9 @@ def test_inverse_transform_not_fitted(fill_strategy, ts_all_date_present_two_seg
 
 
 @pytest.mark.smoke
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_all_dates_present_impute(ts_all_date_present_two_segments, fill_strategy: str):
     """Check that imputer does nothing with series without nans."""
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
@@ -58,7 +64,7 @@ def test_all_dates_present_impute(ts_all_date_present_two_segments, fill_strateg
         )
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize("fill_strategy", ["mean", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"])
 def test_all_missing_impute_fail(ts_all_missing_two_segments: TSDataset, fill_strategy: str):
     """Check that imputer can't fill nans if all values are nans."""
     imputer = TimeSeriesImputerTransform(strategy=fill_strategy)
@@ -206,6 +212,7 @@ def ts_to_fill(sample_ts):
     return ts
 
 
+@pytest.mark.filterwarnings("ignore: Mean of empty slice")
 @pytest.mark.parametrize(
     "window, seasonality, expected",
     [
@@ -250,6 +257,52 @@ def test_missing_values_seasonal(ts_to_fill, window: int, seasonality: int, expe
     np.testing.assert_array_equal(result, expected)
 
 
+@pytest.mark.filterwarnings("ignore: Mean of empty slice")
+@pytest.mark.parametrize(
+    "window, seasonality, expected",
+    [
+        (
+            1,
+            3,
+            np.array(
+                [[np.NaN, 0, np.NaN, 2, 3, 4, 5, 3, 4, 8, 9], [np.NaN, 10, np.NaN, 30, 40, 50, 60, 40, 50, 90, 100]]
+            ).T,
+        ),
+        (
+            3,
+            1,
+            np.array(
+                [[np.NaN, 0, 0, 2, 3, 4, 5, 4, 9 / 2, 8, 9], [np.NaN, 10, 10, 30, 40, 50, 60, 50, 110 / 2, 90, 100]]
+            ).T,
+        ),
+        (
+            3,
+            3,
+            np.array(
+                [[np.NaN, 0, np.NaN, 2, 3, 4, 5, 3 / 2, 4, 8, 9], [np.NaN, 10, np.NaN, 30, 40, 50, 60, 25, 50, 90, 100]]
+            ).T,
+        ),
+        (
+            -1,
+            3,
+            np.array(
+                [[np.NaN, 0, np.NaN, 2, 3, 4, 5, 3 / 2, 4, 8, 9], [np.NaN, 10, np.NaN, 30, 40, 50, 60, 25, 50, 90, 100]]
+            ).T,
+        ),
+    ],
+)
+def test_missing_values_seasonal_nonautoreg(ts_to_fill, window: int, seasonality: int, expected: np.ndarray):
+    ts = deepcopy(ts_to_fill)
+    imputer = TimeSeriesImputerTransform(
+        in_column="target", strategy="seasonal_nonautoreg", window=window, seasonality=seasonality, default_value=None
+    )
+    imputer.fit_transform(ts)
+    result = ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
+
+    np.testing.assert_array_equal(result, expected)
+
+
+@pytest.mark.filterwarnings("ignore: Mean of empty slice")
 @pytest.mark.parametrize(
     "window, seasonality, default_value, expected",
     [
@@ -272,7 +325,9 @@ def test_default_value(ts_to_fill, window: int, seasonality: int, default_value:
     np.testing.assert_array_equal(result, expected)
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_inverse_transform(ts_with_missing_range_x_index_two_segments: TSDataset, fill_strategy: str):
     """Check that transform + inverse_transform don't change original df for two segments."""
     ts, rng = ts_with_missing_range_x_index_two_segments
@@ -283,7 +338,9 @@ def test_inverse_transform(ts_with_missing_range_x_index_two_segments: TSDataset
     np.testing.assert_array_equal(df, inverse_transform_result)
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_inverse_transform_in_forecast(ts_with_missing_range_x_index_two_segments: pd.DataFrame, fill_strategy: str):
     """Check that inverse_transform doesn't change anything in forecast."""
     ts, rng = ts_with_missing_range_x_index_two_segments
@@ -300,7 +357,9 @@ def test_inverse_transform_in_forecast(ts_with_missing_range_x_index_two_segment
         assert np.all(ts_forecast[:, segment, "target"] == true_value)
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_fit_transform_nans_at_the_beginning(fill_strategy, ts_nans_beginning):
     """Check that transform doesn't fill NaNs at the beginning."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
@@ -314,7 +373,9 @@ def test_fit_transform_nans_at_the_beginning(fill_strategy, ts_nans_beginning):
         assert not df_segment_filled[first_valid_index:].isna().any()
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_fit_transform_nans_at_the_end(fill_strategy, ts_diff_endings):
     """Check that transform correctly works with NaNs at the end."""
     imputer = TimeSeriesImputerTransform(in_column="target", strategy=fill_strategy)
@@ -341,7 +402,9 @@ def _check_same_segments(df_1: pd.DataFrame, df_2: pd.DataFrame):
     assert df_1_segments == df_2_segments
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_transform_subset_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
     ts, rng = ts_with_missing_range_x_index_two_segments
     train_ts = ts
@@ -355,7 +418,9 @@ def test_transform_subset_segments(fill_strategy, ts_with_missing_range_x_index_
     _check_same_segments(transformed_df, test_df)
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_inverse_transform_subset_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
     ts, rng = ts_with_missing_range_x_index_two_segments
     train_ts = ts
@@ -369,7 +434,9 @@ def test_inverse_transform_subset_segments(fill_strategy, ts_with_missing_range_
     _check_same_segments(transformed_df, test_df)
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_transform_new_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
     ts, rng = ts_with_missing_range_x_index_two_segments
     train_ts = select_segments_subset(ts=ts, segments=["segment_1"])
@@ -383,7 +450,9 @@ def test_transform_new_segments(fill_strategy, ts_with_missing_range_x_index_two
         _ = transform.transform(test_ts)
 
 
-@pytest.mark.parametrize("fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal"])
+@pytest.mark.parametrize(
+    "fill_strategy", ["mean", "constant", "running_mean", "forward_fill", "seasonal", "seasonal_nonautoreg"]
+)
 def test_inverse_transform_new_segments(fill_strategy, ts_with_missing_range_x_index_two_segments):
     ts, rng = ts_with_missing_range_x_index_two_segments
     train_ts = select_segments_subset(ts=ts, segments=["segment_1"])

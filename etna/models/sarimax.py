@@ -1,6 +1,7 @@
 import warnings
 from abc import abstractmethod
 from datetime import datetime
+from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -14,6 +15,8 @@ from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.distributions import IntDistribution
@@ -22,8 +25,6 @@ from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
-from etna.models.utils import determine_freq
-from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
 
 warnings.filterwarnings(
@@ -33,6 +34,8 @@ warnings.filterwarnings(
     module="statsmodels.tsa.base.tsa_model",
 )
 
+_DEFAULT_FREQ = object()
+
 
 class _SARIMAXBaseAdapter(BaseAdapter):
     """Base class for adapters based on :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`."""
@@ -40,7 +43,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
     def __init__(self):
         self.regressor_columns = None
         self._fit_results = None
-        self._freq = None
+        self._freq: Union[str, None] = _DEFAULT_FREQ  # type: ignore
         self._first_train_timestamp = None
         self._last_train_timestamp = None
 
@@ -63,12 +66,13 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         self.regressor_columns = regressors
         self._check_not_used_columns(df)
 
+        self._first_train_timestamp = df["timestamp"].min()
+        self._last_train_timestamp = df["timestamp"].max()
+
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
         self._freq = determine_freq(timestamps=df["timestamp"])
-        self._first_train_timestamp = df["timestamp"].min()
-        self._last_train_timestamp = df["timestamp"].max()
 
         return self
 
@@ -85,11 +89,11 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         end_timestamp = df["timestamp"].max()
         # determine index of start_timestamp if counting from first timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from first timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if prediction_interval:
@@ -205,7 +209,12 @@ class _SARIMAXBaseAdapter(BaseAdapter):
                 result = df[self.regressor_columns].astype(float)
             except ValueError as e:
                 raise ValueError(f"Only convertible to float features are allowed! Error: {str(e)}")
-            result.index = df["timestamp"]
+
+            if pd.api.types.is_integer_dtype(df["timestamp"]):
+                # make index start with zero
+                result.index = df["timestamp"] - self._first_train_timestamp
+            else:
+                result.index = df["timestamp"]
         else:
             result = None
 
@@ -261,7 +270,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         if len(exog) > 0:
             # restore parameters for exogenous variabales
-            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]))[0]
+            exog_params = np.linalg.lstsq(a=exog, b=np.squeeze(ssm["obs_intercept"]), rcond=None)[0]
 
             # estimate exogenous components and append to others
             weighted_exog = exog * exog_params[np.newaxis]
@@ -369,11 +378,11 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         # determine index of start_timestamp if counting from last timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from last timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if start_idx > 1:
@@ -451,6 +460,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        fit_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """
@@ -539,6 +549,9 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
+        fit_params:
+            Additional parameters for :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX.fit`
+            For example, parameter `dips=False` disables logging.
         **kwargs:
             Additional parameters for :py:class:`statsmodels.tsa.sarimax.SARIMAX`.
         """
@@ -559,6 +572,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.fit_params = fit_params if fit_params else {}
         self.kwargs = kwargs
         super().__init__()
 
@@ -587,7 +601,7 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             validate_specification=self.validate_specification,
             **self.kwargs,
         )
-        result = model.fit()
+        result = model.fit(**self.fit_params)
         return result
 
 
@@ -602,7 +616,7 @@ class SARIMAXModel(
 
     Notes
     -----
-    We use :py:class:`statsmodels.tsa.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
+    We use :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`. Statsmodels package uses `exog` attribute for
     `exogenous regressors` which should be known in future, however we use exogenous for
     additional features what is not known in future, and regressors for features we do know in
     future.
@@ -631,6 +645,7 @@ class SARIMAXModel(
         freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
+        fit_params: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """
@@ -719,8 +734,11 @@ class SARIMAXModel(
             If 'raise', an error is raised. Default is 'none'.
         validate_specification:
             If True, validation of hyperparameters is performed.
+        fit_params:
+            Additional parameters for :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX.fit`
+            For example, parameter `dips=False` disables logging.
         **kwargs:
-            Additional parameters for :py:class:`statsmodels.tsa.sarimax.SARIMAX`.
+            Additional parameters for :py:class:`statsmodels.tsa.statespace.sarimax.SARIMAX`.
         """
         self.order = order
         self.seasonal_order = seasonal_order
@@ -739,6 +757,7 @@ class SARIMAXModel(
         self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
+        self.fit_params = fit_params if fit_params else {}
         self.kwargs = kwargs
         super(SARIMAXModel, self).__init__(
             base_model=_SARIMAXAdapter(
@@ -759,6 +778,7 @@ class SARIMAXModel(
                 freq=self.freq,
                 missing=self.missing,
                 validate_specification=self.validate_specification,
+                fit_params=self.fit_params,
                 **self.kwargs,
             )
         )

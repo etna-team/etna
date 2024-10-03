@@ -8,6 +8,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Set
 from typing import Union
+from typing import cast
 
 import pandas as pd
 
@@ -50,6 +51,7 @@ class _ProphetAdapter(BaseAdapter):
         uncertainty_samples: Union[int, bool] = 1000,
         stan_backend: Optional[str] = None,
         additional_seasonality_params: Iterable[Dict[str, Union[str, float, int]]] = (),
+        timestamp_column: Optional[str] = None,
     ):
 
         self.growth = growth
@@ -69,6 +71,7 @@ class _ProphetAdapter(BaseAdapter):
         self.uncertainty_samples = uncertainty_samples
         self.stan_backend = stan_backend
         self.additional_seasonality_params = additional_seasonality_params
+        self.timestamp_column = timestamp_column
 
         self.model = self._create_model()
 
@@ -131,8 +134,12 @@ class _ProphetAdapter(BaseAdapter):
             )
 
         if self.regressor_columns:
+            columns = deepcopy(self.regressor_columns)
+            if self.timestamp_column in columns:
+                columns.remove(self.timestamp_column)
+
             try:
-                result = df[self.regressor_columns].apply(pd.to_numeric)
+                result = df[columns].apply(pd.to_numeric)
             except ValueError as e:
                 raise ValueError(f"Only convertible to numeric features are allowed! Error: {str(e)}")
         else:
@@ -156,8 +163,11 @@ class _ProphetAdapter(BaseAdapter):
 
         prophet_df = self._prepare_prophet_df(df=df)
         for regressor in self.regressor_columns:
-            if regressor not in self.predefined_regressors_names:
-                self.model.add_regressor(regressor)
+            if regressor in self.predefined_regressors_names:
+                continue
+            if regressor == self.timestamp_column:
+                continue
+            self.model.add_regressor(regressor)
         self.model.fit(prophet_df)
         return self
 
@@ -193,20 +203,42 @@ class _ProphetAdapter(BaseAdapter):
         y_pred = y_pred.rename(rename_dict, axis=1)
         return y_pred
 
+    def _validate_timestamp(self, df: pd.DataFrame):
+        self.regressor_columns = cast(List[str], self.regressor_columns)
+
+        if self.timestamp_column is None:
+            if not pd.api.types.is_datetime64_dtype(df["timestamp"]):
+                raise ValueError("Invalid timestamp! Only datetime type is supported.")
+
+        else:
+            if self.timestamp_column not in df.columns:
+                raise ValueError("Invalid timestamp_column! It isn't present in a given dataset.")
+
+            if self.timestamp_column not in self.regressor_columns:
+                raise ValueError("Invalid timestamp_column! It should be a regressor.")
+
+            if not pd.api.types.is_datetime64_dtype(df[self.timestamp_column]):
+                raise ValueError("Invalid timestamp_column! Only datetime type is supported.")
+
     def _prepare_prophet_df(self, df: pd.DataFrame) -> pd.DataFrame:
         """Prepare dataframe for fit and predict."""
         if self.regressor_columns is None:
             raise ValueError("List of regressor is not set!")
 
+        self._validate_timestamp(df)
         df = df.reset_index()
 
         prophet_df = pd.DataFrame()
         prophet_df["y"] = df["target"]
-        prophet_df["ds"] = df["timestamp"]
+
+        if self.timestamp_column is None:
+            prophet_df["ds"] = df["timestamp"]
+        else:
+            prophet_df["ds"] = df[self.timestamp_column]
 
         regressors_data = self._select_regressors(df)
         if regressors_data is not None:
-            prophet_df[self.regressor_columns] = regressors_data[self.regressor_columns]
+            prophet_df[regressors_data.columns] = regressors_data
 
         return prophet_df
 
@@ -320,30 +352,34 @@ class ProphetModel(
 ):
     """Class for holding Prophet model.
 
+    Note
+    ----
+    This model requires ``prophet`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+
     Notes
     -----
     Original Prophet can use features 'cap' and 'floor',
-    they should be added to the known_future list on dataset initialization.
+    they should be added to the ``known_future`` list on dataset initialization.
 
     This model supports in-sample and out-of-sample forecast decomposition. The number
     of components in the decomposition depends on model parameters. Main components are:
     trend, seasonality, holiday and exogenous effects. Seasonal components will be decomposed
     down to individual periods if fitted. Holiday and exogenous will be present in decomposition
-    if fitted.Corresponding components are obtained directly from the model.
+    if fitted. Corresponding components are obtained directly from the model.
 
     Examples
     --------
     >>> from etna.datasets import generate_periodic_df
     >>> from etna.datasets import TSDataset
     >>> from etna.models import ProphetModel
-    >>> classic_df = generate_periodic_df(
+    >>> df = generate_periodic_df(
     ...     periods=100,
     ...     start_time="2020-01-01",
     ...     n_segments=4,
     ...     period=7,
     ...     sigma=3
     ... )
-    >>> df = TSDataset.to_dataset(df=classic_df)
     >>> ts = TSDataset(df, freq="D")
     >>> future = ts.make_future(7)
     >>> model = ProphetModel(growth="flat")
@@ -353,7 +389,7 @@ class ProphetModel(
     daily_seasonality = 'auto', holidays = None, seasonality_mode = 'additive',
     seasonality_prior_scale = 10.0, holidays_prior_scale = 10.0, changepoint_prior_scale = 0.05,
     mcmc_samples = 0, interval_width = 0.8, uncertainty_samples = 1000, stan_backend = None,
-    additional_seasonality_params = (), )
+    additional_seasonality_params = (), timestamp_column = None, )
     >>> forecast = model.forecast(future)
     >>> forecast
     segment    segment_0 segment_1 segment_2 segment_3
@@ -387,6 +423,7 @@ class ProphetModel(
         uncertainty_samples: Union[int, bool] = 1000,
         stan_backend: Optional[str] = None,
         additional_seasonality_params: Iterable[Dict[str, Union[str, float, int]]] = (),
+        timestamp_column: Optional[str] = None,
     ):
         """
         Create instance of Prophet model.
@@ -462,6 +499,9 @@ class ProphetModel(
             parameters that describe additional (not 'daily', 'weekly', 'yearly') seasonality that should be
             added to model; dict with required keys 'name', 'period', 'fourier_order' and optional ones 'prior_scale',
             'mode', 'condition_name' will be used for :py:meth:`prophet.Prophet.add_seasonality` method call.
+        timestamp_column:
+            Name of a column to be used as timestamp. If not given, index is used.
+            Column is expected to be regressor containing datetime values.
         """
         self.growth = growth
         self.n_changepoints = n_changepoints
@@ -480,6 +520,7 @@ class ProphetModel(
         self.uncertainty_samples = uncertainty_samples
         self.stan_backend = stan_backend
         self.additional_seasonality_params = additional_seasonality_params
+        self.timestamp_column = timestamp_column
 
         super(ProphetModel, self).__init__(
             base_model=_ProphetAdapter(
@@ -500,6 +541,7 @@ class ProphetModel(
                 uncertainty_samples=self.uncertainty_samples,
                 stan_backend=self.stan_backend,
                 additional_seasonality_params=self.additional_seasonality_params,
+                timestamp_column=self.timestamp_column,
             )
         )
 

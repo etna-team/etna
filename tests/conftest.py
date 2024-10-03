@@ -8,6 +8,7 @@ import pytest
 from etna.datasets import generate_const_df
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.tsdataset import TSDataset
+from tests.utils import convert_ts_to_int_timestamp
 
 
 @pytest.fixture(autouse=True)
@@ -111,7 +112,7 @@ def train_test_dfs(random_seed):
 
 
 @pytest.fixture
-def simple_df() -> TSDataset:
+def simple_tsdf() -> TSDataset:
     """Generate dataset with simple values without any noise"""
     history = 49
 
@@ -189,6 +190,11 @@ def example_tsds(random_seed) -> TSDataset:
 
 
 @pytest.fixture
+def example_tsds_int_timestamp(example_tsds) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=example_tsds, shift=10)
+
+
+@pytest.fixture
 def example_reg_tsds(random_seed) -> TSDataset:
     periods = 100
     df1 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=periods)})
@@ -218,6 +224,11 @@ def example_reg_tsds(random_seed) -> TSDataset:
     return tsds
 
 
+@pytest.fixture
+def example_reg_tsds_int_timestamp(example_reg_tsds) -> TSDataset:
+    return convert_ts_to_int_timestamp(ts=example_reg_tsds, shift=10)
+
+
 @pytest.fixture()
 def outliers_tsds():
     timestamp1 = np.arange(np.datetime64("2021-01-01"), np.datetime64("2021-02-01"))
@@ -241,10 +252,16 @@ def outliers_tsds():
     df.columns.names = ["segment", "feature"]
 
     exog = df.copy()
-    exog.columns.set_levels(["exog"], level="feature", inplace=True)
+    exog.columns = exog.columns.set_levels(["exog"], level="feature")
 
     tsds = TSDataset(df, "1d", exog)
 
+    return tsds
+
+
+@pytest.fixture()
+def outliers_tsds_without_missing(outliers_tsds):
+    tsds = TSDataset(df=outliers_tsds[..., "target"].dropna(), freq="1d", df_exog=outliers_tsds.df_exog.dropna())
     return tsds
 
 
@@ -304,7 +321,7 @@ def multitrend_df() -> pd.DataFrame:
 def ts_with_different_series_length(example_df: pd.DataFrame) -> TSDataset:
     """Generate TSDataset with different lengths series."""
     df = TSDataset.to_dataset(example_df)
-    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[: df.index[3], pd.IndexSlice["segment_1", "target"]] = None
     ts = TSDataset(df=df, freq="H")
     return ts
 
@@ -344,6 +361,12 @@ def example_tsdf(random_seed) -> TSDataset:
     df.columns.names = ["segment", "feature"]
     df = TSDataset(df, freq="H")
     return df
+
+
+@pytest.fixture
+def example_tsdf_int_timestamp(example_tsdf) -> TSDataset:
+    ts = convert_ts_to_int_timestamp(example_tsdf, shift=10)
+    return ts
 
 
 @pytest.fixture
@@ -428,8 +451,8 @@ def ts_diff_endings(example_reg_tsds):
 @pytest.fixture
 def ts_with_nans_in_tails(example_df):
     df = TSDataset.to_dataset(example_df)
-    df.loc[:4, pd.IndexSlice["segment_1", "target"]] = None
-    df.loc[-3:, pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[: df.index[3], pd.IndexSlice["segment_1", "target"]] = None
+    df.loc[df.index[-3] :, pd.IndexSlice["segment_1", "target"]] = None
     ts = TSDataset(df, freq="H")
     return ts
 
@@ -453,10 +476,19 @@ def toy_dataset_equal_targets_and_quantiles():
         "timestamp": time * n_segments,
         "segment": ["a"] * n_periods + ["b"] * n_periods,
         "target": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
+    }
+
+    quantiles_df = {
+        "timestamp": time * n_segments,
+        "segment": ["a"] * n_periods + ["b"] * n_periods,
         "target_0.01": np.concatenate((np.array((2, 3, 4, 5, 5)), np.array((3, 3, 3, 5, 2)))).astype(np.float64),
     }
+
     df = TSDataset.to_dataset(pd.DataFrame(df))
+    quantiles_df = TSDataset.to_dataset(pd.DataFrame(quantiles_df))
+
     ts = TSDataset(df, freq="D")
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -475,10 +507,19 @@ def toy_dataset_with_mean_shift_in_target():
         "target": np.concatenate((np.array((-1, 3, 3, -4, -1)) + mean_1, np.array((-2, 3, -4, 5, -2)) + mean_2)).astype(
             np.float64
         ),
+    }
+
+    quantiles_df = {
+        "timestamp": time * n_segments,
+        "segment": ["a"] * n_periods + ["b"] * n_periods,
         "target_0.01": np.concatenate((np.array((-1, 3, 3, -4, -1)), np.array((-2, 3, -4, 5, -2)))).astype(np.float64),
     }
+
     df = TSDataset.to_dataset(pd.DataFrame(df))
+    quantiles_df = TSDataset.to_dataset(pd.DataFrame(quantiles_df))
+
     ts = TSDataset(df, freq="1D")
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -524,6 +565,20 @@ def product_level_df():
             "timestamp": ["2000-01-01", "2000-01-02"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
             "target": [1.0, 1.0] + [0.0, 1.0] + [3.0, 18.0] + [7.0, 2.0],
+        }
+    )
+    df = TSDataset.to_dataset(df)
+    return df
+
+
+@pytest.fixture
+def product_level_df_long_history(periods=200):
+    n_segments = 4
+    df = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range(start="2000-01-01", periods=periods, freq="D")) * n_segments,
+            "segment": ["a"] * periods + ["b"] * periods + ["c"] * periods + ["d"] * periods,
+            "target": np.random.uniform(low=0, high=100, size=periods * n_segments),
         }
     )
     df = TSDataset.to_dataset(df)
@@ -627,6 +682,12 @@ def product_level_simple_hierarchical_ts(product_level_df, hierarchical_structur
 
 
 @pytest.fixture
+def product_level_simple_hierarchical_ts_long_history(product_level_df_long_history, hierarchical_structure):
+    ts = TSDataset(df=product_level_df_long_history, freq="D", hierarchical_structure=hierarchical_structure)
+    return ts
+
+
+@pytest.fixture
 def simple_no_hierarchy_ts(market_level_df):
     ts = TSDataset(df=market_level_df, freq="D")
     return ts
@@ -663,6 +724,11 @@ def product_level_constant_hierarchical_ts(product_level_constant_hierarchical_d
 
 
 @pytest.fixture
+def product_level_constant_hierarchical_ts_int_timestamp(product_level_constant_hierarchical_ts):
+    return convert_ts_to_int_timestamp(product_level_constant_hierarchical_ts)
+
+
+@pytest.fixture
 def product_level_constant_hierarchical_ts_with_exog(
     product_level_constant_hierarchical_df, market_level_constant_hierarchical_df_exog, hierarchical_structure
 ):
@@ -682,14 +748,24 @@ def product_level_constant_forecast_with_quantiles(hierarchical_structure):
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
-            "target": [1, 1] + [2, 2] + [3, 3] + [4, 4],
-            "target_0.25": [1 / 2, 1 / 4] + [1, 1 / 2] + [2, 1] + [3, 2],
-            "target_0.75": [2, 3] + [3, 4] + [4, 5] + [5, 6],
+            "target": [1.0, 1] + [2, 2] + [3, 3] + [4, 4],
         },
-        dtype=float,
     )
+
+    quantiles_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 4,
+            "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
+            "target_0.25": [1 / 2, 1 / 4] + [1, 1 / 2] + [2, 1] + [3, 2],
+            "target_0.75": [2.0, 3] + [3, 4] + [4, 5] + [5, 6],
+        },
+    )
+
     df = TSDataset.to_dataset(df=df)
+    quantiles_df = TSDataset.to_dataset(df=quantiles_df)
+
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -699,9 +775,8 @@ def product_level_constant_forecast_with_target_components(hierarchical_structur
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 4,
             "segment": ["a"] * 2 + ["b"] * 2 + ["c"] * 2 + ["d"] * 2,
-            "target": [1, 1] + [2, 2] + [3, 3] + [4, 4],
+            "target": [1.0, 1] + [2, 2] + [3, 3] + [4, 4],
         },
-        dtype=float,
     )
     target_components_df = pd.DataFrame(
         {
@@ -710,7 +785,6 @@ def product_level_constant_forecast_with_target_components(hierarchical_structur
             "target_component_a": [0.7, 0.7] + [1.5, 1.5] + [2, 2] + [3, 3],
             "target_component_b": [0.3, 0.3] + [0.5, 0.5] + [1, 1] + [1, 1],
         },
-        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     target_components_df = TSDataset.to_dataset(target_components_df)
@@ -725,14 +799,24 @@ def market_level_constant_forecast_with_quantiles(hierarchical_structure):
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 2,
             "segment": ["X"] * 2 + ["Y"] * 2,
-            "target": [3, 3] + [7, 7],
-            "target_0.25": [1.5, 0.75] + [5, 3],
-            "target_0.75": [5, 7] + [9, 11],
+            "target": [3.0, 3] + [7, 7],
         },
-        dtype=float,
     )
+
+    quantiles_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"] * 2,
+            "segment": ["X"] * 2 + ["Y"] * 2,
+            "target_0.25": [1.5, 0.75] + [5, 3],
+            "target_0.75": [5.0, 7] + [9, 11],
+        },
+    )
+
     df = TSDataset.to_dataset(df=df)
+    quantiles_df = TSDataset.to_dataset(df=quantiles_df)
+
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -742,9 +826,8 @@ def market_level_constant_forecast_with_target_components(hierarchical_structure
         {
             "timestamp": ["2000-01-05", "2000-01-06"] * 2,
             "segment": ["X"] * 2 + ["Y"] * 2,
-            "target": [3, 3] + [7, 7],
+            "target": [3.0, 3] + [7, 7],
         },
-        dtype=float,
     )
     target_components_df = pd.DataFrame(
         {
@@ -753,7 +836,6 @@ def market_level_constant_forecast_with_target_components(hierarchical_structure
             "target_component_a": [2.2, 2.2] + [5, 5],
             "target_component_b": [0.8, 0.8] + [2, 2],
         },
-        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     target_components_df = TSDataset.to_dataset(target_components_df)
@@ -768,14 +850,24 @@ def total_level_constant_forecast_with_quantiles(hierarchical_structure):
         {
             "timestamp": ["2000-01-05", "2000-01-06"],
             "segment": ["total"] * 2,
-            "target": [10, 10],
-            "target_0.25": [6.5, 3.75],
-            "target_0.75": [14, 18],
+            "target": [10.0, 10],
         },
-        dtype=float,
     )
+
+    quantiles_df = pd.DataFrame(
+        {
+            "timestamp": ["2000-01-05", "2000-01-06"],
+            "segment": ["total"] * 2,
+            "target_0.25": [6.5, 3.75],
+            "target_0.75": [14.0, 18],
+        },
+    )
+
     df = TSDataset.to_dataset(df=df)
+    quantiles_df = TSDataset.to_dataset(df=quantiles_df)
+
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
 
@@ -785,9 +877,8 @@ def total_level_constant_forecast_with_target_components(hierarchical_structure)
         {
             "timestamp": ["2000-01-05", "2000-01-06"],
             "segment": ["total"] * 2,
-            "target": [10, 10],
+            "target": [10.0, 10],
         },
-        dtype=float,
     )
     target_components_df = pd.DataFrame(
         {
@@ -796,10 +887,50 @@ def total_level_constant_forecast_with_target_components(hierarchical_structure)
             "target_component_a": [7.2, 7.2],
             "target_component_b": [2.8, 2.8],
         },
-        dtype=float,
     )
     df = TSDataset.to_dataset(df=df)
     target_components_df = TSDataset.to_dataset(target_components_df)
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     ts.add_target_components(target_components_df=target_components_df)
+    return ts
+
+
+@pytest.fixture
+def ts_with_binary_exog() -> TSDataset:
+    periods = 100
+    periods_exog = periods + 10
+    df = generate_const_df(start_time="2020-01-01", periods=periods, freq="D", scale=1, n_segments=3)
+    df_exog = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
+    df_exog.rename(columns={"target": "holiday"}, inplace=True)
+    df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 3)
+
+    df = TSDataset.to_dataset(df)
+    df_exog = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
+    return ts
+
+
+@pytest.fixture()
+def outliers_solid_tsds():
+    """Create TSDataset with outliers and same last date."""
+    timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")
+    target1 = [np.sin(i) for i in range(len(timestamp))]
+    target1[10] += 10
+
+    target2 = [np.sin(i) for i in range(len(timestamp))]
+    target2[8] += 8
+    target2[15] = 2
+    target2[26] -= 12
+
+    df1 = pd.DataFrame({"timestamp": timestamp, "target": target1, "segment": "1"})
+    df2 = pd.DataFrame({"timestamp": timestamp, "target": target2, "segment": "2"})
+    df = pd.concat([df1, df2], ignore_index=True)
+    df_exog = df.copy()
+    df_exog.columns = ["timestamp", "regressor_1", "segment"]
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df).iloc[:-10],
+        df_exog=TSDataset.to_dataset(df_exog),
+        freq="D",
+        known_future="all",
+    )
     return ts

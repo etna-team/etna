@@ -15,7 +15,11 @@ from etna.ensembles import VotingEnsemble
 from etna.models import CatBoostPerSegmentModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
+from etna.models import SARIMAXModel
+from etna.pipeline import HierarchicalPipeline
 from etna.pipeline import Pipeline
+from etna.reconciliation import BottomUpReconciliator
+from etna.reconciliation import TopDownReconciliator
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 
@@ -39,9 +43,52 @@ def prophet_pipeline() -> Pipeline:
 
 
 @pytest.fixture
+def sarimax_pipeline() -> Pipeline:
+    """Generate pipeline with SARIMAXModel."""
+    pipeline = Pipeline(model=SARIMAXModel(), transforms=[], horizon=7)
+    return pipeline
+
+
+@pytest.fixture
 def naive_pipeline() -> Pipeline:
     """Generate pipeline with NaiveModel."""
     pipeline = Pipeline(model=NaiveModel(20), transforms=[], horizon=14)
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline_top_down_market_14() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = HierarchicalPipeline(
+        model=NaiveModel(14),
+        transforms=[],
+        horizon=14,
+        reconciliator=TopDownReconciliator(source_level="total", target_level="market", period=7, method="AHP"),
+    )
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline_top_down_product_14() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = HierarchicalPipeline(
+        model=NaiveModel(14),
+        transforms=[],
+        horizon=14,
+        reconciliator=TopDownReconciliator(source_level="total", target_level="product", period=7, method="AHP"),
+    )
+    return pipeline
+
+
+@pytest.fixture
+def naive_pipeline_bottom_up_market_14() -> Pipeline:
+    """Generate pipeline with NaiveModel."""
+    pipeline = HierarchicalPipeline(
+        model=NaiveModel(14),
+        transforms=[],
+        horizon=14,
+        reconciliator=BottomUpReconciliator(source_level="product", target_level="market"),
+    )
     return pipeline
 
 
@@ -68,6 +115,30 @@ def voting_ensemble_pipeline(
 
 
 @pytest.fixture
+def voting_ensemble_pipeline_int_timestamp(
+    catboost_pipeline: Pipeline, sarimax_pipeline: Pipeline, naive_pipeline_1: Pipeline
+) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[catboost_pipeline, sarimax_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def voting_ensemble_hierarchical_pipeline(
+    naive_pipeline_top_down_market_14: HierarchicalPipeline, naive_pipeline_bottom_up_market_14: HierarchicalPipeline
+) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline_top_down_market_14, naive_pipeline_bottom_up_market_14])
+    return pipeline
+
+
+@pytest.fixture
+def voting_ensemble_mix_pipeline(
+    naive_pipeline: Pipeline, naive_pipeline_top_down_product_14: HierarchicalPipeline
+) -> VotingEnsemble:
+    pipeline = VotingEnsemble(pipelines=[naive_pipeline, naive_pipeline_top_down_product_14])
+    return pipeline
+
+
+@pytest.fixture
 def voting_ensemble_naive(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline) -> VotingEnsemble:
     pipeline = VotingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
     return pipeline
@@ -78,6 +149,30 @@ def stacking_ensemble_pipeline(
     catboost_pipeline: Pipeline, prophet_pipeline: Pipeline, naive_pipeline_1: Pipeline
 ) -> StackingEnsemble:
     pipeline = StackingEnsemble(pipelines=[catboost_pipeline, prophet_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def stacking_ensemble_pipeline_int_timestamp(
+    catboost_pipeline: Pipeline, sarimax_pipeline: Pipeline, naive_pipeline_1: Pipeline
+) -> StackingEnsemble:
+    pipeline = StackingEnsemble(pipelines=[catboost_pipeline, sarimax_pipeline, naive_pipeline_1])
+    return pipeline
+
+
+@pytest.fixture
+def stacking_ensemble_hierarchical_pipeline(
+    naive_pipeline_top_down_market_14: HierarchicalPipeline, naive_pipeline_bottom_up_market_14: HierarchicalPipeline
+) -> StackingEnsemble:
+    pipeline = StackingEnsemble(pipelines=[naive_pipeline_top_down_market_14, naive_pipeline_bottom_up_market_14])
+    return pipeline
+
+
+@pytest.fixture
+def stacking_ensemble_mix_pipeline(
+    naive_pipeline: Pipeline, naive_pipeline_top_down_product_14: HierarchicalPipeline
+) -> StackingEnsemble:
+    pipeline = StackingEnsemble(pipelines=[naive_pipeline, naive_pipeline_top_down_product_14])
     return pipeline
 
 

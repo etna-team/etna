@@ -92,7 +92,7 @@ class DeadlineMovingAverageModel(
         return self
 
     def _check_not_used_columns(self, ts: TSDataset):
-        columns = set(ts.columns.get_level_values("feature"))
+        columns = set(ts.features)
         columns_not_used = columns.difference({"target"})
         if columns_not_used:
             warnings.warn(
@@ -331,7 +331,7 @@ class DeadlineMovingAverageModel(
             raise ValueError("There are NaNs in a target column, predict method requires target to be filled!")
 
         num_segments = context.shape[1]
-        index = pd.date_range(start=df.index[-prediction_size], end=df.index[-1], freq=self._freq)
+        index = pd.date_range(start=df.index[-prediction_size], end=df.index[-1], freq=self._freq, name=df.index.name)
         result_template = pd.DataFrame(np.zeros((prediction_size, num_segments)), index=index, columns=context.columns)
         result_values = self._make_predictions(
             result_template=result_template, context=context, prediction_size=prediction_size

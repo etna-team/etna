@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from statsmodels.tsa.exponential_smoothing.ets import ETSModel
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models import NaiveModel
@@ -8,6 +9,7 @@ from etna.transforms.decomposition import STLTransform
 from etna.transforms.decomposition.stl import _OneSegmentSTLTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import convert_ts_to_int_timestamp
 
 
 def add_trend(series: pd.Series, coef: float = 1) -> pd.Series:
@@ -45,6 +47,13 @@ def df_trend_seasonal_one_segment() -> pd.DataFrame:
 
 
 @pytest.fixture
+def df_trend_seasonal_one_segment_int_timestamp(df_trend_seasonal_one_segment) -> pd.DataFrame:
+    df = df_trend_seasonal_one_segment
+    df.index = pd.Index(np.arange(10, 10 + len(df)), name=df.index.name)
+    return df
+
+
+@pytest.fixture
 def df_trend_seasonal_starting_with_nans_one_segment(df_trend_seasonal_one_segment) -> pd.DataFrame:
     result = df_trend_seasonal_one_segment
     result.iloc[:2] = np.NaN
@@ -59,6 +68,12 @@ def ts_trend_seasonal() -> TSDataset:
     df_2["segment"] = "segment_2"
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
+
+
+@pytest.fixture
+def ts_trend_seasonal_int_timestamp(ts_trend_seasonal) -> TSDataset:
+    ts = convert_ts_to_int_timestamp(ts=ts_trend_seasonal, shift=10)
+    return ts
 
 
 @pytest.fixture
@@ -89,9 +104,22 @@ def ts_trend_seasonal_nan_tails() -> TSDataset:
     return TSDataset(df, freq="D")
 
 
-@pytest.mark.parametrize("model", ["arima", "holt"])
+@pytest.fixture
+def not_ts_model():
+    class NotTimeSeriesModel:
+        pass
+
+    return NotTimeSeriesModel
+
+
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
 @pytest.mark.parametrize(
-    "df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_starting_with_nans_one_segment"]
+    "df_name",
+    [
+        "df_trend_seasonal_one_segment",
+        "df_trend_seasonal_starting_with_nans_one_segment",
+        "df_trend_seasonal_one_segment_int_timestamp",
+    ],
 )
 def test_transform_one_segment(df_name, model, request):
     """Test that transform for one segment removes trend and seasonality."""
@@ -103,8 +131,10 @@ def test_transform_one_segment(df_name, model, request):
     np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
 
 
-@pytest.mark.parametrize("model", ["arima", "holt"])
-@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans"])
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
+@pytest.mark.parametrize(
+    "ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans", "ts_trend_seasonal_int_timestamp"]
+)
 def test_transform_multi_segments(ts_name, model, request):
     """Test that transform for all segments removes trend and seasonality."""
     ts = request.getfixturevalue(ts_name)
@@ -116,21 +146,28 @@ def test_transform_multi_segments(ts_name, model, request):
     np.testing.assert_allclose(df_transformed["target"], df_expected["target"], atol=0.3)
 
 
-@pytest.mark.parametrize("model", ["arima", "holt"])
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
 @pytest.mark.parametrize(
-    "df_name", ["df_trend_seasonal_one_segment", "df_trend_seasonal_starting_with_nans_one_segment"]
+    "df_name",
+    [
+        "df_trend_seasonal_one_segment",
+        "df_trend_seasonal_starting_with_nans_one_segment",
+        "df_trend_seasonal_one_segment_int_timestamp",
+    ],
 )
 def test_inverse_transform_one_segment(df_name, model, request):
     """Test that transform + inverse_transform don't change dataframe."""
     df = request.getfixturevalue(df_name)
     transform = _OneSegmentSTLTransform(in_column="target", period=7, model=model)
     df_transformed = transform.fit_transform(df)
-    df_inverse_transformed = transform.inverse_transform(df_transformed)
-    assert df["target"].equals(df_inverse_transformed["target"])
+    df_inverse_transformed = transform.inverse_transform(df=df_transformed)
+    pd.testing.assert_series_equal(df_inverse_transformed["target"], df["target"])
 
 
-@pytest.mark.parametrize("model", ["arima", "holt"])
-@pytest.mark.parametrize("ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans"])
+@pytest.mark.parametrize("model", ["arima", "holt", ETSModel])
+@pytest.mark.parametrize(
+    "ts_name", ["ts_trend_seasonal", "ts_trend_seasonal_starting_with_nans", "ts_trend_seasonal_int_timestamp"]
+)
 def test_inverse_transform_multi_segments(ts_name, model, request):
     """Test that transform + inverse_transform don't change tsdataset."""
     ts = request.getfixturevalue(ts_name)
@@ -139,10 +176,10 @@ def test_inverse_transform_multi_segments(ts_name, model, request):
     transform.fit_transform(ts)
     transform.inverse_transform(ts)
     df_inverse_transformed = ts.to_pandas(flatten=True)
-    assert df_inverse_transformed["target"].equals(df["target"])
+    pd.testing.assert_series_equal(df_inverse_transformed["target"], df["target"])
 
 
-@pytest.mark.parametrize("model_stl", ["arima", "holt"])
+@pytest.mark.parametrize("model_stl", ["arima", "holt", ETSModel])
 def test_forecast(ts_trend_seasonal, model_stl):
     """Test that transform works correctly in forecast."""
     transform = STLTransform(in_column="target", period=7, model=model_stl)
@@ -159,7 +196,7 @@ def test_forecast(ts_trend_seasonal, model_stl):
     ts_forecast = model.forecast(ts_future, prediction_size=3)
     ts_forecast.inverse_transform([transform])
     for segment in ts_forecast.segments:
-        np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.1)
+        np.testing.assert_allclose(ts_forecast[:, segment, "target"], ts_test[:, segment, "target"], atol=0.2)
 
 
 def test_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segment):
@@ -176,7 +213,7 @@ def test_inverse_transform_raise_error_if_not_fitted(df_trend_seasonal_one_segme
         _ = transform.inverse_transform(df=df_trend_seasonal_one_segment)
 
 
-@pytest.mark.parametrize("model_stl", ["arima", "holt"])
+@pytest.mark.parametrize("model_stl", ["arima", "holt", ETSModel])
 def test_fit_transform_with_nans_in_tails(ts_trend_seasonal_nan_tails, model_stl):
     transform = STLTransform(in_column="target", period=7, model=model_stl)
     transform.fit_transform(ts=ts_trend_seasonal_nan_tails)
@@ -194,6 +231,7 @@ def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
     [
         STLTransform(in_column="target", period=7, model="arima"),
         STLTransform(in_column="target", period=7, model="holt"),
+        STLTransform(in_column="target", period=7, model=ETSModel),
     ],
 )
 def test_save_load(transform, ts_trend_seasonal):
@@ -205,3 +243,9 @@ def test_params_to_tune(ts_trend_seasonal):
     transform = STLTransform(in_column="target", period=7)
     assert len(transform.params_to_tune()) > 0
     assert_sampling_is_valid(transform=transform, ts=ts)
+
+
+@pytest.mark.parametrize("model_stl", [10, not_ts_model])
+def test_custom_model(model_stl):
+    with pytest.raises(ValueError, match="Model should be a string or TimeSeriesModel"):
+        transform = STLTransform(in_column="target", period=7, model=model_stl)

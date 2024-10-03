@@ -2,8 +2,10 @@ import itertools
 import math
 from copy import deepcopy
 from enum import Enum
+from functools import cmp_to_key
 from typing import TYPE_CHECKING
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -24,15 +26,36 @@ from statsmodels.graphics.gofplots import qqplot
 from typing_extensions import Literal
 
 from etna.analysis.forecast.utils import _prepare_forecast_results
-from etna.analysis.forecast.utils import _select_quantiles
+from etna.analysis.forecast.utils import _select_prediction_intervals_names
 from etna.analysis.forecast.utils import _validate_intersecting_segments
 from etna.analysis.forecast.utils import get_residuals
 from etna.analysis.utils import _prepare_axes
 from etna.datasets.utils import match_target_components
+from etna.datasets.utils import timestamp_range
 
 if TYPE_CHECKING:
     from etna.datasets import TSDataset
     from etna.transforms import Transform
+
+
+def _get_borders_comparator(segment_borders: pd.DataFrame) -> Callable[[str, str], int]:
+    """Create comparator function to sort border names."""
+
+    def cmp(name_a: str, name_b: str) -> int:
+        """Compare two series based on their values."""
+        border_a = segment_borders[name_a].values
+        border_b = segment_borders[name_b].values
+
+        if np.all(border_a == border_b):
+            return 0
+        elif np.all(border_a <= border_b):
+            return -1
+        elif np.all(border_a >= border_b):
+            return 1
+        else:
+            raise ValueError("Detected intersection between non-equal borders!")
+
+    return cmp
 
 
 def plot_forecast(
@@ -82,6 +105,10 @@ def plot_forecast(
     ------
     ValueError:
         if the format of ``forecast_ts`` is unknown
+    ValueError:
+        if there is an intersection between non-equal borders
+    ValueError:
+        if provided quantiles are not in the datasets
     """
     forecast_results = _prepare_forecast_results(forecast_ts)
     num_forecasts = len(forecast_results.keys())
@@ -95,12 +122,7 @@ def plot_forecast(
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     if prediction_intervals:
-        quantiles = _select_quantiles(forecast_results, quantiles)
-
-    if train_ts is not None:
-        train_ts.df.sort_values(by="timestamp", inplace=True)
-    if test_ts is not None:
-        test_ts.df.sort_values(by="timestamp", inplace=True)
+        prediction_intervals_names = _select_prediction_intervals_names(forecast_results, quantiles)
 
     for i, segment in enumerate(segments):
         if train_ts is not None:
@@ -116,79 +138,97 @@ def plot_forecast(
         if n_train_samples is None:
             plot_df = segment_train_df
         elif n_train_samples != 0:
-            plot_df = segment_train_df[-n_train_samples:]
+            plot_df = segment_train_df.iloc[-n_train_samples:]
         else:
             plot_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
         if (train_ts is not None) and (n_train_samples != 0):
-            ax[i].plot(plot_df.index.values, plot_df.target.values, label="train")
+            marker = None if len(plot_df) > 1 else "o"
+            ax[i].plot(plot_df.index.values, plot_df.target.values, label="train", marker=marker)
         if test_ts is not None:
-            ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test")
+            marker = None if len(segment_test_df) > 1 else "o"
+            ax[i].plot(
+                segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test", marker=marker
+            )
 
         # plot forecast plot for each of given forecasts
-        quantile_prefix = "target_"
         for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
-            segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
+            segment_forecast_df = forecast[:, segment, :][segment]
+            marker = None if len(segment_forecast_df) > 1 else "o"
+
             line = ax[i].plot(
                 segment_forecast_df.index.values,
                 segment_forecast_df.target.values,
                 linewidth=1,
                 label=f"{legend_prefix}forecast",
+                marker=marker,
             )
             forecast_color = line[0].get_color()
 
             # draw prediction intervals from outer layers to inner ones
-            if prediction_intervals and quantiles is not None:
-                alpha = np.linspace(0, 1 / 2, len(quantiles) // 2 + 2)[1:-1]
-                for quantile_idx in range(len(quantiles) // 2):
+            intervals = forecast.get_prediction_intervals()
+            if prediction_intervals and intervals is not None:
+                alpha = np.linspace(0, 1 / 2, len(prediction_intervals_names) // 2 + 2)[1:-1]
+
+                segment_borders_df = intervals.loc[:, pd.IndexSlice[segment, :]].droplevel(level="segment", axis=1)
+                comparator = _get_borders_comparator(segment_borders=segment_borders_df)
+                prediction_intervals_names = sorted(prediction_intervals_names, key=cmp_to_key(comparator))
+
+                for interval_idx in range(len(prediction_intervals_names) // 2):
                     # define upper and lower border for this iteration
-                    low_quantile = quantiles[quantile_idx]
-                    high_quantile = quantiles[-quantile_idx - 1]
-                    values_low = segment_forecast_df[f"{quantile_prefix}{low_quantile}"].values
-                    values_high = segment_forecast_df[f"{quantile_prefix}{high_quantile}"].values
-                    # if (low_quantile, high_quantile) is the smallest interval
-                    if quantile_idx == len(quantiles) // 2 - 1:
+                    low_border = prediction_intervals_names[interval_idx]
+                    high_border = prediction_intervals_names[-interval_idx - 1]
+                    values_low = segment_borders_df[low_border].values
+                    values_high = segment_borders_df[high_border].values
+
+                    # if (low_border, high_border) is the smallest interval
+                    if interval_idx == len(prediction_intervals_names) // 2 - 1:
                         ax[i].fill_between(
-                            segment_forecast_df.index.values,
+                            segment_borders_df.index.values,
                             values_low,
                             values_high,
-                            facecolor=forecast_color,
-                            alpha=alpha[quantile_idx],
-                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
+                            linewidth=3,
+                            color=forecast_color,
+                            alpha=alpha[interval_idx],
+                            label=f"{legend_prefix}{low_border}-{high_border}",
                         )
-                    # if there is some interval inside (low_quantile, high_quantile) we should plot around it
+
+                    # if there is some interval inside (low_border, high_border) we should plot around it
                     else:
-                        low_next_quantile = quantiles[quantile_idx + 1]
-                        high_prev_quantile = quantiles[-quantile_idx - 2]
-                        values_next = segment_forecast_df[f"{quantile_prefix}{low_next_quantile}"].values
+                        low_next_border = prediction_intervals_names[interval_idx + 1]
+                        high_prev_border = prediction_intervals_names[-interval_idx - 2]
+                        values_next = segment_borders_df[low_next_border].values
                         ax[i].fill_between(
-                            segment_forecast_df.index.values,
+                            segment_borders_df.index.values,
                             values_low,
                             values_next,
-                            facecolor=forecast_color,
-                            alpha=alpha[quantile_idx],
-                            label=f"{legend_prefix}{low_quantile}-{high_quantile}",
+                            linewidth=3,
+                            color=forecast_color,
+                            alpha=alpha[interval_idx],
+                            label=f"{legend_prefix}{low_border}-{high_border}",
                         )
-                        values_prev = segment_forecast_df[f"{quantile_prefix}{high_prev_quantile}"].values
+                        values_prev = segment_borders_df[high_prev_border].values
                         ax[i].fill_between(
-                            segment_forecast_df.index.values,
+                            segment_borders_df.index.values,
                             values_high,
                             values_prev,
-                            facecolor=forecast_color,
-                            alpha=alpha[quantile_idx],
+                            linewidth=3,
+                            color=forecast_color,
+                            alpha=alpha[interval_idx],
                         )
-                # when we can't find pair quantile, we plot it separately
-                if len(quantiles) % 2 != 0:
-                    remaining_quantile = quantiles[len(quantiles) // 2]
-                    values = segment_forecast_df[f"{quantile_prefix}{remaining_quantile}"].values
+                # when we can't find pair for border, we plot it separately
+                if len(prediction_intervals_names) % 2 != 0:
+                    remaining_border = prediction_intervals_names[len(prediction_intervals_names) // 2]
+                    values = segment_borders_df[remaining_border].values
+                    marker = "--" if len(values) > 1 else "d"
                     ax[i].plot(
-                        segment_forecast_df.index.values,
+                        segment_borders_df.index.values,
                         values,
-                        "--",
+                        marker,
                         color=forecast_color,
-                        label=f"{legend_prefix}{remaining_quantile}",
+                        label=f"{legend_prefix}{remaining_border}",
                     )
         ax[i].set_title(segment)
         ax[i].tick_params("x", rotation=45)
@@ -271,18 +311,18 @@ def plot_backtest(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
+            end_fold_exclusive = timestamp_range(start=end_fold, periods=2, freq=ts.freq)[-1]
 
             # draw test
-            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            backtest_df_slice_fold = segment_backtest_df.loc[start_fold:end_fold_exclusive]
             ax[i].plot(backtest_df_slice_fold.index, backtest_df_slice_fold.target, color=lines_colors["test"])
 
             if draw_only_lines:
                 # draw forecast
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold_exclusive]
                 ax[i].plot(forecast_df_slice_fold.index, forecast_df_slice_fold.target, color=lines_colors["forecast"])
             else:
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold]
                 backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
 
                 # draw points on test
@@ -336,7 +376,7 @@ def plot_backtest_interactive(
 
     Returns
     -------
-    go.Figure:
+    :
         result of plotting
 
     Raises
@@ -397,10 +437,10 @@ def plot_backtest_interactive(
         for fold_number in folds:
             start_fold = fold_numbers[fold_numbers == fold_number].index.min()
             end_fold = fold_numbers[fold_numbers == fold_number].index.max()
-            end_fold_exclusive = pd.date_range(start=end_fold, periods=2, freq=ts.freq)[1]
+            end_fold_exclusive = timestamp_range(start=end_fold, periods=2, freq=ts.freq)[-1]
 
             # draw test
-            backtest_df_slice_fold = segment_backtest_df[start_fold:end_fold_exclusive]
+            backtest_df_slice_fold = segment_backtest_df.loc[start_fold:end_fold_exclusive]
             fig.add_trace(
                 go.Scattergl(
                     x=backtest_df_slice_fold.index,
@@ -416,7 +456,7 @@ def plot_backtest_interactive(
 
             if draw_only_lines:
                 # draw forecast
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold_exclusive]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold_exclusive]
                 fig.add_trace(
                     go.Scattergl(
                         x=forecast_df_slice_fold.index,
@@ -430,7 +470,7 @@ def plot_backtest_interactive(
                     )
                 )
             else:
-                forecast_df_slice_fold = segment_forecast_df[start_fold:end_fold]
+                forecast_df_slice_fold = segment_forecast_df.loc[start_fold:end_fold]
                 backtest_df_slice_fold = backtest_df_slice_fold.loc[forecast_df_slice_fold.index]
 
                 # draw points on test
@@ -616,7 +656,10 @@ def qq_plot(
 class PerFoldAggregation(str, Enum):
     """Enum for types of aggregation in a metric per-segment plot."""
 
+    #: Mean aggregation.
     mean = "mean"
+
+    #: Median aggregation.
     sum = "median"
 
     @classmethod
@@ -705,20 +748,15 @@ def plot_metric_per_segment(
 
 
 class MetricPlotType(str, Enum):
-    """Enum for types of plot in :py:func:`~etna.analysis.forecast.plots.metric_per_segment_distribution_plot`.
+    """Enum for types of plot in :py:func:`~etna.analysis.forecast.plots.metric_per_segment_distribution_plot`."""
 
-    Attributes
-    ----------
-    hist:
-        Histogram plot, :py:func:`seaborn.histplot` is used
-    box:
-        Boxplot, :py:func:`seaborn.boxplot` is used
-    violin:
-        Violin plot, :py:func:`seaborn.violinplot` is used
-    """
-
+    #: Histogram plot, :py:func:`seaborn.distributions.histplot` is used.
     hist = "hist"
+
+    #: Boxplot, :py:func:`seaborn.categorical.boxplot` is used.
     box = "box"
+
+    #: Violin plot, :py:func:`seaborn.categorical.violinplot` is used.
     violin = "violin"
 
     @classmethod
@@ -758,7 +796,7 @@ def metric_per_segment_distribution_plot(
         * If None, separate distributions for each fold will be drawn
 
         * If str, determines how to aggregate metrics over the folds if they aren't already aggregated
-        (see :py:class:`~etna.analysis.forecast.plots.PerFoldAggregation`)
+          (see :py:class:`~etna.analysis.forecast.plots.PerFoldAggregation`)
 
     plot_type:
         type of plot (see :py:class:`~etna.analysis.forecast.plots.MetricPlotType`)
@@ -850,7 +888,7 @@ def plot_forecast_decomposition(
     segments:
         segments to plot; if not given plot all the segments
     columns_num:
-        number of graphics columns; when mode=``per-component`` all plots will be in the single column
+        number of graphics columns; when ``mode="per-component"`` all plots will be in the single column
     figsize:
         size of the figure per subplot with one segment in inches
     show_grid:
@@ -866,9 +904,9 @@ def plot_forecast_decomposition(
     components_mode = ComponentsMode(mode)
 
     if segments is None:
-        segments = list(forecast_ts.columns.get_level_values("segment").unique())
+        segments = forecast_ts.segments
 
-    column_names = set(forecast_ts.columns.get_level_values("feature"))
+    column_names = set(forecast_ts.features)
     components = list(match_target_components(column_names))
 
     if len(components) == 0:
@@ -882,9 +920,6 @@ def plot_forecast_decomposition(
 
     _, ax = _prepare_axes(num_plots=num_plots, columns_num=columns_num, figsize=figsize, set_grid=show_grid)
 
-    if test_ts is not None:
-        test_ts.df.sort_values(by="timestamp", inplace=True)
-
     alpha = 0.5 if components_mode == ComponentsMode.joint else 1.0
     ax_array = np.asarray(ax).reshape(-1, columns_num).T.ravel()
 
@@ -895,7 +930,7 @@ def plot_forecast_decomposition(
         else:
             segment_test_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
-        segment_forecast_df = forecast_ts[:, segment, :][segment].sort_values(by="timestamp")
+        segment_forecast_df = forecast_ts[:, segment, :][segment]
 
         ax_array[i].set_title(segment)
 

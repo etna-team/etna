@@ -4,6 +4,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -24,6 +25,13 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     For each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
     which covers this point.
 
+    See Also
+    --------
+    etna.pipeline.Pipeline:
+        Pipeline that forecasts values in one iteration using a model.
+    etna.pipeline.AutoRegressivePipeline:
+        Pipeline that forecasts values in several iterations using a model.
+
     Examples
     --------
     >>> from etna.datasets import generate_ar_df
@@ -33,8 +41,7 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     >>> from etna.models import ProphetModel
     >>> from etna.pipeline import Pipeline
     >>> df = generate_ar_df(periods=30, start_time="2021-06-01", ar_coef=[1.2], n_segments=3)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> prophet_pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=3)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=5)
     >>> ensemble = DirectEnsemble(pipelines=[prophet_pipeline, naive_pipeline])
@@ -90,23 +97,28 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             raise ValueError("All the pipelines should have pairwise different horizons.")
         return max(horizons)
 
-    def fit(self, ts: TSDataset) -> "DirectEnsemble":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "DirectEnsemble":
         """Fit pipelines in ensemble.
 
         Parameters
         ----------
         ts:
-            TSDataset to fit ensemble
+            TSDataset to fit ensemble.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         self:
             Fitted ensemble
         """
-        self.ts = ts
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _merge(self, forecasts: List[TSDataset]) -> TSDataset:
@@ -120,7 +132,9 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             # TODO: Fix slicing with explicit passing the segments in issue #775
             horizon, forecast = horizons[idx], forecasts[idx][:, segments, "target"]
             forecast_df.iloc[:horizon] = forecast
-        forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
+        forecast_dataset = TSDataset(
+            df=forecast_df, freq=forecasts[0].freq, hierarchical_structure=forecasts[0].hierarchical_structure
+        )
         return forecast_dataset
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
@@ -141,8 +155,8 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,
@@ -162,11 +176,11 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
-        Not implemented for this class.
+        Currently, returns empty dict, but could have a proper implementation in the future.
 
         Returns
         -------
         :
             Grid with hyperparameters.
         """
-        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")
+        return {}

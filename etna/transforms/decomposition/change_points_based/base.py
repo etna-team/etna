@@ -81,7 +81,7 @@ class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
         if self.intervals is None or self.per_interval_models is None:
             raise ValueError("Something went wrong on fit! Check the parameters of the transform.")
         for interval in self.intervals:
-            tmp_series = series[interval[0] : interval[1]]
+            tmp_series = series.loc[interval[0] : interval[1]]
             features = self._get_features(series=tmp_series)
             targets = self._get_targets(series=tmp_series)
             self.per_interval_models[interval].fit(features=features, target=targets)
@@ -111,9 +111,9 @@ class _OneSegmentChangePointsTransform(OneSegmentTransform, ABC):
         """Apply per-interval detrending to series."""
         if self.intervals is None or self.per_interval_models is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
-        prediction_series = pd.Series(index=series.index)
+        prediction_series = pd.Series(index=series.index, dtype=float)
         for interval in self.intervals:
-            tmp_series = series[interval[0] : interval[1]]
+            tmp_series = series.loc[interval[0] : interval[1]]
             if tmp_series.empty:
                 continue
             features = self._get_features(series=tmp_series)

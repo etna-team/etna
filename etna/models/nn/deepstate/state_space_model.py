@@ -7,9 +7,13 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-import torch
-from torch import Tensor
-from torch.nn.functional import one_hot
+
+from etna import SETTINGS
+
+if SETTINGS.torch_required:
+    import torch
+    from torch import Tensor
+    from torch.nn.functional import one_hot
 
 from etna.core import BaseMixin
 
@@ -125,7 +129,13 @@ class SSM(ABC, BaseMixin):
 
 
 class LevelSSM(SSM):
-    """Class for Level State Space Model."""
+    """Class for Level State Space Model.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def latent_dim(self) -> int:
         """Dimension of the latent space.
@@ -206,7 +216,13 @@ class LevelSSM(SSM):
 
 
 class LevelTrendSSM(LevelSSM):
-    """Class for Level-Trend State Space Model."""
+    """Class for Level-Trend State Space Model.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def latent_dim(self) -> int:
         """Dimension of the latent space.
@@ -238,7 +254,13 @@ class LevelTrendSSM(LevelSSM):
 
 
 class SeasonalitySSM(LevelSSM):
-    """Class for Seasonality State Space Model."""
+    """Class for Seasonality State Space Model.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(self, num_seasons: int, timestamp_transform: Callable[[pd.Timestamp], int]):
         """Create instance of SeasonalitySSM.
@@ -275,7 +297,7 @@ class SeasonalitySSM(LevelSSM):
         :
             Emission coefficient matrix.
         """
-        emission_coeff = one_hot(datetime_index.squeeze(-1), num_classes=self.latent_dim())
+        emission_coeff = one_hot(datetime_index, num_classes=self.latent_dim())
         return emission_coeff.float()
 
     def generate_datetime_index(self, timestamps: np.ndarray) -> np.ndarray:
@@ -295,7 +317,13 @@ class SeasonalitySSM(LevelSSM):
 
 
 class YearlySeasonalitySSM(SeasonalitySSM):
-    """Class for Yearly Seasonality State Space Model."""
+    """Class for Yearly Seasonality State Space Model.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(self):
         super().__init__(num_seasons=12, timestamp_transform=self.get_timestamp_transform)
@@ -317,7 +345,13 @@ class YearlySeasonalitySSM(SeasonalitySSM):
 
 
 class WeeklySeasonalitySSM(SeasonalitySSM):
-    """Class for Weekly Seasonality State Space Model."""
+    """Class for Weekly Seasonality State Space Model.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(self):
         super().__init__(num_seasons=7, timestamp_transform=self.get_timestamp_transform)
@@ -339,7 +373,13 @@ class WeeklySeasonalitySSM(SeasonalitySSM):
 
 
 class DaylySeasonalitySSM(SeasonalitySSM):
-    """Class for Daily Seasonality State Space Model."""
+    """Class for Daily Seasonality State Space Model.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(self):
         super().__init__(num_seasons=24, timestamp_transform=self.get_timestamp_transform)
@@ -361,7 +401,13 @@ class DaylySeasonalitySSM(SeasonalitySSM):
 
 
 class CompositeSSM(SSM):
-    """Class to compose several State Space Models."""
+    """Class to compose several State Space Models.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self, seasonal_ssms: List[SeasonalitySSM], nonseasonal_ssm: Optional[Union[LevelSSM, LevelTrendSSM]] = None

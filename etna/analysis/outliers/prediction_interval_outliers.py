@@ -50,13 +50,17 @@ def _select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
     result: TSDataset
         dataset with selected column.
     """
-    df = ts.raw_df.loc[:, pd.IndexSlice[segments, :]].copy()
+    df = ts.df.loc[:, pd.IndexSlice[segments, :]].copy()
     df = df.dropna()
     df_exog = ts.df_exog
     if df_exog is not None:
-        df_exog = df_exog.loc[df.index, pd.IndexSlice[segments, :]].copy()
+        df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
     known_future = ts.known_future
     freq = ts.freq
+
+    if df_exog is not None:
+        df = df.drop(df_exog.columns.get_level_values("feature").values.tolist(), axis=1, level=1)
+
     subset_ts = TSDataset(df=df, df_exog=df_exog, known_future=known_future, freq=freq)
     return subset_ts
 
@@ -66,8 +70,9 @@ def get_anomalies_prediction_interval(
     model: Union[Type["ProphetModel"], Type["SARIMAXModel"]],
     interval_width: float = 0.95,
     in_column: str = "target",
+    index_only: bool = True,
     **model_params,
-) -> Dict[str, List[pd.Timestamp]]:
+) -> Dict[str, Union[List[pd.Timestamp], List[int], pd.Series]]:
     """
     Get point outliers in time series using prediction intervals (estimation model-based method).
 
@@ -87,6 +92,8 @@ def get_anomalies_prediction_interval(
         * If it is set to "target", then all data will be used for prediction.
 
         * Otherwise, only column data will be used.
+    index_only:
+        whether to return only outliers indices. If `False` will return outliers series
 
     Returns
     -------
@@ -115,5 +122,14 @@ def get_anomalies_prediction_interval(
         anomalies_mask = (actual_segment_slice["target"] > predicted_segment_slice[f"target_{upper_p:.4g}"]) | (
             actual_segment_slice["target"] < predicted_segment_slice[f"target_{lower_p:.4g}"]
         )
-        outliers_per_segment[segment] = list(predicted_segment_slice[anomalies_mask].index.values)
+
+        if anomalies_mask.sum() >= 1:
+            store_values = actual_segment_slice[anomalies_mask]
+            if index_only:
+                store_values = list(store_values.index.values)
+            else:
+                store_values = pd.Series(store_values["target"], index=store_values.index)
+
+            outliers_per_segment[segment] = store_values
+
     return outliers_per_segment

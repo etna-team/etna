@@ -13,6 +13,8 @@ from statsforecast.models import AutoCES
 from statsforecast.models import AutoETS
 from statsforecast.models import AutoTheta
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.libs.statsforecast import ARIMA
@@ -22,10 +24,9 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
-from etna.models.utils import determine_freq
-from etna.models.utils import determine_num_steps
 
 StatsForecastModel = Union[AutoCES, AutoARIMA, AutoTheta, AutoETS, ARIMA]
+_DEFAULT_FREQ = object()
 
 
 class _StatsForecastBaseAdapter(BaseAdapter):
@@ -43,7 +44,7 @@ class _StatsForecastBaseAdapter(BaseAdapter):
             Should model support prediction intervals.
         """
         self.regressor_columns: Optional[List[str]] = None
-        self._freq: Optional[str] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
         self._first_train_timestamp: Optional[pd.Timestamp] = None
         self._last_train_timestamp: Optional[pd.Timestamp] = None
         self._model = model
@@ -140,7 +141,7 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         :
             DataFrame with predictions
         """
-        if self._freq is None:
+        if self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
         start_timestamp = df["timestamp"].min()
@@ -153,11 +154,11 @@ class _StatsForecastBaseAdapter(BaseAdapter):
 
         # determine index of start_timestamp if counting from last timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from last timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if start_idx > 1:
@@ -213,7 +214,7 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         :
             DataFrame with predictions
         """
-        if self._freq is None:
+        if self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
         start_timestamp = df["timestamp"].min()
@@ -232,11 +233,11 @@ class _StatsForecastBaseAdapter(BaseAdapter):
 
         # determine index of start_timestamp if counting from first timestamp of train
         start_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
         )
         # determine index of end_timestamp if counting from first timestamp of train
         end_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq  # type: ignore
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
 
         if prediction_interval and self._support_prediction_intervals:
@@ -523,6 +524,11 @@ class StatsForecastAutoARIMAModel(
     Class for holding :py:class:`statsforecast.models.AutoARIMA`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoarima>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(
@@ -621,6 +627,11 @@ class StatsForecastARIMAModel(
     Class for holding :py:class:`statsforecast.models.ARIMA`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#arima>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(
@@ -696,6 +707,11 @@ class StatsForecastAutoThetaModel(
     Class for holding :py:class:`statsforecast.models.AutoTheta`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autotheta>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(
@@ -734,6 +750,11 @@ class StatsForecastAutoCESModel(
     Class for holding :py:class:`statsforecast.models.AutoCES`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoces>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(self, season_length: int = 1, model: str = "Z"):
@@ -760,6 +781,11 @@ class StatsForecastAutoETSModel(
     Class for holding :py:class:`statsforecast.models.AutoETS`.
 
     `Documentation for the underlying model <https://nixtla.github.io/statsforecast/src/core/models.html#autoets>`_.
+
+    Note
+    ----
+    This model requires ``statsforecast`` extension to be installed.
+    Read more about this at :ref:`installation instruction <installation>`.
     """
 
     def __init__(self, season_length: int = 1, model: str = "ZZZ", damped: Optional[bool] = None):

@@ -26,7 +26,9 @@ def backtest(
     config_path: Path = typer.Argument(..., help="path to yaml config with desired pipeline"),
     backtest_config_path: Path = typer.Argument(..., help="path to backtest config file"),
     target_path: Path = typer.Argument(..., help="path to csv with data to forecast"),
-    freq: str = typer.Argument(..., help="frequency of timestamp in files in pandas format"),
+    freq: str = typer.Argument(
+        ..., help="frequency of timestamp in files in pandas format or 'None' for integer timestamps"
+    ),
     output_path: Path = typer.Argument(..., help="where to save forecast"),
     exog_path: Optional[Path] = typer.Argument(default=None, help="path to csv with exog data"),
     known_future: Optional[List[str]] = typer.Argument(
@@ -73,18 +75,24 @@ def backtest(
 
     backtest_configs = OmegaConf.to_object(OmegaConf.load(backtest_config_path))
 
-    df_timeseries = pd.read_csv(target_path, parse_dates=["timestamp"])
+    if freq == "None":
+        freq_init = None
+        parse_dates = None
+    else:
+        freq_init = freq
+        parse_dates = ["timestamp"]
 
+    df_timeseries = pd.read_csv(target_path, parse_dates=parse_dates, dtype={"segment": str})
     df_timeseries = TSDataset.to_dataset(df_timeseries)
 
     df_exog = None
     k_f: Union[Literal["all"], Sequence[Any]] = ()
     if exog_path:
-        df_exog = pd.read_csv(exog_path, parse_dates=["timestamp"])
+        df_exog = pd.read_csv(exog_path, parse_dates=parse_dates, dtype={"segment": str})
         df_exog = TSDataset.to_dataset(df_exog)
         k_f = "all" if not known_future else known_future
 
-    tsdataset = TSDataset(df=df_timeseries, freq=freq, df_exog=df_exog, known_future=k_f)
+    tsdataset = TSDataset(df=df_timeseries, freq=freq_init, df_exog=df_exog, known_future=k_f)
 
     pipeline_args = remove_params(params=pipeline_configs, to_remove=ADDITIONAL_PIPELINE_PARAMETERS)
     pipeline: Pipeline = hydra_slayer.get_from_params(**pipeline_args)

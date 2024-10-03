@@ -1,5 +1,7 @@
 from datetime import datetime
+from typing import Optional
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -8,6 +10,7 @@ from etna.transforms.timestamp import SpecialDaysTransform
 from etna.transforms.timestamp.special_days import _OneSegmentSpecialDaysTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import convert_ts_to_int_timestamp
 
 
 @pytest.fixture()
@@ -42,8 +45,9 @@ def df_with_specials():
     special_weekdays = (2,)
     special_monthdays = (7, 10)
 
-    df["week_true"] = df["timestamp"].apply(lambda x: x.weekday() in special_weekdays)
-    df["month_true"] = df["timestamp"].apply(lambda x: x.day in special_monthdays)
+    df["week_true"] = df["timestamp"].apply(lambda x: x.weekday() in special_weekdays).astype(int).astype("category")
+    df["month_true"] = df["timestamp"].apply(lambda x: x.day in special_monthdays).astype(int).astype("category")
+    df["external_timestamp"] = df["timestamp"]
     df.set_index("timestamp", inplace=True)
     return df
 
@@ -51,10 +55,35 @@ def df_with_specials():
 @pytest.fixture()
 def ts_with_specials(df_with_specials):
     """Create dataset with special weekdays and monthdays."""
-    df = df_with_specials.reset_index()
-    df["segment"] = "1"
-    df = df[["timestamp", "segment", "target"]]
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    flat_df = df_with_specials.reset_index()
+    flat_df["segment"] = "1"
+    flat_df = flat_df[["timestamp", "segment", "target"]]
+
+    wide_df = TSDataset.to_dataset(flat_df)
+
+    flat_df["external_timestamp"] = flat_df["timestamp"]
+    flat_df.drop(columns=["target"], inplace=True)
+    df_exog = TSDataset.to_dataset(flat_df)
+
+    ts = TSDataset(df=wide_df, df_exog=df_exog, freq="D")
+    return ts
+
+
+@pytest.fixture()
+def ts_with_specials_and_regressor(ts_with_specials) -> TSDataset:
+    df = ts_with_specials.raw_df
+    df_exog = ts_with_specials.df_exog
+    ts = TSDataset(df=df.iloc[:-10], df_exog=df_exog, freq=ts_with_specials.freq, known_future=["external_timestamp"])
+    return ts
+
+
+@pytest.fixture()
+def ts_with_specials_and_nans_in_timestamp(ts_with_specials) -> TSDataset:
+    ts = ts_with_specials
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    df_exog.loc[df_exog.index[:3], pd.IndexSlice[:, "external_timestamp"]] = np.NaN
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
 
 
@@ -164,18 +193,24 @@ def test_interface_two_segments_noweek_nomonth():
         _ = SpecialDaysTransform(find_special_weekday=False, find_special_month_day=False)
 
 
-def test_week_feature(df_with_specials: pd.DataFrame):
+@pytest.mark.parametrize("in_column", [None, "external_timestamp"])
+def test_week_feature(in_column: Optional[str], df_with_specials: pd.DataFrame):
     """This test checks that _OneSegmentSpecialDaysTransform computes weekday feature correctly."""
-    special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=True, find_special_month_day=False)
+    special_days_finder = _OneSegmentSpecialDaysTransform(
+        find_special_weekday=True, find_special_month_day=False, in_column=in_column
+    )
     df = special_days_finder.fit_transform(df_with_specials)
-    assert (df_with_specials["week_true"] == df["anomaly_weekdays"]).all()
+    pd.testing.assert_series_equal(df_with_specials["week_true"], df["anomaly_weekdays"], check_names=False)
 
 
-def test_month_feature(df_with_specials: pd.DataFrame):
+@pytest.mark.parametrize("in_column", [None, "external_timestamp"])
+def test_month_feature(in_column: Optional[str], df_with_specials: pd.DataFrame):
     """This test checks that _OneSegmentSpecialDaysTransform computes monthday feature correctly."""
-    special_days_finder = _OneSegmentSpecialDaysTransform(find_special_weekday=False, find_special_month_day=True)
+    special_days_finder = _OneSegmentSpecialDaysTransform(
+        find_special_weekday=False, find_special_month_day=True, in_column=in_column
+    )
     df = special_days_finder.fit_transform(df_with_specials)
-    assert (df_with_specials["month_true"] == df["anomaly_monthdays"]).all()
+    pd.testing.assert_series_equal(df_with_specials["month_true"], df["anomaly_monthdays"], check_names=False)
 
 
 def test_no_false_positive_week(constant_days_df: pd.DataFrame):
@@ -199,9 +234,62 @@ def test_transform_raise_error_if_not_fitted(constant_days_df: pd.DataFrame):
         _ = transform.transform(df=constant_days_df)
 
 
-def test_fit_transform_with_nans(ts_diff_endings):
+def test_fit_transform_with_nans_in_target(ts_diff_endings):
     transform = SpecialDaysTransform(find_special_weekday=True, find_special_month_day=True)
     transform.fit_transform(ts_diff_endings)
+
+
+def test_fit_transform_with_nans_in_timestamp(ts_with_specials_and_nans_in_timestamp):
+    ts = ts_with_specials_and_nans_in_timestamp
+    transform = SpecialDaysTransform(
+        find_special_weekday=True, find_special_month_day=True, in_column="external_timestamp"
+    )
+    result = transform.fit_transform(ts)
+    columns = ["anomaly_weekdays", "anomaly_monthdays"]
+    for segment in ts.segments:
+        result_df = result.loc[:, pd.IndexSlice[segment, columns]]
+        assert np.all(result_df.isna().sum() == 3)
+
+
+def test_transform_index_fail_int_timestamp(ts_with_specials):
+    ts = convert_ts_to_int_timestamp(ts=ts_with_specials)
+    transform = SpecialDaysTransform(in_column=None)
+    with pytest.raises(ValueError, match="Transform can't work with integer index, parameter in_column should be set"):
+        _ = transform.fit(ts)
+
+
+def test_get_regressors_info_index(ts_with_specials):
+    transform = SpecialDaysTransform(in_column=None)
+
+    regressors_info = transform.get_regressors_info()
+
+    expected_regressor_info = ["anomaly_weekdays", "anomaly_monthdays"]
+    assert sorted(regressors_info) == sorted(expected_regressor_info)
+
+
+def test_get_regressors_info_in_column_fail_not_fitted(ts_with_specials):
+    transform = SpecialDaysTransform(in_column="external_timestamp")
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()
+
+
+def test_get_regressors_info_in_column_fitted_exog(ts_with_specials):
+    transform = SpecialDaysTransform(in_column="external_timestamp")
+
+    transform.fit(ts_with_specials)
+    regressors_info = transform.get_regressors_info()
+
+    assert regressors_info == []
+
+
+def test_get_regressors_info_in_column_fitted_regressor(ts_with_specials_and_regressor):
+    transform = SpecialDaysTransform(in_column="external_timestamp")
+
+    transform.fit(ts_with_specials_and_regressor)
+    regressors_info = transform.get_regressors_info()
+
+    expected_regressor_info = ["anomaly_weekdays", "anomaly_monthdays"]
+    assert sorted(regressors_info) == sorted(expected_regressor_info)
 
 
 def test_save_load(ts_with_specials):

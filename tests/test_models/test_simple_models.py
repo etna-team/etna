@@ -85,45 +85,45 @@ def test_sma_model_fit_with_exogs_warning(example_reg_tsds):
 
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
-def test_sma_model_forecast(simple_df, model):
-    _check_forecast(ts=simple_df, model=model(), horizon=7)
+def test_sma_model_forecast(simple_tsdf, model):
+    _check_forecast(ts=simple_tsdf, model=model(), horizon=7)
 
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
-def test_sma_model_predict(simple_df, model):
-    _check_predict(ts=simple_df, model=model(), prediction_size=7)
+def test_sma_model_predict(simple_tsdf, model):
+    _check_predict(ts=simple_tsdf, model=model(), prediction_size=7)
 
 
-def test_sma_model_forecast_fail_not_enough_context(simple_df):
+def test_sma_model_forecast_fail_not_enough_context(simple_tsdf):
     sma_model = SeasonalMovingAverageModel(window=1000, seasonality=7)
-    sma_model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    sma_model.fit(simple_tsdf)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=sma_model.context_size)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
         _ = sma_model.forecast(future_ts, prediction_size=7)
 
 
-def test_sma_model_predict_fail_not_enough_context(simple_df):
+def test_sma_model_predict_fail_not_enough_context(simple_tsdf):
     sma_model = SeasonalMovingAverageModel(window=1000, seasonality=7)
-    sma_model.fit(simple_df)
+    sma_model.fit(simple_tsdf)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
-        _ = sma_model.predict(simple_df, prediction_size=7)
+        _ = sma_model.predict(simple_tsdf, prediction_size=7)
 
 
-def test_sma_model_forecast_fail_nans_in_context(simple_df):
+def test_sma_model_forecast_fail_nans_in_context(simple_tsdf):
     sma_model = SeasonalMovingAverageModel(window=2, seasonality=2)
-    sma_model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=sma_model.context_size)
+    sma_model.fit(simple_tsdf)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=sma_model.context_size)
     future_ts.df.iloc[1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a forecast context"):
         _ = sma_model.forecast(future_ts, prediction_size=7)
 
 
-def test_sma_model_predict_fail_nans_in_context(simple_df):
+def test_sma_model_predict_fail_nans_in_context(simple_tsdf):
     sma_model = SeasonalMovingAverageModel(window=2, seasonality=7)
-    sma_model.fit(simple_df)
-    simple_df.df.iloc[-1, 0] = np.NaN
+    sma_model.fit(simple_tsdf)
+    simple_tsdf.df.iloc[-1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a target column"):
-        _ = sma_model.predict(simple_df, prediction_size=7)
+        _ = sma_model.predict(simple_tsdf, prediction_size=7)
 
 
 def test_deadline_model_fit_with_exogs_warning(example_reg_tsds):
@@ -195,13 +195,13 @@ def test_deadline_get_context_beginning_fail_not_enough_context(
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
-def test_deadline_model_forecast(simple_df, model):
-    _check_forecast(ts=simple_df, model=model(window=1), horizon=7)
+def test_deadline_model_forecast(simple_tsdf, model):
+    _check_forecast(ts=simple_tsdf, model=model(window=1), horizon=7)
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
-def test_deadline_model_predict(simple_df, model):
-    _check_predict(ts=simple_df, model=model(window=1), prediction_size=7)
+def test_deadline_model_predict(simple_tsdf, model):
+    _check_predict(ts=simple_tsdf, model=model(window=1), prediction_size=7)
 
 
 def test_deadline_model_fit_fail_not_supported_freq():
@@ -212,61 +212,61 @@ def test_deadline_model_fit_fail_not_supported_freq():
         model.fit(ts)
 
 
-def test_deadline_model_forecast_fail_not_enough_context(simple_df):
+def test_deadline_model_forecast_fail_not_enough_context(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1000)
-    model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    model.fit(simple_tsdf)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=model.context_size)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
         _ = model.forecast(future_ts, prediction_size=7)
 
 
-def test_deadline_model_predict_fail_not_enough_context(simple_df):
+def test_deadline_model_predict_fail_not_enough_context(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1000)
-    model.fit(simple_df)
+    model.fit(simple_tsdf)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
-        _ = model.predict(simple_df, prediction_size=7)
+        _ = model.predict(simple_tsdf, prediction_size=7)
 
 
-def test_deadline_model_forecast_fail_nans_in_context(simple_df):
+def test_deadline_model_forecast_fail_nans_in_context(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1)
-    model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    model.fit(simple_tsdf)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=model.context_size)
     future_ts.df.iloc[1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a forecast context"):
         _ = model.forecast(future_ts, prediction_size=7)
 
 
-def test_deadline_model_predict_fail_nans_in_context(simple_df):
+def test_deadline_model_predict_fail_nans_in_context(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1)
-    model.fit(simple_df)
-    simple_df.df.iloc[-1, 0] = np.NaN
+    model.fit(simple_tsdf)
+    simple_tsdf.df.iloc[-1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a target column"):
-        _ = model.predict(simple_df, prediction_size=7)
+        _ = model.predict(simple_tsdf, prediction_size=7)
 
 
-def test_deadline_model_context_size_fail_not_fitted(simple_df):
+def test_deadline_model_context_size_fail_not_fitted(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1000)
     with pytest.raises(ValueError, match="Model is not fitted"):
         _ = model.context_size
 
 
-def test_deadline_model_forecast_fail_not_fitted(simple_df):
+def test_deadline_model_forecast_fail_not_fitted(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1000)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=100)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=100)
     with pytest.raises(ValueError, match="Model is not fitted"):
         _ = model.forecast(future_ts, prediction_size=7)
 
 
-def test_deadline_model_predict_fail_not_fitted(simple_df):
+def test_deadline_model_predict_fail_not_fitted(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1000)
     with pytest.raises(ValueError, match="Model is not fitted"):
-        _ = model.predict(simple_df, prediction_size=7)
+        _ = model.predict(simple_tsdf, prediction_size=7)
 
 
-def test_seasonal_moving_average_forecast_correct(simple_df):
+def test_seasonal_moving_average_forecast_correct(simple_tsdf):
     model = SeasonalMovingAverageModel(window=3, seasonality=7)
-    model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    model.fit(simple_tsdf)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=model.context_size)
     res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
@@ -287,10 +287,10 @@ def test_seasonal_moving_average_forecast_correct(simple_df):
     pd.testing.assert_frame_equal(res, answer)
 
 
-def test_naive_forecast_correct(simple_df):
+def test_naive_forecast_correct(simple_tsdf):
     model = NaiveModel(lag=3)
-    model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    model.fit(simple_tsdf)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=model.context_size)
     res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
@@ -311,10 +311,10 @@ def test_naive_forecast_correct(simple_df):
     pd.testing.assert_frame_equal(res, answer)
 
 
-def test_moving_average_forecast_correct(simple_df):
+def test_moving_average_forecast_correct(simple_tsdf):
     model = MovingAverageModel(window=5)
-    model.fit(simple_df)
-    future_ts = simple_df.make_future(future_steps=7, tail_steps=model.context_size)
+    model.fit(simple_tsdf)
+    future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=model.context_size)
     res = model.forecast(future_ts, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
@@ -411,10 +411,10 @@ def test_deadline_moving_average_forecast_correct(df):
     pd.testing.assert_frame_equal(res, answer)
 
 
-def test_seasonal_moving_average_predict_correct(simple_df):
+def test_seasonal_moving_average_predict_correct(simple_tsdf):
     model = SeasonalMovingAverageModel(window=2, seasonality=2)
-    model.fit(simple_df)
-    res = model.predict(simple_df, prediction_size=7)
+    model.fit(simple_tsdf)
+    res = model.predict(simple_tsdf, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -434,10 +434,10 @@ def test_seasonal_moving_average_predict_correct(simple_df):
     pd.testing.assert_frame_equal(res, answer)
 
 
-def test_naive_predict_correct(simple_df):
+def test_naive_predict_correct(simple_tsdf):
     model = NaiveModel(lag=3)
-    model.fit(simple_df)
-    res = model.predict(simple_df, prediction_size=7)
+    model.fit(simple_tsdf)
+    res = model.predict(simple_tsdf, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -457,10 +457,10 @@ def test_naive_predict_correct(simple_df):
     pd.testing.assert_frame_equal(res, answer)
 
 
-def test_moving_average_predict_correct(simple_df):
+def test_moving_average_predict_correct(simple_tsdf):
     model = MovingAverageModel(window=5)
-    model.fit(simple_df)
-    res = model.predict(simple_df, prediction_size=7)
+    model.fit(simple_tsdf)
+    res = model.predict(simple_tsdf, prediction_size=7)
     res = res.to_pandas(flatten=True)[["target", "segment", "timestamp"]]
 
     df1 = pd.DataFrame()
@@ -793,7 +793,7 @@ def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name
 
     target = forecast.to_pandas(features=["target"])
     target_components_df = forecast.get_target_components()
-    np.testing.assert_allclose(target.values, target_components_df.sum(axis=1, level="segment").values)
+    np.testing.assert_allclose(target.values, target_components_df.groupby(axis=1, level="segment").sum().values)
 
 
 @pytest.mark.parametrize(
@@ -801,13 +801,13 @@ def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name
     (("forecast", [[44, 4], [45, 6], [44, 4]]), ("predict", [[44, 4], [45, 6], [46, 8]])),
 )
 def test_sma_model_predict_components_correct(
-    simple_df, method_name, expected_values, window=1, seasonality=2, horizon=3
+    simple_tsdf, method_name, expected_values, window=1, seasonality=2, horizon=3
 ):
     """Testing that correct lag used as a component."""
     model = SeasonalMovingAverageModel(window=window, seasonality=seasonality)
-    model.fit(simple_df)
+    model.fit(simple_tsdf)
     to_call = getattr(model, method_name)
-    forecast = to_call(ts=simple_df, prediction_size=horizon, return_components=True)
+    forecast = to_call(ts=simple_tsdf, prediction_size=horizon, return_components=True)
 
     target_components_df = forecast.get_target_components()
     np.testing.assert_allclose(target_components_df.values, expected_values)
@@ -853,7 +853,7 @@ def test_deadline_ma_predict_components_sum_up_to_target(long_periodic_ts, metho
     target = forecast.to_pandas(features=["target"])
     components = forecast.get_target_components()
 
-    np.testing.assert_allclose(target.values, components.sum(axis=1, level="segment").values)
+    np.testing.assert_allclose(target.values, components.groupby(axis=1, level="segment").sum().values)
 
 
 @pytest.mark.parametrize(

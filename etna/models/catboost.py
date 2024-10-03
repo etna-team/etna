@@ -145,8 +145,10 @@ class _CatBoostAdapter(BaseAdapter):
             dataframe with prediction components
         """
         features = df.drop(columns=["timestamp", "target"])
+        self._prepare_float_category_columns(features)
+        predict_pool = Pool(features, cat_features=self._categorical)
+        prediction = self.model.predict(predict_pool)
 
-        prediction = self.model.predict(features)
         pool = self._prepare_pool(features, prediction)
         shap_values = self.model.get_feature_importance(pool, type="ShapValues")
 
@@ -189,14 +191,13 @@ class CatBoostPerSegmentModel(
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostPerSegmentModel
     >>> from etna.transforms import LagTransform
-    >>> classic_df = generate_periodic_df(
+    >>> df = generate_periodic_df(
     ...     periods=100,
     ...     start_time="2020-01-01",
     ...     n_segments=4,
     ...     period=7,
     ...     sigma=3
     ... )
-    >>> df = TSDataset.to_dataset(df=classic_df)
     >>> ts = TSDataset(df, freq="D")
     >>> horizon = 7
     >>> transforms = [
@@ -282,6 +283,8 @@ class CatBoostPerSegmentModel(
             * For GPU. The given value is used for reading the data from the hard drive and does
               not affect the training.
               During the training one main thread and one thread for each GPU are used.
+        **kwargs:
+            Additional parameters passed to :py:class:`catboost.CatBoostRegressor` model.
         """
         self.iterations = iterations
         self.depth = depth
@@ -329,14 +332,13 @@ class CatBoostMultiSegmentModel(
     >>> from etna.datasets import TSDataset
     >>> from etna.models import CatBoostMultiSegmentModel
     >>> from etna.transforms import LagTransform
-    >>> classic_df = generate_periodic_df(
+    >>> df = generate_periodic_df(
     ...     periods=100,
     ...     start_time="2020-01-01",
     ...     n_segments=4,
     ...     period=7,
     ...     sigma=3
     ... )
-    >>> df = TSDataset.to_dataset(df=classic_df)
     >>> ts = TSDataset(df, freq="D")
     >>> horizon = 7
     >>> transforms = [
@@ -422,6 +424,8 @@ class CatBoostMultiSegmentModel(
             * For GPU. The given value is used for reading the data from the hard drive and does
               not affect the training.
               During the training one main thread and one thread for each GPU are used.
+        **kwargs:
+            Additional parameters passed to :py:class:`catboost.CatBoostRegressor` model.
         """
         self.iterations = iterations
         self.depth = depth

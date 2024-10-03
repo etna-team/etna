@@ -48,6 +48,20 @@ def remove_columns_df():
     return df, df_transformed
 
 
+@pytest.fixture()
+def remove_columns_ts(remove_columns_df):
+    df, df_transformed = remove_columns_df
+
+    df_exog = df.loc[:, pd.IndexSlice[:, "exog_1"]]
+    intervals = df.loc[:, pd.IndexSlice[:, "target_0.01"]]
+    df = df.drop(columns=["exog_1", "target_0.01"], level="feature")
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts.add_prediction_intervals(prediction_intervals_df=intervals)
+
+    ts_transformed = TSDataset(df=df_transformed, freq="D")
+    return ts, ts_transformed
+
+
 @pytest.mark.parametrize(
     "required_features, expected_features",
     [("all", "all"), (["target", "segment"], ["target", "segment"])],
@@ -109,10 +123,9 @@ def test_fit_request_correct_columns(required_features):
     "required_features",
     [("all"), (["target", "segment"])],
 )
-def test_transform_request_correct_columns(remove_columns_df, required_features):
-    df, _ = remove_columns_df
-    ts = TSDataset(df=df, freq="D")
-    ts.to_pandas = Mock(return_value=df)
+def test_transform_request_correct_columns(remove_columns_ts, required_features):
+    ts, _ = remove_columns_ts
+    ts.to_pandas = Mock(return_value=ts.df)
 
     transform = TransformMock(required_features=required_features)
     transform._update_dataset = Mock()
@@ -125,37 +138,34 @@ def test_transform_request_correct_columns(remove_columns_df, required_features)
     "required_features",
     [("all"), (["target", "segment"])],
 )
-def test_transform_request_update_dataset(remove_columns_df, required_features):
-    df, _ = remove_columns_df
-    columns_before = set(df.columns.get_level_values("feature"))
-    ts = TSDataset(df=df, freq="D")
-    ts.to_pandas = Mock(return_value=df)
+def test_transform_request_update_dataset(remove_columns_ts, required_features):
+    ts, _ = remove_columns_ts
+    columns_before = set(ts.features)
+    ts.to_pandas = Mock(return_value=ts.df)
 
     transform = TransformMock(required_features=required_features)
     transform._update_dataset = Mock()
 
     transform.transform(ts=ts)
-    transform._update_dataset.assert_called_with(ts=ts, columns_before=columns_before, df_transformed=df)
+    transform._update_dataset.assert_called_with(ts=ts, columns_before=columns_before, df_transformed=ts.df)
 
 
 @pytest.mark.parametrize(
     "in_column, expected_required_features",
     [(["target"], ["target", "target_0.01"]), (["exog_1"], ["exog_1"])],
 )
-def test_inverse_transform_add_target_quantiles(remove_columns_df, in_column, expected_required_features):
-    df, _ = remove_columns_df
-    ts = TSDataset(df=df, freq="D")
+def test_inverse_transform_add_target_quantiles(remove_columns_ts, in_column, expected_required_features):
+    ts, _ = remove_columns_ts
 
     transform = ReversibleTransformMock(required_features=in_column)
     required_features = transform._get_inverse_transform_required_features(ts)
     assert sorted(required_features) == sorted(expected_required_features)
 
 
-def test_inverse_transform_request_update_dataset(remove_columns_df):
-    df, _ = remove_columns_df
-    columns_before = set(df.columns.get_level_values("feature"))
-    ts = TSDataset(df=df, freq="D")
-    ts.to_pandas = Mock(return_value=df)
+def test_inverse_transform_request_update_dataset(remove_columns_ts):
+    ts, _ = remove_columns_ts
+    columns_before = set(ts.features)
+    ts.to_pandas = Mock(return_value=ts.df)
 
     transform = ReversibleTransformMock(required_features="all")
     transform._inverse_transform = Mock()
@@ -175,8 +185,6 @@ def ts_with_target_components():
         {
             "timestamp": timestamp,
             "target": 3,
-            "target_component_a": 1,
-            "target_component_b": 2,
             "exog": 10,
             "segment": 1,
         }
@@ -185,16 +193,36 @@ def ts_with_target_components():
         {
             "timestamp": timestamp,
             "target": 7,
-            "target_component_a": 3,
-            "target_component_b": 4,
             "exog": 10,
             "segment": 2,
         }
     )
+
+    components_df_1 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 1,
+            "target_component_b": 2,
+            "segment": 1,
+        }
+    )
+    components_df_2 = pd.DataFrame(
+        {
+            "timestamp": timestamp,
+            "target_component_a": 3,
+            "target_component_b": 4,
+            "segment": 2,
+        }
+    )
+
     df = pd.concat([df_1, df_2])
-    df = TSDataset.to_dataset(df)
+    components_df = pd.concat([components_df_1, components_df_2])
+
+    df = TSDataset.to_dataset(df=df)
+    components_df = TSDataset.to_dataset(df=components_df)
+
     ts = TSDataset(df=df, freq="D")
-    ts._target_components_names = ["target_component_a", "target_component_b"]
+    ts.add_target_components(target_components_df=components_df)
     return ts
 
 

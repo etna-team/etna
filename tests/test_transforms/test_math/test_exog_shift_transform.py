@@ -62,10 +62,10 @@ def ts_with_exogs_ms_freq():
         },
     ),
 )
-def test_save_exog_last_date(df_exog_with_nans, expected):
+def test_save_exog_last_timestamp(df_exog_with_nans, expected):
     t = ExogShiftTransform(lag=1)
-    t._save_exog_last_date(df_exog=df_exog_with_nans)
-    assert t._exog_last_date == expected
+    t._save_exog_last_timestamp(df_exog=df_exog_with_nans)
+    assert t._exog_last_timestamp == expected
 
 
 def test_negative_lag():
@@ -150,9 +150,9 @@ def test_estimate_shift(ts_with_exogs, lag, horizon, expected):
 
 
 @pytest.mark.parametrize("lag", (1, "auto"))
-def test_shift_no_exog(simple_df, lag, expected={"target"}):
+def test_shift_no_exog(simple_tsdf, lag, expected={"target"}):
     t = ExogShiftTransform(lag=lag, horizon=1)
-    transformed = t.fit_transform(simple_df)
+    transformed = t.fit_transform(simple_tsdf)
     assert set(transformed.df.columns.get_level_values("feature")) == expected
 
 
@@ -178,6 +178,31 @@ def test_transformed_names(ts_name, lag, horizon, expected, request):
     transformed = t.fit_transform(ts=ts)
     column_names = transformed.df.columns.get_level_values("feature")
     assert set(column_names) == expected
+
+
+@pytest.mark.parametrize(
+    "lag,horizon,expected_types",
+    (
+        (1, None, {"feat1_shift_1": "float", "feat2_shift_1": "float", "feat3_shift_1": "float", "target": "float"}),
+        ("auto", 1, {"feat1_shift_1": "float", "feat2_shift_2": "float", "feat3": "int", "target": "float"}),
+        ("auto", 2, {"feat1_shift_2": "float", "feat2_shift_3": "float", "feat3_shift_1": "float", "target": "float"}),
+    ),
+)
+@pytest.mark.parametrize(
+    "ts_name",
+    (
+        "ts_with_exogs",
+        "ts_with_exogs_ms_freq",
+    ),
+)
+def test_transform_type_changes(ts_name, lag, horizon, expected_types, request):
+    ts = request.getfixturevalue(ts_name)
+
+    t = ExogShiftTransform(lag=lag, horizon=horizon)
+    transformed = t.fit_transform(ts=ts).to_pandas(flatten=True)
+    dtypes = transformed.dtypes
+    for column, expected_dtype in expected_types.items():
+        assert dtypes[column] == expected_dtype
 
 
 @pytest.mark.parametrize("lag", (3, "auto"))

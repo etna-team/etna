@@ -31,61 +31,76 @@ def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values
 
 
 @pytest.mark.parametrize(
-    "timestamp, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names",
+    "timestamp, freq, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names",
     [
         (
-            pd.date_range(start="2020-01-01", periods=5, freq="D"),
+            pd.date_range(start="2020-01-01", periods=5, freq="D").to_series(),
+            "D",
             3,
             ["1", "1", "1", "2", "2"],
             [0, 1, 2, 0, 1],
             ["0", "1", "2", "0", "1"],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=6, freq="15T"),
+            pd.date_range(start="2020-01-01", periods=6, freq="15T").to_series(),
+            "15T",
             "hour",
             ["2020-01-01 00"] * 4 + ["2020-01-01 01"] * 2,
             [0, 1, 2, 3, 0, 1],
             ["0", "1", "2", "3", "0", "1"],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=26, freq="H"),
+            pd.date_range(start="2020-01-01", periods=26, freq="H").to_series(),
+            "H",
             "day",
             ["2020-01-01"] * 24 + ["2020-01-02"] * 2,
             [i % 24 for i in range(26)],
             [str(i % 24) for i in range(26)],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=10, freq="D"),
+            pd.date_range(start="2020-01-01", periods=10, freq="D").to_series(),
+            "D",
             "week",
             ["2020-00"] * 5 + ["2020-01"] * 5,
             [2, 3, 4, 5, 6, 0, 1, 2, 3, 4],
             ["Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
         ),
         (
-            pd.date_range(start="2020-01-03", periods=40, freq="D"),
+            pd.date_range(start="2020-01-03", periods=40, freq="D").to_series(),
+            "D",
             "month",
             ["2020-Jan"] * 29 + ["2020-Feb"] * 11,
             list(range(3, 32)) + list(range(1, 12)),
             [str(i) for i in range(3, 32)] + [str(i) for i in range(1, 12)],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=14, freq="M"),
+            pd.date_range(start="2020-01-01", periods=14, freq="M").to_series(),
+            "M",
             "quarter",
             ["2020-1"] * 3 + ["2020-2"] * 3 + ["2020-3"] * 3 + ["2020-4"] * 3 + ["2021-1"] * 2,
             [i % 3 for i in range(14)],
             [str(i % 3) for i in range(14)],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=14, freq="M"),
+            pd.date_range(start="2020-01-01", periods=14, freq="M").to_series(),
+            "M",
             "year",
             ["2020"] * 12 + ["2021"] * 2,
             [i % 12 + 1 for i in range(14)],
             ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb"],
         ),
+        (
+            pd.Series(np.arange(5, 10)),
+            None,
+            3,
+            ["1", "1", "1", "2", "2"],
+            [0, 1, 2, 0, 1],
+            ["0", "1", "2", "0", "1"],
+        ),
     ],
 )
-def test_seasonal_split(timestamp, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names):
-    cycle_df = _seasonal_split(timestamp=timestamp.to_series(), freq=timestamp.freq.freqstr, cycle=cycle)
+def test_seasonal_split(timestamp, freq, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names):
+    cycle_df = _seasonal_split(timestamp=timestamp, freq=freq, cycle=cycle)
     assert cycle_df["cycle_name"].tolist() == expected_cycle_names
     assert cycle_df["in_cycle_num"].tolist() == expected_in_cycle_nums
     assert cycle_df["in_cycle_name"].tolist() == expected_in_cycle_names
@@ -106,6 +121,14 @@ def test_seasonal_split(timestamp, cycle, expected_cycle_names, expected_in_cycl
             pd.date_range(start="2020-01-01", periods=14, freq="Q"),
             [np.NaN, np.NaN, np.NaN, np.NaN, np.NaN, 10, 16, 10, 5, 7, 5, 7, 3, 3],
             "Y",
+            "mean",
+            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            [np.NaN, 12.0, 6.0, 3.0],
+        ),
+        (
+            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            [np.NaN, 12.0, 6.0, 3.0],
+            "Q",
             "mean",
             pd.date_range(start="2020-01-01", periods=4, freq="Y"),
             [np.NaN, 12.0, 6.0, 3.0],

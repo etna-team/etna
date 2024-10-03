@@ -1,6 +1,7 @@
 from typing import Iterable
 from typing import Optional
 from typing import Tuple
+from typing import Union
 from warnings import warn
 
 import numpy as np
@@ -11,13 +12,16 @@ from tbats.bats import BATS
 from tbats.tbats import TBATS
 from tbats.tbats.Model import Model
 
+from etna.datasets.utils import determine_freq
+from etna.datasets.utils import determine_num_steps
+from etna.datasets.utils import timestamp_range
 from etna.models.base import BaseAdapter
 from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
-from etna.models.utils import determine_freq
-from etna.models.utils import determine_num_steps
 from etna.models.utils import select_observations
+
+_DEFAULT_FREQ = object()
 
 
 class _TBATSAdapter(BaseAdapter):
@@ -26,7 +30,7 @@ class _TBATSAdapter(BaseAdapter):
         self._fitted_model: Optional[Model] = None
         self._first_train_timestamp = None
         self._last_train_timestamp = None
-        self._freq: Optional[str] = None
+        self._freq: Union[str, None] = _DEFAULT_FREQ  # type: ignore
 
     def _check_not_used_columns(self, df: pd.DataFrame):
         columns = df.columns
@@ -49,7 +53,7 @@ class _TBATSAdapter(BaseAdapter):
         return self
 
     def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
-        if self._fitted_model is None or self._freq is None:
+        if self._fitted_model is None or self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
         steps_to_forecast = self._get_steps_to_forecast(df=df)
@@ -76,11 +80,11 @@ class _TBATSAdapter(BaseAdapter):
         return y_pred
 
     def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
-        if self._fitted_model is None or self._freq is None:
+        if self._fitted_model is None or self._freq is _DEFAULT_FREQ or self._last_train_timestamp is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
-        train_timestamp = pd.date_range(
-            start=str(self._first_train_timestamp), end=str(self._last_train_timestamp), freq=self._freq
+        train_timestamp = timestamp_range(
+            start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._freq
         )
 
         if not (set(df["timestamp"]) <= set(train_timestamp)):
@@ -134,7 +138,7 @@ class _TBATSAdapter(BaseAdapter):
         :
             dataframe with forecast components
         """
-        if self._fitted_model is None or self._freq is None:
+        if self._fitted_model is None or self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
@@ -168,7 +172,7 @@ class _TBATSAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
-        if self._fitted_model is None or self._freq is None:
+        if self._fitted_model is None or self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before estimating forecast components!")
 
         if self._last_train_timestamp < df["timestamp"].max() or self._first_train_timestamp > df["timestamp"].min():
@@ -193,7 +197,7 @@ class _TBATSAdapter(BaseAdapter):
         return components
 
     def _get_steps_to_forecast(self, df: pd.DataFrame) -> int:
-        if self._freq is None:
+        if self._freq is _DEFAULT_FREQ:
             raise ValueError("Data frequency is not set!")
 
         if df["timestamp"].min() <= self._last_train_timestamp:
@@ -397,7 +401,18 @@ class BATSModel(
         context: abstract.ContextInterface, optional (default=None)
             For advanced users only. Provide this to override default behaviors
         """
-        self.model = BATS(
+        self.use_box_cox = use_box_cox
+        self.box_cox_bounds = box_cox_bounds
+        self.use_trend = use_trend
+        self.use_damped_trend = use_damped_trend
+        self.seasonal_periods = seasonal_periods
+        self.use_arma_errors = use_arma_errors
+        self.show_warnings = show_warnings
+        self.n_jobs = n_jobs
+        self.multiprocessing_start_method = multiprocessing_start_method
+        self.context = context
+
+        self._model = BATS(
             use_box_cox=use_box_cox,
             box_cox_bounds=box_cox_bounds,
             use_trend=use_trend,
@@ -409,7 +424,7 @@ class BATSModel(
             multiprocessing_start_method=multiprocessing_start_method,
             context=context,
         )
-        super().__init__(base_model=_TBATSAdapter(self.model))
+        super().__init__(base_model=_TBATSAdapter(self._model))
 
 
 class TBATSModel(
@@ -474,7 +489,18 @@ class TBATSModel(
         context: abstract.ContextInterface, optional (default=None)
             For advanced users only. Provide this to override default behaviors
         """
-        self.model = TBATS(
+        self.use_box_cox = use_box_cox
+        self.box_cox_bounds = box_cox_bounds
+        self.use_trend = use_trend
+        self.use_damped_trend = use_damped_trend
+        self.seasonal_periods = seasonal_periods
+        self.use_arma_errors = use_arma_errors
+        self.show_warnings = show_warnings
+        self.n_jobs = n_jobs
+        self.multiprocessing_start_method = multiprocessing_start_method
+        self.context = context
+
+        self._model = TBATS(
             use_box_cox=use_box_cox,
             box_cox_bounds=box_cox_bounds,
             use_trend=use_trend,
@@ -486,4 +512,4 @@ class TBATSModel(
             multiprocessing_start_method=multiprocessing_start_method,
             context=context,
         )
-        super().__init__(base_model=_TBATSAdapter(self.model))
+        super().__init__(base_model=_TBATSAdapter(self._model))

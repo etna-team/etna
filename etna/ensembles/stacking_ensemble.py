@@ -21,8 +21,6 @@ from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.ensembles.mixins import EnsembleMixin
 from etna.ensembles.mixins import SaveEnsembleMixin
-from etna.loggers import tslogger
-from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
@@ -40,8 +38,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     >>> import pandas as pd
     >>> pd.options.display.float_format = '{:,.2f}'.format
     >>> df = generate_ar_df(periods=100, start_time="2021-06-01", ar_coef=[0.8], n_segments=3)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> ma_pipeline = Pipeline(model=MovingAverageModel(window=5), transforms=[], horizon=7)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=7)
     >>> ensemble = StackingEnsemble(pipelines=[ma_pipeline, naive_pipeline])
@@ -105,9 +102,16 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             self.joblib_params = joblib_params
         super().__init__(horizon=self._get_horizon(pipelines=pipelines))
 
-    def _filter_features_to_use(self, forecasts: List[TSDataset]) -> Union[None, Set[str]]:
+    def _make_same_level(self, ts: TSDataset, forecasts: List[pd.DataFrame]) -> TSDataset:
+        if ts.has_hierarchy():
+            current_df_level = ts._get_dataframe_level(df=forecasts[0])
+            if ts.current_df_level != current_df_level:
+                ts = ts.get_level_dataset(current_df_level)  # type: ignore
+        return ts
+
+    def _filter_features_to_use(self, forecasts: List[pd.DataFrame]) -> Union[None, Set[str]]:
         """Return all the features from ``features_to_use`` which can be obtained from base models' forecasts."""
-        features_df = pd.concat([forecast.df for forecast in forecasts], axis=1)
+        features_df = pd.concat(forecasts, axis=1)
         available_features = set(features_df.columns.get_level_values("feature")) - {"fold_number"}
         features_to_use = self.features_to_use
         if features_to_use is None:
@@ -131,28 +135,26 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             )
             return None
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
         """Get forecasts from backtest for given pipeline."""
-        with tslogger.disable():
-            _, forecasts, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=self.n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
+        forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
         return forecasts
 
-    def fit(self, ts: TSDataset) -> "StackingEnsemble":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "StackingEnsemble":
         """Fit the ensemble.
 
         Parameters
         ----------
         ts:
             TSDataset to fit ensemble.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         self:
             Fitted ensemble.
         """
-        self.ts = ts
-
         # Get forecasts from base models on backtest to fit the final model on
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
@@ -160,22 +162,30 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
 
         # Fit the final model
         self.filtered_features_for_final_model = self._filter_features_to_use(forecasts)
-        x, y = self._make_features(ts=self.ts, forecasts=forecasts, train=True)
+        x, y = self._make_features(ts=ts, forecasts=forecasts, train=True)
         self.final_model.fit(x, y)
 
         # Fit the base models
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _make_features(
-        self, ts: TSDataset, forecasts: List[TSDataset], train: bool = False
+        self, ts: TSDataset, forecasts: List[pd.DataFrame], train: bool = False
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         """Prepare features for the ``final_model``."""
+        ts = self._make_same_level(ts=ts, forecasts=forecasts)
+
         # Stack targets from the forecasts
         targets = [
-            forecast[:, :, "target"].rename({"target": f"regressor_target_{i}"}, level="feature", axis=1)
+            forecast.loc[:, pd.IndexSlice[:, "target"]].rename(
+                {"target": f"regressor_target_{i}"}, level="feature", axis=1
+            )
             for i, forecast in enumerate(forecasts)
         ]
         targets = pd.concat(targets, axis=1)
@@ -192,7 +202,8 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
                 for forecast in forecasts
             ]
             features = pd.concat(
-                [forecast[:, :, features_in_forecasts[i]] for i, forecast in enumerate(forecasts)], axis=1
+                [forecast.loc[:, pd.IndexSlice[:, features_in_forecasts[i]]] for i, forecast in enumerate(forecasts)],
+                axis=1,
             )
             features = features.loc[:, ~features.columns.duplicated()]
         features_df = pd.concat([features, targets], axis=1)
@@ -208,7 +219,9 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             return x, None
 
-    def _process_forecasts(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
+    def _process_forecasts(self, ts: TSDataset, forecasts: List[pd.DataFrame]) -> TSDataset:
+        ts = self._make_same_level(ts=ts, forecasts=forecasts)
+
         x, _ = self._make_features(ts=ts, forecasts=forecasts, train=False)
         y = self.final_model.predict(x)
         num_segments = len(forecasts[0].segments)
@@ -224,7 +237,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         df = forecasts[0][:, :, "target"].copy()
         df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = np.NAN
 
-        result = TSDataset(df=df, freq=ts.freq, df_exog=df_exog)
+        result = TSDataset(df=df, freq=ts.freq, df_exog=df_exog, hierarchical_structure=ts.hierarchical_structure)
         result.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
         return result
 
@@ -245,8 +258,8 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,
@@ -268,11 +281,11 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
-        Not implemented for this class.
+        Currently, returns empty dict, but could have a proper implementation in the future.
 
         Returns
         -------
         :
             Grid with hyperparameters.
         """
-        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")
+        return {}

@@ -1,19 +1,35 @@
 from typing import List
 from typing import Optional
+from typing import Sequence
+from typing import Union
 
 import numpy as np
 import pandas as pd
 from numpy.random import RandomState
 from statsmodels.tsa.arima_process import arma_generate_sample
 
+from etna.datasets.utils import _check_timestamp_param
+from etna.datasets.utils import timestamp_range
+
+
+def _create_timestamp(
+    start_time: Optional[Union[pd.Timestamp, int, str]], freq: Optional[str], periods: int
+) -> Sequence[Union[pd.Timestamp, int]]:
+    if freq is None and start_time is None:
+        start_time = 0
+    if freq is not None and start_time is None:
+        start_time = pd.Timestamp("2000-01-01")
+    _check_timestamp_param(param=start_time, param_name="start_time", freq=freq)
+    return timestamp_range(start=start_time, periods=periods, freq=freq)
+
 
 def generate_ar_df(
     periods: int,
-    start_time: str,
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     ar_coef: Optional[list] = None,
     sigma: float = 1,
     n_segments: int = 1,
-    freq: str = "1D",
+    freq: Optional[str] = "D",
     random_seed: int = 1,
 ) -> pd.DataFrame:
     """
@@ -35,6 +51,11 @@ def generate_ar_df(
         pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
     random_seed:
         random seed
+
+    Raises
+    ------
+    ValueError:
+        Incorrect type of ``start_time`` is used according to ``freq``
     """
     if ar_coef is None:
         ar_coef = [1]
@@ -44,18 +65,18 @@ def generate_ar_df(
         ar=ar_coef, ma=[1], nsample=(n_segments, periods), axis=1, distrvs=random_sampler, scale=sigma
     )
     df = pd.DataFrame(data=ar_samples.T, columns=[f"segment_{i}" for i in range(n_segments)])
-    df["timestamp"] = pd.date_range(start=start_time, freq=freq, periods=periods)
+    df["timestamp"] = _create_timestamp(start_time=start_time, freq=freq, periods=periods)
     df = df.melt(id_vars=["timestamp"], value_name="target", var_name="segment")
     return df
 
 
 def generate_periodic_df(
     periods: int,
-    start_time: str,
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     scale: float = 10,
     period: int = 1,
     n_segments: int = 1,
-    freq: str = "1D",
+    freq: Optional[str] = "D",
     add_noise: bool = False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -83,6 +104,11 @@ def generate_periodic_df(
         scale of added noise
     random_seed:
         random seed
+
+    Raises
+    ------
+    ValueError:
+        Non-integer timestamp parameter is used for integer-indexed timestamp.
     """
     samples = RandomState(seed=random_seed).randint(int(scale), size=(n_segments, period))
     patterns = [list(ar) for ar in samples]
@@ -100,10 +126,10 @@ def generate_periodic_df(
 
 def generate_const_df(
     periods: int,
-    start_time: str,
-    scale: float,
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
+    scale: float = 10,
     n_segments: int = 1,
-    freq: str = "1D",
+    freq: Optional[str] = "D",
     add_noise: bool = False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -119,8 +145,6 @@ def generate_const_df(
         start timestamp
     scale:
         const value to fill
-    period:
-        data frequency -- x[i+period] = x[i]
     n_segments:
         number of segments
     freq:
@@ -131,6 +155,11 @@ def generate_const_df(
         scale of added noise
     random_seed:
         random seed
+
+    Raises
+    ------
+    ValueError:
+        Non-integer timestamp parameter is used for integer-indexed timestamp.
     """
     patterns = [[scale] for _ in range(n_segments)]
     df = generate_from_patterns_df(
@@ -147,9 +176,9 @@ def generate_const_df(
 
 def generate_from_patterns_df(
     periods: int,
-    start_time: str,
+    start_time: Optional[Union[pd.Timestamp, int, str]],
     patterns: List[List[float]],
-    freq: str = "1D",
+    freq: Optional[str] = "D",
     add_noise=False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -173,6 +202,11 @@ def generate_from_patterns_df(
         scale of added noise
     random_seed:
         random seed
+
+    Raises
+    ------
+    ValueError:
+        Incorrect type of ``start_time`` is used according to ``freq``
     """
     n_segments = len(patterns)
     if add_noise:
@@ -183,7 +217,7 @@ def generate_from_patterns_df(
     for idx, pattern in enumerate(patterns):
         samples[idx, :] += np.array(pattern * (periods // len(pattern) + 1))[:periods]
     df = pd.DataFrame(data=samples.T, columns=[f"segment_{i}" for i in range(n_segments)])
-    df["timestamp"] = pd.date_range(start=start_time, freq=freq, periods=periods)
+    df["timestamp"] = _create_timestamp(start_time=start_time, freq=freq, periods=periods)
     df = df.melt(id_vars=["timestamp"], value_name="target", var_name="segment")
     return df
 
@@ -191,8 +225,8 @@ def generate_from_patterns_df(
 def generate_hierarchical_df(
     periods: int,
     n_segments: List[int],
-    freq: str = "D",
-    start_time: str = "2000-01-01",
+    freq: Optional[str] = "D",
+    start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     ar_coef: Optional[list] = None,
     sigma: float = 1,
     random_seed: int = 1,
@@ -235,6 +269,8 @@ def generate_hierarchical_df(
         ``n_segments`` contains not positive integers
     ValueError:
         ``n_segments`` represents not non-decreasing sequence
+    ValueError:
+        Non-integer timestamp parameter is used for integer-indexed timestamp.
     """
     if len(n_segments) == 0:
         raise ValueError("`n_segments` should contain at least one positive integer!")

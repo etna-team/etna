@@ -8,6 +8,7 @@ import pandas as pd
 from sklearn import preprocessing
 from sklearn.utils._encode import _check_unknown
 from sklearn.utils._encode import _encode
+from typing_extensions import assert_never
 
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
@@ -22,9 +23,26 @@ class ImputerMode(str, Enum):
     mean = "mean"
     none = "none"
 
+    @classmethod
+    def _missing_(cls, value):
+        raise ValueError(f"The strategy '{value}' doesn't exist")
+
+
+class ReturnType(str, Enum):
+    """Enum for data types of returned columns."""
+
+    categorical = "categorical"
+    numeric = "numeric"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Supported types: {', '.join([repr(m.value) for m in cls])}"
+        )
+
 
 class _LabelEncoder(preprocessing.LabelEncoder):
-    def transform(self, y: pd.Series, strategy: str):
+    def transform(self, y: pd.Series, strategy: ImputerMode):
         diff = _check_unknown(y, known_values=self.classes_)
 
         is_new_index = np.isin(y, diff)
@@ -34,14 +52,14 @@ class _LabelEncoder(preprocessing.LabelEncoder):
             float
         )
 
-        if strategy == ImputerMode.none:
+        if strategy is ImputerMode.none:
             filling_value = None
-        elif strategy == ImputerMode.new_value:
+        elif strategy is ImputerMode.new_value:
             filling_value = -1
-        elif strategy == ImputerMode.mean:
+        elif strategy is ImputerMode.mean:
             filling_value = np.mean(encoded[~np.isin(y, diff)])
         else:
-            raise ValueError(f"The strategy '{strategy}' doesn't exist")
+            assert_never(strategy)
 
         encoded[is_new_index] = filling_value
         return encoded
@@ -50,7 +68,13 @@ class _LabelEncoder(preprocessing.LabelEncoder):
 class LabelEncoderTransform(IrreversibleTransform):
     """Encode categorical feature with value between 0 and n_classes-1."""
 
-    def __init__(self, in_column: str, out_column: Optional[str] = None, strategy: str = ImputerMode.mean):
+    def __init__(
+        self,
+        in_column: str,
+        out_column: Optional[str] = None,
+        strategy: str = ImputerMode.mean,
+        return_type: str = ReturnType.categorical,
+    ):
         """
         Init LabelEncoderTransform.
 
@@ -68,12 +92,19 @@ class LabelEncoderTransform(IrreversibleTransform):
             - If "mean", then replace missing values using the mean in encoded column
 
             - If "none", then replace missing values with None
+        return_type:
+            Data type of returned columns:
+
+            - If "categorical", then returned columns will have "category" data type
+
+            - If "numeric", then returned columns will have float data type
 
         """
         super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
-        self.strategy = strategy
+        self.strategy = ImputerMode(strategy)
+        self.return_type = ReturnType(return_type)
         self.le = _LabelEncoder()
         self.in_column_regressor: Optional[bool] = None
 
@@ -123,7 +154,15 @@ class LabelEncoderTransform(IrreversibleTransform):
         out_column = self._get_column_name()
         result_df = TSDataset.to_flatten(df)
         result_df[out_column] = self.le.transform(result_df[self.in_column], self.strategy)
-        result_df[out_column] = result_df[out_column].astype("category")
+
+        if self.return_type is ReturnType.categorical:
+            return_type = "category"
+        elif self.return_type is ReturnType.numeric:
+            return_type = "float"
+        else:
+            assert_never(self.return_type)
+
+        result_df[out_column] = result_df[out_column].astype(return_type)
         result_df = TSDataset.to_dataset(result_df)
         return result_df
 
@@ -155,7 +194,7 @@ class OneHotEncoderTransform(IrreversibleTransform):
     encoded columns for this feature will be all zeros.
     """
 
-    def __init__(self, in_column: str, out_column: Optional[str] = None):
+    def __init__(self, in_column: str, out_column: Optional[str] = None, return_type: str = ReturnType.categorical):
         """
         Init OneHotEncoderTransform.
 
@@ -165,10 +204,17 @@ class OneHotEncoderTransform(IrreversibleTransform):
             Name of column to be encoded
         out_column:
             Prefix of names of added columns. If not given, use ``self.__repr__()``
+        return_type:
+            Data type of returned columns:
+
+            - If "categorical", then returned columns will have "category" data type
+
+            - If "numeric", then returned columns will have float data type
         """
         super().__init__(required_features=[in_column])
         self.in_column = in_column
         self.out_column = out_column
+        self.return_type = ReturnType(return_type)
         self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False, dtype=int)
         self.in_column_regressor: Optional[bool] = None
 
@@ -219,7 +265,13 @@ class OneHotEncoderTransform(IrreversibleTransform):
         x = result_df[[self.in_column]]
         out_columns = self._get_out_column_names()
         result_df[out_columns] = self.ohe.transform(X=x)
-        result_df[out_columns] = result_df[out_columns].astype("category")
+
+        if self.return_type == ReturnType.categorical:
+            return_type = "category"
+        elif self.return_type == ReturnType.numeric:
+            return_type = "float"
+
+        result_df[out_columns] = result_df[out_columns].astype(return_type)
         result_df = TSDataset.to_dataset(result_df)
         return result_df
 

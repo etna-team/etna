@@ -7,6 +7,10 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -17,14 +21,17 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: "3.10"
 
-      - name: Install Dependencies
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
         run: |
-          pip install poetry==1.4.0 # TODO: remove after poetry fix
-          poetry --version
-          poetry config virtualenvs.in-project true
-          poetry install -E style --no-root
+          poetry install -E style -vv
 
       - name: Static Analysis
         run: poetry run make lint
@@ -33,7 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8, 3.9, '3.10']
+        python-version: ['3.8', '3.10']
+        shard-id: [0, 1, 2]
       fail-fast: false
 
     steps:
@@ -58,127 +66,20 @@ jobs:
           path: .venv
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
-      # TODO: remove pip install after optuna fix
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: |
-          poetry install -E "all tests" -vv
-          poetry run pip install "sqlalchemy>=1.4,<2"
+          poetry install -E "all jupyter tests" -vv
 
-      - name: PyTest ("not long")
+      - name: PyTest with sharding
         run: |
-          poetry run pytest tests -v --cov=etna -m "not long_1 and not long_2" --ignore=tests/test_experimental --cov-report=xml --durations=10
+          poetry run pytest tests -v --shard-id=${{ matrix.shard-id }} --num-shards=3 --cov=etna --cov-report=xml --durations=10
           poetry run pytest etna -v --doctest-modules --ignore=etna/libs --durations=10
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v2
-
-  long-1-test:
-      runs-on: ubuntu-latest
-
-      steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python
-        id: setup-python
-        uses: actions/setup-python@v2
+        uses: codecov/codecov-action@v4
         with:
-          python-version: 3.8
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v2
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
-
-      # TODO: remove pip install after optuna fix
-      - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: |
-          poetry install -E "all tests" -vv
-          poetry run pip install "sqlalchemy>=1.4,<2"
-
-      - name: PyTest ("long")
-        run: |
-          poetry run pytest tests -v --cov=etna -m "long_1" --ignore=tests/test_experimental --cov-report=xml --durations=10
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
-
-  long-2-test:
-      runs-on: ubuntu-latest
-
-      steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python
-        id: setup-python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v2
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-3.8-${{ hashFiles('**/poetry.lock') }}
-
-      # TODO: remove pip install after optuna fix
-      - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: |
-          poetry install -E "all tests" -vv
-          poetry run pip install "sqlalchemy>=1.4,<2"
-
-      - name: PyTest ("long")
-        run: |
-          poetry run pytest tests -v --cov=etna -m "long_2" --ignore=tests/test_experimental --cov-report=xml --durations=10
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
-
-  experimental-test:
-      runs-on: ubuntu-latest
-
-      steps:
-      - uses: actions/checkout@v2
-
-      - name: Set up Python
-        id: setup-python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.8
-
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - name: Install dependencies
-        run: |
-          poetry install -E "all tests" -vv
-
-      - name: PyTest ("experimental")
-        run: |
-          poetry run pytest tests/test_experimental -v --cov=etna --cov-report=xml
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-pandas-versions:
     runs-on: ubuntu-latest
@@ -188,7 +89,8 @@ jobs:
           - ">=1.1,<1.2"
           - ">=1.2,<1.3"
           - ">=1.3,<1.4"
-          - ">=1.4"
+          - ">=1.4,<1.5"
+          - ">=1.5,<2"
       fail-fast: false
 
     steps:
@@ -208,7 +110,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          poetry install -E "all tests" -vv
+          poetry install -E "all jupyter tests" -vv
           poetry run pip install "pandas${{ matrix.pandas-version }}"
 
       - name: PyTest ("tsdataset transforms")
@@ -217,5 +119,30 @@ jobs:
           poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml --durations=10
           poetry run pytest tests/test_models/test_utils.py -v --cov=etna --cov-report=xml --durations=10
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
+  test-without-extras:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: |
+          poetry install -vv
+
+      - name: Check without extras
+        run: |
+          poetry run python scripts/check_without_extras.py

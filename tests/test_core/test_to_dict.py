@@ -4,6 +4,7 @@ import pickle
 import hydra_slayer
 import pytest
 from ruptures import Binseg
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 
 from etna.core import BaseMixin
@@ -15,6 +16,8 @@ from etna.metrics import SMAPE
 from etna.models import AutoARIMAModel
 from etna.models import CatBoostPerSegmentModel
 from etna.models import LinearPerSegmentModel
+from etna.models import SklearnMultiSegmentModel
+from etna.models import SklearnPerSegmentModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import MLPModel
 from etna.models.nn import TFTModel
@@ -26,6 +29,7 @@ from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
 from etna.transforms.decomposition.change_points_based import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based import SklearnRegressionPerIntervalModel
+from tests.test_core.conftest import BaseDummy
 
 
 def ensemble_samples():
@@ -94,7 +98,7 @@ def test_to_dict_transforms(target_object):
     [
         (
             DensityOutliersTransform("target", distance_coef=6),
-            {'in_column': 'target', 'window_size': 15, 'distance_coef': 6, 'n_neighbors': 3, 'distance_func': {'_target_': 'etna.analysis.outliers.density_outliers.absolute_difference_distance'}, '_target_': 'etna.transforms.outliers.point_outliers.DensityOutliersTransform'}  # noqa: E501
+            {'in_column': 'target', 'window_size': 15, 'distance_coef': 6, 'n_neighbors': 3, 'distance_func': 'absolute_difference', '_target_': 'etna.transforms.outliers.point_outliers.DensityOutliersTransform'}  # noqa: E501
         ),
         (
             MLPModel(decoder_length=1, hidden_size=[64, 64], input_size=1, trainer_params={"max_epochs": 100, "callbacks": [EarlyStopping(monitor="val_loss", patience=3)]}, lr=0.01, train_batch_size=32, split_params=dict(train_size=0.75)),  # noqa: E501
@@ -134,6 +138,8 @@ def test_to_dict_transforms_with_expected(target_object, expected):
             ),
             marks=pytest.mark.xfail(raises=AssertionError),
         ),
+        SklearnPerSegmentModel(regressor=RandomForestRegressor()),
+        SklearnMultiSegmentModel(regressor=RandomForestRegressor()),
     ],
 )
 def test_to_dict_models(target_model):
@@ -200,3 +206,8 @@ class _InvalidParsing(BaseMixin):
 def test_warnings():
     with pytest.warns(Warning, match="Some of external objects in input parameters could be not written in dict"):
         _ = _InvalidParsing(_Dummy()).to_dict()
+
+
+def test_to_dict_public_property_private_attribute():
+    dummy = BaseDummy(a=1, b=2)
+    assert dummy.to_dict() == {"a": 1, "b": 2, "_target_": "tests.test_core.conftest.BaseDummy"}

@@ -1,0 +1,10 @@
+contact_links:
+  - name: Suggest an idea
+    about: Suggest an idea for the library using GitHub Discussions
+    url: https://github.com/etna-team/etna/discussions/categories/improvements
+  - name: Point out a drawback
+    about: Describe a drawback of the library using GitHub Discussions
+    url: https://github.com/etna-team/etna/discussions/categories/improvements
+  - name: Ask a question
+    about: Ask a question about the library using GitHub Discussions
+    url: https://github.com/etna-team/etna/discussions/categories/q-a

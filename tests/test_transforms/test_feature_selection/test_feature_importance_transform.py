@@ -133,7 +133,7 @@ def test_selected_top_k_regressors(model, top_k, ts_with_regressors):
     selector = TreeFeatureSelectionTransform(model=model, top_k=top_k)
     selector.fit_transform(ts)
 
-    selected_regressors = set(ts.columns.get_level_values("feature")).difference({"target"})
+    selected_regressors = set(ts.features).difference({"target"})
     assert len(selected_regressors) == min(len(all_regressors), top_k)
 
 
@@ -282,11 +282,17 @@ def test_fit_transform_with_nans(model, ts_diff_endings):
 @pytest.mark.parametrize("fast_redundancy", ([True, False]))
 @pytest.mark.parametrize("relevance_table", ([StatisticsRelevanceTable()]))
 @pytest.mark.parametrize("top_k", [0, 1, 5, 15, 50])
-def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors, fast_redundancy):
+@pytest.mark.parametrize("redundancy_aggregation_mode", ["mean", "median"])
+def test_mrmr_right_len(relevance_table, top_k, ts_with_regressors, fast_redundancy, redundancy_aggregation_mode):
     """Check that transform selects exactly top_k regressors."""
     all_regressors = ts_with_regressors.regressors
     ts = ts_with_regressors
-    mrmr = MRMRFeatureSelectionTransform(relevance_table=relevance_table, top_k=top_k, fast_redundancy=fast_redundancy)
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=top_k,
+        fast_redundancy=fast_redundancy,
+        redundancy_aggregation_mode=redundancy_aggregation_mode,
+    )
     df_selected = mrmr.fit_transform(ts).to_pandas()
 
     selected_regressors = set()
@@ -311,6 +317,94 @@ def test_mrmr_right_regressors(relevance_table, ts_with_regressors, fast_redunda
         if column.startswith("regressor"):
             selected_regressors.add(column)
     assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
+
+
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_top_k_greater_than_number_of_regressors(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects all regressors if top_k greater than number of regressors."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=20,
+        model=CatBoostRegressor(iterations=1),
+        fast_redundancy=fast_redundancy,
+    )
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+    assert len(selected_regressors) == len(ts.regressors)
+
+
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_select_top_k_regressors_in_drop_zero_mode(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects top_k regressors in drop_zero mode
+    if number of regressors with positive relevance less than top_k."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=10,
+        model=CatBoostRegressor(iterations=1),
+        drop_zero=True,
+        fast_redundancy=fast_redundancy,
+    )
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+    assert len(selected_regressors) == 10
+
+
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_drop_zero_mode_sanity_check(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects right top_k regressors in drop_zero mode."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=3,
+        model=RandomForestRegressor(),
+        drop_zero=True,
+        fast_redundancy=fast_redundancy,
+    )
+
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+
+    assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1", "regressor_useful_2"}
+
+
+@pytest.mark.parametrize("fast_redundancy", ([True, False]))
+@pytest.mark.parametrize("relevance_table", ([ModelRelevanceTable()]))
+def test_mrmr_drop_zero_mode_top_k_less_than_relevant(relevance_table, ts_with_regressors, fast_redundancy):
+    """Check that transform selects exact top_k regressors if number of relevant regressors greater than top_k."""
+    ts = ts_with_regressors
+
+    mrmr = MRMRFeatureSelectionTransform(
+        relevance_table=relevance_table,
+        top_k=2,
+        model=RandomForestRegressor(),
+        drop_zero=True,
+        fast_redundancy=fast_redundancy,
+    )
+
+    df_selected = mrmr.fit_transform(ts).to_pandas()
+    selected_regressors = set()
+    for column in df_selected.columns.get_level_values("feature"):
+        if column.startswith("regressor"):
+            selected_regressors.add(column)
+
+    assert set(selected_regressors) == {"regressor_useful_0", "regressor_useful_1"}
 
 
 @pytest.mark.parametrize(

@@ -14,16 +14,19 @@ from sklearn.preprocessing import StandardScaler
 from etna import SETTINGS
 from etna.core import BaseMixin
 from etna.datasets.tsdataset import TSDataset
+from etna.datasets.utils import determine_num_steps
+from etna.datasets.utils import timestamp_range
 from etna.loggers import tslogger
 from etna.models.base import log_decorator
-from etna.models.utils import determine_num_steps
 
 if SETTINGS.torch_required:
     import pytorch_lightning as pl
+    import torch
     from pytorch_forecasting.data import TimeSeriesDataSet
     from pytorch_forecasting.data.encoders import EncoderNormalizer
     from pytorch_forecasting.data.encoders import NaNLabelEncoder
     from pytorch_forecasting.data.encoders import TorchNormalizer
+    from torch import nn
     from torch.utils.data import DataLoader
 
 else:
@@ -52,7 +55,13 @@ class _DeepCopyMixin:
 
 
 class PytorchForecastingDatasetBuilder(BaseMixin):
-    """Builder for PytorchForecasting dataset."""
+    """Builder for PytorchForecasting dataset.
+
+    Note
+    ----
+    This class requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,
@@ -222,6 +231,7 @@ class PytorchForecastingMixin:
     train_batch_size: int
     test_batch_size: int
     encoder_length: int
+    trainer: Optional[pl.Trainer]
 
     @log_decorator
     def fit(self, ts: TSDataset):
@@ -259,7 +269,7 @@ class PytorchForecastingMixin:
             raise ValueError("Trainer or model is None")
         return self
 
-    def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> pd.Timestamp:
+    def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> Union[pd.Timestamp, int]:
         return ts.index[-horizon]
 
     def _is_in_sample_prediction(self, ts: TSDataset, horizon: int) -> bool:
@@ -268,7 +278,7 @@ class PytorchForecastingMixin:
 
     def _is_prediction_with_gap(self, ts: TSDataset, horizon: int) -> bool:
         first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)
-        first_timestamp_after_train = pd.date_range(self._last_train_timestamp, periods=2, freq=self._freq)[-1]
+        first_timestamp_after_train = timestamp_range(start=self._last_train_timestamp, periods=2, freq=self._freq)[-1]
         return first_prediction_timestamp > first_timestamp_after_train
 
     def _make_target_prediction(self, ts: TSDataset, horizon: int) -> Tuple[TSDataset, DataLoader]:
@@ -302,3 +312,35 @@ class PytorchForecastingMixin:
         ts.df = ts.df.iloc[-horizon:]
         ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
         return ts, prediction_dataloader
+
+
+class MultiEmbedding(nn.Module):
+    """Class for obtaining the embeddings of the categorical features."""
+
+    def __init__(self, embedding_sizes: Dict[str, Tuple[int, int]]):
+        """
+        Init MultiEmbedding.
+
+        Parameters
+        ----------
+        embedding_sizes:
+            dictionary mapping feature name to tuple of number of categorical classes and embedding size
+        """
+        super().__init__()
+
+        self.embedding_sizes = embedding_sizes
+        # We should add one more embedding for new categories that were not seen during model's `fit`
+        self.embedding = nn.ModuleDict(
+            {feature: nn.Embedding(n + 1, dim) for feature, (n, dim) in self.embedding_sizes.items()}
+        )
+
+    def forward(self, x: Dict[str, torch.Tensor]) -> torch.Tensor:
+        """
+        Forward pass.
+
+        Parameters
+        ----------
+        x:
+            dictionary mapping feature name to feature values
+        """
+        return torch.concat([self.embedding[feature](x[feature].int().squeeze(2)) for feature in x.keys()], dim=2)

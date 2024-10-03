@@ -111,6 +111,18 @@ def test_lags_values_two_segments(lags: Union[int, Sequence[int]], int_ts_two_se
             assert_almost_equal(true_values.values, lags_df[segment, f"regressor_lag_feature_{lag}"].values)
 
 
+@pytest.mark.parametrize(
+    "lags, expected_types", [(3, {"lag_1": "float", "lag_2": "float", "lag_3": "float", "target": "int"})]
+)
+def test_transform_type_changes(lags, expected_types, int_ts_two_segments):
+    ts = int_ts_two_segments
+    lf = LagTransform(in_column="target", lags=lags, out_column="lag")
+    transformed = lf.fit_transform(ts=ts).to_pandas(flatten=True)
+    dtypes = transformed.dtypes
+    for column, expected_dtype in expected_types.items():
+        assert dtypes[column] == expected_dtype
+
+
 @pytest.mark.parametrize("lags", (0, -1, (10, 15, -2)))
 def test_invalid_lags_value_two_segments(lags):
     """Test that LagTransform can't be created with non-positive lags."""

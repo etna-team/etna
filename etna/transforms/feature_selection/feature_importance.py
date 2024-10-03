@@ -172,6 +172,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         top_k: int,
         features_to_use: Union[List[str], Literal["all"]] = "all",
         fast_redundancy: bool = False,
+        drop_zero: bool = False,
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
         atol: float = 1e-10,
@@ -190,9 +191,13 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         features_to_use:
             columns of the dataset to select from
             if "all" value is given, all columns are used
+        drop_zero:
+            * True: use only features with relevance > 0 in calculations, if their number is less than ``top_k``,
+              randomly selects features with zero relevance so that the total number of selected features is ``top_k``
+            * False: use all features in calculations
         fast_redundancy:
-            * True: compute redundancy only inside the the segments, time complexity :math:`O(top\_k * n\_segments * n\_features * history\_len)
-            * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k * n\_segments^2 * n\_features * history\_len)`
+            * True: compute redundancy only inside the segments, time complexity :math:`O(top\_k \\cdot n\_segments \\cdot n\_features \\cdot history\_len)`
+            * False: compute redundancy for all the pairs of segments, time complexity :math:`O(top\_k \\cdot n\_segments^2 \\cdot n\_features \\cdot history\_len)`
         relevance_aggregation_mode:
             the method for relevance values per-segment aggregation
         redundancy_aggregation_mode:
@@ -209,6 +214,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.fast_redundancy = fast_redundancy
+        self.drop_zero = drop_zero
         self.relevance_aggregation_mode = relevance_aggregation_mode
         self.redundancy_aggregation_mode = redundancy_aggregation_mode
         self.atol = atol
@@ -229,15 +235,23 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             instance after fitting
         """
         features = self._get_features_to_use(df)
-        ts = TSDataset(df=df, freq=pd.infer_freq(df.index))
-        relevance_table = self.relevance_table(ts[:, :, "target"], ts[:, :, features], **self.relevance_params)
+        df_target = df.loc[:, pd.IndexSlice[:, "target"]]
+        df_target = df_target.loc[df_target.first_valid_index() :]
+        df_features = df.loc[:, pd.IndexSlice[:, features]]
+        df_features = df_features.loc[df_features.first_valid_index() :]
+        relevance_table = self.relevance_table(df_target, df_features, **self.relevance_params)
+
         if not self.relevance_table.greater_is_better:
-            relevance_table *= -1
+            min_relevance = relevance_table.values.min()
+            max_relevance = relevance_table.values.max()
+            relevance_table = max_relevance + min_relevance - relevance_table
+
         self.selected_features = mrmr(
             relevance_table=relevance_table,
-            regressors=ts[:, :, features],
+            regressors=df_features,
             top_k=self.top_k,
             fast_redundancy=self.fast_redundancy,
+            drop_zero=self.drop_zero,
             relevance_aggregation_mode=self.relevance_aggregation_mode,
             redundancy_aggregation_mode=self.redundancy_aggregation_mode,
             atol=self.atol,
@@ -258,4 +272,6 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         """
         return {
             "top_k": IntDistribution(low=1, high=self.top_k),
+            "relevance_aggregation_mode": CategoricalDistribution(["mean", "median", "max", "min"]),
+            "redundancy_aggregation_mode": CategoricalDistribution(["mean", "median", "max", "min"]),
         }

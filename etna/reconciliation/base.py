@@ -84,7 +84,7 @@ class BaseReconciliator(ABC, BaseMixin):
         current_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.source_level)
         target_level_segments = ts.hierarchical_structure.get_level_segments(level_name=self.target_level)
 
-        target_names = ts.target_quantiles_names + ts.target_components_names + ("target",)
+        target_names = ts.prediction_intervals_names + ts.target_components_names + ("target",)
 
         df_reconciled = get_level_dataframe(
             df=ts.to_pandas(features=target_names),
@@ -97,6 +97,10 @@ class BaseReconciliator(ABC, BaseMixin):
         if len(ts.target_components_names) > 0:  # for pandas >=1.1, <1.2
             df_reconciled = df_reconciled.drop(columns=list(ts.target_components_names), level="feature")
 
+        prediction_intervals_df = df_reconciled.loc[:, pd.IndexSlice[:, ts.prediction_intervals_names]]
+        if len(ts.prediction_intervals_names) > 0:  # for pandas >=1.1, <1.2
+            df_reconciled = df_reconciled.drop(columns=list(ts.prediction_intervals_names), level="feature")
+
         ts_reconciled = TSDataset(
             df=df_reconciled,
             freq=ts.freq,
@@ -107,4 +111,8 @@ class BaseReconciliator(ABC, BaseMixin):
 
         if len(ts.target_components_names) > 0:
             ts_reconciled.add_target_components(target_components_df=target_components_df)
+
+        if len(ts.prediction_intervals_names) > 0:
+            ts_reconciled.add_prediction_intervals(prediction_intervals_df=prediction_intervals_df)
+
         return ts_reconciled

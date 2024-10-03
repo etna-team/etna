@@ -23,8 +23,6 @@ if SETTINGS.torch_required:
 class PatchTSBatch(TypedDict):
     """Batch specification for PatchTS."""
 
-    encoder_real: "torch.Tensor"
-    decoder_real: "torch.Tensor"
     encoder_target: "torch.Tensor"
     decoder_target: "torch.Tensor"
     segment: "torch.Tensor"
@@ -46,10 +44,10 @@ class PositionalEncoding(nn.Module):
         self.register_buffer("pe", pe)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """x: Tensor, shape [batch_size, input_size, patch_num, embedding_dim]."""
+        """x: Tensor, shape [batch_size, 1, patch_num, embedding_dim]."""
         x = torch.reshape(x, (x.shape[0] * x.shape[1], x.shape[2], x.shape[3]))
-        # x.shape == (batch_size * input_size, patch_num, embedding_dim)
-        x = x.permute(1, 0, 2)  # (patch_num, batch_size * input_size, embedding_dim)
+        # x.shape == (batch_size * 1, patch_num, embedding_dim)
+        x = x.permute(1, 0, 2)  # (patch_num, batch_size * 1, embedding_dim)
         x = x + self.pe[: x.size(0)]  # type: ignore
         return self.dropout(x)
 
@@ -96,12 +94,14 @@ class PatchTSNet(DeepBaseNet):
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         """
         super().__init__()
+        self.save_hyperparameters()
+        self.encoder_length = encoder_length
         self.patch_len = patch_len
-        self.num_layers = num_layers
-        self.feedforward_size = feedforward_size
-        self.hidden_size = hidden_size
-        self.nhead = nhead
         self.stride = stride
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+        self.feedforward_size = feedforward_size
+        self.nhead = nhead
         self.loss = loss
 
         encoder_layers = nn.TransformerEncoderLayer(
@@ -133,11 +133,10 @@ class PatchTSNet(DeepBaseNet):
         :
             forecast with shape (batch_size, decoder_length, 1)
         """
-        encoder_real = x["encoder_real"].float()  # (batch_size, encoder_length, input_size)
-        decoder_real = x["decoder_real"].float()  # (batch_size, decoder_length, input_size)
-        decoder_length = decoder_real.shape[1]
+        encoder_target = x["encoder_target"].float()  # (batch_size, encoder_length, 1)
+        decoder_length = x["decoder_target"].shape[1]
         outputs = []
-        current_input = encoder_real
+        current_input = encoder_target
         for _ in range(decoder_length):
             pred = self._get_prediction(current_input)
             outputs.append(pred)
@@ -149,14 +148,12 @@ class PatchTSNet(DeepBaseNet):
         return forecast
 
     def _get_prediction(self, x: torch.Tensor) -> torch.Tensor:
-        x = x.permute(0, 2, 1)  # (batch_size, input_size, encoder_length)
+        x = x.permute(0, 2, 1)  # (batch_size, 1, encoder_length)
         # do patching
-        x = x.unfold(
-            dimension=-1, size=self.patch_len, step=self.stride
-        )  # (batch_size, input_size, patch_num, patch_len)
+        x = x.unfold(dimension=-1, size=self.patch_len, step=self.stride)  # (batch_size, 1, patch_num, patch_len)
 
-        y = self.model(x)
-        y = y.permute(1, 0, 2)  # (batch_size, hidden_size, patch_num)
+        y = self.model(x)  # (patch_num, batch_size, hidden_size)
+        y = y.permute(1, 0, 2)  # (batch_size, patch_num, hidden_size)
 
         return self.projection(y)  # (batch_size, 1)
 
@@ -173,19 +170,16 @@ class PatchTSNet(DeepBaseNet):
         :
             loss, true_target, prediction_target
         """
-        encoder_real = batch["encoder_real"].float()  # (batch_size, encoder_length, input_size)
-        decoder_real = batch["decoder_real"].float()  # (batch_size, decoder_length, input_size)
-
+        encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
-
-        decoder_length = decoder_real.shape[1]
+        decoder_length = decoder_target.shape[1]
 
         outputs = []
-        x = encoder_real
+        x = encoder_target
         for i in range(decoder_length):
             pred = self._get_prediction(x)
             outputs.append(pred)
-            x = torch.cat((x[:, 1:, :], torch.unsqueeze(decoder_real[:, i, :], dim=1)), dim=1)
+            x = torch.cat((x[:, 1:, :], torch.unsqueeze(decoder_target[:, i, :], dim=1)), dim=1)
 
         target_prediction = torch.cat(outputs, dim=1)
         target_prediction = torch.unsqueeze(target_prediction, dim=2)
@@ -195,12 +189,10 @@ class PatchTSNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.select_dtypes(include=[np.number]).values
         values_target = df["target"].values
         segment = df["segment"].values[0]
 
         def _make(
-            values_real: np.ndarray,
             values_target: np.ndarray,
             segment: str,
             start_idx: int,
@@ -209,8 +201,6 @@ class PatchTSNet(DeepBaseNet):
         ) -> Optional[dict]:
 
             sample: Dict[str, Any] = {
-                "encoder_real": list(),
-                "decoder_real": list(),
                 "encoder_target": list(),
                 "decoder_target": list(),
                 "segment": None,
@@ -220,9 +210,6 @@ class PatchTSNet(DeepBaseNet):
 
             if total_sample_length + start_idx > total_length:
                 return None
-
-            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
-            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length]
 
             target = values_target[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
             sample["encoder_target"] = target[:encoder_length]
@@ -236,7 +223,6 @@ class PatchTSNet(DeepBaseNet):
         while True:
             batch = _make(
                 values_target=values_target,
-                values_real=values_real,
                 segment=segment,
                 start_idx=start_idx,
                 encoder_length=encoder_length,
@@ -254,7 +240,15 @@ class PatchTSNet(DeepBaseNet):
 
 
 class PatchTSModel(DeepBaseModel):
-    """PatchTS model using PyTorch layers."""
+    """PatchTS model using PyTorch layers. For more details read the `paper <https://arxiv.org/abs/2211.14730>`_.
+
+    Model uses only `target` column, other columns will be ignored.
+
+    Note
+    ----
+    This model requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
+    """
 
     def __init__(
         self,
@@ -281,7 +275,7 @@ class PatchTSModel(DeepBaseModel):
 
         Parameters
         ----------
-         encoder_length:
+        encoder_length:
             encoder length
         decoder_length:
             decoder length

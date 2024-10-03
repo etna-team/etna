@@ -43,7 +43,7 @@ def test_run(catboostmodel, new_format_df):
 def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
     df = new_format_df
     exog = new_format_exog
-    exog.columns.set_levels(["regressor_exog"], level="feature", inplace=True)
+    exog.columns = exog.columns.set_levels(["regressor_exog"], level="feature")
 
     ts = TSDataset(df, "1d", df_exog=exog, known_future="all")
 
@@ -183,9 +183,30 @@ def test_decomposition_sums_to_target(dfs_w_exog):
     np.testing.assert_allclose(y_hat_pred, y_pred)
 
 
+@pytest.fixture
+def ts_with_features() -> TSDataset:
+    df = generate_ar_df(periods=100, n_segments=2, start_time="2000-01-01")
+    df_exog = df.copy().rename(columns={"target": "exog"})
+    df_exog["cat_exog"] = df_exog["exog"].astype(int).astype("category")
+
+    df = TSDataset.to_dataset(df)
+    df_exog = TSDataset.to_dataset(df_exog)
+    return TSDataset(df=df, df_exog=df_exog, freq="D")
+
+
 @pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
-def test_prediction_decomposition(outliers_tsds, model):
-    train, test = outliers_tsds.train_test_split(test_size=10)
+def test_prediction_decomposition(ts_with_features, model):
+    train, test = ts_with_features.train_test_split(test_size=10)
+    assert_prediction_components_are_present(model=model, train=train, test=test)
+
+
+@pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
+def test_prediction_decomposition_with_shuffled_columns(
+    ts_with_features, model, train_order=("target", "cat_exog", "exog"), test_order=("target", "exog", "cat_exog")
+):
+    train, test = ts_with_features.train_test_split(test_size=10)
+    train.df = train.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, train_order]]
+    test.df = test.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, test_order]]
     assert_prediction_components_are_present(model=model, train=train, test=test)
 
 

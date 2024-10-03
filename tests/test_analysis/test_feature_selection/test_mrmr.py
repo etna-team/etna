@@ -139,8 +139,8 @@ def high_relevance_high_redundancy_problem_diff_starts(periods=10):
         periods=periods, n_segments=2, start_time="2000-01-07", freq="D", random_seed=2
     )["target"]
     regressors = TSDataset.to_dataset(regressors)
-    regressors.loc[pd.IndexSlice[:2], pd.IndexSlice[:, "regressor_1"]] = np.NaN
-    regressors.loc[pd.IndexSlice[:4], pd.IndexSlice[:, "regressor_3"]] = np.NaN
+    regressors.loc[regressors.index[:1], pd.IndexSlice[:, "regressor_1"]] = np.NaN
+    regressors.loc[regressors.index[:1], pd.IndexSlice[:, "regressor_3"]] = np.NaN
     return {
         "relevance_table": relevance_table,
         "regressors": regressors,

@@ -15,8 +15,11 @@ from etna.ensembles.stacking_ensemble import StackingEnsemble
 from etna.metrics import MAE
 from etna.pipeline import Pipeline
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
+from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
+from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
+from tests.test_pipeline.utils import assert_pipeline_predicts
 
 HORIZON = 7
 
@@ -99,6 +102,7 @@ def test_features_to_use_not_found(
         _ = ensemble._filter_features_to_use(forecasts_ts)
 
 
+@pytest.mark.filterwarnings("ignore: Features {'unknown'} are not found and will be dropped!")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -148,6 +152,18 @@ def test_make_features(
     assert (y == targets).all()
 
 
+@pytest.mark.parametrize("save_ts", [False, True])
+def test_fit_saving_ts(example_tsds, naive_pipeline_1, naive_pipeline_2, save_ts):
+    ensemble = StackingEnsemble(pipelines=[naive_pipeline_1, naive_pipeline_2])
+    ensemble.fit(example_tsds, save_ts=save_ts)
+
+    if save_ts:
+        assert ensemble.ts is example_tsds
+    else:
+        assert ensemble.ts is None
+
+
+@pytest.mark.filterwarnings("ignore: Features {'unknown'} are not found and will be dropped!")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -192,6 +208,7 @@ def test_forecast_interface(
     assert features == expected_features
 
 
+@pytest.mark.filterwarnings("ignore: Features {'unknown'} are not found and will be dropped!")
 @pytest.mark.parametrize(
     "features_to_use,expected_features",
     (
@@ -286,9 +303,8 @@ def test_forecast_sanity(weekly_period_ts: Tuple["TSDataset", "TSDataset"], naiv
     np.allclose(mae(test, forecast), 0)
 
 
-@pytest.mark.long_1
 def test_multiprocessing_ensembles(
-    simple_df: TSDataset,
+    simple_tsdf,
     catboost_pipeline: Pipeline,
     prophet_pipeline: Pipeline,
     naive_pipeline_1: Pipeline,
@@ -299,8 +315,8 @@ def test_multiprocessing_ensembles(
     single_jobs_ensemble = StackingEnsemble(pipelines=deepcopy(pipelines), n_jobs=1)
     multi_jobs_ensemble = StackingEnsemble(pipelines=deepcopy(pipelines), n_jobs=3)
 
-    single_jobs_ensemble.fit(ts=deepcopy(simple_df))
-    multi_jobs_ensemble.fit(ts=deepcopy(simple_df))
+    single_jobs_ensemble.fit(ts=deepcopy(simple_tsdf))
+    multi_jobs_ensemble.fit(ts=deepcopy(simple_tsdf))
 
     single_jobs_forecast = single_jobs_ensemble.forecast()
     multi_jobs_forecast = multi_jobs_ensemble.forecast()
@@ -308,7 +324,6 @@ def test_multiprocessing_ensembles(
     assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with StackingEnsemble."""
@@ -317,10 +332,41 @@ def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TS
         assert isinstance(df, pd.DataFrame)
 
 
-def test_forecast_raise_error_if_no_ts(naive_ensemble: StackingEnsemble):
-    """Test that StackingEnsemble raises error when calling forecast without ts."""
-    with pytest.raises(ValueError, match="There is no ts to forecast!"):
-        _ = naive_ensemble.forecast()
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_backtest_hierarchical_pipeline(
+    stacking_ensemble_hierarchical_pipeline: StackingEnsemble,
+    product_level_simple_hierarchical_ts_long_history: TSDataset,
+    n_jobs: int,
+):
+    """Check that backtest works with StackingEnsemble of hierarchical pipelines."""
+    results = stacking_ensemble_hierarchical_pipeline.backtest(
+        ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_backtest_mix_pipeline(
+    stacking_ensemble_mix_pipeline: StackingEnsemble,
+    product_level_simple_hierarchical_ts_long_history: TSDataset,
+    n_jobs: int,
+):
+    """Check that backtest works with StackingEnsemble of pipeline and hierarchical pipeline."""
+    results = stacking_ensemble_mix_pipeline.backtest(
+        ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
+    )
+    for df in results:
+        assert isinstance(df, pd.DataFrame)
+
+
+@pytest.mark.parametrize("n_jobs", (1, 5))
+def test_get_historical_forecasts(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
+    """Check that get_historical_forecasts works with StackingEnsemble."""
+    n_folds = 3
+    forecast = stacking_ensemble_pipeline.get_historical_forecasts(ts=example_tsds, n_jobs=n_jobs, n_folds=n_folds)
+    assert isinstance(forecast, pd.DataFrame)
+    assert len(forecast) == n_folds * stacking_ensemble_pipeline.horizon
 
 
 @pytest.mark.parametrize("load_ts", [True, False])
@@ -328,16 +374,60 @@ def test_save_load(stacking_ensemble_pipeline, example_tsds, load_ts):
     assert_pipeline_equals_loaded_original(pipeline=stacking_ensemble_pipeline, ts=example_tsds, load_ts=load_ts)
 
 
-def test_forecast_given_ts(stacking_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts(
-        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
-    )
+def test_forecast_raise_error_if_no_ts(stacking_ensemble_pipeline, example_tsds):
+    assert_pipeline_forecast_raise_error_if_no_ts(pipeline=stacking_ensemble_pipeline, ts=example_tsds)
 
 
-def test_forecast_given_ts_with_prediction_interval(stacking_ensemble_pipeline, example_tsds):
-    assert_pipeline_forecasts_given_ts_with_prediction_intervals(
-        pipeline=stacking_ensemble_pipeline, ts=example_tsds, horizon=stacking_ensemble_pipeline.horizon
-    )
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecasts_without_self_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_without_self_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecast_given_ts(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_forecast_given_ts_with_prediction_interval(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_forecasts_given_ts_with_prediction_intervals(pipeline=ensemble, ts=ts, horizon=ensemble.horizon)
+
+
+@pytest.mark.parametrize(
+    "ts_name, ensemble_name",
+    [
+        ("example_tsds", "stacking_ensemble_pipeline"),
+        ("example_tsds_int_timestamp", "stacking_ensemble_pipeline_int_timestamp"),
+    ],
+)
+def test_predict(ts_name, ensemble_name, request):
+    ts = request.getfixturevalue(ts_name)
+    ensemble = request.getfixturevalue(ensemble_name)
+    assert_pipeline_predicts(pipeline=ensemble, ts=ts, start_idx=20, end_idx=30)
 
 
 def test_forecast_with_return_components_fails(example_tsds, naive_ensemble):
@@ -352,7 +442,6 @@ def test_predict_with_return_components_fails(example_tsds, naive_ensemble):
         naive_ensemble.predict(ts=example_tsds, return_components=True)
 
 
-@pytest.mark.long_1
 @pytest.mark.parametrize("n_jobs", (1, 4))
 def test_ts_with_segment_named_target(
     ts_with_segment_named_target: TSDataset, stacking_ensemble_pipeline: StackingEnsemble, n_jobs: int
@@ -364,6 +453,6 @@ def test_ts_with_segment_named_target(
         assert isinstance(df, pd.DataFrame)
 
 
-def test_params_to_tune_not_implemented(stacking_ensemble_pipeline):
-    with pytest.raises(NotImplementedError, match="StackingEnsemble doesn't support this method"):
-        _ = stacking_ensemble_pipeline.params_to_tune()
+def test_params_to_tune(stacking_ensemble_pipeline):
+    result = stacking_ensemble_pipeline.params_to_tune()
+    assert result == {}

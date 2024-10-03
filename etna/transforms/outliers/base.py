@@ -3,9 +3,11 @@ from abc import abstractmethod
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Union
 
 import numpy as np
 import pandas as pd
+from deprecated import deprecated
 
 from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
@@ -15,7 +17,7 @@ from etna.transforms.utils import check_new_segments
 class OutliersTransform(ReversibleTransform, ABC):
     """Finds outliers in specific columns of DataFrame and replaces it with NaNs."""
 
-    def __init__(self, in_column: str):
+    def __init__(self, in_column: str, ignore_flag_column: Optional[str] = None):
         """
         Create instance of OutliersTransform.
 
@@ -23,12 +25,42 @@ class OutliersTransform(ReversibleTransform, ABC):
         ----------
         in_column:
             name of processed column
+        ignore_flag_column:
+            column name for skipping values from outlier check
         """
-        super().__init__(required_features=[in_column])
+        required_features = [in_column]
+        if ignore_flag_column:
+            required_features.append(ignore_flag_column)
+
+        super().__init__(required_features=required_features)
         self.in_column = in_column
-        self.outliers_timestamps: Optional[Dict[str, List[pd.Timestamp]]] = None
-        self.original_values: Optional[Dict[str, List[pd.Timestamp]]] = None
+        self.ignore_flag_column = ignore_flag_column
+
+        self.segment_outliers: Optional[Dict[str, pd.Series]] = None
+
         self._fit_segments: Optional[List[str]] = None
+
+    @property
+    @deprecated(
+        reason="Attribute `outliers_timestamps` is deprecated and will be removed! Use `segment_outliers` instead.",
+        version="3.0",
+    )
+    def outliers_timestamps(self) -> Union[Dict[str, List[pd.Timestamp]], Dict[str, List[int]], None]:
+        """Backward compatibility property."""
+        if self.segment_outliers is not None:
+            return {segment: outliers.index.to_list() for segment, outliers in self.segment_outliers.items()}
+        return None
+
+    @property
+    @deprecated(
+        reason="Attribute `original_values` is deprecated and will be removed! Use `segment_outliers` instead.",
+        version="3.0",
+    )
+    def original_values(self) -> Optional[Dict[str, pd.Series]]:
+        """Backward compatibility property."""
+        if self.segment_outliers is not None:
+            return self.segment_outliers.copy()
+        return None
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
@@ -40,22 +72,32 @@ class OutliersTransform(ReversibleTransform, ABC):
         """
         return []
 
-    def _save_original_values(self, ts: TSDataset):
-        """
-        Save values to be replaced with NaNs.
+    def fit(self, ts: TSDataset) -> "OutliersTransform":
+        """Fit the transform.
 
         Parameters
         ----------
         ts:
-            original TSDataset
+            Dataset to fit the transform on.
+
+        Returns
+        -------
+        :
+            The fitted transform instance.
         """
-        if self.outliers_timestamps is None:
-            raise ValueError("Something went wrong during outliers detection stage! Check the transform parameters.")
-        self.original_values = dict()
-        for segment, timestamps in self.outliers_timestamps.items():
-            segment_ts = ts[:, segment, :]
-            segment_values = segment_ts[segment_ts.index.isin(timestamps)].droplevel("segment", axis=1)[self.in_column]
-            self.original_values[segment] = segment_values
+        if self.ignore_flag_column is not None:
+            if self.ignore_flag_column not in ts.features:
+                raise ValueError(f'Name ignore_flag_column="{self.ignore_flag_column}" not find.')
+            types_ignore_flag = ts[..., self.ignore_flag_column].isin([0, 1]).all(axis=0)
+            if not all(types_ignore_flag):
+                raise ValueError(
+                    f'Columns ignore_flag contain non binary value: columns: "{self.ignore_flag_column}" in segment: {types_ignore_flag[~types_ignore_flag].index.get_level_values("segment").tolist()}'
+                )
+
+        self.segment_outliers = self.detect_outliers(ts)
+        self._fit_segments = ts.segments
+        super().fit(ts=ts)
+        return self
 
     def _fit(self, df: pd.DataFrame) -> "OutliersTransform":
         """
@@ -68,14 +110,9 @@ class OutliersTransform(ReversibleTransform, ABC):
 
         Returns
         -------
-        result: OutliersTransform
+        result:
             instance with saved outliers
         """
-        ts = TSDataset(df, freq=pd.infer_freq(df.index))
-        self.outliers_timestamps = self.detect_outliers(ts)
-        self._save_original_values(ts)
-        self._fit_segments = ts.segments
-
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -99,14 +136,27 @@ class OutliersTransform(ReversibleTransform, ABC):
         NotImplementedError:
             If there are segments that weren't present during training.
         """
-        if self.outliers_timestamps is None:
+        if self.segment_outliers is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling transform method.")
-        segments = df.columns.get_level_values("segment").unique().tolist()
+
+        segments = set(df.columns.get_level_values("segment"))
+        index_set = set(df.index.values)
+
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
-        for segment in segments:
+        for segment in self.segment_outliers:
+            if segment not in segments:
+                continue
             # to locate only present indices
-            segment_outliers_timestamps = df.index.intersection(self.outliers_timestamps[segment])
+            if self.ignore_flag_column:
+                available_points = set(df[df[segment, self.ignore_flag_column] == 0].index.values)
+            else:
+                available_points = index_set
+            segment_outliers_timestamps = list(
+                available_points.intersection(self.segment_outliers[segment].index.values)
+            )
+
             df.loc[segment_outliers_timestamps, pd.IndexSlice[segment, self.in_column]] = np.NaN
+
         return df
 
     def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -130,17 +180,24 @@ class OutliersTransform(ReversibleTransform, ABC):
         NotImplementedError:
             If there are segments that weren't present during training.
         """
-        if self.original_values is None or self.outliers_timestamps is None:
+        if self.segment_outliers is None:
             raise ValueError("Transform is not fitted! Fit the Transform before calling inverse_transform method.")
-        segments = df.columns.get_level_values("segment").unique().tolist()
+
+        segments = set(df.columns.get_level_values("segment"))
+        index_set = set(df.index.values)
+
         check_new_segments(transform_segments=segments, fit_segments=self._fit_segments)
-        for segment in segments:
-            segment_ts = df[segment, self.in_column]
-            segment_ts[segment_ts.index.isin(self.outliers_timestamps[segment])] = self.original_values[segment]
+        for segment in self.segment_outliers:
+            if segment not in segments:
+                continue
+
+            segment_outliers_timestamps = list(index_set.intersection(self.segment_outliers[segment].index.values))
+            original_values = self.segment_outliers[segment][segment_outliers_timestamps].values
+            df.loc[segment_outliers_timestamps, pd.IndexSlice[segment, self.in_column]] = original_values
         return df
 
     @abstractmethod
-    def detect_outliers(self, ts: TSDataset) -> Dict[str, List[pd.Timestamp]]:
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
         """Call function for detection outliers with self parameters.
 
         Parameters

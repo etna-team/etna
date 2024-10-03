@@ -9,11 +9,13 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
+from etna.datasets.utils import timestamp_range
 from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.transforms.base import ReversibleTransform
 from etna.transforms.utils import check_new_segments
-from etna.transforms.utils import match_target_quantiles
+
+_DEFAULT_FREQ = object()
 
 
 class _SingleDifferencingTransform(ReversibleTransform):
@@ -45,7 +47,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
             number of steps back to calculate the difference with, it should be >= 1
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if True, apply transformation inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 
@@ -74,6 +76,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
         self._train_init_dict: Optional[Dict[str, pd.Series]] = None
         self._test_init_df: Optional[pd.DataFrame] = None
         self.in_column_regressor: Optional[bool] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -94,6 +97,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
     def fit(self, ts: TSDataset) -> "_SingleDifferencingTransform":
         """Fit the transform."""
         self.in_column_regressor = self.in_column in ts.regressors
+        self._freq = ts.freq
         super().fit(ts)
         return self
 
@@ -195,12 +199,9 @@ class _SingleDifferencingTransform(ReversibleTransform):
         result_df = df.copy()
 
         # check that test is right after the train
-        expected_min_test_timestamp = pd.date_range(
-            start=self._test_init_df.index.max(),  # type: ignore
-            periods=2,
-            freq=pd.infer_freq(self._train_timestamp),
-            closed="right",
-        )[0]
+        expected_min_test_timestamp = timestamp_range(
+            start=self._test_init_df.index[-1], periods=2, freq=self._freq  # type: ignore
+        )[-1]
         if expected_min_test_timestamp != df.index.min():
             raise ValueError("Test should go after the train without gaps")
 
@@ -208,7 +209,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
         for column in columns_to_inverse:
             to_transform = df.loc[:, pd.IndexSlice[segments, column]].copy()
             init_df = self._test_init_df.copy()  # type: ignore
-            init_df.columns.set_levels([column], level="feature", inplace=True)
+            init_df.columns = init_df.columns.set_levels([column], level="feature")
             init_df = init_df[segments]
             to_transform = pd.concat([init_df, to_transform])
 
@@ -259,11 +260,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
         if not self.inplace:
             return df
 
-        columns_to_inverse = {self.in_column}
-
-        # if we are working with in_column="target" then there can be quantiles to inverse too
-        if self.in_column == "target":
-            columns_to_inverse.update(match_target_quantiles(set(df.columns.get_level_values("feature"))))
+        columns_to_inverse = set(df.columns.get_level_values("feature"))
 
         # determine if we are working with train or test
         if self._train_timestamp.shape[0] == df.index.shape[0] and np.all(self._train_timestamp == df.index):
@@ -312,7 +309,7 @@ class DifferencingTransform(ReversibleTransform):
             number of differences to make, it should be >= 1
         inplace:
 
-            * if True, apply transformation inplace to in_column,
+            * if True, apply transformation inplace to ``in_column``,
 
             * if False, add transformed column to dataset
 
@@ -359,6 +356,7 @@ class DifferencingTransform(ReversibleTransform):
             )
         self._fit_segments: Optional[List[str]] = None
         self.in_column_regressor: Optional[bool] = None
+        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -379,6 +377,7 @@ class DifferencingTransform(ReversibleTransform):
     def fit(self, ts: TSDataset) -> "DifferencingTransform":
         """Fit the transform."""
         self.in_column_regressor = self.in_column in ts.regressors
+        self._freq = ts.freq
         super().fit(ts)
         return self
 
@@ -403,6 +402,9 @@ class DifferencingTransform(ReversibleTransform):
         result_df = df
         for transform in self._differencing_transforms:
             result_df = transform._fit_transform(result_df)
+            transform._freq = self._freq
+            transform.in_column_regressor = self.in_column_regressor
+
         self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
         return self
 
@@ -473,7 +475,7 @@ class DifferencingTransform(ReversibleTransform):
 
         result_df = df
         for transform in self._differencing_transforms[::-1]:
-            result_df = transform._inverse_transform(result_df)
+            result_df = transform._inverse_transform(df=result_df)
         return result_df
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:

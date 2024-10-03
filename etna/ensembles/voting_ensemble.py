@@ -17,8 +17,6 @@ from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.ensembles.mixins import EnsembleMixin
 from etna.ensembles.mixins import SaveEnsembleMixin
-from etna.loggers import tslogger
-from etna.metrics import MAE
 from etna.pipeline.base import BasePipeline
 
 
@@ -34,8 +32,7 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     >>> from etna.models import ProphetModel
     >>> from etna.pipeline import Pipeline
     >>> df = generate_ar_df(periods=30, start_time="2021-06-01", ar_coef=[1.2], n_segments=3)
-    >>> df_ts_format = TSDataset.to_dataset(df)
-    >>> ts = TSDataset(df_ts_format, "D")
+    >>> ts = TSDataset(df, "D")
     >>> prophet_pipeline = Pipeline(model=ProphetModel(), transforms=[], horizon=7)
     >>> naive_pipeline = Pipeline(model=NaiveModel(lag=10), transforms=[], horizon=7)
     >>> ensemble = VotingEnsemble(
@@ -124,39 +121,31 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             raise ValueError("Invalid format of weights is passed!")
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
         """Get forecasts from backtest for given pipeline."""
-        with tslogger.disable():
-            _, forecasts, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=self.n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
+        forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
         return forecasts
 
-    def _process_weights(self) -> List[float]:
+    def _process_weights(self, ts: TSDataset) -> List[float]:
         """Get the weights of base estimators depending on the weights mode."""
         if self.weights is None:
             weights = [1.0 for _ in range(len(self.pipelines))]
         elif self.weights == "auto":
-            if self.ts is None:
-                raise ValueError("Something went wrong, ts is None!")
-
             forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-                delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(self.ts)) for pipeline in self.pipelines
+                delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
             )
 
             x = pd.concat(
                 [
-                    forecast[:, :, "target"].rename({"target": f"target_{i}"}, axis=1)
+                    forecast.loc[:, pd.IndexSlice[:, "target"]].rename({"target": f"target_{i}"}, axis=1)
                     for i, forecast in enumerate(forecasts)
                 ],
                 axis=1,
             )
-            x = pd.concat([x.loc[:, segment] for segment in self.ts.segments], axis=0)
+            x = pd.concat([x.loc[:, segment] for segment in ts.segments], axis=0)
 
             y = pd.concat(
-                [
-                    self.ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"]
-                    for segment in self.ts.segments
-                ],
+                [ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"] for segment in ts.segments],
                 axis=0,
             )
 
@@ -168,24 +157,29 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         weights = [w / common_weight for w in weights]
         return weights
 
-    def fit(self, ts: TSDataset) -> "VotingEnsemble":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "VotingEnsemble":
         """Fit pipelines in ensemble.
 
         Parameters
         ----------
         ts:
-            TSDataset to fit ensemble
+            TSDataset to fit ensemble.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         self:
             Fitted ensemble
         """
-        self.ts = ts
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
         )
-        self.processed_weights = self._process_weights()
+        self.processed_weights = self._process_weights(ts=ts)
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _vote(self, forecasts: List[TSDataset]) -> TSDataset:
@@ -196,7 +190,9 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         forecast_df = sum(
             [forecast[:, :, "target"] * weight for forecast, weight in zip(forecasts, self.processed_weights)]
         )
-        forecast_dataset = TSDataset(df=forecast_df, freq=forecasts[0].freq)
+        forecast_dataset = TSDataset(
+            df=forecast_df, freq=forecasts[0].freq, hierarchical_structure=forecasts[0].hierarchical_structure
+        )
         return forecast_dataset
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
@@ -216,8 +212,8 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def _predict(
         self,
         ts: TSDataset,
-        start_timestamp: pd.Timestamp,
-        end_timestamp: pd.Timestamp,
+        start_timestamp: Union[pd.Timestamp, int],
+        end_timestamp: Union[pd.Timestamp, int],
         prediction_interval: bool,
         quantiles: Sequence[float],
         return_components: bool,
@@ -239,11 +235,11 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
-        Not implemented for this class.
+        Currently, returns empty dict, but could have a proper implementation in the future.
 
         Returns
         -------
         :
             Grid with hyperparameters.
         """
-        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")
+        return {}

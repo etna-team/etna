@@ -18,7 +18,19 @@ from etna.transforms.base import Transform
 
 
 class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveModelPipelineMixin, BasePipeline):
-    """Pipeline of transforms with a final estimator."""
+    """
+    Pipeline of transforms with a final estimator.
+
+    Makes forecast in one iteration, during which applies transforms and makes
+    call for forecast method for model.
+
+    See Also
+    --------
+    etna.pipeline.AutoRegressivePipeline:
+        Makes forecast in several iterations.
+    etna.ensembles.DirectEnsemble:
+        Makes forecast by merging the forecasts of base pipelines.
+    """
 
     def __init__(self, model: ModelType, transforms: Sequence[Transform] = (), horizon: int = 1):
         """
@@ -37,7 +49,7 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         self.transforms = transforms
         super().__init__(horizon=horizon)
 
-    def fit(self, ts: TSDataset) -> "Pipeline":
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "Pipeline":
         """Fit the Pipeline.
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
@@ -45,17 +57,22 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         Parameters
         ----------
         ts:
-            Dataset with timeseries data
+            Dataset with timeseries data.
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
 
         Returns
         -------
         :
             Fitted Pipeline instance
         """
-        self.ts = ts
-        self.ts.fit_transform(self.transforms)
-        self.model.fit(self.ts)
-        self.ts.inverse_transform(self.transforms)
+        ts.fit_transform(self.transforms)
+        self.model.fit(ts)
+        ts.inverse_transform(self.transforms)
+
+        if save_ts:
+            self.ts = ts
+
         return self
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:
@@ -72,6 +89,9 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
             self.model = cast(ContextIgnorantModelType, self.model)
             future = ts.make_future(future_steps=self.horizon, transforms=self.transforms)
             predictions = self.model.forecast(ts=future, return_components=return_components)
+
+        predictions.inverse_transform(self.transforms)
+
         return predictions
 
     def forecast(
@@ -89,7 +109,7 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         Parameters
         ----------
         ts:
-            Dataset to forecast. If not given, dataset given during :py:meth:``fit`` is used.
+            Dataset to forecast. If not given, dataset given during :py:meth:`fit` is used.
         prediction_interval:
             If True returns prediction interval for forecast
         quantiles:
@@ -107,7 +127,7 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
         if ts is None:
             if self.ts is None:
                 raise ValueError(
-                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline is loaded with ts."
+                    "There is no ts to forecast! Pass ts into forecast method or make sure that pipeline contains ts."
                 )
             ts = self.ts
 
@@ -122,6 +142,8 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
                 quantiles=quantiles,
                 return_components=return_components,
             )
+            predictions.inverse_transform(self.transforms)
+
         elif prediction_interval and isinstance(self.model, PredictionIntervalContextRequiredAbstractModel):
             future = ts.make_future(
                 future_steps=self.horizon, transforms=self.transforms, tail_steps=self.model.context_size
@@ -133,6 +155,8 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
                 quantiles=quantiles,
                 return_components=return_components,
             )
+            predictions.inverse_transform(self.transforms)
+
         else:
             predictions = super().forecast(
                 ts=ts,
@@ -141,5 +165,5 @@ class Pipeline(ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveMo
                 n_folds=n_folds,
                 return_components=return_components,
             )
-        predictions.inverse_transform(self.transforms)
+
         return predictions

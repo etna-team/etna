@@ -1,25 +1,39 @@
-## Examples
+# Examples
 
 We have prepared a set of tutorials for an easy introduction:
 
-#### 01. [Get started](https://github.com/etna-team/etna/tree/master/examples/get_started.ipynb) 
-- Creating TSDataset and time series plotting 
-- Forecast single time series - Simple forecast, Prophet, Catboost
-- Forecast multiple time series
-- Pipeline
+[Quickstart](https://github.com/etna-team/etna/tree/master/examples/quick_start.ipynb)
 
-#### 02. [Backtest](https://github.com/etna-team/etna/tree/master/examples/backtest.ipynb)
+## Tutorials
+
+### Basic
+
+#### [Get started](https://github.com/etna-team/etna/tree/master/examples/101-get_started.ipynb) 
+- Loading dataset
+- Plotting
+- Forecasting single time series
+  - Naive forecast
+  - Prophet 
+  - Catboost
+- Forecasting multiple time series 
+
+#### [Backtest](https://github.com/etna-team/etna/tree/master/examples/102-backtest.ipynb)
 - What is backtest and how it works
 - How to run a validation
+- Backtest with fold masks
 - Validation visualisation
+- Metrics visualisation
 
-#### 03. [EDA](https://github.com/etna-team/etna/tree/master/examples/EDA.ipynb) 
-- Visualization
-  - Plot
-  - Partial autocorrelation
-  - Cross-correlation
-  - Correlation heatmap
-  - Distribution
+#### [EDA](https://github.com/etna-team/etna/tree/master/examples/103-EDA.ipynb) 
+- Loading dataset
+- Visualization 
+  - Plotting time series 
+  - Autocorrelation & partial autocorrelation 
+  - Cross-correlation 
+  - Correlation heatmap 
+  - Distribution 
+  - Trend 
+  - Seasonality
 - Outliers
   - Median method
   - Density method
@@ -27,55 +41,132 @@ We have prepared a set of tutorials for an easy introduction:
   - Change points plot
   - Interactive change points plot
 
-#### 04. [Regressors and exogenous data](https://github.com/etna-team/etna/tree/master/examples/exogenous_data.ipynb)
+## Intermediate
+
+#### [Regressors and exogenous data](https://github.com/etna-team/etna/tree/master/examples/201-exogenous_data.ipynb)
 - What is regressor? 
-  - What is exogenous data?
+  - What is additional data?
 - Dataset
   - Loading Dataset
   - EDA
-- Forecast with regressors
+- Forecasting with regressors
 
-#### 05. [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/custom_transform_and_model.ipynb)
-- What is Transform and how it works 
-- Custom Transform 
-  - Per-segment Custom Transform 
-  - Multi-segment Custom Transform 
-- Custom Model
-
-#### 06. [Deep learning models](https://github.com/etna-team/etna/tree/master/examples/NN_examples.ipynb)
-- Creating TSDataset  
+#### [Deep learning models](https://github.com/etna-team/etna/tree/master/examples/202-NN_examples.ipynb)
+- Loading dataset
 - Architecture
 - Testing models
+  - Baseline 
   - DeepAR 
-  - TFT
-  - Simple Model
+  - RNN 
+  - Deep State Model 
+  - N-BEATS Model 
+  - PatchTS Model
 
-#### 07. [Ensembles](https://github.com/etna-team/etna/tree/master/examples/ensembles.ipynb)
-- VotingEnsemble
-- StackingEnsemble
+#### [Ensembles](https://github.com/etna-team/etna/tree/master/examples/203-ensembles.ipynb)
+- Loading dataset 
+- Building pipelines 
+- Ensembles 
+  - `VotingEnsemble`
+  - `StackingEnsamble`
+  - Results
 
-#### 08. [Outliers](https://github.com/etna-team/etna/tree/master/examples/outliers.ipynb) 
-- Point outliers
-  - Median method
-  - Density method
-  - Prediction interval method
-  - Histogram method
-- Sequence outliers
-- Interactive visualization
+#### [Outliers](https://github.com/etna-team/etna/tree/master/examples/204-outliers.ipynb) 
+- Loading dataset 
+- Point outliers 
+  - Median method 
+  - Density method 
+  - Prediction interval method 
+  - Histogram method 
+- Interactive visualization 
 - Outliers imputation
 
-#### 09. [Forecasting strategies](https://github.com/etna-team/etna/tree/master/examples/forecasting_strategies.ipynb)
-- Imports and constants 
-- Load dataset 
-- Recursive strategy 
-  - AutoRegressivePipeline 
-- Direct strategy 
-  - Pipeline 
-  - DirectEnsemble 
-  - assemble_pipelines + DirectEnsemble 
+#### [AutoML](https://github.com/etna-team/etna/tree/master/examples/205-automl.ipynb)
+- Hyperparameters tuning
+  - How `Tune` works
+  - Example
+- General AutoML
+  - How `Auto` works
+  - Example
 - Summary
 
-#### 10. [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/forecast_interpretation.ipynb)
+#### [Clustering](https://github.com/etna-team/etna/tree/master/examples/206-clustering.ipynb) 
+- Generating dataset 
+- Distances 
+- Clustering 
+  - Building Distance Matrix 
+  - Building Clustering algorithm 
+  - Predicting clusters 
+  - Getting centroids 
+- Advanced: Custom Distance 
+  - Custom Distance implementation 
+  - Custom Distance in clustering
+
+#### [Feature selection](https://github.com/etna-team/etna/tree/master/examples/207-feature_selection.ipynb)
+- Loading dataset
+- Feature selection methods
+  - Intro to feature selection
+  - `TreeFeatureSelectionTransform`
+  - `GaleShapleyFeatureSelectionTransform`
+  - `MRMRFeatureSelectionTransform`
+- Summary
+
+#### [Forecasting strategies](https://github.com/etna-team/etna/tree/master/examples/208-forecasting_strategies.ipynb)
+- Loading dataset 
+- Recursive strategy 
+- Direct strategy 
+  - `Pipeline`
+  - `DirectEnsemble`
+- Summary
+
+#### [Mechanics of forecasting](https://github.com/etna-team/etna/tree/master/examples/209-mechanics_of_forecasting.ipynb)
+- Loading dataset
+- Forecasting
+  - Context-free models
+  - Context-required models
+  - ML models
+- Summary
+
+#### [Embedding models](https://github.com/etna-team/etna/tree/master/examples/210-embedding_models.ipynb)
+- Using embedding models directly
+- Using embedding models with transforms
+  - Baseline
+  - EmbeddingSegmentTransform
+  - EmbeddingWindowTransform
+- Saving and loading models
+
+### Advanced
+
+#### [Custom model and transform](https://github.com/etna-team/etna/tree/master/examples/301-custom_transform_and_model.ipynb)
+- What is transform and how it works
+- Custom transform 
+  - Per-segment custom transform 
+  - Multi-segment custom transform
+- Custom model 
+  - Creating a new model from scratch 
+  - Creating a new model using sklearn interface
+
+#### [Inference: using saved pipeline on a new data](https://github.com/etna-team/etna/tree/master/examples/302-inference.ipynb) 
+- Preparing data
+- Fitting and saving pipeline 
+  - Fitting pipeline 
+  - Saving pipeline 
+  - Method `to_dict`
+- Using saved pipeline on a new data 
+  - Loading pipeline 
+  - Forecast on a new data
+
+#### [Hierarchical time series](https://github.com/etna-team/etna/tree/master/examples/303-hierarchical_pipeline.ipynb)
+- Hierarchical time series 
+- Preparing dataset 
+  - Manually setting hierarchical structure 
+  - Hierarchical structure detection 
+- Reconciliation methods 
+  - Bottom-up approach 
+  - Top-down approach 
+- Exogenous variables for hierarchical forecasts
+
+#### [Forecast interpretation](https://github.com/etna-team/etna/tree/master/examples/304-forecasting_interpretation.ipynb)
+- Loading dataset
 - Forecast decomposition 
   - CatBoost 
   - SARIMAX 
@@ -86,50 +177,45 @@ We have prepared a set of tutorials for an easy introduction:
   - Feature relevance 
   - Components relevance
 
-#### 11. [Clustering](https://github.com/etna-team/etna/tree/master/examples/clustering.ipynb) 
-- Clustering pipeline
-- Custom Distance
-- Visualisation
-
-#### 12. [AutoML script](https://github.com/etna-team/etna/tree/master/examples/auto.py)
-- Auto pipeline search
-
-#### 13. [AutoML notebook](https://github.com/etna-team/etna/tree/master/examples/automl.ipynb)
-- Hyperparameters tuning
-  - How `Tune` works
-  - Example
-- General AutoML
-  - How `Auto` works
-  - Example
-
-#### 14. Hyperparameter search
-- [Optuna](https://github.com/etna-team/etna/tree/master/examples/optuna)
-- [WandB sweeps](https://github.com/etna-team/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)
-
-#### 15. [Inference: using saved pipeline on a new data](https://github.com/etna-team/etna/tree/master/examples/inference.ipynb) 
-- Fitting and saving pipeline
-- Using saved pipeline on a new data
-
-#### 16. [Hierarchical time series](https://github.com/etna-team/etna/tree/master/examples/hierarchical_pipeline.ipynb)
-- Hierarchical time series
-- Hierarchical structure
-- Reconciliation methods
-- Exogenous variables for hierarchical forecasts
-
-#### 17. [Classification](https://github.com/etna-team/etna/tree/master/examples/classification.ipynb)
+#### [Classification](https://github.com/etna-team/etna/tree/master/examples/305-classification.ipynb)
 - Classification 
-  - Load Dataset
+  - Loading dataset
   - Feature extraction 
   - Cross validation 
 - Predictability analysis
-  - Load Dataset 
-  - Load pretrained analyzer 
-  - Analyze segments predictability
+  - Loading dataset 
+  - Loading pretrained analyzer 
+  - Analyzing segments predictability
 
-#### 18. [Feature selection](https://github.com/etna-team/etna/tree/master/examples/feature_selection.ipynb)
-- Loading Dataset
-- Feature selection methods
-  - Intro to feature selection
-  - `TreeFeatureSelectionTransform`
-  - `GaleShapleyFeatureSelectionTransform`
-  - `MRMRFeatureSelectionTransform`
+#### [Prediction intervals](https://github.com/etna-team/etna/tree/master/examples/306-prediction_intervals.ipynb)
+- Loading and preparing data
+- Estimating intervals using builtin method
+    - Accessing prediction intervals in `TSDataset`
+    - Computing interval metrics
+- Estimating prediction intervals using `experimental.prediction_intervals` module
+    - `NaiveVariancePredictionIntervals`
+    - `ConformalPredictionIntervals`
+    - `EmpiricalPredictionIntervals`
+    - Prediction intervals for ensembles
+- Custom prediction interval method
+    - Non-parametric method
+    - Estimating historical residuals
+
+#### [Working with misaligned data](https://github.com/etna-team/etna/tree/master/examples/307-working_with_misaligned_data.ipynb)
+- Loading data
+- Preparing data
+    - Using `TSDataset.create_from_misaligned`
+    - Using `infer_alignment`
+    - Using `apply_alignment`
+    - Using `make_timestamp_df_from_alignment`
+- Examples with regular data
+    - Forecasting with `CatBoostMultiSegmentModel`
+    - Utilizing old data with `CatBoostMultiSegmentModel`
+    - Forecasting with `ProphetModel`
+- Working with irregular data 
+
+## Scripts
+
+### Hyperparameter search
+- [Optuna](https://github.com/etna-team/etna/tree/master/examples/optuna)
+- [WandB sweeps](https://github.com/etna-team/etna/tree/master/examples/wandb/sweeps) example based on [Hydra](https://hydra.cc/)

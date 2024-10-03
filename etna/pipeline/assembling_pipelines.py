@@ -20,13 +20,18 @@ def assemble_pipelines(
     After broadcasting we have:
 
     - models:
-    .. math:: M_1, \dots, M_n
-    - transforms:
-    .. math:: (T_{1,1}, \dots, T_{1,n}), ... (T_{k,1}, \dots, T_{k,n})
-    - horizons:
-    .. math:: H_1, \dots, H_n
 
-    We expect that in input shape of size `n` can be reduced to size 1 or even become a scalar value. During broadcasting we copy this value `n` times.
+      .. math:: M_1, \dots, M_n
+
+    - transforms:
+
+      .. math:: (T_{1,1}, \dots, T_{1,n}), ... (T_{k,1}, \dots, T_{k,n})
+
+    - horizons:
+
+      .. math:: H_1, \dots, H_n
+
+    We expect that in input shape of size :math:`n` can be reduced to size 1 or even become a scalar value. During broadcasting we copy this value :math:`n` times.
 
     Parameters
     ----------
@@ -58,7 +63,7 @@ def assemble_pipelines(
     Pipeline(model = LinearPerSegmentModel(fit_intercept = True, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), AddConstTransform(in_column = 'target', value = 1, inplace = True, out_column = None, )], horizon = 3, )]
     >>> assemble_pipelines(models=[LinearPerSegmentModel(), NaiveModel()], transforms=[LagTransform(in_column='target', lags=[1]), [AddConstTransform(in_column='target', value=1), DateFlagsTransform()]], horizons=[1,2])
     [Pipeline(model = LinearPerSegmentModel(fit_intercept = True, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), AddConstTransform(in_column = 'target', value = 1, inplace = True, out_column = None, )], horizon = 1, ),
-    Pipeline(model = NaiveModel(lag = 1, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), DateFlagsTransform(day_number_in_week = True, day_number_in_month = True, day_number_in_year = False, week_number_in_month = False, week_number_in_year = False, month_number_in_year = False, season_number = False, year_number = False, is_weekend = True, special_days_in_week = (), special_days_in_month = (), out_column = None, )], horizon = 2, )]
+    Pipeline(model = NaiveModel(lag = 1, ), transforms = [LagTransform(in_column = 'target', lags = [1], out_column = None, ), DateFlagsTransform(day_number_in_week = True, day_number_in_month = True, day_number_in_year = False, week_number_in_month = False, week_number_in_year = False, month_number_in_year = False, season_number = False, year_number = False, is_weekend = True, special_days_in_week = (), special_days_in_month = (), out_column = None, in_column = None, )], horizon = 2, )]
     """
     n_models = len(models) if isinstance(models, Sequence) else 1
     n_horizons = len(horizons) if isinstance(horizons, Sequence) else 1

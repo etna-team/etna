@@ -2,9 +2,9 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Sequence
-from typing import Union
 
 import pandas as pd
+from deprecated import deprecated
 
 from etna import SETTINGS
 from etna.datasets.tsdataset import TSDataset
@@ -13,7 +13,7 @@ from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.models.base import log_decorator
-from etna.models.mixins import SaveNNMixin
+from etna.models.mixins import SavePytorchForecastingMixin
 from etna.models.nn.utils import PytorchForecastingDatasetBuilder
 from etna.models.nn.utils import PytorchForecastingMixin
 from etna.models.nn.utils import _DeepCopyMixin
@@ -25,10 +25,19 @@ if SETTINGS.torch_required:
     from pytorch_forecasting.metrics import NormalDistributionLoss
     from pytorch_forecasting.models import DeepAR
     from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
 
 
-class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, PredictionIntervalContextRequiredAbstractModel):
+@deprecated(reason="DeepARModel is deprecated. Use DeepARNativeModel instead.", version="3.0")
+class DeepARModel(
+    _DeepCopyMixin, PytorchForecastingMixin, SavePytorchForecastingMixin, PredictionIntervalContextRequiredAbstractModel
+):
     """Wrapper for :py:class:`pytorch_forecasting.models.deepar.DeepAR`.
+
+    Note
+    ----
+    This model requires ``torch`` extension to be installed.
+    Read more about this at :ref:`installation page <installation>`.
 
     Notes
     -----
@@ -118,7 +127,8 @@ class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, Predicti
         self.loss = loss
         self.trainer_params = trainer_params if trainer_params is not None else dict()
         self.quantiles_kwargs = quantiles_kwargs if quantiles_kwargs is not None else dict()
-        self.model: Optional[Union[LightningModule, DeepAR]] = None
+        self.model: Optional[DeepAR] = None
+        self.trainer: Optional[Trainer] = None
         self._last_train_timestamp = None
 
     def _from_dataset(self, ts_dataset: TimeSeriesDataSet) -> LightningModule:
@@ -194,14 +204,12 @@ class DeepARModel(_DeepCopyMixin, PytorchForecastingMixin, SaveNNMixin, Predicti
             quantiles_predicts = quantiles_predicts.reshape(quantiles_predicts.shape[0], -1)
             # shape (encoder_length, segments * len(quantiles))
 
-            df = ts.df
             segments = ts.segments
             quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
-            columns = pd.MultiIndex.from_product([segments, quantile_columns])
-            quantiles_df = pd.DataFrame(quantiles_predicts[: len(df)], columns=columns, index=df.index)
-            df = pd.concat((df, quantiles_df), axis=1)
-            df = df.sort_index(axis=1)
-            ts.df = df
+            columns = pd.MultiIndex.from_product([segments, quantile_columns], names=["segment", "feature"])
+            quantiles_df = pd.DataFrame(quantiles_predicts[: len(ts.df)], columns=columns, index=ts.df.index)
+
+            ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
 
         return ts
 

@@ -1,7 +1,11 @@
 from copy import deepcopy
+from unittest.mock import Mock
+from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import pytest
+from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 
 from etna.models import SARIMAXModel
@@ -52,19 +56,39 @@ def test_save_regressors_on_fit(example_reg_tsds):
         assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
 
 
-def test_select_regressors_correctly(example_reg_tsds):
+def test_select_regressors_correctly_datetime_timestamp(example_reg_tsds):
+    ts = example_reg_tsds
     model = SARIMAXModel()
-    model.fit(ts=example_reg_tsds)
+    model.fit(ts=ts)
     for segment, segment_model in model._models.items():
-        segment_features = example_reg_tsds[:, segment, :].droplevel("segment", axis=1)
-        segment_regressors_expected = segment_features[example_reg_tsds.regressors]
-        segment_regressors = segment_model._select_regressors(df=segment_features.reset_index())
-        assert (segment_regressors == segment_regressors_expected).all().all()
+        segment_features = ts[:, segment, :].droplevel("segment", axis=1).reset_index()
+
+        segment_regressors_expected = segment_features[ts.regressors].astype(float)
+        segment_regressors_expected.index = segment_features["timestamp"]
+        segment_regressors = segment_model._select_regressors(df=segment_features)
+
+        pd.testing.assert_frame_equal(segment_regressors, segment_regressors_expected)
 
 
-def test_prediction(example_tsds):
-    _check_forecast(ts=deepcopy(example_tsds), model=SARIMAXModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_tsds), model=SARIMAXModel())
+def test_select_regressors_correctly_int_timestamp(example_reg_tsds_int_timestamp):
+    ts = example_reg_tsds_int_timestamp
+    model = SARIMAXModel()
+    model.fit(ts=ts)
+    for segment, segment_model in model._models.items():
+        segment_features = ts[:, segment, :].droplevel("segment", axis=1).reset_index()
+
+        segment_regressors_expected = segment_features[ts.regressors].astype(float)
+        segment_regressors_expected.index = pd.Index(np.arange(len(segment_regressors_expected)), name="timestamp")
+        segment_regressors = segment_model._select_regressors(df=segment_features)
+
+        pd.testing.assert_frame_equal(segment_regressors, segment_regressors_expected)
+
+
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
+def test_prediction(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
+    _check_predict(ts=deepcopy(ts), model=SARIMAXModel())
 
 
 def test_prediction_with_simple_differencing(example_tsds):
@@ -72,9 +96,11 @@ def test_prediction_with_simple_differencing(example_tsds):
     _check_predict(ts=deepcopy(example_tsds), model=SARIMAXModel(simple_differencing=True))
 
 
-def test_prediction_with_reg(example_reg_tsds):
-    _check_forecast(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(), horizon=7)
-    _check_predict(ts=deepcopy(example_reg_tsds), model=SARIMAXModel())
+@pytest.mark.parametrize("ts_name", ["example_reg_tsds", "example_reg_tsds_int_timestamp"])
+def test_prediction_with_reg(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
+    _check_predict(ts=deepcopy(ts), model=SARIMAXModel())
 
 
 def test_prediction_with_reg_custom_order(example_reg_tsds):
@@ -88,12 +114,17 @@ def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
         _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=20)
 
 
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
 @pytest.mark.parametrize("method_name", ["forecast", "predict"])
-def test_prediction_interval_insample(example_tsds, method_name):
+def test_prediction_interval_insample(ts_name, method_name, request):
+    ts = request.getfixturevalue(ts_name)
     model = SARIMAXModel()
-    model.fit(example_tsds)
+    model.fit(ts)
     method = getattr(model, method_name)
-    forecast = method(example_tsds, prediction_interval=True, quantiles=[0.025, 0.975])
+    forecast = method(ts, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
@@ -102,18 +133,31 @@ def test_prediction_interval_insample(example_tsds, method_name):
         # assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
 
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
-def test_forecast_prediction_interval_infuture(example_tsds):
+
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
+def test_forecast_prediction_interval_infuture(ts_name, request):
+    ts = request.getfixturevalue(ts_name)
     model = SARIMAXModel()
-    model.fit(example_tsds)
-    future = example_tsds.make_future(10)
+    model.fit(ts)
+    future = ts.make_future(10)
     forecast = model.forecast(future, prediction_interval=True, quantiles=[0.025, 0.975])
+
+    assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
+    prediction_intervals = forecast.get_prediction_intervals()
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
         assert {"target_0.025", "target_0.975", "target"}.issubset(segment_slice.columns)
         assert (segment_slice["target_0.975"] - segment_slice["target"] >= 0).all()
         assert (segment_slice["target"] - segment_slice["target_0.025"] >= 0).all()
         assert (segment_slice["target_0.975"] - segment_slice["target_0.025"] >= 0).all()
+
+        segment_intervals = prediction_intervals[segment]
+        assert np.allclose(segment_slice["target_0.975"], segment_intervals["target_0.975"])
+        assert np.allclose(segment_slice["target_0.025"], segment_intervals["target_0.025"])
 
 
 @pytest.mark.parametrize("method_name", ["forecast", "predict"])
@@ -219,7 +263,7 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
     assert sorted(components.columns) == sorted(expected_components)
 
 
-@pytest.mark.long_2
+@pytest.mark.parametrize("dfs_name", ["dfs_w_exog", "dfs_w_exog_int_timestamp"])
 @pytest.mark.parametrize(
     "components_method_name,predict_method_name,in_sample",
     (("predict_components", "predict", True), ("forecast_components", "forecast", False)),
@@ -240,7 +284,7 @@ def test_components_names(dfs_w_exog, regressors, regressors_components, trend, 
 @pytest.mark.parametrize("concentrate_scale", (True, False))
 @pytest.mark.parametrize("use_exact_diffuse", (True, False))
 def test_components_sum_up_to_target(
-    dfs_w_exog,
+    dfs_name,
     components_method_name,
     predict_method_name,
     in_sample,
@@ -252,8 +296,9 @@ def test_components_sum_up_to_target(
     concentrate_scale,
     use_exact_diffuse,
     regressors,
+    request,
 ):
-    train, test = dfs_w_exog
+    train, test = request.getfixturevalue(dfs_name)
 
     model = _SARIMAXAdapter(
         trend=trend,
@@ -343,3 +388,11 @@ def test_params_to_tune(model, example_tsds):
     ts = example_tsds
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
+
+
+def test_fit_params_passed_to_fit_method(example_tsds):
+
+    model = SARIMAXModel(fit_params={"disp": False})
+    with patch("statsmodels.tsa.statespace.sarimax.SARIMAX.fit", Mock()):
+        model.fit(example_tsds)
+        SARIMAX.fit.assert_called_with(disp=False)

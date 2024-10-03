@@ -5,11 +5,13 @@ import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 from etna.metrics import R2
 from etna.models import LinearPerSegmentModel
 from etna.transforms.timestamp import FourierTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 from tests.test_transforms.utils import assert_transformation_equals_loaded_original
+from tests.utils import convert_ts_to_int_timestamp
 
 
 def add_seasonality(series: pd.Series, period: int, magnitude: float) -> pd.Series:
@@ -34,9 +36,105 @@ def get_one_df(period_1, period_2, magnitude_1, magnitude_2):
 
 
 @pytest.fixture
+def example_df():
+    return generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="H")
+
+
+@pytest.fixture
 def example_ts(example_df):
-    df = TSDataset.to_dataset(example_df)
-    ts = TSDataset(df=df, freq="H")
+    df = example_df
+    df_wide = TSDataset.to_dataset(df)
+    df["external_timestamp"] = df["timestamp"]
+    df.drop(columns=["target"], inplace=True)
+    df_exog_wide = TSDataset.to_dataset(df)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
+    return ts
+
+
+@pytest.fixture
+def example_ts_int_timestamp(example_df):
+    df = example_df
+    df["timestamp"] = (df["timestamp"] - df["timestamp"].min()) // pd.Timedelta("1H")
+    df_wide = TSDataset.to_dataset(example_df)
+    ts = TSDataset(df=df_wide, freq=None)
+    return ts
+
+
+@pytest.fixture
+def example_ts_external_datetime_timestamp(example_df):
+    df = example_df
+    df_wide = TSDataset.to_dataset(df)
+    df_exog = df.copy()
+    df_exog["external_timestamp"] = df_exog["timestamp"]
+    df_exog.drop(columns=["target"], inplace=True)
+    df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += pd.Timedelta("6H")
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
+    ts_int_index = convert_ts_to_int_timestamp(ts=ts, shift=10)
+    return ts_int_index
+
+
+@pytest.fixture
+def example_ts_external_irregular_datetime_timestamp(example_ts_external_datetime_timestamp) -> TSDataset:
+    ts = example_ts_external_datetime_timestamp
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta("3H")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
+    return ts
+
+
+@pytest.fixture
+def example_ts_external_datetime_timestamp_different_freq(example_ts_external_datetime_timestamp) -> TSDataset:
+    ts = example_ts_external_datetime_timestamp
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = pd.date_range(
+        start="2020-01-01", periods=len(df_exog), freq="D"
+    )
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
+    return ts
+
+
+@pytest.fixture
+def example_ts_external_datetime_timestamp_with_nans(example_ts_external_datetime_timestamp) -> TSDataset:
+    ts = example_ts_external_datetime_timestamp
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    df_exog.loc[df_exog.index[:3], pd.IndexSlice["segment_0", "external_timestamp"]] = np.NaN
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
+    return ts
+
+
+@pytest.fixture
+def example_ts_external_int_timestamp(example_df):
+    df_wide = TSDataset.to_dataset(example_df.copy())
+    df_exog = example_df.copy()
+    df_exog["external_timestamp"] = (example_df["timestamp"] - example_df["timestamp"].min()) // pd.Timedelta("1H")
+    df_exog.drop(columns=["target"], inplace=True)
+    df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += 6
+    df_exog_wide = TSDataset.to_dataset(df_exog)
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
+    ts_int_index = convert_ts_to_int_timestamp(ts=ts, shift=10)
+    return ts_int_index
+
+
+@pytest.fixture
+def example_ts_external_int_timestamp_with_nans(example_ts_external_int_timestamp) -> TSDataset:
+    ts = example_ts_external_int_timestamp
+    df = ts.raw_df
+    df_exog = ts.df_exog
+    df_exog.loc[df_exog.index[:3], pd.IndexSlice["segment_0", "external_timestamp"]] = np.NaN
+    df_exog.loc[df_exog.index[3:6], pd.IndexSlice["segment_1", "external_timestamp"]] = np.NaN
+    ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
+    return ts
+
+
+@pytest.fixture
+def example_ts_with_regressor(example_ts):
+    df = example_ts.raw_df
+    df_exog = example_ts.df_exog
+    ts = TSDataset(df=df.iloc[:-1], df_exog=df_exog, freq=example_ts.freq, known_future=["external_timestamp"])
     return ts
 
 
@@ -58,7 +156,7 @@ def test_repr(order, mods):
         mods=mods,
     )
     transform_repr = transform.__repr__()
-    true_repr = f"FourierTransform(period = 10, order = {order}, mods = {mods}, out_column = None, )"
+    true_repr = f"FourierTransform(period = 10, order = {order}, mods = {mods}, out_column = None, in_column = None, )"
     assert transform_repr == true_repr
 
 
@@ -100,15 +198,19 @@ def test_fail_set_both():
 )
 def test_column_names(example_ts, period, order, num_columns):
     """Test that transform creates expected number of columns and they can be recreated by its name."""
-    segments = example_ts.columns.get_level_values("segment").unique()
+    segments = example_ts.segments
+    initial_columns = example_ts.features
     transform = FourierTransform(period=period, order=order)
+
     transformed_df = transform.fit_transform(deepcopy(example_ts)).to_pandas()
-    columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
-    assert len(columns) == num_columns
-    for column in columns:
+    new_columns = transformed_df.columns.get_level_values("feature").unique().difference(initial_columns)
+
+    assert len(new_columns) == num_columns
+    for column in new_columns:
         transform_temp = eval(column)
         df_temp = transform_temp.fit_transform(deepcopy(example_ts)).to_pandas()
-        columns_temp = df_temp.columns.get_level_values("feature").unique().drop("target")
+        columns_temp = df_temp.columns.get_level_values("feature").unique().difference(initial_columns)
+
         assert len(columns_temp) == 1
         generated_column = columns_temp[0]
         assert generated_column == column
@@ -120,31 +222,172 @@ def test_column_names(example_ts, period, order, num_columns):
 
 def test_column_names_out_column(example_ts):
     """Test that transform creates expected columns if `out_column` is set"""
+    initial_columns = example_ts.features
     transform = FourierTransform(period=10, order=3, out_column="regressor_fourier")
     transformed_df = transform.fit_transform(example_ts).to_pandas()
-    columns = transformed_df.columns.get_level_values("feature").unique().drop("target")
+    columns = transformed_df.columns.get_level_values("feature").unique().difference(initial_columns)
     expected_columns = {f"regressor_fourier_{i}" for i in range(1, 7)}
     assert set(columns) == expected_columns
 
 
+def test_fit_irregular_datetime_fail(example_ts_external_irregular_datetime_timestamp):
+    ts = example_ts_external_irregular_datetime_timestamp
+    transform = FourierTransform(period=10, order=3, out_column="regressor_fourier", in_column="external_timestamp")
+    with pytest.raises(
+        ValueError, match="Invalid in_column values! Datetime values should be regular timestamps with some frequency."
+    ):
+        transform.fit(ts)
+
+
+def test_fit_different_freq_fail(example_ts_external_datetime_timestamp_different_freq):
+    ts = example_ts_external_datetime_timestamp_different_freq
+    transform = FourierTransform(period=10, order=3, out_column="regressor_fourier", in_column="external_timestamp")
+    with pytest.raises(
+        ValueError, match="Invalid in_column values! Datetime values should have the same frequency for every segment."
+    ):
+        transform.fit(ts)
+
+
+def test_transform_irregular_datetime_fail(
+    example_ts_external_datetime_timestamp, example_ts_external_irregular_datetime_timestamp
+):
+    ts_fit = example_ts_external_datetime_timestamp
+    ts_transform = example_ts_external_irregular_datetime_timestamp
+    transform = FourierTransform(period=10, order=3, out_column="regressor_fourier", in_column="external_timestamp")
+    transform.fit(ts_fit)
+    with pytest.raises(
+        ValueError, match="Invalid in_column values! Datetime values should be regular timestamps with some frequency."
+    ):
+        _ = transform.transform(ts_transform)
+
+
+def test_transform_different_freq_fail(
+    example_ts_external_datetime_timestamp, example_ts_external_datetime_timestamp_different_freq
+):
+    ts_fit = example_ts_external_datetime_timestamp
+    ts_transform = example_ts_external_datetime_timestamp_different_freq
+    transform = FourierTransform(period=10, order=3, out_column="regressor_fourier", in_column="external_timestamp")
+    transform.fit(ts_fit)
+    with pytest.raises(
+        ValueError, match="Invalid in_column values! Datetime values should have the same frequency for every segment."
+    ):
+        transform.fit(ts_transform)
+
+
+def test_transform_fail_not_fitted(example_ts):
+    transform = FourierTransform(period=10, order=3, out_column="regressor_fourier")
+    with pytest.raises(ValueError, match="The transform isn't fitted"):
+        _ = transform.transform(example_ts)
+
+
+@pytest.mark.parametrize(
+    "in_column, ts_name, expected_timestamp",
+    [
+        (None, "example_ts", list(range(10)) + list(range(10))),
+        (None, "example_ts_int_timestamp", list(range(10)) + list(range(10))),
+        ("external_timestamp", "example_ts_external_int_timestamp", list(range(10)) + list(range(6, 16))),
+        ("external_timestamp", "example_ts_external_datetime_timestamp", list(range(10)) + list(range(6, 16))),
+        (
+            "external_timestamp",
+            "example_ts_external_int_timestamp_with_nans",
+            [None, None, None] + list(range(3, 10)) + [6, 7, 8, None, None, None, 12, 13, 14, 15],
+        ),
+        (
+            "external_timestamp",
+            "example_ts_external_datetime_timestamp_with_nans",
+            list(range(-3, 7)) + list(range(3, 13)),
+        ),
+    ],
+)
 @pytest.mark.parametrize("period, mod", [(24, 1), (24, 2), (24, 9), (24, 20), (24, 23), (7.5, 3), (7.5, 4)])
-def test_column_values(example_ts, period, mod):
+def test_transform_values(in_column, ts_name, expected_timestamp, period, mod, request):
     """Test that transform generates correct values."""
-    transform = FourierTransform(period=period, mods=[mod], out_column="regressor_fourier")
-    transformed_df = transform.fit_transform(example_ts).to_pandas()
-    for segment in example_ts.segments:
-        transform_values = transformed_df.loc[:, pd.IndexSlice[segment, f"regressor_fourier_{mod}"]]
+    ts = request.getfixturevalue(ts_name)
+    transform = FourierTransform(period=period, mods=[mod], out_column="regressor_fourier", in_column=in_column)
+    transformed_df = transform.fit_transform(ts).to_pandas(flatten=True)
+    transform_values = transformed_df[f"regressor_fourier_{mod}"]
 
-        timestamp = example_ts.index
-        freq = pd.Timedelta("1H")
-        elapsed = (timestamp - timestamp[0]) / (period * freq)
-        order = (mod + 1) // 2
-        if mod % 2 == 0:
-            expected_values = np.cos(2 * np.pi * order * elapsed).values
-        else:
-            expected_values = np.sin(2 * np.pi * order * elapsed).values
+    elapsed = np.array(expected_timestamp, dtype=float) / period
+    order = (mod + 1) // 2
+    if mod % 2 == 0:
+        expected_values = np.cos(2 * np.pi * order * elapsed)
+    else:
+        expected_values = np.sin(2 * np.pi * order * elapsed)
 
-        assert np.allclose(transform_values, expected_values, atol=1e-12)
+    np.testing.assert_allclose(transform_values, expected_values, atol=1e-12)
+
+
+@pytest.mark.parametrize(
+    "shift",
+    [
+        0,
+        3,
+    ],
+)
+@pytest.mark.parametrize(
+    "in_column, ts_name",
+    [
+        (None, "example_ts"),
+        (None, "example_ts_int_timestamp"),
+        ("external_timestamp", "example_ts_external_int_timestamp"),
+        ("external_timestamp", "example_ts_external_datetime_timestamp"),
+        ("external_timestamp", "example_ts_external_int_timestamp_with_nans"),
+        (
+            "external_timestamp",
+            "example_ts_external_datetime_timestamp_with_nans",
+        ),
+    ],
+)
+@pytest.mark.parametrize("period, mod", [(24, 1), (24, 2), (24, 9), (24, 20), (24, 23), (7.5, 3), (7.5, 4)])
+def test_transform_values_with_shift(shift, in_column, ts_name, period, mod, request):
+    ts = request.getfixturevalue(ts_name)
+
+    ts_1 = ts
+    ts_2 = TSDataset(df=ts.raw_df.iloc[shift:], df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
+    transform = FourierTransform(period=period, mods=[mod], out_column="regressor_fourier", in_column=in_column)
+
+    transform.fit(ts)
+    transformed_df_1 = transform.transform(ts_1).to_pandas()
+    transformed_df_2 = transform.transform(ts_2).to_pandas()
+
+    for segment in ts.segments:
+        transform_values_1 = transformed_df_1.loc[:, pd.IndexSlice[segment, f"regressor_fourier_{mod}"]].iloc[shift:]
+        transform_values_2 = transformed_df_2.loc[:, pd.IndexSlice[segment, f"regressor_fourier_{mod}"]]
+        pd.testing.assert_series_equal(transform_values_1, transform_values_2)
+
+
+def test_get_regressors_info_index(example_ts):
+    transform = FourierTransform(period=10, order=3, out_column="fourier")
+
+    regressors_info = transform.get_regressors_info()
+
+    expected_regressor_info = [f"{transform.out_column}_{mod}" for mod in range(1, 7)]
+    assert sorted(regressors_info) == sorted(expected_regressor_info)
+
+
+def test_get_regressors_info_in_column_fail_not_fitted(example_ts):
+    transform = FourierTransform(period=10, order=3, out_column="fourier", in_column="external_timestamp")
+    with pytest.raises(ValueError, match="Fit the transform to get the correct regressors info!"):
+        _ = transform.get_regressors_info()
+
+
+def test_get_regressors_info_in_column_fitted_exog(example_ts):
+    transform = FourierTransform(period=10, order=3, out_column="fourier", in_column="external_timestamp")
+
+    transform.fit(example_ts)
+    regressors_info = transform.get_regressors_info()
+
+    assert regressors_info == []
+
+
+def test_get_regressors_info_in_column_fitted_regressor(example_ts_with_regressor):
+    transform = FourierTransform(period=10, order=3, out_column="fourier", in_column="external_timestamp")
+
+    transform.fit(example_ts_with_regressor)
+    regressors_info = transform.get_regressors_info()
+
+    expected_regressor_info = [f"{transform.out_column}_{mod}" for mod in range(1, 7)]
+    assert sorted(regressors_info) == sorted(expected_regressor_info)
 
 
 def test_forecast(ts_trend_seasonal):

@@ -6,6 +6,8 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
+from etna.datasets import TSDataset
+from etna.datasets import duplicate_data
 from etna.distributions import BaseDistribution
 from etna.distributions import CategoricalDistribution
 from etna.transforms.base import IrreversibleTransform
@@ -23,6 +25,7 @@ class TimeFlagsTransform(IrreversibleTransform):
         half_day_number: bool = False,
         one_third_day_number: bool = False,
         out_column: Optional[str] = None,
+        in_column: Optional[str] = None,
     ):
         """Initialise class attributes.
 
@@ -52,9 +55,13 @@ class TimeFlagsTransform(IrreversibleTransform):
             * if don't set, name will be ``transform.__repr__()``,
               repr will be made for transform that creates exactly this column
 
+        in_column:
+            name of column to work with; if not given, index is used, only datetime index is supported
+
         Raises
         ------
-        ValueError: if feature has invalid initial params
+        ValueError:
+            if all features aren't set in transform
         """
         if not any(
             [
@@ -71,7 +78,13 @@ class TimeFlagsTransform(IrreversibleTransform):
                 f"at least one of minute_in_hour_number, fifteen_minutes_in_hour_number, hour_number, "
                 f"half_hour_number, half_day_number, one_third_day_number should be True."
             )
-        super().__init__(required_features=["target"])
+
+        if in_column is None:
+            required_features = ["target"]
+        else:
+            required_features = [in_column]
+        super().__init__(required_features=required_features)
+
         self.date_column_name = None
         self.minute_in_hour_number: bool = minute_in_hour_number
         self.fifteen_minutes_in_hour_number: bool = fifteen_minutes_in_hour_number
@@ -81,6 +94,12 @@ class TimeFlagsTransform(IrreversibleTransform):
         self.one_third_day_number: bool = one_third_day_number
 
         self.out_column = out_column
+        self.in_column = in_column
+
+        if self.in_column is None:
+            self.in_column_regressor: Optional[bool] = True
+        else:
+            self.in_column_regressor = None
 
         # create empty init parameters
         self._empty_parameters = dict(
@@ -103,6 +122,12 @@ class TimeFlagsTransform(IrreversibleTransform):
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
+        if self.in_column_regressor is None:
+            raise ValueError("Fit the transform to get the correct regressors info!")
+
+        if not self.in_column_regressor:
+            return []
+
         features = [
             "minute_in_hour_number",
             "fifteen_minutes_in_hour_number",
@@ -116,9 +141,56 @@ class TimeFlagsTransform(IrreversibleTransform):
         ]
         return output_columns
 
+    def fit(self, ts: TSDataset) -> "TimeFlagsTransform":
+        """Fit the transform."""
+        if self.in_column is None:
+            self.in_column_regressor = True
+        else:
+            self.in_column_regressor = self.in_column in ts.regressors
+        super().fit(ts)
+        return self
+
     def _fit(self, *args, **kwargs) -> "TimeFlagsTransform":
         """Fit datetime model."""
         return self
+
+    def _compute_features(self, timestamps: pd.Series) -> pd.DataFrame:
+        timestamps_no_nans = timestamps.dropna()
+        features = pd.DataFrame(index=timestamps_no_nans.index)
+
+        if self.minute_in_hour_number:
+            minute_in_hour_number = self._get_minute_number(timestamp_series=timestamps_no_nans)
+            features[self._get_column_name("minute_in_hour_number")] = minute_in_hour_number
+
+        if self.fifteen_minutes_in_hour_number:
+            fifteen_minutes_in_hour_number = self._get_period_in_hour(
+                timestamp_series=timestamps_no_nans, period_in_minutes=15
+            )
+            features[self._get_column_name("fifteen_minutes_in_hour_number")] = fifteen_minutes_in_hour_number
+
+        if self.hour_number:
+            hour_number = self._get_hour_number(timestamp_series=timestamps_no_nans)
+            features[self._get_column_name("hour_number")] = hour_number
+
+        if self.half_hour_number:
+            half_hour_number = self._get_period_in_hour(timestamp_series=timestamps_no_nans, period_in_minutes=30)
+            features[self._get_column_name("half_hour_number")] = half_hour_number
+
+        if self.half_day_number:
+            half_day_number = self._get_period_in_day(timestamp_series=timestamps_no_nans, period_in_hours=12)
+            features[self._get_column_name("half_day_number")] = half_day_number
+
+        if self.one_third_day_number:
+            one_third_day_number = self._get_period_in_day(timestamp_series=timestamps_no_nans, period_in_hours=8)
+            features[self._get_column_name("one_third_day_number")] = one_third_day_number
+
+        for feature in features.columns:
+            features[feature] = features[feature].astype("category")
+
+        # add NaNs in features
+        features = features.reindex(timestamps.index)
+
+        return features
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
@@ -131,51 +203,29 @@ class TimeFlagsTransform(IrreversibleTransform):
 
         Returns
         -------
-        result: pd.DataFrame
+        :
             Dataframe with extracted features
         """
-        features = pd.DataFrame(index=df.index)
-        timestamp_series = pd.Series(df.index)
+        if self.in_column is None:
+            if pd.api.types.is_integer_dtype(df.index.dtype):
+                raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
 
-        if self.minute_in_hour_number:
-            minute_in_hour_number = self._get_minute_number(timestamp_series=timestamp_series)
-            features[self._get_column_name("minute_in_hour_number")] = minute_in_hour_number
+            timestamps = pd.Series(df.index)
+            features = self._compute_features(timestamps=timestamps)
+            features.index = df.index
 
-        if self.fifteen_minutes_in_hour_number:
-            fifteen_minutes_in_hour_number = self._get_period_in_hour(
-                timestamp_series=timestamp_series, period_in_minutes=15
-            )
-            features[self._get_column_name("fifteen_minutes_in_hour_number")] = fifteen_minutes_in_hour_number
+            segments = df.columns.get_level_values("segment").unique().tolist()
+            result = duplicate_data(df=features.reset_index(), segments=segments)
+            result = pd.concat([df, result], axis=1).sort_index(axis=1)
 
-        if self.hour_number:
-            hour_number = self._get_hour_number(timestamp_series=timestamp_series)
-            features[self._get_column_name("hour_number")] = hour_number
+        else:
+            flat_df = TSDataset.to_flatten(df=df, features=[self.in_column])
+            features = self._compute_features(timestamps=flat_df[self.in_column])
+            features["timestamp"] = flat_df["timestamp"]
+            features["segment"] = flat_df["segment"]
+            wide_df = TSDataset.to_dataset(features)
+            result = pd.concat([df, wide_df], axis=1).sort_index(axis=1)
 
-        if self.half_hour_number:
-            half_hour_number = self._get_period_in_hour(timestamp_series=timestamp_series, period_in_minutes=30)
-            features[self._get_column_name("half_hour_number")] = half_hour_number
-
-        if self.half_day_number:
-            half_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=12)
-            features[self._get_column_name("half_day_number")] = half_day_number
-
-        if self.one_third_day_number:
-            one_third_day_number = self._get_period_in_day(timestamp_series=timestamp_series, period_in_hours=8)
-            features[self._get_column_name("one_third_day_number")] = one_third_day_number
-
-        for feature in features.columns:
-            features[feature] = features[feature].astype("category")
-
-        dataframes = []
-        for seg in df.columns.get_level_values("segment").unique():
-            tmp = df[seg].join(features)
-            _idx = tmp.columns.to_frame()
-            _idx.insert(0, "segment", seg)
-            tmp.columns = pd.MultiIndex.from_frame(_idx)
-            dataframes.append(tmp)
-
-        result = pd.concat(dataframes, axis=1).sort_index(axis=1)
-        result.columns.names = ["segment", "feature"]
         return result
 
     @staticmethod

@@ -15,7 +15,6 @@ from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
-from etna.transforms.utils import match_target_quantiles
 
 
 @deprecated(version="3.0", reason="FutureMixin class is deprecated")
@@ -226,11 +225,11 @@ class ReversibleTransform(Transform):
         pass
 
     def _get_inverse_transform_required_features(self, ts) -> Union[List[str], Literal["all"]]:
-        """Add the target quantiles for the list with required features if necessary."""
+        """Add target prediction intervals to the list with required features if necessary."""
         required_features = self.required_features
         if isinstance(required_features, list) and "target" in self.required_features:
-            features = set(ts.columns.get_level_values("feature").tolist())
-            required_features = list(set(required_features) | match_target_quantiles(features))
+            intervals_names = set(ts.prediction_intervals_names)
+            required_features = list(set(required_features) | intervals_names)
         return required_features
 
     def inverse_transform(self, ts: TSDataset) -> TSDataset:
@@ -403,7 +402,7 @@ class ReversiblePerSegmentWrapper(PerSegmentWrapper, ReversibleTransform):
                 raise NotImplementedError("Per-segment transforms can't work on new segments!")
 
             segment_transform = self.segment_transforms[segment]
-            seg_df = segment_transform.inverse_transform(df[segment])
+            seg_df = segment_transform.inverse_transform(df=df[segment])
 
             _idx = seg_df.columns.to_frame()
             _idx.insert(0, "segment", segment)

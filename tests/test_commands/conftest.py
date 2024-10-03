@@ -184,6 +184,16 @@ def base_timeseries_path():
 
 
 @pytest.fixture
+def base_timeseries_int_timestamp_path():
+    df = generate_ar_df(periods=100, start_time=10, n_segments=2, freq=None)
+    tmp = NamedTemporaryFile("w")
+    df.to_csv(tmp, index=False)
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
 def base_timeseries_exog_path():
     df_regressors = pd.DataFrame(
         {
@@ -201,7 +211,59 @@ def base_timeseries_exog_path():
 
 
 @pytest.fixture
-def empty_ts():
-    df = pd.DataFrame({"segment": [], "timestamp": [], "target": []})
+def base_timeseries_int_timestamp_exog_path():
+    df_regressors = pd.DataFrame(
+        {
+            "timestamp": np.arange(10, 130).tolist() * 2,
+            "regressor_1": np.arange(240),
+            "regressor_2": np.arange(240) + 5,
+            "segment": ["segment_0"] * 120 + ["segment_1"] * 120,
+        }
+    )
+    tmp = NamedTemporaryFile("w")
+    df_regressors.to_csv(tmp, index=False)
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def small_ts():
+    df = pd.DataFrame({"segment": ["segment_0"], "timestamp": [pd.Timestamp("2020-01-01")], "target": [1]})
     df = TSDataset.to_dataset(df=df)
     return TSDataset(df=df, freq="D")
+
+
+@pytest.fixture
+def base_timeseries_numeric_segments_path():
+    df = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range("2021-06-01", periods=100)) * 2,
+            "target": np.arange(200),
+            # segments with numeric names and leading zeros
+            "segment": ["01234"] * 100 + ["12345"] * 100,
+        }
+    )
+    tmp = NamedTemporaryFile("w")
+    df.to_csv(tmp, index=False)
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()
+
+
+@pytest.fixture
+def base_timeseries_numeric_segments_exog_path():
+    df_regressors = pd.DataFrame(
+        {
+            "timestamp": list(pd.date_range("2021-06-01", periods=120)) * 2,
+            "regressor_1": np.arange(240),
+            "regressor_2": np.arange(240) + 5,
+            # segments with numeric names and leading zeros
+            "segment": ["01234"] * 120 + ["12345"] * 120,
+        }
+    )
+    tmp = NamedTemporaryFile("w")
+    df_regressors.to_csv(tmp, index=False)
+    tmp.flush()
+    yield Path(tmp.name)
+    tmp.close()

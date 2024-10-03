@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.analysis.outliers import get_anomalies_hist
@@ -131,3 +132,19 @@ def test_in_column(outliers_df_with_two_columns):
     for key in expected:
         assert key in outliers
         np.testing.assert_array_equal(outliers[key], expected[key])
+
+
+@pytest.mark.parametrize(
+    "index_only, value_type",
+    (
+        (True, list),
+        (False, pd.Series),
+    ),
+)
+def test_get_anomalies_hist_index_only(outliers_df_with_two_columns, index_only, value_type):
+    result = get_anomalies_hist(ts=outliers_df_with_two_columns, in_column="feature", index_only=index_only)
+
+    assert isinstance(result, dict)
+    for key, value in result.items():
+        assert isinstance(key, str)
+        assert isinstance(value, value_type)

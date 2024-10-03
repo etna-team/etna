@@ -13,7 +13,6 @@ from etna.distributions import BaseDistribution
 from etna.distributions import IntDistribution
 from etna.transforms.base import OneSegmentTransform
 from etna.transforms.base import ReversiblePerSegmentWrapper
-from etna.transforms.utils import match_target_quantiles
 
 
 class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
@@ -42,12 +41,14 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
 
     @staticmethod
     def _get_x(df) -> np.ndarray:
-        series_len = len(df)
         x = df.index.to_series()
-        if isinstance(type(x.dtype), pd.Timestamp):
-            raise ValueError("Your timestamp column has wrong format. Need np.datetime64 or datetime.datetime")
-        x = x.apply(lambda ts: ts.timestamp())
-        x = x.to_numpy().reshape(series_len, 1)
+
+        if pd.api.types.is_integer_dtype(x.dtype):
+            x = x.astype("float").to_numpy()
+        else:
+            x = x.apply(lambda ts: ts.timestamp()).to_numpy()
+
+        x = x.reshape(-1, 1)
         return x
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentLinearTrendBaseTransform":
@@ -128,14 +129,11 @@ class _OneSegmentLinearTrendBaseTransform(OneSegmentTransform):
         result = df
         x = self._get_x(df)
         x -= self._x_median
-        y = df[self.in_column].values
         trend = self._pipeline.predict(x)
-        add_trend_timeseries = y + trend
-        result[self.in_column] = add_trend_timeseries
-        if self.in_column == "target":
-            quantiles = match_target_quantiles(set(result.columns))
-            for quantile_column_nm in quantiles:
-                result.loc[:, quantile_column_nm] += trend
+
+        for column_name in df.columns:
+            result.loc[:, column_name] += trend
+
         return result
 
 
