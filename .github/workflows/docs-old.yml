@@ -1,4 +1,4 @@
-name: Build docs on PR
+name: Build old docs
 
 on:
   pull_request:
