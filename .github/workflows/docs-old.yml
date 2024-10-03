@@ -1,9 +1,8 @@
-name: Build docs from truck
+name: Build old docs
 
 on:
-  push:
-    branches:
-      - master
+  pull_request:
+    types: [opened, synchronize]
 
 jobs:
   build-docs:
