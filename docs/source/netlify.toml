@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "/*"
+  to = "https://docs.etna.ai/stable/index.html"
+  status = 301
+  force = true
