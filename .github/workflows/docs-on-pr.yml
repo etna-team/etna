@@ -46,7 +46,7 @@ jobs:
            publish-dir: './site'
            production-branch: master
            alias: deploy-preview-${{ github.event.number }}
-           production-deploy: false
+           production-deploy: true
            deploy-message: "Deploy from GitHub Actions"
            github-token: ${{ secrets.GITHUB_TOKEN }}
            enable-commit-comment: true
