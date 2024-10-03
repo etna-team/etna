@@ -45,7 +45,7 @@ jobs:
          with:
            publish-dir: './site'
            production-branch: master
-           alias: "unstable"
+           alias: deploy-preview-${{ github.event.number }}
            production-deploy: false
            deploy-message: "Deploy from GitHub Actions"
            github-token: ${{ secrets.GITHUB_TOKEN }}
