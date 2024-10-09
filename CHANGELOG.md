@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 
 - 
-- Add docstring warning about handling non-regressors (including target) to children of `WindowStatisticsTransform` ([#469](https://github.com/etna-team/etna/pull/474))
+- Add docstring warning about handling non-regressors (including target) to children of `WindowStatisticsTransform` ([#474](https://github.com/etna-team/etna/pull/474))
 - 
 - 
 - 
@@ -37,7 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
-- 
+- Fix working with `embedding_sizes` in `202-NN_examples` notebook ([#489](https://github.com/etna-team/etna/pull/489))
 - 
 - 
 - 
