@@ -1312,6 +1312,9 @@ class TSDataset:
                 "Prediction intervals can't be dropped from the dataset using this method! Use `drop_prediction_intervals` method!"
             )
 
+        if "target" in features_set:
+            raise ValueError(f"Target can't be dropped from the dataset!")
+
         dfs = [("df", self.df)]
         if drop_from_exog:
             dfs.append(("df_exog", self.df_exog))
