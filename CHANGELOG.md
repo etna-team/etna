@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix working with `embedding_sizes` in `202-NN_examples` notebook ([#489](https://github.com/etna-team/etna/pull/489))
-- 
+- Fix `TSDataset.drop_features` allows to drop target ([#491](https://github.com/etna-team/etna/pull/491))
 - 
 - 
 - 
