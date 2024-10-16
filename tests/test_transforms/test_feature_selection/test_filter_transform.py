@@ -43,7 +43,7 @@ def test_set_none():
         _ = FilterFeaturesTransform()
 
 
-@pytest.mark.parametrize("include", [["target"], ["target", "exog_1"], ["exog_1", "exog_2", "target"]])  # this ok
+@pytest.mark.parametrize("include", [["target"], ["target", "exog_1"], ["exog_1", "exog_2", "target"]])
 def test_include_filter(ts_with_features, include):
     """Test that transform remains only features in include."""
     original_df = ts_with_features.to_pandas()
