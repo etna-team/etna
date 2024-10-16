@@ -1296,7 +1296,7 @@ class TSDataset:
         Raises
         ------
         ValueError:
-            If ``features`` list contains target components
+            If ``features`` list contains target or target components
         """
         features_set = set(features)
 
