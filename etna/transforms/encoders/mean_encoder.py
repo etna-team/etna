@@ -213,14 +213,27 @@ class MeanEncoderTransform(IrreversibleTransform):
                     y = segment_df["target"]
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
+                    # generate NaN mask
+                    first_notna_index = segment_df.loc[y.notna()].groupby(self.in_column).head(1).index
+                    first_notna_index = pd.Series(index=first_notna_index, data=True).reindex(y.index).fillna(False)
+                    first_appearance = segment_df.groupby(self.in_column).cumcount() == 0
+                    mask = ~(first_appearance | first_notna_index)
                     # cumcount not including current timestamp
-                    cumcount = y.groupby(segment_df[self.in_column].astype(str)).agg("cumcount")
-                    # cumsum not including current timestamp
-                    cumsum = (
-                        y.groupby(segment_df[self.in_column].astype(str))
-                        .transform(lambda x: x.shift().cumsum())
-                        .fillna(0)
+                    cumcount_include_nan_index = y.groupby(segment_df[self.in_column].astype(str)).cumcount()
+                    cumcount = (
+                        y.dropna()
+                        .groupby(segment_df[self.in_column].astype(str))
+                        .cumcount()
+                        .reindex(y.index)
+                        .fillna(cumcount_include_nan_index)
                     )
+                    cumcount = cumcount.where(mask, np.nan)
+                    # cumsum not including current timestamp
+                    cumsum = y.groupby(segment_df[self.in_column].astype(str)).transform(
+                        lambda x: x.shift().fillna(0).cumsum()
+                    )
+                    cumsum = cumsum.where(mask, np.nan)
+
                     feature = (cumsum + expanding_mean * self.smoothing) / (cumcount + self.smoothing)
                     if self.handle_missing is MissingMode.global_mean:
                         nan_feature_index = segment_df[segment_df[self.in_column].isnull()].index
@@ -237,7 +250,7 @@ class MeanEncoderTransform(IrreversibleTransform):
                 timestamps = intersected_df.index
                 categories = pd.unique(df.loc[:, self.idx[:, self.in_column]].values.ravel())
 
-                cumstats = pd.DataFrame(data={"sum": 0, "count": 0, self.in_column: categories})
+                cumstats = pd.DataFrame(data={"sum": np.NaN, "count": np.NaN, self.in_column: categories})
                 cur_timestamp_idx = np.arange(0, len(timestamps) * n_segments, len(timestamps))
                 for _ in range(len(timestamps)):
                     timestamp_df = flatten.loc[cur_timestamp_idx]
@@ -253,9 +266,15 @@ class MeanEncoderTransform(IrreversibleTransform):
                         .groupby(timestamp_df[self.in_column], dropna=False)
                         .agg(["count", "sum"])
                         .reset_index()
+                        .replace(0, np.NaN)
                     )
                     # sum current and previous statistics
-                    cumstats = pd.concat([cumstats, stats]).groupby(self.in_column, as_index=False, dropna=False).sum()
+                    cumstats = (
+                        pd.concat([cumstats, stats])
+                        .groupby(self.in_column, as_index=False, dropna=False)
+                        .sum()
+                        .replace(0, np.NaN)
+                    )
                     cur_timestamp_idx += 1
 
                 feature = (temp["cumsum"] + running_mean * self.smoothing) / (temp["cumcount"] + self.smoothing)
