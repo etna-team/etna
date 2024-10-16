@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - 
 - 
-- 
+- Fix working with NaN target in `MeanEncoderTransform` ([#492](https://github.com/etna-team/etna/pull/492))
 - 
 - 
 - 
