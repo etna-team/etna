@@ -214,9 +214,9 @@ class MeanEncoderTransform(IrreversibleTransform):
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
                     # generate NaN mask
-                    first_notna_index = segment_df.loc[y.notna()].groupby(self.in_column).head(1).index
+                    first_notna_index = segment_df.loc[y.notna()].groupby(self.in_column, dropna=False).head(1).index
                     first_notna_index = pd.Series(index=first_notna_index, data=True).reindex(y.index).fillna(False)
-                    first_appearance = segment_df.groupby(self.in_column).cumcount() == 0
+                    first_appearance = segment_df.groupby(self.in_column, dropna=False).cumcount() == 0
                     mask = ~(first_appearance | first_notna_index)
                     # cumcount not including current timestamp
                     cumcount_include_nan_index = y.groupby(segment_df[self.in_column].astype(str)).cumcount()
@@ -266,15 +266,12 @@ class MeanEncoderTransform(IrreversibleTransform):
                         .groupby(timestamp_df[self.in_column], dropna=False)
                         .agg(["count", "sum"])
                         .reset_index()
-                        .replace(0, np.NaN)
                     )
+                    stats = stats.replace({"count": 0, "sum": 0}, np.NaN)
+
                     # sum current and previous statistics
-                    cumstats = (
-                        pd.concat([cumstats, stats])
-                        .groupby(self.in_column, as_index=False, dropna=False)
-                        .sum()
-                        .replace(0, np.NaN)
-                    )
+                    cumstats = pd.concat([cumstats, stats]).groupby(self.in_column, as_index=False, dropna=False).sum()
+                    cumstats = cumstats.replace({"count": 0, "sum": 0}, np.NaN)
                     cur_timestamp_idx += 1
 
                 feature = (temp["cumsum"] + running_mean * self.smoothing) / (temp["cumcount"] + self.smoothing)

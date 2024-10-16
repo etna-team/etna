@@ -56,7 +56,7 @@ def expected_mean_segment_encoder_ts() -> TSDataset:
 def expected_micro_category_ts() -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
-    df["mean_encoded_regressor"] = [np.NaN, np.NaN, 1.5, 1.5, 2.75, 2.25] + [np.NaN, np.NaN, 6.25, 7, 7.625, 8.0]
+    df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 1.5, 2.75, 2.25] + [np.NaN, np.NaN, 6.25, 7, 7.625, np.NaN]
 
     ts = TSDataset(df, freq="D")
     return ts
