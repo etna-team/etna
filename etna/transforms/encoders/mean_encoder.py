@@ -213,26 +213,13 @@ class MeanEncoderTransform(IrreversibleTransform):
                     y = segment_df["target"]
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
-                    # generate NaN mask
-                    first_notna_index = segment_df.loc[y.notna()].groupby(self.in_column, dropna=False).head(1).index
-                    first_notna_index = pd.Series(index=first_notna_index, data=True).reindex(y.index).fillna(False)
-                    first_appearance = segment_df.groupby(self.in_column, dropna=False).cumcount() == 0
-                    mask = ~(first_appearance | first_notna_index)
                     # cumcount not including current timestamp
-                    cumcount_include_nan_index = y.groupby(segment_df[self.in_column].astype(str)).cumcount()
-                    cumcount = (
-                        y.dropna()
-                        .groupby(segment_df[self.in_column].astype(str))
-                        .cumcount()
-                        .reindex(y.index)
-                        .fillna(cumcount_include_nan_index)
-                    )
-                    cumcount = cumcount.where(mask, np.nan)
+                    cumcount = segment_df.loc[y.notna()].groupby(self.in_column, dropna=False).cumcount().reindex(y.index).replace(0, np.NaN)
                     # cumsum not including current timestamp
-                    cumsum = y.groupby(segment_df[self.in_column].astype(str)).transform(
+                    cumsum = segment_df['target'].groupby(segment_df[self.in_column].astype(str), dropna=False).transform(
                         lambda x: x.shift().fillna(0).cumsum()
                     )
-                    cumsum = cumsum.where(mask, np.nan)
+                    cumsum = cumsum.where(cumcount.notna(), np.NaN)
 
                     feature = (cumsum + expanding_mean * self.smoothing) / (cumcount + self.smoothing)
                     if self.handle_missing is MissingMode.global_mean:
