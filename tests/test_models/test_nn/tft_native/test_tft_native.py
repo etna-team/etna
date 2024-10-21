@@ -188,31 +188,37 @@ def test_tft_make_samples(
             df[[feature]].iloc[:1],
             first_sample["static_reals"][feature],
         )
+        assert first_sample["static_reals"][feature].base is not None
     for feature in static_categoricals:
         np.testing.assert_almost_equal(
             df[[feature]].iloc[:1],
             first_sample["static_categoricals"][feature],
         )
+        assert first_sample["static_categoricals"][feature].base is not None
     for feature in time_varying_categoricals_encoder:
         np.testing.assert_almost_equal(
             df[[feature]].iloc[:encoder_length],
             first_sample["time_varying_categoricals_encoder"][feature],
         )
+        assert first_sample["time_varying_categoricals_encoder"][feature].base is not None
     for feature in time_varying_categoricals_decoder:
         np.testing.assert_almost_equal(
             df[[feature]].iloc[encoder_length : encoder_length + decoder_length],
             first_sample["time_varying_categoricals_decoder"][feature],
         )
+        assert first_sample["time_varying_categoricals_decoder"][feature].base is not None
     for feature in time_varying_reals_encoder:
         np.testing.assert_almost_equal(
             df[[feature]].iloc[:encoder_length],
             first_sample["time_varying_reals_encoder"][feature],
         )
+        assert first_sample["time_varying_reals_encoder"][feature].base is not None
     for feature in time_varying_reals_decoder:
         np.testing.assert_almost_equal(
             df[[feature]].iloc[encoder_length : encoder_length + decoder_length],
             first_sample["time_varying_reals_decoder"][feature],
         )
+        assert first_sample["time_varying_reals_decoder"][feature].base is not None
 
 
 @pytest.mark.parametrize("encoder_length, decoder_length", [(2, 1), (1, 2), (10, 5)])
