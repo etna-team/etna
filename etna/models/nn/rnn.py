@@ -219,39 +219,17 @@ class RNNNet(DeepBaseNet):
             sample["encoder_real"] = sample["encoder_real"][1:]
 
             for index, feature in enumerate(self.embedding_sizes.keys()):
-                sample["encoder_categorical"][feature] = (
-                    values_categorical[index][start_idx : start_idx + encoder_length].reshape(-1, 1)[1:]
-                )
+                sample["encoder_categorical"][feature] = values_categorical[index][
+                    start_idx : start_idx + encoder_length
+                ].reshape(-1, 1)[1:]
 
-                sample["decoder_categorical"][feature] = (
-                    values_categorical[index][start_idx + encoder_length : start_idx + total_sample_length]
-                    .reshape(-1, 1)
-                )
+                sample["decoder_categorical"][feature] = values_categorical[index][
+                    start_idx + encoder_length : start_idx + total_sample_length
+                ].reshape(-1, 1)
 
             target = values_target[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
             sample["encoder_target"] = target[1:encoder_length]
             sample["decoder_target"] = target[encoder_length:]
-
-            sample["segment"] = segment
-
-            # sample["decoder_real"] = tuple(map(tuple, values_real[start_idx + encoder_length : start_idx + total_sample_length]))
-            #
-            # # Get shifted target and concatenate it with real values features
-            # sample["encoder_real"] = tuple(map(tuple, values_real[start_idx : start_idx + encoder_length]))
-            # sample["encoder_real"] = tuple(map(tuple, sample["encoder_real"][1:]))
-            #
-            # for index, feature in enumerate(self.embedding_sizes.keys()):
-            #     sample["encoder_categorical"][feature] = tuple(map(tuple, values_categorical[index][
-            #         start_idx : start_idx + encoder_length
-            #     ].reshape(-1, 1)[1:]))
-            #
-            #     sample["decoder_categorical"][feature] = tuple(map(tuple, values_categorical[index][
-            #         start_idx + encoder_length : start_idx + total_sample_length
-            #     ].reshape(-1, 1)))
-            #
-            # target = values_target[start_idx : start_idx + encoder_length + decoder_length].reshape(-1, 1)
-            # sample["encoder_target"] = tuple(map(tuple, target[1:encoder_length]))
-            # sample["decoder_target"] = tuple(map(tuple, target[encoder_length:]))
 
             sample["segment"] = segment
 
