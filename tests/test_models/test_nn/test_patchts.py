@@ -79,6 +79,7 @@ def test_patchts_make_samples(df_name, request):
         assert ts_samples[i]["segment"] == "segment_1"
         for key in expected_sample:
             np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
+            assert ts_samples[i][key].base is not None
 
 
 def test_save_load(example_tsds):

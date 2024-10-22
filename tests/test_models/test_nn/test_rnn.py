@@ -121,6 +121,11 @@ def test_rnn_make_samples(df_name, cat_columns, request):
         assert ts_samples[i]["segment"] == "segment_1"
         for key in expected_sample:
             np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
+            if "categorical" in key:
+                for column in ts_samples[i][key]:
+                    assert ts_samples[i][key][column].base is not None
+            else:
+                assert ts_samples[i][key].base is not None
 
 
 @pytest.mark.parametrize("encoder_length", [1, 2, 10])
