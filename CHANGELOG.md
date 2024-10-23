@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Disallow dropping target in `TSDataset.drop_features` ([#491](https://github.com/etna-team/etna/pull/491))
 - Optimize memory usage in `TFTNativeModel` by eliminating copying during making samples ([#494](https://github.com/etna-team/etna/pull/494))
 - 
-- 
+- Fix working with NaN target in `MeanEncoderTransform` ([#492](https://github.com/etna-team/etna/pull/492))
 - 
 - 
 - 

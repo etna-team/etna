@@ -214,13 +214,13 @@ class MeanEncoderTransform(IrreversibleTransform):
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
                     # cumcount not including current timestamp
-                    cumcount = y.groupby(segment_df[self.in_column].astype(str)).agg("cumcount")
+                    cumcount = segment_df.loc[y.notna()].groupby(self.in_column, dropna=False).cumcount().reindex(y.index).replace(0, np.NaN)
                     # cumsum not including current timestamp
-                    cumsum = (
-                        y.groupby(segment_df[self.in_column].astype(str))
-                        .transform(lambda x: x.shift().cumsum())
-                        .fillna(0)
+                    cumsum = segment_df['target'].groupby(segment_df[self.in_column].astype(str), dropna=False).transform(
+                        lambda x: x.shift().fillna(0).cumsum()
                     )
+                    cumsum = cumsum.where(cumcount.notna(), np.NaN)
+
                     feature = (cumsum + expanding_mean * self.smoothing) / (cumcount + self.smoothing)
                     if self.handle_missing is MissingMode.global_mean:
                         nan_feature_index = segment_df[segment_df[self.in_column].isnull()].index
@@ -237,7 +237,7 @@ class MeanEncoderTransform(IrreversibleTransform):
                 timestamps = intersected_df.index
                 categories = pd.unique(df.loc[:, self.idx[:, self.in_column]].values.ravel())
 
-                cumstats = pd.DataFrame(data={"sum": 0, "count": 0, self.in_column: categories})
+                cumstats = pd.DataFrame(data={"sum": np.NaN, "count": np.NaN, self.in_column: categories})
                 cur_timestamp_idx = np.arange(0, len(timestamps) * n_segments, len(timestamps))
                 for _ in range(len(timestamps)):
                     timestamp_df = flatten.loc[cur_timestamp_idx]
@@ -254,8 +254,11 @@ class MeanEncoderTransform(IrreversibleTransform):
                         .agg(["count", "sum"])
                         .reset_index()
                     )
+                    stats = stats.replace({"count": 0, "sum": 0}, np.NaN)
+
                     # sum current and previous statistics
                     cumstats = pd.concat([cumstats, stats]).groupby(self.in_column, as_index=False, dropna=False).sum()
+                    cumstats = cumstats.replace({"count": 0, "sum": 0}, np.NaN)
                     cur_timestamp_idx += 1
 
                 feature = (temp["cumsum"] + running_mean * self.smoothing) / (temp["cumcount"] + self.smoothing)
