@@ -132,6 +132,10 @@ class DeepARNativeNet(DeepBaseNet):
         decoder_categorical = x["decoder_categorical"]  # each (batch_size, decoder_length, 1)
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
+        weights = x["weight"]
+
+        encoder_real[:, :, 0] = encoder_real[:, :, 0] / weights.unsqueeze(1)
+        decoder_real[:, :, 0] = decoder_real[:, :, 0] / weights.unsqueeze(1)
 
         encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
         decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
@@ -191,7 +195,11 @@ class DeepARNativeNet(DeepBaseNet):
         decoder_categorical = batch["decoder_categorical"]  # each (batch_size, decoder_length, 1)
         encoder_target = batch["encoder_target"].float()  # (batch_size, encoder_length-1, 1)
         decoder_target = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
-        weights = batch["weight"]
+        weights = batch["weight"]  # (batch_size)
+
+        # scale target values at index 0
+        encoder_real[:, :, 0] = encoder_real[:, :, 0] / weights.unsqueeze(1)
+        decoder_real[:, :, 0] = decoder_real[:, :, 0] / weights.unsqueeze(1)
 
         encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
         decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
@@ -255,11 +263,10 @@ class DeepARNativeNet(DeepBaseNet):
                 return None
 
             # Get shifted target and concatenate it with real values features
-            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length].copy()
+            sample["decoder_real"] = values_real[start_idx + encoder_length : start_idx + total_sample_length]
 
             # Get shifted target and concatenate it with real values features
-            sample["encoder_real"] = values_real[start_idx : start_idx + encoder_length].copy()
-            sample["encoder_real"] = sample["encoder_real"][1:]
+            sample["encoder_real"] = values_real[start_idx + 1 : start_idx + encoder_length]
 
             for index, feature in enumerate(self.embedding_sizes.keys()):
                 sample["encoder_categorical"][feature] = values_categorical[index][
@@ -276,10 +283,6 @@ class DeepARNativeNet(DeepBaseNet):
 
             sample["segment"] = segment
             sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
-            sample["encoder_real"][:, 0] = values_real[start_idx + 1 : start_idx + encoder_length, 0] / sample["weight"]
-            sample["decoder_real"][:, 0] = (
-                values_real[start_idx + encoder_length : start_idx + total_sample_length, 0] / sample["weight"]
-            )
 
             return sample
 
