@@ -134,6 +134,7 @@ class DeepARNativeNet(DeepBaseNet):
         decoder_length = decoder_real.shape[1]
         weights = x["weight"]
 
+        # scale target values at index 0
         encoder_real[:, :, 0] = encoder_real[:, :, 0] / weights.unsqueeze(1)
         decoder_real[:, :, 0] = decoder_real[:, :, 0] / weights.unsqueeze(1)
 
