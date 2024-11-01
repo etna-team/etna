@@ -28,31 +28,6 @@ def category_ts() -> TSDataset:
 
 
 @pytest.fixture
-def mean_segment_encoder_ts() -> TSDataset:
-    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
-    df["target"] = [0, 1, np.NaN, 3, 4]
-
-    df_exog = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=10)
-    df_exog.rename(columns={"target": "segment_feature"}, inplace=True)
-    df_exog["segment_feature"] = "segment_0"
-
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future="all")
-
-    return ts
-
-
-@pytest.fixture
-def expected_mean_segment_encoder_ts() -> TSDataset:
-    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
-    df.rename(columns={"target": "segment_mean"}, inplace=True)
-    df["segment_mean"] = [np.NaN, 0, 0.5, 0.5, 1.33]
-
-    ts = TSDataset(df=df, freq="D")
-
-    return ts
-
-
-@pytest.fixture
 def expected_micro_category_ts() -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
@@ -142,6 +117,106 @@ def expected_ts_begin_nan_smooth_2() -> TSDataset:
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 5 / 3, 5 / 3, 2.5]
 
     ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def multiple_nan_target_new_category_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
+    df["target"] = [np.NaN, 1.5, np.NaN, 3.0, 4.0]
+
+    df_exog = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=6)
+    df_exog.rename(columns={"target": "regressor"}, inplace=True)
+    df_exog["regressor"] = ["A", "B", "A", "A", "B", "C"]
+
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future="all")
+
+    return ts
+
+
+@pytest.fixture
+def expected_multiple_nan_target_new_category_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
+    df.rename(columns={"target": "regressor_mean"}, inplace=True)
+    df["regressor_mean"] = [np.NaN, np.NaN, np.NaN, np.NaN, 1.5]
+
+    ts = TSDataset(df=df, freq="D")
+
+    return ts
+
+
+@pytest.fixture
+def multiple_nan_target_old_category_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=7)
+    df["target"] = [np.nan, 1.5, np.nan, 3.0, 4.0, np.NaN, np.NaN]
+
+    df_exog = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=8)
+    df_exog.rename(columns={"target": "regressor"}, inplace=True)
+    df_exog["regressor"] = ["A", "B", "A", "A", "B", "B", "B", "C"]
+
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future="all")
+
+    return ts
+
+
+@pytest.fixture
+def expected_multiple_nan_target_old_category_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=7)
+    df.rename(columns={"target": "regressor_mean"}, inplace=True)
+    df["regressor_mean"] = [np.NaN, np.NaN, np.NaN, np.NaN, 1.5, 2.75, 2.75]
+
+    ts = TSDataset(df=df, freq="D")
+
+    return ts
+
+
+@pytest.fixture
+def mean_segment_encoder_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
+    df["target"] = [0, 1, np.NaN, 3, 4]
+
+    df_exog = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=10)
+    df_exog.rename(columns={"target": "segment_feature"}, inplace=True)
+    df_exog["segment_feature"] = "segment_0"
+
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future="all")
+
+    return ts
+
+
+@pytest.fixture
+def expected_mean_segment_encoder_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
+    df.rename(columns={"target": "segment_mean"}, inplace=True)
+    df["segment_mean"] = [np.NaN, 0, 0.5, 0.5, 1.33]
+
+    ts = TSDataset(df=df, freq="D")
+
+    return ts
+
+
+@pytest.fixture
+def multiple_nan_target_two_segments_ts() -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
+    df["target"] = [np.NaN, 2, 3, 4, np.NaN, 5] + [np.NaN, 7, 8, 9, 10, 11]
+
+    df_exog = generate_ar_df(start_time="2001-01-01", periods=8, n_segments=2)
+    df_exog.rename(columns={"target": "regressor"}, inplace=True)
+    df_exog["regressor"] = ["A", "B", np.NaN, "A", pd.NA, "B", "C", "A"] + ["A", "B", "A", "A", "A", np.NaN, "A", "C"]
+
+    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+
+    return ts
+
+
+@pytest.fixture
+def expected_multiple_nan_target_two_segments_ts() -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
+    df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
+    df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 8, 3, 4.5] + [np.NaN, np.NaN, np.NaN, 8, 7, 3]
+
+    ts = TSDataset(df=df, freq="D")
+
     return ts
 
 
@@ -348,6 +423,42 @@ def test_mean_segment_encoder(mean_segment_encoder_ts, expected_mean_segment_enc
     assert_frame_equal(
         mean_segment_encoder_ts.df.loc[:, pd.IndexSlice[:, "segment_mean"]],
         expected_mean_segment_encoder_ts.df,
+        atol=0.01,
+    )
+
+
+def test_multiple_nan_target_new_category(
+    multiple_nan_target_new_category_ts, expected_multiple_nan_target_new_category_ts
+):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor",
+        mode="per-segment",
+        handle_missing="category",
+        smoothing=0,
+        out_column="regressor_mean",
+    )
+    mean_encoder.fit_transform(multiple_nan_target_new_category_ts)
+    assert_frame_equal(
+        multiple_nan_target_new_category_ts.df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
+        expected_multiple_nan_target_new_category_ts.df,
+        atol=0.01,
+    )
+
+
+def test_multiple_nan_target_old_category(
+    multiple_nan_target_old_category_ts, expected_multiple_nan_target_old_category_ts
+):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor",
+        mode="per-segment",
+        handle_missing="category",
+        smoothing=0,
+        out_column="regressor_mean",
+    )
+    mean_encoder.fit_transform(multiple_nan_target_old_category_ts)
+    assert_frame_equal(
+        multiple_nan_target_old_category_ts.df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
+        expected_multiple_nan_target_old_category_ts.df,
         atol=0.01,
     )
 

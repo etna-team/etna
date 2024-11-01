@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 from typing import cast
 
@@ -165,6 +166,28 @@ class MeanEncoderTransform(IrreversibleTransform):
         expanding_mean = pd.Series(index=df.index, data=expanding_mean.values).shift(n_segments)
         return expanding_mean
 
+    @staticmethod
+    def _count_per_segment_cumstats(target: np.ndarray, categories: np.ndarray) -> Tuple[List[float], List[float]]:
+        cumsum = {}
+        cumcount = {}
+        for category in np.unique(categories):
+            cumsum[category] = np.NaN
+            cumcount[category] = np.NaN
+
+        ans_cumsum = []
+        ans_cumcount = []
+
+        for i in range(len(target)):
+            ans_cumsum.append(cumsum[categories[i]])
+            ans_cumcount.append(cumcount[categories[i]])
+            if not np.isnan(target[i]):
+                if np.isnan(cumsum[categories[i]]):
+                    cumsum[categories[i]] = 0
+                    cumcount[categories[i]] = 0
+                cumsum[categories[i]] += target[i]
+                cumcount[categories[i]] += 1
+        return ans_cumsum, ans_cumcount
+
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Get encoded values for the segment.
@@ -211,15 +234,13 @@ class MeanEncoderTransform(IrreversibleTransform):
                 for segment in segments:
                     segment_df = TSDataset.to_flatten(intersected_df.loc[:, self.idx[segment, :]])
                     y = segment_df["target"]
+                    categories = segment_df[self.in_column].values.astype(str)
+
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
-                    # cumcount not including current timestamp
-                    cumcount = segment_df.loc[y.notna()].groupby(self.in_column, dropna=False).cumcount().reindex(y.index).replace(0, np.NaN)
-                    # cumsum not including current timestamp
-                    cumsum = segment_df['target'].groupby(segment_df[self.in_column].astype(str), dropna=False).transform(
-                        lambda x: x.shift().fillna(0).cumsum()
-                    )
-                    cumsum = cumsum.where(cumcount.notna(), np.NaN)
+                    cumsum, cumcount = self._count_per_segment_cumstats(y.values, categories)
+                    cumsum = pd.Series(cumsum)
+                    cumcount = pd.Series(cumcount)
 
                     feature = (cumsum + expanding_mean * self.smoothing) / (cumcount + self.smoothing)
                     if self.handle_missing is MissingMode.global_mean:

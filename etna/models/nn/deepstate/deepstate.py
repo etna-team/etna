@@ -4,6 +4,7 @@ from typing import Iterator
 from typing import Optional
 from typing import Tuple
 
+import numpy as np
 import pandas as pd
 from typing_extensions import TypedDict
 
@@ -117,9 +118,9 @@ class DeepStateNet(DeepBaseNet):
         :
             loss, true_target, prediction_target
         """
-        encoder_real = batch["encoder_real"]  # (batch_size, seq_length, input_size)
+        encoder_real = batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
         encoder_categorical = batch["encoder_categorical"]  # each (batch_size, seq_length, 1)
-        targets = batch["encoder_target"]  # (batch_size, seq_length, 1)
+        targets = batch["encoder_target"].float()  # (batch_size, seq_length, 1)
         seq_length = targets.shape[1]
         datetime_index = batch["datetime_index"].permute(1, 0, 2)[
             :, :, :seq_length
@@ -159,11 +160,11 @@ class DeepStateNet(DeepBaseNet):
         :
             forecast with shape (batch_size, decoder_length, 1)
         """
-        encoder_real = x["encoder_real"]  # (batch_size, seq_length, input_size)
+        encoder_real = x["encoder_real"].float()  # (batch_size, seq_length, input_size)
         encoder_categorical = x["encoder_categorical"]  # each (batch_size, seq_length, 1)
         seq_length = encoder_real.shape[1]
-        targets = x["encoder_target"][:, :seq_length]  # (batch_size, seq_length, 1)
-        decoder_real = x["decoder_real"]  # (batch_size, horizon, input_size)
+        targets = x["encoder_target"][:, :seq_length].float()  # (batch_size, seq_length, 1)
+        decoder_real = x["decoder_real"].float()  # (batch_size, horizon, input_size)
         decoder_categorical = x["decoder_categorical"]  # each (batch_size, horizon, 1)
         datetime_index_train = x["datetime_index"].permute(1, 0, 2)[
             :, :, :seq_length
@@ -213,26 +214,23 @@ class DeepStateNet(DeepBaseNet):
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
         values_real = df.drop(columns=["target", "segment", "timestamp"] + list(self.embedding_sizes.keys())).values
-        values_real = torch.from_numpy(values_real).float()
 
         # Categories that were not seen during `fit` will be filled with new category
         for feature in self.embedding_sizes:
             df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
 
         # Columns in `values_categorical` are in the same order as in `embedding_sizes`
-        values_categorical = torch.from_numpy(df[self.embedding_sizes.keys()].values.T)
+        values_categorical = df[self.embedding_sizes.keys()].values.T
 
-        values_datetime = torch.from_numpy(self.ssm.generate_datetime_index(df["timestamp"]))
-        values_datetime = values_datetime.to(torch.int64)
+        values_datetime = self.ssm.generate_datetime_index(df["timestamp"]).astype(int)
         values_target = df["target"].values
-        values_target = torch.from_numpy(values_target).float()
         segment = df["segment"].values[0]
 
         def _make(
-            values_target: torch.Tensor,
-            values_real: torch.Tensor,
-            values_categorical: torch.Tensor,
-            values_datetime: torch.Tensor,
+            values_target: np.ndarray,
+            values_real: np.ndarray,
+            values_categorical: np.ndarray,
+            values_datetime: np.ndarray,
             segment: str,
             start_idx: int,
             encoder_length: int,
