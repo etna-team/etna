@@ -7,6 +7,7 @@ from typing import Tuple
 from typing import Union
 from typing import cast
 
+import numba
 import numpy as np
 import pandas as pd
 from bottleneck import nanmean
@@ -167,25 +168,35 @@ class MeanEncoderTransform(IrreversibleTransform):
         return expanding_mean
 
     @staticmethod
-    def _count_per_segment_cumstats(target: np.ndarray, categories: np.ndarray) -> Tuple[List[float], List[float]]:
-        cumsum = {}
-        cumcount = {}
-        for category in np.unique(categories):
-            cumsum[category] = np.NaN
-            cumcount[category] = np.NaN
+    @numba.njit()
+    def _count_per_segment_cumstats_new(target: np.ndarray, categories: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        ans_cumsum = np.full_like(target, np.nan)
+        ans_cumcount = np.full_like(target, np.nan)
+        unique_categories = np.unique(categories)
+        for category in unique_categories:
+            idx = np.where(category == categories)[0]
+            t = target[idx]
 
-        ans_cumsum = []
-        ans_cumcount = []
+            # Mask for valid (non-NaN) target values
+            valid = ~np.isnan(t)
 
-        for i in range(len(target)):
-            ans_cumsum.append(cumsum[categories[i]])
-            ans_cumcount.append(cumcount[categories[i]])
-            if not np.isnan(target[i]):
-                if np.isnan(cumsum[categories[i]]):
-                    cumsum[categories[i]] = 0
-                    cumcount[categories[i]] = 0
-                cumsum[categories[i]] += target[i]
-                cumcount[categories[i]] += 1
+            # Compute cumulative sums and counts for valid values
+            cumsum = np.cumsum(np.where(valid, t, 0))
+            cumcount = np.cumsum(valid).astype(np.float32)
+
+            cumsum = np.roll(cumsum, 1)
+            cumcount = np.roll(cumcount, 1)
+
+            cumsum[0] = np.NaN
+            cumcount[0] = np.NaN
+
+            # Handle positions with no previous valid values
+            cumsum[cumcount == 0] = np.NaN
+            cumcount[cumcount == 0] = np.NaN
+
+            # Assign the computed values back to the answer arrays
+            ans_cumsum[idx] = cumsum
+            ans_cumcount[idx] = cumcount
         return ans_cumsum, ans_cumcount
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -236,9 +247,13 @@ class MeanEncoderTransform(IrreversibleTransform):
                     y = segment_df["target"]
                     categories = segment_df[self.in_column].values.astype(str)
 
+                    unique_categories = np.unique(categories)
+                    cat_to_int = {cat: idx for idx, cat in enumerate(unique_categories)}
+                    int_categories = np.array([cat_to_int[cat] for cat in categories], dtype=np.int64)
+
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
-                    cumsum, cumcount = self._count_per_segment_cumstats(y.values, categories)
+                    cumsum, cumcount = self._count_per_segment_cumstats_new(y.values, int_categories)
                     cumsum = pd.Series(cumsum)
                     cumcount = pd.Series(cumcount)
 
