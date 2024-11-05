@@ -122,6 +122,7 @@ def expected_ts_begin_nan_smooth_2() -> TSDataset:
 
 @pytest.fixture
 def multiple_nan_target_new_category_ts() -> TSDataset:
+    """Fixture with several timestamp with NaN target for new category where there were no notna targets yet."""
     df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
     df["target"] = [np.NaN, 1.5, np.NaN, 3.0, 4.0]
 
@@ -147,6 +148,7 @@ def expected_multiple_nan_target_new_category_ts() -> TSDataset:
 
 @pytest.fixture
 def multiple_nan_target_old_category_ts() -> TSDataset:
+    """Fixture with several timestamp with NaN target for category where there was already a notna target."""
     df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=7)
     df["target"] = [np.nan, 1.5, np.nan, 3.0, 4.0, np.NaN, np.NaN]
 
