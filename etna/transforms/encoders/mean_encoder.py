@@ -254,6 +254,7 @@ class MeanEncoderTransform(IrreversibleTransform):
 
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
+
                     cumsum, cumcount = self._count_per_segment_cumstats(y.values, int_categories)
                     cumsum = pd.Series(cumsum)
                     cumcount = pd.Series(cumcount)
@@ -262,6 +263,7 @@ class MeanEncoderTransform(IrreversibleTransform):
                     if self.handle_missing is MissingMode.global_mean:
                         nan_feature_index = segment_df[segment_df[self.in_column].isnull()].index
                         feature.loc[nan_feature_index] = expanding_mean.loc[nan_feature_index]
+
                     intersected_df.loc[:, self.idx[segment, self.out_column]] = feature.values
 
             else:
@@ -278,12 +280,15 @@ class MeanEncoderTransform(IrreversibleTransform):
                 cur_timestamp_idx = np.arange(0, len(timestamps) * n_segments, len(timestamps))
                 for _ in range(len(timestamps)):
                     timestamp_df = flatten.loc[cur_timestamp_idx]
+
                     # statistics from previous timestamp
                     cumsum_dict = dict(cumstats[[self.in_column, "sum"]].values)
                     cumcount_dict = dict(cumstats[[self.in_column, "count"]].values)
+
                     # map categories for current timestamp to statistics
                     temp.loc[cur_timestamp_idx, "cumsum"] = timestamp_df[self.in_column].map(cumsum_dict)
                     temp.loc[cur_timestamp_idx, "cumcount"] = timestamp_df[self.in_column].map(cumcount_dict)
+
                     # count statistics for current timestamp
                     stats = (
                         timestamp_df["target"]
@@ -298,6 +303,7 @@ class MeanEncoderTransform(IrreversibleTransform):
                     cumstats = pd.concat([cumstats, stats]).groupby(self.in_column, as_index=False, dropna=False).sum()
                     # zeros appear for categories that weren't updated in previous line and whose statistics were NaN
                     cumstats = cumstats.replace({"count": 0, "sum": 0}, np.NaN)
+
                     cur_timestamp_idx += 1
 
                 feature = (temp["cumsum"] + running_mean * self.smoothing) / (temp["cumcount"] + self.smoothing)
