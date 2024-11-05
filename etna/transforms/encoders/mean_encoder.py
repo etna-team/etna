@@ -169,7 +169,7 @@ class MeanEncoderTransform(IrreversibleTransform):
 
     @staticmethod
     @numba.njit()
-    def _count_per_segment_cumstats_new(target: np.ndarray, categories: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    def _count_per_segment_cumstats(target: np.ndarray, categories: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         ans_cumsum = np.full_like(target, np.nan)
         ans_cumcount = np.full_like(target, np.nan)
         unique_categories = np.unique(categories)
@@ -184,6 +184,7 @@ class MeanEncoderTransform(IrreversibleTransform):
             cumsum = np.cumsum(np.where(valid, t, 0))
             cumcount = np.cumsum(valid).astype(np.float32)
 
+            # Shift statistics by 1 to get statistics not including currect index
             cumsum = np.roll(cumsum, 1)
             cumcount = np.roll(cumcount, 1)
 
@@ -253,7 +254,7 @@ class MeanEncoderTransform(IrreversibleTransform):
 
                     # first timestamp is NaN
                     expanding_mean = y.expanding().mean().shift()
-                    cumsum, cumcount = self._count_per_segment_cumstats_new(y.values, int_categories)
+                    cumsum, cumcount = self._count_per_segment_cumstats(y.values, int_categories)
                     cumsum = pd.Series(cumsum)
                     cumcount = pd.Series(cumcount)
 
@@ -290,10 +291,12 @@ class MeanEncoderTransform(IrreversibleTransform):
                         .agg(["count", "sum"])
                         .reset_index()
                     )
+                    # statistics become zeros for categories with target=NaN
                     stats = stats.replace({"count": 0, "sum": 0}, np.NaN)
 
                     # sum current and previous statistics
                     cumstats = pd.concat([cumstats, stats]).groupby(self.in_column, as_index=False, dropna=False).sum()
+                    # zeros appear for categories that weren't updated in previous line and whose statistics were NaN
                     cumstats = cumstats.replace({"count": 0, "sum": 0}, np.NaN)
                     cur_timestamp_idx += 1
 
