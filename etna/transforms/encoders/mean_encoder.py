@@ -184,7 +184,7 @@ class MeanEncoderTransform(IrreversibleTransform):
             cumsum = np.cumsum(np.where(valid, t, 0))
             cumcount = np.cumsum(valid).astype(np.float32)
 
-            # Shift statistics by 1 to get statistics not including currect index
+            # Shift statistics by 1 to get statistics not including current index
             cumsum = np.roll(cumsum, 1)
             cumcount = np.roll(cumcount, 1)
 
