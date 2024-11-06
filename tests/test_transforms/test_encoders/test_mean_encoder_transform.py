@@ -177,12 +177,17 @@ def expected_mean_segment_encoder_ts() -> TSDataset:
 
 @pytest.fixture
 def multiple_nan_target_two_segments_ts() -> TSDataset:
-    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
-    df["target"] = [np.NaN, 2, 3, 4, np.NaN, 5] + [np.NaN, 7, 8, 9, 10, 11]
+    """Fixture with two segments having multiple NaN targets:
 
-    df_exog = generate_ar_df(start_time="2001-01-01", periods=8, n_segments=2)
+    * For `regressor="A"` set of NaN timestamp goes before first notna value
+    * For `regressor="B"` set of NaN timestamp goes after first notna value
+    """
+    df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
+    df["target"] = [np.NaN, 2, np.NaN, 4, np.NaN, 5] + [np.NaN, 7, np.NaN, np.NaN, 10, 11]
+
+    df_exog = generate_ar_df(start_time="2001-01-01", periods=7, n_segments=2)
     df_exog.rename(columns={"target": "regressor"}, inplace=True)
-    df_exog["regressor"] = ["A", "B", np.NaN, "A", pd.NA, "B", "C", "A"] + ["A", "B", "A", "A", "A", np.NaN, "A", "C"]
+    df_exog["regressor"] = ["A", "B", "A", "A", "B", "B", "A"] + ["A", "B", "A", "B", "A", "B", "A"]
 
     ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
 
@@ -192,8 +197,8 @@ def multiple_nan_target_two_segments_ts() -> TSDataset:
 @pytest.fixture
 def expected_multiple_nan_target_two_segments_ts() -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
-    df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
-    df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 8, 3, 4.5] + [np.NaN, np.NaN, np.NaN, 8, 7, 3]
+    df.rename(columns={"target": "regressor_mean"}, inplace=True)
+    df["regressor_mean"] = [np.NaN, np.NaN, np.NaN, np.NaN, 4.5, 4.5] + [np.NaN, np.NaN, np.NaN, 4.5, 4, 4.5]
 
     ts = TSDataset(df=df, freq="D")
 
@@ -419,6 +424,24 @@ def test_multiple_nan_target_category_ts(multiple_nan_target_category_ts, expect
     assert_frame_equal(
         multiple_nan_target_category_ts.df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
         expected_multiple_nan_target_category_ts.df,
+        atol=0.01,
+    )
+
+
+def test_multiple_nan_target_two_segments_ts(
+    multiple_nan_target_two_segments_ts, expected_multiple_nan_target_two_segments_ts
+):
+    mean_encoder = MeanEncoderTransform(
+        in_column="regressor",
+        mode="macro",
+        handle_missing="category",
+        smoothing=0,
+        out_column="regressor_mean",
+    )
+    mean_encoder.fit_transform(multiple_nan_target_two_segments_ts)
+    assert_frame_equal(
+        multiple_nan_target_two_segments_ts.df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
+        expected_multiple_nan_target_two_segments_ts.df,
         atol=0.01,
     )
 
