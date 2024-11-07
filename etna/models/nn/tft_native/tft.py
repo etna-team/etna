@@ -381,6 +381,17 @@ class TFTNativeNet(DeepBaseNet):
         segment = df["segment"].values[0]
         for feature in self.num_embeddings:
             df[feature] = df[feature].astype(float).fillna(self.num_embeddings[feature])
+
+        reals_columns = list(set(self.static_reals + self.time_varying_reals_encoder + self.time_varying_reals_decoder))
+        categ_columns = list(
+            set(
+                self.static_categoricals
+                + self.time_varying_categoricals_encoder
+                + self.time_varying_categoricals_decoder
+            )
+        )
+
+        df = df[reals_columns + categ_columns]
         column_to_index = {column: index for index, column in enumerate(df.columns)}
         values = df.values.T
 
@@ -410,48 +421,44 @@ class TFTNativeNet(DeepBaseNet):
                 return None
 
             sample["segment"] = segment
-            sample["decoder_target"] = (
-                values[column_to_index["target"]][start_idx + encoder_length : start_idx + total_sample_length]
-                .reshape(-1, 1)
-                .astype(float)
+            sample["decoder_target"] = values[column_to_index["target"]][
+                start_idx + encoder_length : start_idx + total_sample_length
+            ].reshape(
+                -1, 1
             )  # (decoder_length, 1)
 
             for feature in self.static_reals:
-                sample["static_reals"][feature] = (
-                    values[column_to_index[feature]][:1].reshape(-1, 1).astype(float)
-                )  # (1, 1)
+                sample["static_reals"][feature] = values[column_to_index[feature]][:1].reshape(-1, 1)  # (1, 1)
 
             for feature in self.static_categoricals:
-                sample["static_categoricals"][feature] = (
-                    values[column_to_index[feature]][:1].reshape(-1, 1).astype(float)
-                )  # (1, 1)
+                sample["static_categoricals"][feature] = values[column_to_index[feature]][:1].reshape(-1, 1)  # (1, 1)
 
             for feature in self.time_varying_categoricals_encoder:
-                sample["time_varying_categoricals_encoder"][feature] = (
-                    values[column_to_index[feature]][start_idx : start_idx + encoder_length]
-                    .reshape(-1, 1)
-                    .astype(float)
+                sample["time_varying_categoricals_encoder"][feature] = values[column_to_index[feature]][
+                    start_idx : start_idx + encoder_length
+                ].reshape(
+                    -1, 1
                 )  # (encoder_length, 1)
 
             for feature in self.time_varying_categoricals_decoder:
-                sample["time_varying_categoricals_decoder"][feature] = (
-                    values[column_to_index[feature]][start_idx + encoder_length : start_idx + total_sample_length]
-                    .reshape(-1, 1)
-                    .astype(float)
+                sample["time_varying_categoricals_decoder"][feature] = values[column_to_index[feature]][
+                    start_idx + encoder_length : start_idx + total_sample_length
+                ].reshape(
+                    -1, 1
                 )  # (decoder_length, 1)
 
             for feature in self.time_varying_reals_encoder:
-                sample["time_varying_reals_encoder"][feature] = (
-                    values[column_to_index[feature]][start_idx : start_idx + encoder_length]
-                    .reshape(-1, 1)
-                    .astype(float)
+                sample["time_varying_reals_encoder"][feature] = values[column_to_index[feature]][
+                    start_idx : start_idx + encoder_length
+                ].reshape(
+                    -1, 1
                 )  # (encoder_length, 1)
 
             for feature in self.time_varying_reals_decoder:
-                sample["time_varying_reals_decoder"][feature] = (
-                    values[column_to_index[feature]][start_idx + encoder_length : start_idx + total_sample_length]
-                    .reshape(-1, 1)
-                    .astype(float)
+                sample["time_varying_reals_decoder"][feature] = values[column_to_index[feature]][
+                    start_idx + encoder_length : start_idx + total_sample_length
+                ].reshape(
+                    -1, 1
                 )  # (decoder_length, 1)
 
             return sample

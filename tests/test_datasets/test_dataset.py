@@ -1592,7 +1592,7 @@ def test_drop_features_raise_warning_on_unknown_columns(
 @pytest.mark.parametrize(
     "features, expected_regressors",
     (
-        (["target", "regressor_2"], ["regressor_1"]),
+        (["regressor_2"], ["regressor_1"]),
         (["out_of_dataset_column"], ["regressor_1", "regressor_2"]),
     ),
 )
@@ -1601,6 +1601,13 @@ def test_drop_features_update_regressors(df_and_regressors, features, expected_r
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=False)
     assert sorted(ts.regressors) == sorted(expected_regressors)
+
+
+def test_drop_features_throw_error_on_target(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.raises(ValueError, match="Target can't be dropped from the dataset!"):
+        ts.drop_features(features=["target"], drop_from_exog=False)
 
 
 def test_drop_features_throw_error_on_target_components(ts_with_target_components):
