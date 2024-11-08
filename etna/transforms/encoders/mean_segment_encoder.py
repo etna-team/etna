@@ -10,14 +10,13 @@ from etna.transforms.encoders.mean_encoder import MeanEncoderTransform
 class MeanSegmentEncoderTransform(IrreversibleTransform):
     """Makes expanding mean target encoding of the segment. Creates column 'segment_mean'."""
 
-    idx = pd.IndexSlice
-    segment_column = "segment_column"
+    _segment_column = "segment_column"
     out_column = "segment_mean"
 
     def __init__(self):
         super().__init__(required_features=["target"])
-        self.mean_encoder = MeanEncoderTransform(
-            in_column=self.segment_column, mode="per-segment", out_column=self.out_column, smoothing=0
+        self._mean_encoder = MeanEncoderTransform(
+            in_column=self._segment_column, mode="per-segment", out_column=self.out_column, smoothing=0
         )
 
     def _add_segment_column(self, df):
@@ -25,7 +24,7 @@ class MeanSegmentEncoderTransform(IrreversibleTransform):
         flatten_segments = np.repeat(segments.values[np.newaxis, :], len(df), axis=0)
         segment_values = pd.DataFrame(
             data=flatten_segments,
-            columns=pd.MultiIndex.from_product([segments, [self.segment_column]]),
+            columns=pd.MultiIndex.from_product([segments, [self._segment_column]]),
             index=df.index,
         )
         df = pd.concat([df, segment_values], axis=1).sort_index(axis=1)
@@ -46,7 +45,7 @@ class MeanSegmentEncoderTransform(IrreversibleTransform):
             Fitted transform
         """
         df = self._add_segment_column(df)
-        self.mean_encoder._fit(df)
+        self._mean_encoder._fit(df)
         return self
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -71,8 +70,8 @@ class MeanSegmentEncoderTransform(IrreversibleTransform):
             If there are segments that weren't present during training.
         """
         df = self._add_segment_column(df)
-        df_transformed = self.mean_encoder._transform(df)
-        df_transformed = df_transformed.drop(columns=[self.segment_column], level="feature")
+        df_transformed = self._mean_encoder._transform(df)
+        df_transformed = df_transformed.drop(columns=[self._segment_column], level="feature")
         return df_transformed
 
     def get_regressors_info(self) -> List[str]:
