@@ -7,6 +7,7 @@ import pytest
 from typing_extensions import Literal
 
 from etna.auto import Auto
+from etna.auto.auto import PoolGenerator
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
@@ -15,6 +16,29 @@ from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
+
+
+@pytest.fixture()
+def pool_generator():
+    pool = [
+        {
+            "_target_": "etna.pipeline.Pipeline",
+            "horizon": "${__aux__.horizon}",
+            "model": {"_target_": "etna.models.MovingAverageModel", "window": "${mult:${horizon},1}"},
+        },
+        {
+            "_target_": "etna.pipeline.Pipeline",
+            "horizon": "${__aux__.horizon}",
+            "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
+        },
+    ]
+    pool_generator = PoolGenerator(pool)
+    return pool_generator
+
+
+@pytest.fixture()
+def pool_list():
+    return [Pipeline(MovingAverageModel(7), horizon=7), Pipeline(NaiveModel(1), horizon=7)]
 
 
 def test_objective(
@@ -118,11 +142,9 @@ def test_init_optuna(
     )
 
 
-def test_fit_without_tuning(
-    example_tsds,
-    optuna_storage,
-    pool=(Pipeline(MovingAverageModel(5), horizon=7), Pipeline(NaiveModel(1), horizon=7)),
-):
+@pytest.mark.parametrize("pool", ["pool_list", "pool_generator"])
+def test_fit_without_tuning_list(example_tsds, optuna_storage, pool, request):
+    pool = request.getfixturevalue(pool)
     auto = Auto(
         MAE(),
         pool=pool,
@@ -136,6 +158,8 @@ def test_fit_without_tuning(
     assert len(auto.summary()) == 2
     assert len(auto.top_k(k=5)) == 2
     assert len(auto.top_k(k=1)) == 1
+    if isinstance(pool, PoolGenerator):
+        pool = pool.generate(7)
     assert auto.top_k(k=1)[0].to_dict() == pool[0].to_dict()
 
 
