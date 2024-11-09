@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+from pandas.testing import assert_frame_equal
 
 from etna.datasets import TSDataset
 from etna.metrics import R2
@@ -10,44 +11,31 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 from tests.utils import select_segments_subset
 
 
-@pytest.mark.parametrize("expected_global_means", [{"Moscow": 3, "Omsk": 30}])
-def test_mean_segment_encoder_fit(simple_ts, expected_global_means):
+def test_mean_segment_encoder_transform(mean_segment_encoder_ts, expected_mean_segment_encoder_ts):
     encoder = MeanSegmentEncoderTransform()
-    encoder.fit(simple_ts)
-    assert encoder.global_means == expected_global_means
+    transformed_df = encoder.fit_transform(mean_segment_encoder_ts).to_pandas()
+    assert_frame_equal(transformed_df, expected_mean_segment_encoder_ts.to_pandas(), atol=0.01)
 
 
-def test_mean_segment_encoder_transform(simple_ts, transformed_simple_df):
-    encoder = MeanSegmentEncoderTransform()
-    transformed_df = encoder.fit_transform(simple_ts).to_pandas()
-    transformed_simple_df.index.freq = "D"
-    pd.testing.assert_frame_equal(transformed_simple_df, transformed_df)
+def test_make_future_mean_segment_encoder_transform(
+    mean_segment_encoder_ts, expected_make_future_mean_segment_encoder_ts
+):
+    mean_segment_encoder = MeanSegmentEncoderTransform()
+    mean_segment_encoder.fit_transform(mean_segment_encoder_ts)
+    future_ts = mean_segment_encoder_ts.make_future(future_steps=2, transforms=[mean_segment_encoder])
+
+    assert_frame_equal(future_ts.to_pandas(), expected_make_future_mean_segment_encoder_ts.to_pandas())
 
 
-def test_subset_segments(simple_ts):
-    train_ts = simple_ts
-    test_df = simple_ts.loc[:, pd.IndexSlice["Omsk", :]]
-    test_ts = TSDataset(df=test_df, freq=simple_ts.freq)
-    transform = MeanSegmentEncoderTransform()
-
-    transform.fit(train_ts)
-    transformed_test_df = transform.transform(test_ts).to_pandas()
-
-    segments = sorted(transformed_test_df.columns.get_level_values("segment").unique())
-    features = sorted(transformed_test_df.columns.get_level_values("feature").unique())
-    assert segments == ["Omsk"]
-    assert features == ["exog", "segment_mean", "target"]
-
-
-def test_not_fitted_error(simple_ts):
+def test_not_fitted_error(mean_segment_encoder_ts):
     encoder = MeanSegmentEncoderTransform()
     with pytest.raises(ValueError, match="The transform isn't fitted"):
-        encoder.transform(simple_ts)
+        encoder.transform(mean_segment_encoder_ts)
 
 
-def test_new_segments_error(simple_ts):
-    train_ts = select_segments_subset(ts=simple_ts, segments=["Moscow"])
-    test_ts = select_segments_subset(ts=simple_ts, segments=["Omsk"])
+def test_new_segments_error(mean_segment_encoder_ts):
+    train_ts = select_segments_subset(ts=mean_segment_encoder_ts, segments=["segment_0"])
+    test_ts = select_segments_subset(ts=mean_segment_encoder_ts, segments=["segment_1"])
     transform = MeanSegmentEncoderTransform()
 
     transform.fit(train_ts)

@@ -32,7 +32,6 @@ def expected_micro_category_ts() -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 1.5, 2.75, 2.25] + [np.NaN, np.NaN, 6.25, 7, 7.625, np.NaN]
-
     ts = TSDataset(df, freq="D")
     return ts
 
@@ -151,28 +150,14 @@ def expected_multiple_nan_target_category_ts() -> TSDataset:
 
 
 @pytest.fixture
-def mean_segment_encoder_ts() -> TSDataset:
-    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
-    df["target"] = [0, 1, np.NaN, 3, 4]
+def mean_segment_encoder_ts(mean_segment_encoder_ts) -> TSDataset:
+    df = generate_ar_df(n_segments=2, start_time="2001-01-01", periods=7)
+    df = df.drop(columns=["target"])
+    df["segment_feature"] = ["segment_0"] * 7 + ["segment_1"] * 7
+    df_wide = TSDataset.to_dataset(df)
+    mean_segment_encoder_ts.add_columns_from_pandas(df_wide, update_exog=True, regressors=["segment_feature"])
 
-    df_exog = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=10)
-    df_exog.rename(columns={"target": "segment_feature"}, inplace=True)
-    df_exog["segment_feature"] = "segment_0"
-
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future="all")
-
-    return ts
-
-
-@pytest.fixture
-def expected_mean_segment_encoder_ts() -> TSDataset:
-    df = generate_ar_df(n_segments=1, start_time="2001-01-01", periods=5)
-    df.rename(columns={"target": "segment_mean"}, inplace=True)
-    df["segment_mean"] = [np.NaN, 0, 0.5, 0.5, 1.33]
-
-    ts = TSDataset(df=df, freq="D")
-
-    return ts
+    return mean_segment_encoder_ts
 
 
 @pytest.fixture
@@ -407,7 +392,7 @@ def test_mean_segment_encoder(mean_segment_encoder_ts, expected_mean_segment_enc
     mean_encoder.fit_transform(mean_segment_encoder_ts)
     assert_frame_equal(
         mean_segment_encoder_ts.df.loc[:, pd.IndexSlice[:, "segment_mean"]],
-        expected_mean_segment_encoder_ts.df,
+        expected_mean_segment_encoder_ts.df.loc[:, pd.IndexSlice[:, "segment_mean"]],
         atol=0.01,
     )
 
