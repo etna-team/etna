@@ -87,6 +87,7 @@ We have prepared a set of tutorials for an easy introduction:
 - General AutoML
   - How `Auto` works
   - Example
+  - Using custom pipeline pool
 - Summary
 
 #### [Clustering](https://github.com/etna-team/etna/tree/master/examples/206-clustering.ipynb) 
@@ -133,6 +134,7 @@ We have prepared a set of tutorials for an easy introduction:
   - EmbeddingSegmentTransform
   - EmbeddingWindowTransform
 - Saving and loading models
+- Loading external pretrained models
 
 ### Advanced
 
