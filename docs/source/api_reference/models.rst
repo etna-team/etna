@@ -114,3 +114,11 @@ Utilities for neural network models based on ``pytorch_forecasting``:
    :template: class.rst
 
    nn.PytorchForecastingDatasetBuilder
+
+Pretrained neural network models:
+
+.. autosummary::
+   :toctree: api/
+   :template: class.rst
+
+   nn.ChronosModel

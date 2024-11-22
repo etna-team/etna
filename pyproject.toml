@@ -85,6 +85,8 @@ sqlalchemy = {version = "^1.1.0", optional = true}
 
 statsforecast = {version = "1.4", optional = true}
 
+transformers = {version = "<5", optional = true}
+
 sphinx-mathjax-offline = {version = "^0.0.2", optional = true}
 nbsphinx = {version = "^0.9.0", optional = true}
 Sphinx = {version = "^6.2", optional = true}
@@ -127,6 +129,8 @@ wandb = ["wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
+chronos = ["torch", "transformers"]
+
 # dev deps
 release = ["click", "semver"]
 docs = ["Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design", "jupyter"]
@@ -140,7 +144,8 @@ all = [
     "wandb",
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
-    "statsforecast"
+    "statsforecast",
+    "transformers"
 ]
 
 all-dev = [
@@ -155,7 +160,8 @@ all-dev = [
     "click", "semver",
     "jupyter", "nbconvert", "ipywidgets",
     "pyts", "tsfresh",
-    "statsforecast"
+    "statsforecast",
+    "transformers"
 ]
 
 [tool.poetry.scripts]
@@ -209,6 +215,7 @@ filterwarnings = [
     "ignore: Given top_k=.* is less than n_segments=.*. Algo will filter data without Gale-Shapley run.",
     "ignore: This model doesn't work with exogenous features",
     "ignore: Some of external objects in input parameters could be not",
+    "ignore: We recommend keeping prediction length <= 64. The quality of longer predictions may degrade since the model is not optimized for it.",
     # external warnings
     "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
