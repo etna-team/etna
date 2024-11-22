@@ -1544,7 +1544,6 @@ class TestForecastSubsetSegments:
                 "example_tsds",
             ),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
-            (ChronosModel(model_name="chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
         ],
     )
     def test_forecast_subset_segments(self, model, transforms, dataset_name, request):
@@ -1568,6 +1567,18 @@ class TestForecastSubsetSegments:
         ],
     )
     def test_forecast_subset_segments_failed_deep_state(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (ChronosModel(model_name="chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_subset_segments_failed_chronos(self, model, transforms, dataset_name, request):
+        """This test is expected to fail due to LLM non determinism"""
         ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
             self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])

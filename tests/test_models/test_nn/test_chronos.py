@@ -43,7 +43,7 @@ def test_custom_cache_dir():
 @pytest.mark.smoke
 @pytest.mark.parametrize("encoder_length", [1, 2])
 def test_context_size(example_tsds, encoder_length):
-    model = ChronosModel(model_name="chronos-t5-tiny")
+    model = ChronosModel(model_name="chronos-t5-tiny", encoder_length=encoder_length)
     assert model.context_size == encoder_length
 
 
