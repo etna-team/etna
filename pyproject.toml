@@ -86,6 +86,7 @@ sqlalchemy = {version = "^1.1.0", optional = true}
 statsforecast = {version = "1.4", optional = true}
 
 transformers = {version = "<5", optional = true}
+accelerate = {version = "<1", optional = true}
 
 sphinx-mathjax-offline = {version = "^0.0.2", optional = true}
 nbsphinx = {version = "^0.9.0", optional = true}
@@ -129,7 +130,7 @@ wandb = ["wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
-chronos = ["torch", "transformers"]
+chronos = ["torch", "transformers", "accelerate"]
 
 # dev deps
 release = ["click", "semver"]
@@ -145,7 +146,7 @@ all = [
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
     "statsforecast",
-    "transformers"
+    "transformers", "accelerate"
 ]
 
 all-dev = [
@@ -161,7 +162,7 @@ all-dev = [
     "jupyter", "nbconvert", "ipywidgets",
     "pyts", "tsfresh",
     "statsforecast",
-    "transformers"
+    "transformers", "accelerate"
 ]
 
 [tool.poetry.scripts]
