@@ -76,6 +76,7 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
             Batch size.
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
+
         Raises
         ------
         ValueError:
@@ -194,6 +195,8 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
         ------
         NotImplementedError:
             if return_components mode is used.
+        ValueError:
+            if dataset doesn't have any context timestamps.
         """
         if return_components:
             raise NotImplementedError("This mode isn't currently implemented!")
