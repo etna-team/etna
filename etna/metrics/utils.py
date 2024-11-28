@@ -1,6 +1,7 @@
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Union
 
 import numpy as np
@@ -13,7 +14,7 @@ from etna.metrics import Metric
 
 def compute_metrics(
     metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
-) -> Dict[str, Union[float, Dict[str, float]]]:
+) -> Dict[str, Union[Optional[float], Dict[str, Optional[float]]]]:
     """
     Compute metrics for given y_true, y_pred.
 

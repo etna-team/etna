@@ -1,6 +1,7 @@
 from abc import ABC
 from abc import abstractmethod
 from enum import Enum
+from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Union
@@ -29,6 +30,22 @@ class MetricAggregationMode(str, Enum):
     def _missing_(cls, value):
         raise NotImplementedError(
             f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} aggregation allowed"
+        )
+
+
+class MetricMissingMode(str, Enum):
+    """Enum for different metric modes of working with missing values."""
+
+    #: The error is raised on missing values in y_true or y_pred.
+    error = "error"
+
+    #: Missing values in y_true are ignored, the error is raised on missing values in y_pred.
+    ignore = "ignore"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} modes allowed"
         )
 
 
@@ -61,7 +78,7 @@ class AbstractMetric(ABC):
     """Abstract class for metric."""
 
     @abstractmethod
-    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         """
         Compute metric's value with ``y_true`` and ``y_pred``.
 
@@ -137,6 +154,9 @@ class Metric(AbstractMetric, BaseMixin):
         NotImplementedError:
             If non-existent ``metric_fn_signature`` is used.
         """
+        self._aggregate_metrics: Callable[
+            [Dict[str, Optional[float]]], Union[Optional[float], Dict[str, Optional[float]]]
+        ]
         if MetricAggregationMode(mode) is MetricAggregationMode.macro:
             self._aggregate_metrics = self._macro_average
         elif MetricAggregationMode(mode) is MetricAggregationMode.per_segment:
@@ -230,8 +250,7 @@ class Metric(AbstractMetric, BaseMixin):
         if not y_true.index.equals(y_pred.index):
             raise ValueError("y_true and y_pred have different timestamps")
 
-    @staticmethod
-    def _validate_nans(y_true: TSDataset, y_pred: TSDataset):
+    def _validate_nans(self, y_true: TSDataset, y_pred: TSDataset):
         """Check that ``y_true`` and ``y_pred`` doesn't have NaNs.
 
         Parameters
@@ -258,32 +277,36 @@ class Metric(AbstractMetric, BaseMixin):
             raise ValueError("There are NaNs in y_pred")
 
     @staticmethod
-    def _macro_average(metrics_per_segments: Dict[str, float]) -> Union[float, Dict[str, float]]:
+    def _macro_average(metrics_per_segments: Dict[str, Optional[float]]) -> Optional[float]:
         """
         Compute macro averaging of metrics over segment.
 
         Parameters
         ----------
-        metrics_per_segments: dict of {segment: metric_value} for segments to aggregate
+        metrics_per_segments:
+            dict of {segment: metric_value} for segments to aggregate
 
         Returns
         -------
-        aggregated value of metric
+        :
+            aggregated value of metric
         """
-        return np.mean(list(metrics_per_segments.values())).item()
+        return np.mean(list(metrics_per_segments.values())).item()  # type: ignore
 
     @staticmethod
-    def _per_segment_average(metrics_per_segments: Dict[str, float]) -> Union[float, Dict[str, float]]:
+    def _per_segment_average(metrics_per_segments: Dict[str, Optional[float]]) -> Dict[str, Optional[float]]:
         """
         Compute per-segment averaging of metrics over segment.
 
         Parameters
         ----------
-        metrics_per_segments: dict of {segment: metric_value} for segments to aggregate
+        metrics_per_segments:
+            dict of {segment: metric_value} for segments to aggregate
 
         Returns
         -------
-        aggregated dict of metric
+        :
+            aggregated dict of metric
         """
         return metrics_per_segments
 
@@ -291,7 +314,7 @@ class Metric(AbstractMetric, BaseMixin):
         """Log metric computation."""
         tslogger.log(f"Metric {self.__repr__()} is calculated on dataset")
 
-    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         """
         Compute metric's value with ``y_true`` and ``y_pred``.
 
@@ -322,7 +345,7 @@ class Metric(AbstractMetric, BaseMixin):
 
         segments = df_true.columns.get_level_values("segment").unique()
 
-        metrics_per_segment: Dict[str, float]
+        metrics_per_segment: Dict[str, Optional[float]]
         if self._metric_fn_signature is MetricFunctionSignature.array_to_scalar:
             metrics_per_segment = {}
             for i, segment in enumerate(segments):
@@ -339,4 +362,93 @@ class Metric(AbstractMetric, BaseMixin):
         return metrics
 
 
-__all__ = ["Metric", "MetricAggregationMode"]
+class MetricWithMissingHandling(Metric):
+    """Base class for all the multi-segment metrics that can handle missing values."""
+
+    def __init__(
+        self,
+        metric_fn: MetricFunction,
+        mode: str = MetricAggregationMode.per_segment,
+        metric_fn_signature: str = "array_to_scalar",
+        missing_mode: str = "error",
+        **kwargs,
+    ):
+        """
+        Init Metric.
+
+        Parameters
+        ----------
+        metric_fn:
+            functional metric
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+        metric_fn_signature:
+            type of signature of ``metric_fn`` (see :py:class:`~etna.metrics.base.MetricFunctionSignature`)
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
+        kwargs:
+            functional metric's params
+
+        Raises
+        ------
+        NotImplementedError:
+            If non-existent ``mode`` is used.
+        NotImplementedError:
+            If non-existent ``metric_fn_signature`` is used.
+        NotImplementedError:
+            If non-existent ``missing_mode`` is used.
+        """
+        super().__init__(metric_fn=metric_fn, mode=mode, metric_fn_signature=metric_fn_signature, **kwargs)
+        self.missing_mode = MetricMissingMode(missing_mode)
+
+    def _validate_nans(self, y_true: TSDataset, y_pred: TSDataset):
+        """Check that ``y_true`` and ``y_pred`` doesn't have NaNs depending on ``missing_mode``.
+
+        Parameters
+        ----------
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
+
+        Raises
+        ------
+        ValueError:
+            If there are NaNs in ``y_true`` or ``y_pred``
+        """
+        df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]]
+        df_pred = y_pred.df.loc[:, pd.IndexSlice[:, "target"]]
+
+        df_true_isna = df_true.isna().any().any()
+        if self.missing_mode is MetricMissingMode.error and df_true_isna > 0:
+            raise ValueError("There are NaNs in y_true")
+
+        df_pred_isna = df_pred.isna().any().any()
+        if df_pred_isna > 0:
+            raise ValueError("There are NaNs in y_pred")
+
+    @staticmethod
+    def _macro_average(metrics_per_segments: Dict[str, Optional[float]]) -> Optional[float]:
+        """
+        Compute macro averaging of metrics over segment.
+
+        In ``missing_mode == "ignore"`` None values are ignored.
+
+        Parameters
+        ----------
+        metrics_per_segments: dict of {segment: metric_value} for segments to aggregate
+
+        Returns
+        -------
+        :
+            aggregated value of metric
+        """
+        return np.nanmean(list(metrics_per_segments.values())).item()  # type: ignore
+
+
+__all__ = ["Metric", "MetricAggregationMode", "MetricMissingMode"]

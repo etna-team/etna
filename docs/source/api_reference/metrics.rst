@@ -27,6 +27,7 @@ Enums:
    :template: class.rst
 
    MetricAggregationMode
+   MetricMissingMode
 
 Scalar metrics:
 
