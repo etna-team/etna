@@ -6,11 +6,12 @@ from typing import Union
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error as mae
-from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_squared_log_error as msle
 from sklearn.metrics import median_absolute_error as medae
 from sklearn.metrics import r2_score
 from typing_extensions import assert_never
+
+from etna.libs.sklearn import mean_squared_error as mse
 
 ArrayLike = Union[float, Sequence[float], Sequence[Sequence[float]]]
 
