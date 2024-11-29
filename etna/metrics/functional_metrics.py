@@ -6,12 +6,11 @@ from typing import Union
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error as mae
+from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import mean_squared_log_error as msle
 from sklearn.metrics import median_absolute_error as medae
 from sklearn.metrics import r2_score
 from typing_extensions import assert_never
-
-from etna.libs.sklearn import mean_squared_error as mse
 
 ArrayLike = Union[float, Sequence[float], Sequence[Sequence[float]]]
 
@@ -40,6 +39,45 @@ def _get_axis_by_multioutput(multioutput: str) -> Optional[int]:
         return 0
     else:
         assert_never(multioutput_enum)
+
+
+def mse_with_missing_handling(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Mean squared error with missing values handling.
+
+    `Wikipedia entry on the Mean squared error
+    <https://en.wikipedia.org/wiki/Mean_squared_error>`_
+
+    The nans are ignored during computation.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A non-negative floating point value (the best value is 0.0), or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    axis = _get_axis_by_multioutput(multioutput)
+    return np.nanmean((y_true_array - y_pred_array) ** 2, axis=axis)
 
 
 def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
