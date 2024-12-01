@@ -1,19 +1,13 @@
 """
-
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
-
    TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
-
    1. Definitions.
-
       "License" shall mean the terms and conditions for use, reproduction,
       and distribution as defined by Sections 1 through 9 of this document.
-
       "Licensor" shall mean the copyright owner or entity authorized by
       the copyright owner that is granting the License.
-
       "Legal Entity" shall mean the union of the acting entity and all
       other entities that control, are controlled by, or are under common
       control with that entity. For the purposes of this definition,
@@ -21,24 +15,19 @@
       direction or management of such entity, whether by contract or
       otherwise, or (ii) ownership of fifty percent (50%) or more of the
       outstanding shares, or (iii) beneficial ownership of such entity.
-
       "You" (or "Your") shall mean an individual or Legal Entity
       exercising permissions granted by this License.
-
       "Source" form shall mean the preferred form for making modifications,
       including but not limited to software source code, documentation
       source, and configuration files.
-
       "Object" form shall mean any form resulting from mechanical
       transformation or translation of a Source form, including but
       not limited to compiled object code, generated documentation,
       and conversions to other media types.
-
       "Work" shall mean the work of authorship, whether in Source or
       Object form, made available under the License, as indicated by a
       copyright notice that is included in or attached to the work
       (an example is provided in the Appendix below).
-
       "Derivative Works" shall mean any work, whether in Source or Object
       form, that is based on (or derived from) the Work and for which the
       editorial revisions, annotations, elaborations, or other modifications
@@ -46,7 +35,6 @@
       of this License, Derivative Works shall not include works that remain
       separable from, or merely link (or bind by name) to the interfaces of,
       the Work and Derivative Works thereof.
-
       "Contribution" shall mean any work of authorship, including
       the original version of the Work and any modifications or additions
       to that Work or Derivative Works thereof, that is intentionally
@@ -60,18 +48,15 @@
       Licensor for the purpose of discussing and improving the Work, but
       excluding communication that is conspicuously marked or otherwise
       designated in writing by the copyright owner as "Not a Contribution."
-
       "Contributor" shall mean Licensor and any individual or Legal Entity
       on behalf of whom a Contribution has been received by Licensor and
       subsequently incorporated within the Work.
-
    2. Grant of Copyright License. Subject to the terms and conditions of
       this License, each Contributor hereby grants to You a perpetual,
       worldwide, non-exclusive, no-charge, royalty-free, irrevocable
       copyright license to reproduce, prepare Derivative Works of,
       publicly display, publicly perform, sublicense, and distribute the
       Work and such Derivative Works in Source or Object form.
-
    3. Grant of Patent License. Subject to the terms and conditions of
       this License, each Contributor hereby grants to You a perpetual,
       worldwide, non-exclusive, no-charge, royalty-free, irrevocable
@@ -87,24 +72,19 @@
       or contributory patent infringement, then any patent licenses
       granted to You under this License for that Work shall terminate
       as of the date such litigation is filed.
-
    4. Redistribution. You may reproduce and distribute copies of the
       Work or Derivative Works thereof in any medium, with or without
       modifications, and in Source or Object form, provided that You
       meet the following conditions:
-
       (a) You must give any other recipients of the Work or
           Derivative Works a copy of this License; and
-
       (b) You must cause any modified files to carry prominent notices
           stating that You changed the files; and
-
       (c) You must retain, in the Source form of any Derivative Works
           that You distribute, all copyright, patent, trademark, and
           attribution notices from the Source form of the Work,
           excluding those notices that do not pertain to any part of
           the Derivative Works; and
-
       (d) If the Work includes a "NOTICE" text file as part of its
           distribution, then any Derivative Works that You distribute must
           include a readable copy of the attribution notices contained
@@ -121,14 +101,12 @@
           or as an addendum to the NOTICE text from the Work, provided
           that such additional attribution notices cannot be construed
           as modifying the License.
-
       You may add Your own copyright statement to Your modifications and
       may provide additional or different license terms and conditions
       for use, reproduction, or distribution of Your modifications, or
       for any such Derivative Works as a whole, provided Your use,
       reproduction, and distribution of the Work otherwise complies with
       the conditions stated in this License.
-
    5. Submission of Contributions. Unless You explicitly state otherwise,
       any Contribution intentionally submitted for inclusion in the Work
       by You to the Licensor shall be under the terms and conditions of
@@ -136,12 +114,10 @@
       Notwithstanding the above, nothing herein shall supersede or modify
       the terms of any separate license agreement you may have executed
       with Licensor regarding such Contributions.
-
    6. Trademarks. This License does not grant permission to use the trade
       names, trademarks, service marks, or product names of the Licensor,
       except as required for reasonable and customary use in describing the
       origin of the Work and reproducing the content of the NOTICE file.
-
    7. Disclaimer of Warranty. Unless required by applicable law or
       agreed to in writing, Licensor provides the Work (and each
       Contributor provides its Contributions) on an "AS IS" BASIS,
@@ -151,7 +127,6 @@
       PARTICULAR PURPOSE. You are solely responsible for determining the
       appropriateness of using or redistributing the Work and assume any
       risks associated with Your exercise of permissions under this License.
-
    8. Limitation of Liability. In no event and under no legal theory,
       whether in tort (including negligence), contract, or otherwise,
       unless required by applicable law (such as deliberate and grossly
@@ -163,7 +138,6 @@
       work stoppage, computer failure or malfunction, or any and all
       other commercial damages or losses), even if such Contributor
       has been advised of the possibility of such damages.
-
    9. Accepting Warranty or Additional Liability. While redistributing
       the Work or Derivative Works thereof, You may choose to offer,
       and charge a fee for, acceptance of support, warranty, indemnity,
@@ -175,35 +149,39 @@
       incurred by, or claims asserted against, such Contributor by reason
       of your accepting any such warranty or additional liability.
 """
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# Authors: Abdul Fatir Ansari <ansarnd@amazon.com>, Lorenzo Stella <stellalo@amazon.com>, Caner Turkmen <atturkm@amazon.com>
+
 # Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
-# Делались небольшие изменения для удовлетворения линтера
-# Фиксился ChronosConfig.create_tokenizer, чтобы не импортировать модуль chronos
-# Добавился параметр batch_size в ChronosPipeline.predict
+# Revert ChronosConfig.create_tokenizer to old version not to import chronos module
+# Add batch_size parameter to ChronosPipeline.predict
 
-import warnings
+import logging
 from dataclasses import dataclass
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Literal
-from typing import Optional
-from typing import Tuple
-from typing import Union
-from etna import SETTINGS
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+import warnings
 
-if SETTINGS.torch_required:
-    import torch
-    import torch.nn as nn
-    from transformers import AutoConfig
-    from transformers import AutoModelForCausalLM
-    from transformers import AutoModelForSeq2SeqLM
-    from transformers import GenerationConfig
-    from transformers import PreTrainedModel
+import torch
+import torch.nn as nn
+from transformers import (
+    AutoConfig,
+    AutoModelForCausalLM,
+    AutoModelForSeq2SeqLM,
+    GenerationConfig,
+    PreTrainedModel,
+)
+
+from etna.libs.chronos.base import BaseChronosPipeline, ForecastType
+from etna.libs.chronos.utils import left_pad_and_stack_1D
+
+logger = logging.getLogger(__file__)
 
 
 @dataclass
 class ChronosConfig:
-    """Class holds all the configuration parameters to be used by ``ChronosTokenizer`` and ``ChronosForecaster``."""
+    """Class holds all the configuration parameters to be used by ``ChronosTokenizer`` and ``ChronosModelForForecasting``."""
 
     tokenizer_class: str
     tokenizer_kwargs: Dict[str, Any]
@@ -222,11 +200,11 @@ class ChronosConfig:
 
     def __post_init__(self):
         assert (
-            self.pad_token_id < self.n_special_tokens and self.eos_token_id < self.n_special_tokens
+            self.pad_token_id < self.n_special_tokens
+            and self.eos_token_id < self.n_special_tokens
         ), f"Special token id's must be smaller than {self.n_special_tokens=}"
 
     def create_tokenizer(self) -> "ChronosTokenizer":
-        """Create tokenizer."""
         if self.tokenizer_class == "MeanScaleUniformBins":
             return MeanScaleUniformBins(**self.tokenizer_kwargs, config=self)
         raise ValueError
@@ -270,9 +248,9 @@ class ChronosTokenizer:
         raise NotImplementedError()
 
     def label_input_transform(self, label: torch.Tensor, tokenizer_state: Any) -> Tuple:
-        """Turn a batch of label slices of time series into token IDs and attention map.
-
-        Transformation is made using the ``tokenizer_state`` provided by ``context_input_transform``.
+        """
+        Turn a batch of label slices of time series into token IDs and attention map
+        using the ``tokenizer_state`` provided by ``context_input_transform``.
 
         Parameters
         ----------
@@ -329,7 +307,11 @@ class MeanScaleUniformBins(ChronosTokenizer):
     def __init__(self, low_limit: float, high_limit: float, config: ChronosConfig) -> None:
         """Init MeanScaleUniformBins."""
         self.config = config
-        self.centers = torch.linspace(low_limit, high_limit, config.n_tokens - config.n_special_tokens - 1)
+        self.centers = torch.linspace(
+            low_limit,
+            high_limit,
+            config.n_tokens - config.n_special_tokens - 1,
+        )
         self.boundaries = torch.concat(
             (
                 torch.tensor([-1e20], device=self.centers.device),
@@ -345,7 +327,9 @@ class MeanScaleUniformBins(ChronosTokenizer):
         attention_mask = ~torch.isnan(context)
 
         if scale is None:
-            scale = torch.nansum(torch.abs(context) * attention_mask, dim=-1) / torch.nansum(attention_mask, dim=-1)
+            scale = torch.nansum(
+                torch.abs(context) * attention_mask, dim=-1
+            ) / torch.nansum(attention_mask, dim=-1)
             scale[~(scale > 0)] = 1.0
 
         scaled_context = context / scale.unsqueeze(dim=-1)
@@ -407,14 +391,19 @@ class MeanScaleUniformBins(ChronosTokenizer):
         return token_ids, attention_mask
 
     def output_transform(self, samples: torch.Tensor, scale: torch.Tensor) -> torch.Tensor:
-        """Turn a batch of sample token IDs into real values."""
         scale_unsqueezed = scale.unsqueeze(-1).unsqueeze(-1)
-        indices = torch.clamp(samples - self.config.n_special_tokens - 1, min=0, max=len(self.centers) - 1)
+        indices = torch.clamp(
+            samples - self.config.n_special_tokens - 1,
+            min=0,
+            max=len(self.centers) - 1,
+        )
         return self.centers[indices] * scale_unsqueezed
 
 
-class ChronosForecaster(nn.Module):
-    """A ``ChronosForecaster`` wraps a ``PreTrainedModel`` object from ``transformers`` and uses it to predict sample paths for time series tokens.
+class ChronosModelForForecasting(nn.Module):
+    """
+    A ``ChronosModelForForecasting`` wraps a ``PreTrainedModel`` object from ``transformers``
+    and uses it to predict sample paths for time series tokens.
 
     Parameters
     ----------
@@ -431,7 +420,6 @@ class ChronosForecaster(nn.Module):
 
     @property
     def device(self):
-        """Get device."""
         return self.model.device
 
     def encode(self, input_ids: torch.Tensor, attention_mask: torch.Tensor):
@@ -453,8 +441,12 @@ class ChronosForecaster(nn.Module):
             A tensor of encoder embeddings with shape
             (batch_size, sequence_length, d_model).
         """
-        assert self.config.model_type == "seq2seq", "Encoder embeddings are only supported for encoder-decoder models"
-        return self.model.encoder(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state
+        assert (
+            self.config.model_type == "seq2seq"
+        ), "Encoder embeddings are only supported for encoder-decoder models"
+        return self.model.encoder(
+            input_ids=input_ids, attention_mask=attention_mask
+        ).last_hidden_state
 
     def forward(
         self,
@@ -517,21 +509,10 @@ class ChronosForecaster(nn.Module):
         return preds.reshape(input_ids.size(0), num_samples, -1)
 
 
-def left_pad_and_stack_1d(tensors: List[torch.Tensor]) -> torch.Tensor:
-    """Pad sequences from left side and stack them."""
-    max_len = max(len(c) for c in tensors)
-    padded = []
-    for c in tensors:
-        assert isinstance(c, torch.Tensor)
-        assert c.ndim == 1
-        padding = torch.full(size=(max_len - len(c),), fill_value=torch.nan, device=c.device)
-        padded.append(torch.concat((padding, c), dim=-1))
-    return torch.stack(padded).to(tensors[0])
-
-
-@dataclass
-class ChronosPipeline:
-    """A ``ChronosPipeline`` uses the given tokenizer and model to forecast input time series.
+class ChronosPipeline(BaseChronosPipeline):
+    """
+    A ``ChronosPipeline`` uses the given tokenizer and model to forecast
+    input time series.
 
     Use the ``from_pretrained`` class method to load serialized models.
     Use the ``predict`` method to get forecasts.
@@ -545,11 +526,19 @@ class ChronosPipeline:
     """
 
     tokenizer: ChronosTokenizer
-    model: ChronosForecaster
+    model: ChronosModelForForecasting
+    forecast_type: ForecastType = ForecastType.SAMPLES
 
-    def _prepare_and_validate_context(self, context: Union[torch.Tensor, List[torch.Tensor]]):
+    def __init__(self, tokenizer, model):
+        super().__init__(inner_model=model.model)
+        self.tokenizer = tokenizer
+        self.model = model
+
+    def _prepare_and_validate_context(
+        self, context: Union[torch.Tensor, List[torch.Tensor]]
+    ):
         if isinstance(context, list):
-            context = left_pad_and_stack_1d(context)
+            context = left_pad_and_stack_1D(context)
         assert isinstance(context, torch.Tensor)
         if context.ndim == 1:
             context = context.unsqueeze(0)
@@ -558,7 +547,9 @@ class ChronosPipeline:
         return context
 
     @torch.no_grad()
-    def embed(self, context: Union[torch.Tensor, List[torch.Tensor]]) -> Tuple[torch.Tensor, Any]:
+    def embed(
+        self, context: Union[torch.Tensor, List[torch.Tensor]]
+    ) -> Tuple[torch.Tensor, Any]:
         """
         Get encoder embeddings for the given time series.
 
@@ -582,13 +573,16 @@ class ChronosPipeline:
             provided, and the extra 1 is for EOS.
         """
         context_tensor = self._prepare_and_validate_context(context=context)
-        token_ids, attention_mask, tokenizer_state = self.tokenizer.context_input_transform(context_tensor)
+        token_ids, attention_mask, tokenizer_state = (
+            self.tokenizer.context_input_transform(context_tensor)
+        )
         embeddings = self.model.encode(
-            input_ids=token_ids.to(self.model.device), attention_mask=attention_mask.to(self.model.device)
+            input_ids=token_ids.to(self.model.device),
+            attention_mask=attention_mask.to(self.model.device),
         ).cpu()
         return embeddings, tokenizer_state
 
-    def predict(
+    def predict(  # type: ignore[override]
         self,
         context: Union[torch.Tensor, List[torch.Tensor]],
         prediction_length: Optional[int] = None,
@@ -596,22 +590,17 @@ class ChronosPipeline:
         temperature: Optional[float] = None,
         top_k: Optional[int] = None,
         top_p: Optional[float] = None,
-        limit_prediction_length: bool = True,
+        limit_prediction_length: bool = False,
         batch_size: int = 128,
     ) -> torch.Tensor:
         """
         Get forecasts for the given time series.
 
-        Parameters
-        ----------
-        context
-            Input series. This is either a 1D tensor, or a list
-            of 1D tensors, or a 2D tensor whose first dimension
-            is batch. In the latter case, use left-padding with
-            ``torch.nan`` to align series of different lengths.
-        prediction_length
-            Time steps to predict. Defaults to what specified
-            in ``self.model.config``.
+        Refer to the base method (``BaseChronosPipeline.predict``)
+        for details on shared parameters.
+
+        Additional parameters
+        ---------------------
         num_samples
             Number of sample paths to predict. Defaults to what
             specified in ``self.model.config``.
@@ -626,7 +615,7 @@ class ChronosPipeline:
             Defaults to what specified in ``self.model.config``.
         limit_prediction_length
             Force prediction length smaller or equal than the
-            built-in prediction length from the model. True by
+            built-in prediction length from the model. False by
             default. When true, fail loudly if longer predictions
             are requested, otherwise longer predictions are allowed.
         batch_size
@@ -651,7 +640,7 @@ class ChronosPipeline:
             if limit_prediction_length:
                 msg += "You can turn off this check by setting `limit_prediction_length=False`."
                 raise ValueError(msg)
-            warnings.warn(msg)
+            warnings.warn(msg)  # changed from logger.warning
 
         input_dtype = context_tensor.dtype
         input_device = context_tensor.device
@@ -660,8 +649,8 @@ class ChronosPipeline:
         remaining = prediction_length
 
         while remaining > 0:
-            prediction = torch.tensor([])
-            for i in range(0, context_tensor.shape[0], batch_size):
+            prediction = []
+            for i in range(0, context_tensor.shape[0], batch_size):  # added batch iteration
                 batch_context_tensor = context_tensor[i : i + batch_size, :]
                 token_ids, attention_mask, scale = self.tokenizer.context_input_transform(batch_context_tensor)
                 samples = self.model(
@@ -674,8 +663,9 @@ class ChronosPipeline:
                     top_p,
                 )
                 batch_prediction = self.tokenizer.output_transform(samples.to(scale.device), scale)
-                prediction = torch.cat((prediction, batch_prediction), dim=0)
+                prediction.append(batch_prediction)
 
+            prediction = torch.cat(prediction, dim=0)
             predictions.append(prediction)
             remaining -= prediction.shape[-1]
 
@@ -686,6 +676,30 @@ class ChronosPipeline:
 
         return torch.cat(predictions, dim=-1).to(dtype=input_dtype, device=input_device)
 
+    def predict_quantiles(
+        self,
+        context: Union[torch.Tensor, List[torch.Tensor]],
+        prediction_length: Optional[int] = None,
+        quantile_levels: List[float] = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
+        **predict_kwargs,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Refer to the base method (``BaseChronosPipeline.predict_quantiles``).
+        """
+        prediction_samples = (
+            self.predict(context, prediction_length=prediction_length, **predict_kwargs)
+            .detach()
+            .swapaxes(1, 2)
+        )
+        mean = prediction_samples.mean(dim=-1)
+        quantiles = torch.quantile(
+            prediction_samples,
+            q=torch.tensor(quantile_levels, dtype=prediction_samples.dtype),
+            dim=-1,
+        ).permute(1, 2, 0)
+
+        return quantiles, mean
+
     @classmethod
     def from_pretrained(cls, *args, **kwargs):
         """
@@ -693,6 +707,7 @@ class ChronosPipeline:
         Supports the same arguments as ``AutoConfig`` and ``AutoModel``
         from ``transformers``.
         """
+
         config = AutoConfig.from_pretrained(*args, **kwargs)
 
         assert hasattr(config, "chronos_config"), "Not a Chronos config file"
@@ -706,5 +721,6 @@ class ChronosPipeline:
             inner_model = AutoModelForCausalLM.from_pretrained(*args, **kwargs)
 
         return cls(
-            tokenizer=chronos_config.create_tokenizer(), model=ChronosForecaster(config=chronos_config, model=inner_model)
+            tokenizer=chronos_config.create_tokenizer(),
+            model=ChronosModelForForecasting(config=chronos_config, model=inner_model),
         )

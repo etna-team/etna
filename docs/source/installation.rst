@@ -24,7 +24,7 @@ Available user extensions are the following:
 - ``auto``: adds AutoML functionality,
 - ``statsforecast``: adds models from `statsforecast <https://nixtla.github.io/statsforecast/>`_,
 - ``classiciation``: adds time series classification functionality,
-- ``chronos``: adds Chronos pretrained models.
+- ``chronos``: adds Chronos-like pretrained models.
 
 Install extension:
 

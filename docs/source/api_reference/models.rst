@@ -122,3 +122,4 @@ Pretrained neural network models:
    :template: class.rst
 
    nn.ChronosModel
+   nn.ChronosBoltModel

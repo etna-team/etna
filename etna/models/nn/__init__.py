@@ -1,6 +1,7 @@
 from etna import SETTINGS
 
 if SETTINGS.torch_required:
+    from etna.models.nn.chronos import ChronosBoltModel
     from etna.models.nn.chronos import ChronosModel
     from etna.models.nn.deepar import DeepARModel
     from etna.models.nn.deepar_native import DeepARNativeModel

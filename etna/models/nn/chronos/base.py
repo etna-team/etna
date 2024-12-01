@@ -1,81 +1,53 @@
 import warnings
+from abc import abstractmethod
 from pathlib import Path
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Union
 
 import pandas as pd
 
 from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
-from etna.libs.chronos.chronos import ChronosModelForForecasting
-from etna.libs.chronos.chronos import ChronosPipeline
+from etna.libs.chronos import BaseChronosPipeline
+from etna.libs.chronos import ChronosBoltModelForForecasting
+from etna.libs.chronos import ChronosModelForForecasting
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 
 if SETTINGS.torch_required:
     import torch
 
-_DOWNLOAD_PATH = Path.home() / ".etna" / "chronos-models"
 
-
-class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
-    """
-    Class for pretrained chronos models.
-
-    This model is for zero-shot forecasting: it doesn't need calling ``fit`` method before calling ``forecast``.
-
-    Methods ``save`` and ``load`` do nothing.
-    """
+class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
+    """Base class for Chronos-like pretrained models."""
 
     def __init__(
         self,
         model_name: str,
-        encoder_length: int = 512,
-        device: str = "cpu",
-        dtype: torch.dtype = torch.float32,
-        num_samples: int = 1,
-        temperature: float = 1.0,
-        top_k: int = 50,
-        top_p: float = 1.0,
-        limit_prediction_length: bool = False,
-        batch_size: int = 128,
-        cache_dir: Path = _DOWNLOAD_PATH,
+        encoder_length: int,
+        device: str,
+        dtype: torch.dtype,
+        cache_dir: Path,
     ):
         """
-        Init Chronos model.
+        Init Chronos-like model.
 
         Parameters
         ----------
         model_name:
-            Model name. The available models are:
-
-            - 'chronos-t5-tiny'
-            - 'chronos-t5-mini'
-            - 'chronos-t5-small'
-            - 'chronos-t5-base'
-            - 'chronos-t5-large'.
-        device:
-            Device type, "gpu" or "cpu".
-        dtype:
-            Torch dtype of computation.
+            Model name. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
         encoder_length:
             Number of last timestamps to use as a context.
-        num_samples:
-            Number of samples generated for one timestamp.
-        temperature:
-            Temperature of generation. Higher `temperature` will make outputs more random and diverse.
-        top_k:
-            Number of most likely tokens to sample from at each step of generation. Higher `top_k` will make outputs more random and diverse.
-        top_p:
-            The cumulative probability cutoff for token selection at each step of generation. Lower `top_p` will make outputs more random and diverse.
-        limit_prediction_length:
-            Whether to cancel prediction if prediction_length is greater that built-in prediction length from the model.
-        batch_size:
-            Batch size.
+        device:
+            Device type. See ``device_map`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
+        dtype:
+            Torch dtype of computation. See ``torch_dtype`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
+            See ``cache_dir`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
 
         Raises
         ------
@@ -83,25 +55,17 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
             If `model_name` model version is not available.
         """
         super().__init__()
-        if model_name not in self.list_models():
-            raise NotImplementedError(
-                f"Model {model_name} is not available. To get list of available models use `list_models` method."
-            )
         self.model_name = model_name
         self.device = device
         self.dtype = dtype
-        self.encoder_length = encoder_length
-        self.num_samples = num_samples
-        self.temperature = temperature
-        self.top_k = top_k
-        self.top_p = top_p
-        self.limit_prediction_length = limit_prediction_length
-        self.batch_size = batch_size
         self.cache_dir = cache_dir
 
-        self.pipeline = ChronosPipeline.from_pretrained(
+        self.encoder_length = encoder_length
+
+        self.pipeline = BaseChronosPipeline.from_pretrained(
             f"amazon/{self.model_name}", device_map=self.device, torch_dtype=self.dtype, cache_dir=self.cache_dir
         )
+
         self.model = self.pipeline.model
         self.context: Optional[torch.Tensor] = None
 
@@ -110,7 +74,7 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
         """Context size for model."""
         return self.encoder_length
 
-    def get_model(self) -> ChronosModelForForecasting:
+    def get_model(self) -> Union[ChronosModelForForecasting, ChronosBoltModelForForecasting]:
         """Get model."""
         return self.model
 
@@ -162,13 +126,14 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
         """
         raise NotImplementedError("Method predict isn't currently implemented!")
 
-    def forecast(
+    def _forecast(
         self,
         ts: TSDataset,
         prediction_size: int,
         prediction_interval: bool = False,
         quantiles: Sequence[float] = (0.025, 0.975),
         return_components: bool = False,
+        **predict_kwargs,
     ) -> TSDataset:
         """Make autoregressive forecasts.
 
@@ -185,7 +150,8 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
             Levels of prediction distribution. By default 2.5% and 97.5% are taken to form a 95% prediction interval.
         return_components:
             If True additionally returns forecast components.
-
+        **predict_kwargs:
+            Predict kwargs.
         Returns
         -------
         :
@@ -210,34 +176,32 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
         available_context_size = min(max_context_size, self.context_size)
 
         target = ts.df.loc[:, pd.IndexSlice[:, "target"]]
-        context = torch.tensor(target.values.T[:, :available_context_size])
+        context = torch.tensor(target.values.T[:, :available_context_size])  # check dtype
 
-        forecast = self.pipeline.predict(
-            context=context,
-            prediction_length=prediction_size,
-            num_samples=self.num_samples,
-            temperature=self.temperature,
-            top_k=self.top_k,
-            top_p=self.top_p,
-            limit_prediction_length=self.limit_prediction_length,
-            batch_size=self.batch_size,
-        )  # shape [n_segments, num_samples, prediction_length]
-        forecast = forecast.float()
-        target_forecast = torch.quantile(forecast, q=0.5, dim=1).numpy()  # shape [n_segments, prediction_length]
+        if prediction_interval:
+            quantiles_forecast, target_forecast = self.pipeline.predict_quantiles(
+                context=context,  # check dtype
+                prediction_length=prediction_size,
+                quantile_levels=quantiles,
+                **predict_kwargs,
+            )  # shape [n_segments, prediction_length, n_quantiles], [n_segments, prediction_length]
+        else:
+            quantiles_forecast, target_forecast = self.pipeline.predict_quantiles(
+                context=context,  # check dtype
+                prediction_length=prediction_size,
+                **predict_kwargs,
+            )  # shape [n_segments, prediction_length, n_quantiles], [n_segments, prediction_length]
+        target_forecast = target_forecast.float().numpy()  # shape [n_segments, prediction_length]
 
         end_idx = len(ts.index)
         future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
 
         if prediction_interval:
-            quantiles_predicts = torch.quantile(
-                forecast, q=torch.tensor(quantiles), dim=1
-            ).numpy()  # shape [n_quantiles, n_segments, prediction_length]
-            quantiles_predicts = quantiles_predicts.transpose(2, 1, 0).reshape(
-                prediction_size, -1
+            quantiles_predicts = (
+                quantiles_forecast.numpy().transpose(1, 0, 2).reshape(prediction_size, -1)
             )  # shape [prediction_length, segments * n_quantiles]
-            segments = ts.segments
             quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
-            columns = pd.MultiIndex.from_product([segments, quantile_columns], names=["segment", "feature"])
+            columns = pd.MultiIndex.from_product([ts.segments, quantile_columns], names=["segment", "feature"])
             quantiles_df = pd.DataFrame(quantiles_predicts[: len(ts.df)], columns=columns, index=future_ts.df.index)
 
             future_ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
@@ -247,6 +211,7 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
         return future_ts
 
     @staticmethod
+    @abstractmethod
     def list_models() -> List[str]:
         """
         Return a list of available pretrained chronos models.
@@ -256,7 +221,7 @@ class ChronosModel(PredictionIntervalContextRequiredAbstractModel):
         :
             List of available pretrained chronos models.
         """
-        return ["chronos-t5-tiny", "chronos-t5-mini", "chronos-t5-small", "chronos-t5-base", "chronos-t5-large"]
+        pass
 
     def save(self, path: Path):
         """Save the model. For this model, save does nothing.
