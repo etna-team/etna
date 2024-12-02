@@ -423,7 +423,7 @@ class ChronosBoltModelForForecasting(T5PreTrainedModel):
         # patching
         patched_context = self.patch(context)
         patched_mask = torch.nan_to_num(self.patch(mask), nan=0.0)
-        patched_context = torch.where(patched_mask > 0.0, patched_context, torch.tensor(0, dtype=patched_context.dtype))  # replaced 0.0
+        patched_context = torch.where(patched_mask > 0.0, patched_context, 0.0)
         # concat context and mask along patch dim
         patched_context = torch.cat([patched_context, patched_mask], dim=-1)
 
@@ -650,9 +650,9 @@ class ChronosBoltPipeline(BaseChronosPipeline):
                     dtype=torch.float32,  # scaling should be done in 32-bit precision
                 )
                 with torch.no_grad():
-                    batch_prediction = self.model(  # added batch iteration
+                    batch_prediction = self.model(  # TODO added batch iteration
                         context=batch_context_tensor,
-                    ).quantile_preds.to(context_tensor)
+                    ).quantile_preds.to(batch_context_tensor)
                 prediction.append(batch_prediction)
 
             prediction = torch.cat(prediction, dim=0)
