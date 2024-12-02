@@ -151,7 +151,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         return_components:
             If True additionally returns forecast components.
         **predict_kwargs:
-            Predict kwargs.
+            Additional predict parameters for Chronos and Chronos-Bolt models.
         Returns
         -------
         :
@@ -176,22 +176,21 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         available_context_size = min(max_context_size, self.context_size)
 
         target = ts.df.loc[:, pd.IndexSlice[:, "target"]]
-        context = torch.tensor(target.values.T[:, :available_context_size])  # check dtype
+        context = torch.tensor(target.values.T[:, :available_context_size])
 
         if prediction_interval:
             quantiles_forecast, target_forecast = self.pipeline.predict_quantiles(
-                context=context,  # check dtype
+                context=context,
                 prediction_length=prediction_size,
                 quantile_levels=quantiles,
                 **predict_kwargs,
             )  # shape [n_segments, prediction_length, n_quantiles], [n_segments, prediction_length]
         else:
             quantiles_forecast, target_forecast = self.pipeline.predict_quantiles(
-                context=context,  # check dtype
+                context=context,
                 prediction_length=prediction_size,
                 **predict_kwargs,
             )  # shape [n_segments, prediction_length, n_quantiles], [n_segments, prediction_length]
-        target_forecast = target_forecast.float().numpy()  # shape [n_segments, prediction_length]
 
         end_idx = len(ts.index)
         future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
@@ -206,7 +205,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
 
             future_ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
 
-        future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = target_forecast.transpose(1, 0)
+        future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = target_forecast.numpy().transpose(1, 0)
 
         return future_ts
 

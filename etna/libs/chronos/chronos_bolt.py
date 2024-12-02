@@ -158,6 +158,7 @@
 
 # Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
 # Add batch_size parameter to ChronosBoltPipeline.predict
+# Replace logger with warnings
 
 import copy
 import logging
@@ -650,7 +651,7 @@ class ChronosBoltPipeline(BaseChronosPipeline):
                     dtype=torch.float32,  # scaling should be done in 32-bit precision
                 )
                 with torch.no_grad():
-                    batch_prediction = self.model(  # TODO added batch iteration
+                    batch_prediction = self.model(  # added batch iteration
                         context=batch_context_tensor,
                     ).quantile_preds.to(batch_context_tensor)
                 prediction.append(batch_prediction)

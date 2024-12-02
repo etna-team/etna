@@ -157,6 +157,7 @@
 # Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
 # Revert ChronosConfig.create_tokenizer to old version not to import chronos module
 # Add batch_size parameter to ChronosPipeline.predict
+# Replace logger with warnings
 
 import logging
 from dataclasses import dataclass
