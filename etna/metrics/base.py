@@ -295,16 +295,7 @@ class Metric(AbstractMetric, BaseMixin):
         :
             aggregated value of metric
         """
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                message="Mean of empty slice",
-                action="ignore",
-            )
-            value = np.nanmean(np.fromiter(metrics_per_segments.values(), dtype=float)).item()
-        if np.isnan(value):
-            return None
-        else:
-            return value
+        return np.mean(list(metrics_per_segments.values())).item()
 
     @staticmethod
     def _per_segment_average(metrics_per_segments: Dict[str, Optional[float]]) -> Dict[str, Optional[float]]:
@@ -452,7 +443,7 @@ class MetricWithMissingHandling(Metric):
         """
         Compute macro averaging of metrics over segment.
 
-        In ``missing_mode == "ignore"`` None values are ignored.
+        None values are ignored during computation.
 
         Parameters
         ----------
@@ -463,7 +454,18 @@ class MetricWithMissingHandling(Metric):
         :
             aggregated value of metric
         """
-        return np.nanmean(list(metrics_per_segments.values())).item()  # type: ignore
+        with warnings.catch_warnings():
+            # this helps to prevent warning in case of all nans
+            warnings.filterwarnings(
+                message="Mean of empty slice",
+                action="ignore",
+            )
+            # dtype=float is used to cast None to np.nan
+            value = np.nanmean(np.fromiter(metrics_per_segments.values(), dtype=float)).item()
+        if np.isnan(value):
+            return None
+        else:
+            return value
 
 
 __all__ = ["Metric", "MetricAggregationMode", "MetricMissingMode"]
