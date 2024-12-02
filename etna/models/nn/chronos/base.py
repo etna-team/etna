@@ -17,7 +17,7 @@ from etna.libs.chronos import ChronosBoltModelForForecasting
 from etna.libs.chronos import ChronosModelForForecasting
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 
-if SETTINGS.torch_required:
+if SETTINGS.chronos_required:
     import torch
 
 

@@ -7,7 +7,7 @@ from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.models.nn.chronos.base import ChronosBaseModel
 
-if SETTINGS.torch_required:
+if SETTINGS.chronos_required:
     import torch
 
 _DOWNLOAD_PATH = Path.home() / ".etna" / "chronos-models" / "chronos"
