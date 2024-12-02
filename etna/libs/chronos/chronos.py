@@ -642,9 +642,6 @@ class ChronosPipeline(BaseChronosPipeline):
                 raise ValueError(msg)
             warnings.warn(msg)  # changed from logger.warning
 
-        input_dtype = context_tensor.dtype
-        input_device = context_tensor.device
-
         predictions = []
         remaining = prediction_length
 
@@ -674,7 +671,7 @@ class ChronosPipeline(BaseChronosPipeline):
 
             context_tensor = torch.cat([context_tensor, prediction.median(dim=1).values], dim=-1)
 
-        return torch.cat(predictions, dim=-1).to(dtype=input_dtype, device=input_device)
+        return torch.cat(predictions, dim=-1).to(dtype=torch.float32, device="cpu")
 
     def predict_quantiles(
         self,

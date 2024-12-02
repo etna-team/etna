@@ -645,14 +645,13 @@ class ChronosBoltPipeline(BaseChronosPipeline):
         while remaining > 0:
             prediction = []
             for i in range(0, context_tensor.shape[0], batch_size):
-                batch_context_tensor = context_tensor[i : i + batch_size, :]
-
+                batch_context_tensor = context_tensor[i : i + batch_size, :].to(
+                    device=self.model.device,
+                    dtype=torch.float32,  # scaling should be done in 32-bit precision
+                )
                 with torch.no_grad():
                     batch_prediction = self.model(  # added batch iteration
-                        context=batch_context_tensor.to(
-                            device=self.model.device,
-                            dtype=torch.float32,  # scaling should be done in 32-bit precision
-                        ),
+                        context=batch_context_tensor,
                     ).quantile_preds.to(context_tensor)
                 prediction.append(batch_prediction)
 
@@ -668,7 +667,9 @@ class ChronosBoltPipeline(BaseChronosPipeline):
 
             context_tensor = torch.cat([context_tensor, central_prediction], dim=-1)
 
-        return torch.cat(predictions, dim=-1)[..., :prediction_length]
+        return torch.cat(predictions, dim=-1)[..., :prediction_length].to(
+            dtype=torch.float32, device="cpu"
+        )
 
     def predict_quantiles(
         self,
