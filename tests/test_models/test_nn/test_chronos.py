@@ -59,6 +59,18 @@ def test_chronos_bolt_custom_cache_dir():
 @pytest.mark.parametrize(
     "model",
     [
+        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, from_s3=True),
+        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10, from_s3=True),
+    ],
+)
+def test_from_s3(model):
+    assert os.path.exists(model.cache_dir / model.model_name)
+
+
+@pytest.mark.smoke
+@pytest.mark.parametrize(
+    "model",
+    [
         ChronosModel(model_name="chronos-t5-tiny", encoder_length=10),
         ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10),
     ],

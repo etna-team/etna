@@ -1,6 +1,5 @@
 from pathlib import Path
 from typing import List
-from typing import Optional
 from typing import Sequence
 
 from etna import SETTINGS
@@ -38,6 +37,7 @@ class ChronosBoltModel(ChronosBaseModel):
         limit_prediction_length: bool = False,
         batch_size: int = 128,
         cache_dir: Path = _DOWNLOAD_PATH,
+        from_s3: bool = False,
     ):
         """
         Init Chronos model.
@@ -59,6 +59,8 @@ class ChronosBoltModel(ChronosBaseModel):
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
             See ``cache_dir`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
+        from_s3:
+            Whether to load from s3 or huggingface. Mostly for developer usage.
 
         Raises
         ------
@@ -76,11 +78,15 @@ class ChronosBoltModel(ChronosBaseModel):
         self.limit_prediction_length = limit_prediction_length
         self.batch_size = batch_size
         self.cache_dir = cache_dir
-
-        self.context: Optional[torch.Tensor] = None
+        self.from_s3 = from_s3
 
         super().__init__(
-            model_name=model_name, encoder_length=encoder_length, device=device, dtype=dtype, cache_dir=cache_dir
+            model_name=model_name,
+            encoder_length=encoder_length,
+            device=device,
+            dtype=dtype,
+            cache_dir=cache_dir,
+            from_s3=from_s3,
         )
 
     def forecast(

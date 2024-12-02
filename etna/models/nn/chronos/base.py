@@ -1,4 +1,6 @@
+import os
 import warnings
+import zipfile
 from abc import abstractmethod
 from pathlib import Path
 from typing import Dict
@@ -6,6 +8,7 @@ from typing import List
 from typing import Optional
 from typing import Sequence
 from typing import Union
+from urllib import request
 
 import pandas as pd
 
@@ -31,6 +34,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         device: str,
         dtype: torch.dtype,
         cache_dir: Path,
+        from_s3: bool,
     ):
         """
         Init Chronos-like model.
@@ -48,26 +52,39 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
             See ``cache_dir`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
-
-        Raises
-        ------
-        ValueError:
-            If `model_name` model version is not available.
+        from_s3:
+            Whether to load from s3 or huggingface. Mostly for developer usage.
         """
         super().__init__()
         self.model_name = model_name
+        self.encoder_length = encoder_length
         self.device = device
         self.dtype = dtype
         self.cache_dir = cache_dir
+        self.from_s3 = from_s3
 
-        self.encoder_length = encoder_length
+        if self.from_s3:
+            self._download_model_from_s3()
+            model_path = Path(self.cache_dir) / self.model_name
+        else:
+            model_path = Path("amazon") / self.model_name
 
         self.pipeline = BaseChronosPipeline.from_pretrained(
-            f"amazon/{self.model_name}", device_map=self.device, torch_dtype=self.dtype, cache_dir=self.cache_dir
+            model_path, device_map=self.device, torch_dtype=self.dtype, cache_dir=self.cache_dir
         )
 
         self.model = self.pipeline.model
         self.context: Optional[torch.Tensor] = None
+
+    def _download_model_from_s3(self):
+        """Save model from s3 to cache_dir."""
+        model_path = self.model_name + ".zip"
+        url = f"http://etna-github-prod.cdn-tinkoff.ru/chronos/{model_path}"
+        request.urlretrieve(url=url, filename=model_path)
+
+        with zipfile.ZipFile(model_path, "r") as zip_ref:
+            zip_ref.extractall(self.cache_dir)
+        os.remove(model_path)
 
     @property
     def context_size(self) -> int:
