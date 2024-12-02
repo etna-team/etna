@@ -295,7 +295,7 @@ class Metric(AbstractMetric, BaseMixin):
         :
             aggregated value of metric
         """
-        return np.mean(list(metrics_per_segments.values())).item()
+        return np.mean(list(metrics_per_segments.values())).item()  # type: ignore
 
     @staticmethod
     def _per_segment_average(metrics_per_segments: Dict[str, Optional[float]]) -> Dict[str, Optional[float]]:
