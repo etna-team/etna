@@ -1,3 +1,5 @@
+import reprlib
+import warnings
 from abc import ABC
 from abc import abstractmethod
 from enum import Enum
@@ -268,13 +270,15 @@ class Metric(AbstractMetric, BaseMixin):
         df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]]
         df_pred = y_pred.df.loc[:, pd.IndexSlice[:, "target"]]
 
-        df_true_isna = df_true.isna().any().any()
-        if df_true_isna > 0:
-            raise ValueError("There are NaNs in y_true")
+        df_true_isna_sum = df_true.isna().sum()
+        if (df_true_isna_sum > 0).any():
+            error_segments = set(df_true_isna_sum[df_true_isna_sum > 0].index.droplevel("feature").tolist())
+            raise ValueError(f"There are NaNs in y_true! Segments with NaNs: {reprlib.repr(error_segments)}.")
 
-        df_pred_isna = df_pred.isna().any().any()
-        if df_pred_isna > 0:
-            raise ValueError("There are NaNs in y_pred")
+        df_pred_isna_sum = df_pred.isna().sum()
+        if (df_pred_isna_sum > 0).any():
+            error_segments = set(df_pred_isna_sum[df_pred_isna_sum > 0].index.droplevel("feature").tolist())
+            raise ValueError(f"There are NaNs in y_pred Segments with NaNs: {reprlib.repr(error_segments)}.")
 
     @staticmethod
     def _macro_average(metrics_per_segments: Dict[str, Optional[float]]) -> Optional[float]:
@@ -291,7 +295,16 @@ class Metric(AbstractMetric, BaseMixin):
         :
             aggregated value of metric
         """
-        return np.mean(list(metrics_per_segments.values())).item()  # type: ignore
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                message="Mean of empty slice",
+                action="ignore",
+            )
+            value = np.nanmean(np.fromiter(metrics_per_segments.values(), dtype=float)).item()
+        if np.isnan(value):
+            return None
+        else:
+            return value
 
     @staticmethod
     def _per_segment_average(metrics_per_segments: Dict[str, Optional[float]]) -> Dict[str, Optional[float]]:
@@ -424,13 +437,15 @@ class MetricWithMissingHandling(Metric):
         df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]]
         df_pred = y_pred.df.loc[:, pd.IndexSlice[:, "target"]]
 
-        df_true_isna = df_true.isna().any().any()
-        if self.missing_mode is MetricMissingMode.error and df_true_isna > 0:
-            raise ValueError("There are NaNs in y_true")
+        df_true_isna_sum = df_true.isna().sum()
+        if self.missing_mode is MetricMissingMode.error and (df_true_isna_sum > 0).any():
+            error_segments = set(df_true_isna_sum[df_true_isna_sum > 0].index.droplevel("feature").tolist())
+            raise ValueError(f"There are NaNs in y_true! Segments with NaNs: {reprlib.repr(error_segments)}.")
 
-        df_pred_isna = df_pred.isna().any().any()
-        if df_pred_isna > 0:
-            raise ValueError("There are NaNs in y_pred")
+        df_pred_isna_sum = df_pred.isna().sum()
+        if (df_pred_isna_sum > 0).any():
+            error_segments = set(df_pred_isna_sum[df_pred_isna_sum > 0].index.droplevel("feature").tolist())
+            raise ValueError(f"There are NaNs in y_pred Segments with NaNs: {reprlib.repr(error_segments)}.")
 
     @staticmethod
     def _macro_average(metrics_per_segments: Dict[str, Optional[float]]) -> Optional[float]:
