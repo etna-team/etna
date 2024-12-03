@@ -159,6 +159,7 @@
 # Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
 # Add batch_size parameter to ChronosBoltPipeline.predict
 # Replace logger with warnings
+# Change dtype in torch.where in ChronosBoltModelForForecasting.forward
 
 import copy
 import logging
@@ -424,7 +425,11 @@ class ChronosBoltModelForForecasting(T5PreTrainedModel):
         # patching
         patched_context = self.patch(context)
         patched_mask = torch.nan_to_num(self.patch(mask), nan=0.0)
-        patched_context = torch.where(patched_mask > 0.0, patched_context, 0.0)
+        patched_context = torch.where(
+            patched_mask > 0.0,
+            patched_context,
+            torch.tensor(0.0, dtype=patched_context.dtype, device=patched_context.device),  # replace 0.0
+        )
         # concat context and mask along patch dim
         patched_context = torch.cat([patched_context, patched_mask], dim=-1)
 
