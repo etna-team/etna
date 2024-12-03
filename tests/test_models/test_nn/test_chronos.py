@@ -42,17 +42,15 @@ def test_chronos_bolt_fail_unknown_model_name():
 
 
 @pytest.mark.smoke
-def test_chronos_custom_cache_dir():
-    cache_dir = Path("chronos")
-    _ = ChronosModel(model_name="chronos-t5-tiny", cache_dir=cache_dir)
-    assert os.path.exists(cache_dir)
+def test_chronos_custom_cache_dir(tmp_path):
+    _ = ChronosModel(model_name="chronos-t5-tiny", cache_dir=tmp_path)
+    assert os.path.exists(tmp_path)
 
 
 @pytest.mark.smoke
-def test_chronos_bolt_custom_cache_dir():
-    cache_dir = Path("chronos")
-    _ = ChronosBoltModel(model_name="chronos-bolt-tiny", cache_dir=cache_dir)
-    assert os.path.exists(cache_dir)
+def test_chronos_bolt_custom_cache_dir(tmp_path):
+    _ = ChronosBoltModel(model_name="chronos-bolt-tiny", cache_dir=tmp_path)
+    assert os.path.exists(tmp_path)
 
 
 @pytest.mark.smoke

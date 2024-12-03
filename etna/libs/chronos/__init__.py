@@ -152,7 +152,7 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: Apache-2.0
 
-# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
+# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting/blob/47cac082c1848835db463bee1768bb355b26968f/src/chronos/__init__.py)
 
 from etna.libs.chronos.base import BaseChronosPipeline, ForecastType
 from etna.libs.chronos.chronos import (

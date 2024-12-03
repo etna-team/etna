@@ -156,7 +156,7 @@
 # Original source:
 # https://github.com/autogluon/autogluon/blob/f57beb26cb769c6e0d484a6af2b89eab8aee73a8/timeseries/src/autogluon/timeseries/models/chronos/pipeline/chronos_bolt.py
 
-# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
+# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting/blob/47cac082c1848835db463bee1768bb355b26968f/src/chronos/chronos_bolt.py)
 # Add batch_size parameter to ChronosBoltPipeline.predict
 # Replace logger with warnings
 # Change dtype in torch.where in ChronosBoltModelForForecasting.forward

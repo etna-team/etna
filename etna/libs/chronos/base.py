@@ -156,7 +156,7 @@
 # Original source:
 # https://github.com/autogluon/autogluon/blob/f57beb26cb769c6e0d484a6af2b89eab8aee73a8/timeseries/src/autogluon/timeseries/models/chronos/pipeline/base.py
 
-# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
+# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting/blob/47cac082c1848835db463bee1768bb355b26968f/src/chronos/base.py)
 
 from enum import Enum
 from pathlib import Path

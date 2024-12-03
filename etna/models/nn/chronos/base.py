@@ -73,7 +73,6 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
             model_path, device_map=self.device, torch_dtype=self.dtype, cache_dir=self.cache_dir
         )
 
-        self.model = self.pipeline.model
         self.context: Optional[torch.Tensor] = None
 
     def _download_model_from_s3(self):
@@ -93,7 +92,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
 
     def get_model(self) -> Union[ChronosModelForForecasting, ChronosBoltModelForForecasting]:
         """Get model."""
-        return self.model
+        return self.pipeline.model
 
     def fit(self, ts: TSDataset):
         """Fit model.

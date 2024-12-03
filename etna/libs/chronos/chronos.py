@@ -154,7 +154,7 @@
 
 # Authors: Abdul Fatir Ansari <ansarnd@amazon.com>, Lorenzo Stella <stellalo@amazon.com>, Caner Turkmen <atturkm@amazon.com>
 
-# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting)
+# Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting/blob/47cac082c1848835db463bee1768bb355b26968f/src/chronos/chronos.py)
 # Revert ChronosConfig.create_tokenizer to old version not to import chronos module
 # Add batch_size parameter to ChronosPipeline.predict
 # Replace logger with warnings
