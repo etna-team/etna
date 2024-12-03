@@ -19,6 +19,7 @@ Base:
    :template: class.rst
 
    Metric
+   MetricWithMissingHandling
 
 Enums:
 

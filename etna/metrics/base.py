@@ -6,7 +6,9 @@ from enum import Enum
 from typing import Callable
 from typing import Dict
 from typing import Optional
+from typing import Sequence
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -352,13 +354,24 @@ class Metric(AbstractMetric, BaseMixin):
         metrics_per_segment: Dict[str, Optional[float]]
         if self._metric_fn_signature is MetricFunctionSignature.array_to_scalar:
             metrics_per_segment = {}
-            for i, segment in enumerate(segments):
+            for i, cur_segment in enumerate(segments):
                 cur_y_true = df_true.iloc[:, i].values
                 cur_y_pred = df_pred.iloc[:, i].values
-                metrics_per_segment[segment] = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)  # type: ignore
+                cur_value = self.metric_fn(y_true=cur_y_true, y_pred=cur_y_pred, **self.kwargs)
+                cur_value = cast(float, cur_value)
+                if np.isnan(cur_value):
+                    metrics_per_segment[cur_segment] = None
+                else:
+                    metrics_per_segment[cur_segment] = cur_value
         elif self._metric_fn_signature is MetricFunctionSignature.matrix_to_array:
             values = self.metric_fn(y_true=df_true.values, y_pred=df_pred.values, **self.kwargs)
-            metrics_per_segment = dict(zip(segments, values))  # type: ignore
+            values = cast(Sequence[float], values)
+            metrics_per_segment = {}
+            for cur_segment, cur_value in zip(segments, values):
+                if np.isnan(cur_value):
+                    metrics_per_segment[cur_segment] = None
+                else:
+                    metrics_per_segment[cur_segment] = cur_value
         else:
             assert_never(self._metric_fn_signature)
 
@@ -468,4 +481,4 @@ class MetricWithMissingHandling(Metric):
             return value
 
 
-__all__ = ["Metric", "MetricAggregationMode", "MetricMissingMode"]
+__all__ = ["Metric", "MetricWithMissingHandling", "MetricAggregationMode", "MetricMissingMode"]
