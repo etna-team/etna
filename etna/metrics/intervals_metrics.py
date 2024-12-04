@@ -56,7 +56,7 @@ class Coverage(Metric, _IntervalsMetricMixin):
     def __init__(
         self,
         quantiles: Optional[Tuple[float, float]] = None,
-        mode: str = MetricAggregationMode.per_segment,
+        mode: str = MetricAggregationMode.per_segment.value,
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
         **kwargs,
@@ -67,8 +67,14 @@ class Coverage(Metric, _IntervalsMetricMixin):
         ----------
         quantiles:
             lower and upper quantiles
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         upper_name:
             name of column with upper border of the interval
         lower_name:
@@ -169,7 +175,7 @@ class Width(Metric, _IntervalsMetricMixin):
     def __init__(
         self,
         quantiles: Optional[Tuple[float, float]] = None,
-        mode: str = MetricAggregationMode.per_segment,
+        mode: str = MetricAggregationMode.per_segment.value,
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
         **kwargs,
@@ -180,8 +186,14 @@ class Width(Metric, _IntervalsMetricMixin):
         ----------
         quantiles:
             lower and upper quantiles
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         upper_name:
             name of column with upper border of the interval
         lower_name:

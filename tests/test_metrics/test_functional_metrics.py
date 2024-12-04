@@ -124,7 +124,6 @@ def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2
     npt.assert_almost_equal(metric(y_true_2d, y_pred_2d, **params), right_metrics_value)
 
 
-@pytest.mark.filterwarnings("ignore: Mean of empty slice")
 @pytest.mark.parametrize(
     "y_true, y_pred, multioutput, expected",
     [

@@ -35,31 +35,28 @@ from tests.utils import create_dummy_functional_metric
 
 
 @pytest.mark.parametrize(
-    "metric_class, metric_class_repr, metric_params, param_repr",
+    "metric, expected_repr",
     (
-        (MAE, "MAE", {}, ""),
-        (MSE, "MSE", {}, ""),
-        (RMSE, "RMSE", {}, ""),
-        (MedAE, "MedAE", {}, ""),
-        (MSLE, "MSLE", {}, ""),
-        (MAPE, "MAPE", {}, ""),
-        (SMAPE, "SMAPE", {}, ""),
-        (R2, "R2", {}, ""),
-        (Sign, "Sign", {}, ""),
-        (MaxDeviation, "MaxDeviation", {}, ""),
-        (DummyMetric, "DummyMetric", {"alpha": 1.0}, "alpha = 1.0, "),
-        (WAPE, "WAPE", {}, ""),
+        (MAE(), "MAE(mode = 'per-segment', )"),
+        (MAE(mode="macro"), "MAE(mode = 'macro', )"),
+        (MSE(), "MSE(mode = 'per-segment', missing_mode = 'error', )"),
+        (MSE(missing_mode="ignore"), "MSE(mode = 'per-segment', missing_mode = 'ignore', )"),
+        (RMSE(), "RMSE(mode = 'per-segment', )"),
+        (MedAE(), "MedAE(mode = 'per-segment', )"),
+        (MSLE(), "MSLE(mode = 'per-segment', )"),
+        (MAPE(), "MAPE(mode = 'per-segment', )"),
+        (SMAPE(), "SMAPE(mode = 'per-segment', )"),
+        (R2(), "R2(mode = 'per-segment', )"),
+        (Sign(), "Sign(mode = 'per-segment', )"),
+        (MaxDeviation(), "MaxDeviation(mode = 'per-segment', )"),
+        (DummyMetric(), "DummyMetric(mode = 'per-segment', alpha = 1.0, )"),
+        (WAPE(), "WAPE(mode = 'per-segment', )"),
     ),
 )
-def test_repr(metric_class, metric_class_repr, metric_params, param_repr):
+def test_repr(metric, expected_repr):
     """Check metrics __repr__ method"""
-    metric_mode = "per-segment"
-    kwargs = {**metric_params, "kwarg_1": "value_1", "kwarg_2": "value_2"}
-    kwargs_repr = param_repr + "kwarg_1 = 'value_1', kwarg_2 = 'value_2'"
-    metric = metric_class(mode=metric_mode, **kwargs)
     metric_repr = metric.__repr__()
-    true_repr = f"{metric_class_repr}(mode = '{metric_mode}', {kwargs_repr}, )"
-    assert metric_repr == true_repr
+    assert metric_repr == expected_repr
 
 
 @pytest.mark.parametrize(
@@ -168,15 +165,84 @@ def test_invalid_nans_pred(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric",
+    (
+        MAE(),
+        MSE(missing_mode="error"),
+        RMSE(),
+        MedAE(),
+        MSLE(),
+        MAPE(),
+        SMAPE(),
+        R2(),
+        Sign(),
+        MaxDeviation(),
+        DummyMetric(),
+        WAPE(),
+    ),
 )
-def test_invalid_nans_true(metric_class, train_test_dfs):
+def test_invalid_nans_true(metric, train_test_dfs):
     """Check metrics behavior in case of nans in true values."""
     forecast_df, true_df = train_test_dfs
     true_df.df.iloc[0, 0] = np.NaN
-    metric = metric_class()
     with pytest.raises(ValueError, match="There are NaNs in y_true"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (MSE(missing_mode="ignore"),),
+)
+def test_invalid_single_nan_ignore(metric, train_test_dfs):
+    """Check metrics behavior in case of ignoring one nan in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[0, 0] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert isinstance(value, dict)
+    segments = set(forecast_df.df.columns.get_level_values("segment").unique().tolist())
+    assert value.keys() == segments
+    assert all(isinstance(cur_value, float) for cur_value in value.values())
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (MSE(mode="per-segment", missing_mode="ignore"),),
+)
+def test_invalid_segment_nans_ignore_per_segment(metric, train_test_dfs):
+    """Check per-segment metrics behavior in case of ignoring segment of all nans in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[:, 0] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert isinstance(value, dict)
+    segments = set(forecast_df.df.columns.get_level_values("segment").unique().tolist())
+    assert value.keys() == segments
+    empty_segment = true_df.df.columns.get_level_values("segment").unique()[0]
+    assert all(isinstance(cur_value, float) for cur_segment, cur_value in value.items() if cur_segment != empty_segment)
+    assert value[empty_segment] is None
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (MSE(mode="macro", missing_mode="ignore"),),
+)
+def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
+    """Check macro metrics behavior in case of ignoring segment of all nans in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[:, 0] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert isinstance(value, float)
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (MSE(mode="macro", missing_mode="ignore"),),
+)
+def test_invalid_all_nans_ignore_macro(metric, train_test_dfs):
+    """Check macro metrics behavior in case of all nan values in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[:, :] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert value is None
 
 
 @pytest.mark.parametrize(

@@ -1,3 +1,4 @@
+import warnings
 from enum import Enum
 from functools import partial
 from typing import Optional
@@ -77,7 +78,14 @@ def mse_with_missing_handling(y_true: ArrayLike, y_pred: ArrayLike, multioutput:
         raise ValueError("Shapes of the labels must be the same")
 
     axis = _get_axis_by_multioutput(multioutput)
-    return np.nanmean((y_true_array - y_pred_array) ** 2, axis=axis)
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = np.nanmean((y_true_array - y_pred_array) ** 2, axis=axis)
+    return result
 
 
 def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:

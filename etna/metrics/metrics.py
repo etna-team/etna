@@ -2,11 +2,12 @@ from functools import partial
 
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+from etna.metrics.base import MetricWithMissingHandling
 from etna.metrics.functional_metrics import mae
 from etna.metrics.functional_metrics import mape
 from etna.metrics.functional_metrics import max_deviation
 from etna.metrics.functional_metrics import medae
-from etna.metrics.functional_metrics import mse
+from etna.metrics.functional_metrics import mse_with_missing_handling
 from etna.metrics.functional_metrics import msle
 from etna.metrics.functional_metrics import r2_score
 from etna.metrics.functional_metrics import rmse
@@ -26,7 +27,7 @@ class MAE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
@@ -45,7 +46,7 @@ class MAE(Metric):
         return False
 
 
-class MSE(Metric):
+class MSE(MetricWithMissingHandling):
     """Mean squared error metric with multi-segment computation support.
 
     .. math::
@@ -56,18 +57,33 @@ class MSE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
-        mse_per_output = partial(mse, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=mse_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        mse_per_output = partial(mse_with_missing_handling, multioutput="raw_values")
+        super().__init__(
+            mode=mode,
+            metric_fn=mse_per_output,
+            missing_mode=missing_mode,
+            metric_fn_signature="matrix_to_array",
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
@@ -86,13 +102,19 @@ class RMSE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
@@ -115,13 +137,19 @@ class R2(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
@@ -145,13 +173,19 @@ class MAPE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
@@ -175,13 +209,19 @@ class SMAPE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
@@ -205,13 +245,19 @@ class MedAE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
@@ -235,13 +281,19 @@ class MSLE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
 
@@ -266,13 +318,19 @@ class Sign(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
@@ -296,13 +354,19 @@ class MaxDeviation(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
@@ -325,13 +389,19 @@ class WAPE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
         kwargs:
             metric's computation arguments
         """
