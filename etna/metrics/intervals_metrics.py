@@ -96,7 +96,7 @@ class Coverage(Metric, _IntervalsMetricMixin):
         self.upper_name = upper_name
         self.lower_name = lower_name
 
-    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         """
         Compute metric's value with y_true and y_pred.
 
@@ -209,7 +209,7 @@ class Width(Metric, _IntervalsMetricMixin):
         self.upper_name = upper_name
         self.lower_name = lower_name
 
-    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         """
         Compute metric's value with y_true and y_pred.
 

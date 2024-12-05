@@ -408,9 +408,9 @@ class _DummyMetric(Metric):
     def greater_is_better(self) -> bool:
         return False
 
-    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         segments = set(y_true.df.columns.get_level_values("segment"))
-        metrics_per_segment = {}
+        metrics_per_segment: Dict[str, Optional[float]] = {}
         for segment in segments:
             metrics_per_segment[segment] = 0.0
         metrics = self._aggregate_metrics(metrics_per_segment)

@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add `load_dataset` to public API ([#484](https://github.com/etna-team/etna/pull/484))
 - Add example of using custom pipeline pools in `Auto` ([#504](https://github.com/etna-team/etna/pull/504))
+- Add `MetricWithMissingHandling` base class, change signature of `etna.metrics.Metric` to return `None` values ([#514](https://github.com/etna-team/etna/pull/514))
 - Add `ChronosModel` ([#511](https://github.com/etna-team/etna/pull/511))
 - Add `ChronosBoltModel` ([#511](https://github.com/etna-team/etna/pull/511))
-- 
 - 
 - 
 - 

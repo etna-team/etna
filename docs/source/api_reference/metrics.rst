@@ -19,6 +19,7 @@ Base:
    :template: class.rst
 
    Metric
+   MetricWithMissingHandling
 
 Enums:
 
@@ -27,6 +28,7 @@ Enums:
    :template: class.rst
 
    MetricAggregationMode
+   MetricMissingMode
 
 Scalar metrics:
 
