@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 
 import pytest
 from pandas.testing import assert_frame_equal
@@ -43,14 +42,16 @@ def test_chronos_bolt_fail_unknown_model_name():
 
 @pytest.mark.smoke
 def test_chronos_custom_cache_dir(tmp_path):
-    _ = ChronosModel(model_name="chronos-t5-tiny", cache_dir=tmp_path)
-    assert os.path.exists(tmp_path)
+    model_name = "chronos-t5-tiny"
+    _ = ChronosModel(model_name=model_name, cache_dir=tmp_path)
+    assert os.path.exists(tmp_path / f"models--amazon--{model_name}")
 
 
 @pytest.mark.smoke
 def test_chronos_bolt_custom_cache_dir(tmp_path):
-    _ = ChronosBoltModel(model_name="chronos-bolt-tiny", cache_dir=tmp_path)
-    assert os.path.exists(tmp_path)
+    model_name = "chronos-bolt-tiny"
+    _ = ChronosBoltModel(model_name=model_name, cache_dir=tmp_path)
+    assert os.path.exists(tmp_path / f"models--amazon--{model_name}")
 
 
 @pytest.mark.smoke
@@ -177,7 +178,7 @@ def test_forecast(ts_increasing_integers, expected_ts_increasing_integers, model
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, num_samples=1),
+        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, num_samples=3),
         ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10),
     ],
 )
@@ -188,9 +189,11 @@ def test_forecast_prediction_intervals(ts, model, request):
     pipeline = Pipeline(model=model, horizon=1)
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast(prediction_interval=True, quantiles=quantiles)
+    forecast_df = forecast.to_pandas(flatten=True)
     assert isinstance(forecast, TSDataset)
     assert len(forecast.index) == 1
-    assert len(forecast.features) == 3
+    assert forecast.features == ["target", "target_0.1", "target_0.9"]
+    assert forecast_df["target_0.9"].gt(forecast_df["target_0.1"]).all()
 
 
 def test_chronos_bolt_forecast_prediction_intervals_unusual_quantiles(ts_increasing_integers):
@@ -200,7 +203,7 @@ def test_chronos_bolt_forecast_prediction_intervals_unusual_quantiles(ts_increas
     pipeline.fit(ts=ts_increasing_integers)
     with pytest.warns(
         UserWarning,
-        match=f"Quantiles to be predicted ({quantiles}) are not within the range of quantiles that Chronos-Bolt was trained on ({model.get_model().chronos_config.quantiles}).",
+        match=f"Quantiles to be predicted .+ are not within the range of quantiles that Chronos-Bolt was trained on \(\[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9\]\).",
     ):
         _ = pipeline.forecast(prediction_interval=True, quantiles=quantiles)
 

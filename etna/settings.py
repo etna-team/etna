@@ -39,14 +39,7 @@ def _is_torch_available():
 
 
 def _is_chronos_available():
-    true_case = (
-        _module_available("accelerate")
-        & _module_available("huggingface_hub")
-        & _module_available("safetensors")
-        & _module_available("tokenizers")
-        & _module_available("transformers")
-        & _module_available("torch")
-    )
+    true_case = _module_available("torch") & _module_available("transformers") & _module_available("accelerate")
     if true_case:
         return True
     else:
