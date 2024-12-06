@@ -13,7 +13,6 @@ from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
 from etna.metrics import wape
-from etna.metrics.functional_metrics import mse_with_missing_handling
 
 
 @pytest.fixture()
@@ -36,7 +35,6 @@ def y_pred_1d():
     (
         (mae, 1),
         (mse, 1),
-        (mse_with_missing_handling, 1),
         (rmse, 1),
         (mape, 66 + 2 / 3),
         (smape, 47.6190476),
@@ -61,7 +59,7 @@ def test_mle_metric_exception(y_true_1d, y_pred_1d):
 @pytest.mark.parametrize(
     "metric",
     (
-        mse_with_missing_handling,
+        mse,
         mape,
         smape,
         sign,
@@ -89,7 +87,6 @@ def y_pred_2d():
     (
         (mae, 1),
         (mse, 1),
-        (mse_with_missing_handling, 1),
         (rmse, 1),
         (mape, 42 + 3 / 11),
         (smape, 38.0952380),
@@ -109,7 +106,6 @@ def test_all_2d_metrics_joint(metric, right_metrics_value, y_true_2d, y_pred_2d)
     (
         (mae, {"multioutput": "raw_values"}, [1, 1]),
         (mse, {"multioutput": "raw_values"}, [1, 1]),
-        (mse_with_missing_handling, {"multioutput": "raw_values"}, [1, 1]),
         (rmse, {"multioutput": "raw_values"}, [1, 1]),
         (mape, {"multioutput": "raw_values"}, [9.5454545, 75]),
         (smape, {"multioutput": "raw_values"}, [9.5238095, 66 + 2 / 3]),
@@ -182,5 +178,5 @@ def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2
     ],
 )
 def test_values_ok(y_true, y_pred, multioutput, expected):
-    result = mse_with_missing_handling(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    result = mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
     npt.assert_allclose(result, expected)

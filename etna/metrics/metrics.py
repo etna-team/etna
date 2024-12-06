@@ -7,7 +7,7 @@ from etna.metrics.functional_metrics import mae
 from etna.metrics.functional_metrics import mape
 from etna.metrics.functional_metrics import max_deviation
 from etna.metrics.functional_metrics import medae
-from etna.metrics.functional_metrics import mse_with_missing_handling
+from etna.metrics.functional_metrics import mse
 from etna.metrics.functional_metrics import msle
 from etna.metrics.functional_metrics import r2_score
 from etna.metrics.functional_metrics import rmse
@@ -76,7 +76,7 @@ class MSE(MetricWithMissingHandling):
         kwargs:
             metric's computation arguments
         """
-        mse_per_output = partial(mse_with_missing_handling, multioutput="raw_values")
+        mse_per_output = partial(mse, multioutput="raw_values")
         super().__init__(
             mode=mode,
             metric_fn=mse_per_output,

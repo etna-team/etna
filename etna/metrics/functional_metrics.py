@@ -7,7 +7,7 @@ from typing import Union
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error as mae
-from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import mean_squared_error as mse_sklearn
 from sklearn.metrics import mean_squared_log_error as msle
 from sklearn.metrics import median_absolute_error as medae
 from sklearn.metrics import r2_score
@@ -42,7 +42,7 @@ def _get_axis_by_multioutput(multioutput: str) -> Optional[int]:
         assert_never(multioutput_enum)
 
 
-def mse_with_missing_handling(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+def mse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
     """Mean squared error with missing values handling.
 
     `Wikipedia entry on the Mean squared error
@@ -253,7 +253,7 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
     return np.max(np.abs(prefix_error_sum), axis=axis)
 
 
-rmse = partial(mse, squared=False)
+rmse = partial(mse_sklearn, squared=False)
 
 
 def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
