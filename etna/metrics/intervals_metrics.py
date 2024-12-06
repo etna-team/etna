@@ -9,7 +9,6 @@ import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.metrics.base import Metric
-from etna.metrics.base import MetricAggregationMode
 from etna.metrics.functional_metrics import ArrayLike
 
 
@@ -56,7 +55,7 @@ class Coverage(Metric, _IntervalsMetricMixin):
     def __init__(
         self,
         quantiles: Optional[Tuple[float, float]] = None,
-        mode: str = MetricAggregationMode.per_segment.value,
+        mode: str = "per-segment",
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
         **kwargs,
@@ -175,7 +174,7 @@ class Width(Metric, _IntervalsMetricMixin):
     def __init__(
         self,
         quantiles: Optional[Tuple[float, float]] = None,
-        mode: str = MetricAggregationMode.per_segment.value,
+        mode: str = "per-segment",
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
         **kwargs,

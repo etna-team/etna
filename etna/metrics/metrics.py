@@ -1,7 +1,6 @@
 from functools import partial
 
 from etna.metrics.base import Metric
-from etna.metrics.base import MetricAggregationMode
 from etna.metrics.base import MetricWithMissingHandling
 from etna.metrics.functional_metrics import mae
 from etna.metrics.functional_metrics import mape
@@ -27,7 +26,7 @@ class MAE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -57,7 +56,7 @@ class MSE(MetricWithMissingHandling):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, missing_mode: str = "error", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
@@ -102,7 +101,7 @@ class RMSE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -137,7 +136,7 @@ class R2(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -173,7 +172,7 @@ class MAPE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -209,7 +208,7 @@ class SMAPE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -245,7 +244,7 @@ class MedAE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -281,7 +280,7 @@ class MSLE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -318,7 +317,7 @@ class Sign(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -354,7 +353,7 @@ class MaxDeviation(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters
@@ -389,7 +388,7 @@ class WAPE(Metric):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, **kwargs):
+    def __init__(self, mode: str = "per-segment", **kwargs):
         """Init metric.
 
         Parameters

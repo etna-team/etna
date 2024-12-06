@@ -128,7 +128,7 @@ class Metric(AbstractMetric, BaseMixin):
     def __init__(
         self,
         metric_fn: MetricFunction,
-        mode: str = MetricAggregationMode.per_segment.value,
+        mode: str = "per-segment",
         metric_fn_signature: str = "array_to_scalar",
         **kwargs,
     ):
@@ -387,7 +387,7 @@ class MetricWithMissingHandling(Metric):
     def __init__(
         self,
         metric_fn: MetricFunction,
-        mode: str = MetricAggregationMode.per_segment.value,
+        mode: str = "per-segment",
         metric_fn_signature: str = "array_to_scalar",
         missing_mode: str = "error",
         **kwargs,
