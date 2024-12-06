@@ -45,10 +45,10 @@ def _get_axis_by_multioutput(multioutput: str) -> Optional[int]:
 def mse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
     """Mean squared error with missing values handling.
 
-    `Wikipedia entry on the Mean squared error
-    <https://en.wikipedia.org/wiki/Mean_squared_error>`_
+    .. math::
+        MSE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
 
-    The nans are ignored during computation.
+    The nans are ignored during computation. If all values are nans, the result is NaN.
 
     Parameters
     ----------
@@ -91,8 +91,10 @@ def mse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Arr
 def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
     """Mean absolute percentage error.
 
-    `Wikipedia entry on the Mean absolute percentage error
-    <https://en.wikipedia.org/wiki/Mean_absolute_percentage_error>`_
+    .. math::
+       MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
+
+    `Scale-dependent errors <https://otexts.com/fpp3/accuracy.html#scale-dependent-errors>`_
 
     Parameters
     ----------
@@ -135,11 +137,8 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: 
 def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
     """Symmetric mean absolute percentage error.
 
-    `Wikipedia entry on the Symmetric mean absolute percentage error
-    <https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error>`_
-
     .. math::
-        SMAPE = \dfrac{100}{n}\sum_{t=1}^{n}\dfrac{|ytrue_{t}-ypred_{t}|}{(|ypred_{t}|+|ytrue_{t}|) / 2}
+       SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
 
     Parameters
     ----------
@@ -183,7 +182,7 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     """Sign error metric.
 
     .. math::
-        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=0}^{n - 1}{sign(y\_true_i - y\_pred_i)}
+        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{sign(y\_true_i - y\_pred_i)}
 
     Parameters
     ----------
@@ -219,6 +218,9 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
 
 def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
     """Max Deviation metric.
+
+    .. math::
+        MaxDeviation(y\_true, y\_pred) = \\max_{1 \\le j \\le n} | y_j |, where \\, y_j = \\sum_{i=1}^{j}{y\_pred_i - y\_true_i}
 
     Parameters
     ----------
@@ -260,7 +262,7 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     """Weighted average percentage Error metric.
 
     .. math::
-        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=0}^{n}|y\\_true_i|}
+        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=1}^{n}|y\\_true_i|}
 
     Parameters
     ----------

@@ -51,6 +51,9 @@ class MSE(MetricWithMissingHandling):
     .. math::
         MSE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
 
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
+
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
@@ -383,6 +386,7 @@ class WAPE(Metric):
 
     .. math::
         WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=1}^{n}|y\\_true_i|}
+
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
