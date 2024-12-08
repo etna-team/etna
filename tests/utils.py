@@ -92,7 +92,7 @@ class DummyMetric(Metric):
     We change the name property here.
     """
 
-    def __init__(self, mode: str = MetricAggregationMode.per_segment, alpha: float = 1.0, **kwargs):
+    def __init__(self, mode: str = MetricAggregationMode.per_segment.value, alpha: float = 1.0, **kwargs):
         self.alpha = alpha
         super().__init__(mode=mode, metric_fn=create_dummy_functional_metric(alpha), **kwargs)
 

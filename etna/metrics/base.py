@@ -128,7 +128,7 @@ class Metric(AbstractMetric, BaseMixin):
     def __init__(
         self,
         metric_fn: MetricFunction,
-        mode: str = MetricAggregationMode.per_segment,
+        mode: str = "per-segment",
         metric_fn_signature: str = "array_to_scalar",
         **kwargs,
     ):
@@ -145,6 +145,8 @@ class Metric(AbstractMetric, BaseMixin):
             * if "macro" computes average value
 
             * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
 
         metric_fn_signature:
             type of signature of ``metric_fn`` (see :py:class:`~etna.metrics.base.MetricFunctionSignature`)
@@ -385,7 +387,7 @@ class MetricWithMissingHandling(Metric):
     def __init__(
         self,
         metric_fn: MetricFunction,
-        mode: str = MetricAggregationMode.per_segment,
+        mode: str = "per-segment",
         metric_fn_signature: str = "array_to_scalar",
         missing_mode: str = "error",
         **kwargs,
@@ -404,6 +406,8 @@ class MetricWithMissingHandling(Metric):
 
             * if "per-segment" -- does not aggregate metrics
 
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+
         metric_fn_signature:
             type of signature of ``metric_fn`` (see :py:class:`~etna.metrics.base.MetricFunctionSignature`)
         missing_mode:
@@ -421,7 +425,8 @@ class MetricWithMissingHandling(Metric):
             If non-existent ``missing_mode`` is used.
         """
         super().__init__(metric_fn=metric_fn, mode=mode, metric_fn_signature=metric_fn_signature, **kwargs)
-        self.missing_mode = MetricMissingMode(missing_mode)
+        self.missing_mode = missing_mode
+        self._missing_mode_enum = MetricMissingMode(missing_mode)
 
     def _validate_nans(self, y_true: TSDataset, y_pred: TSDataset):
         """Check that ``y_true`` and ``y_pred`` doesn't have NaNs depending on ``missing_mode``.
@@ -442,7 +447,7 @@ class MetricWithMissingHandling(Metric):
         df_pred = y_pred.df.loc[:, pd.IndexSlice[:, "target"]]
 
         df_true_isna_sum = df_true.isna().sum()
-        if self.missing_mode is MetricMissingMode.error and (df_true_isna_sum > 0).any():
+        if self._missing_mode_enum is MetricMissingMode.error and (df_true_isna_sum > 0).any():
             error_segments = set(df_true_isna_sum[df_true_isna_sum > 0].index.droplevel("feature").tolist())
             raise ValueError(f"There are NaNs in y_true! Segments with NaNs: {reprlib.repr(error_segments)}.")
 

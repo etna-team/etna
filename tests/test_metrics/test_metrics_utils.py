@@ -16,7 +16,7 @@ def test_compute_metrics(train_test_dfs: Tuple[TSDataset, TSDataset]):
     expected_keys = [
         "MAE(mode = 'per-segment', )",
         "MAE(mode = 'macro', )",
-        "MSE(mode = 'per-segment', )",
+        "MSE(mode = 'per-segment', missing_mode = 'error', )",
         "MAPE(mode = 'macro', eps = 1e-05, )",
     ]
     result = compute_metrics(metrics=metrics, y_true=true_df, y_pred=forecast_df)

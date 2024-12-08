@@ -1,3 +1,4 @@
+import warnings
 from enum import Enum
 from functools import partial
 from typing import Optional
@@ -6,7 +7,7 @@ from typing import Union
 
 import numpy as np
 from sklearn.metrics import mean_absolute_error as mae
-from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import mean_squared_error as mse_sklearn
 from sklearn.metrics import mean_squared_log_error as msle
 from sklearn.metrics import median_absolute_error as medae
 from sklearn.metrics import r2_score
@@ -41,11 +42,59 @@ def _get_axis_by_multioutput(multioutput: str) -> Optional[int]:
         assert_never(multioutput_enum)
 
 
+def mse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Mean squared error with missing values handling.
+
+    .. math::
+        MSE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
+
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A non-negative floating point value (the best value is 0.0), or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    axis = _get_axis_by_multioutput(multioutput)
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = np.nanmean((y_true_array - y_pred_array) ** 2, axis=axis)
+    return result
+
+
 def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
     """Mean absolute percentage error.
 
-    `Wikipedia entry on the Mean absolute percentage error
-    <https://en.wikipedia.org/wiki/Mean_absolute_percentage_error>`_
+    .. math::
+       MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
+
+    `Scale-dependent errors <https://otexts.com/fpp3/accuracy.html#scale-dependent-errors>`_
 
     Parameters
     ----------
@@ -88,11 +137,8 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: 
 def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
     """Symmetric mean absolute percentage error.
 
-    `Wikipedia entry on the Symmetric mean absolute percentage error
-    <https://en.wikipedia.org/wiki/Symmetric_mean_absolute_percentage_error>`_
-
     .. math::
-        SMAPE = \dfrac{100}{n}\sum_{t=1}^{n}\dfrac{|ytrue_{t}-ypred_{t}|}{(|ypred_{t}|+|ytrue_{t}|) / 2}
+       SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
 
     Parameters
     ----------
@@ -136,7 +182,7 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     """Sign error metric.
 
     .. math::
-        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=0}^{n - 1}{sign(y\_true_i - y\_pred_i)}
+        Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{sign(y\_true_i - y\_pred_i)}
 
     Parameters
     ----------
@@ -173,6 +219,9 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
 def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
     """Max Deviation metric.
 
+    .. math::
+        MaxDeviation(y\_true, y\_pred) = \\max_{1 \\le j \\le n} | y_j |, where \\, y_j = \\sum_{i=1}^{j}{y\_pred_i - y\_true_i}
+
     Parameters
     ----------
     y_true:
@@ -206,14 +255,14 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
     return np.max(np.abs(prefix_error_sum), axis=axis)
 
 
-rmse = partial(mse, squared=False)
+rmse = partial(mse_sklearn, squared=False)
 
 
 def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
     """Weighted average percentage Error metric.
 
     .. math::
-        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=0}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=0}^{n}|y\\_true_i|}
+        WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=1}^{n}|y\\_true_i|}
 
     Parameters
     ----------
