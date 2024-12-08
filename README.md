@@ -147,8 +147,9 @@ Available user extensions are the following:
 * `torch`: adds models based on neural nets,
 * `wandb`: adds wandb logger,
 * `auto`: adds AutoML functionality,
-* `statsforecast`: adds models from [statsforecast](https://nixtla.github.io/statsforecast/)
-* `classiciation`: adds time series classification functionality.
+* `statsforecast`: adds models from [statsforecast](https://nixtla.github.io/statsforecast/),
+* `classiciation`: adds time series classification functionality,
+* `chronos`: adds Chronos-like pretrained models.
 
 Install extension:
 ```bash
