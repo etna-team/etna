@@ -5,7 +5,6 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Sequence
 from typing import Union
 from urllib import request
@@ -29,20 +28,24 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
 
     def __init__(
         self,
-        model_name: str,
+        path_or_url: str,
         encoder_length: int,
         device: str,
         dtype: torch.dtype,
         cache_dir: Path,
-        from_s3: bool,
     ):
         """
         Init Chronos-like model.
 
         Parameters
         ----------
-        model_name:
-            Model name. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
+        path_or_url:
+            Path to the model. It can be huggingface repository, local path or external url
+            - If huggingface repository, see available models in ``list_models`` of appropriate model class.
+            During the first initialization model is downloaded from huggingface and saved to local ``cache_dir``.
+            All following initializations model will be loaded from ``cache_dir``. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`
+            - If local path, model will not be saved to local ``cache_dir``.
+            - If external url, it must be zip archive with the same name as model directory inside. Model will be downloaded to ``cache_dir``.
         encoder_length:
             Number of last timestamps to use as a context.
         device:
@@ -52,38 +55,39 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
             See ``cache_dir`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
-        from_s3:
-            Whether to load from s3 or huggingface. Mostly for developer usage.
         """
         super().__init__()
-        self.model_name = model_name
+        self.path_or_url = path_or_url
         self.encoder_length = encoder_length
         self.device = device
         self.dtype = dtype
         self.cache_dir = cache_dir
-        self.from_s3 = from_s3
 
-        if self.from_s3:
-            self._download_model_from_s3()
-            model_path = Path(self.cache_dir) / self.model_name
+        if self._is_url():
+            full_model_path = self._download_model_from_url()
+            self.pipeline = BaseChronosPipeline.from_pretrained(
+                full_model_path, device_map=self.device, torch_dtype=self.dtype, cache_dir=self.cache_dir
+            )
         else:
-            model_path = Path("amazon") / self.model_name
+            self.pipeline = BaseChronosPipeline.from_pretrained(
+                self.path_or_url, device_map=self.device, torch_dtype=self.dtype, cache_dir=self.cache_dir
+            )
 
-        self.pipeline = BaseChronosPipeline.from_pretrained(
-            model_path, device_map=self.device, torch_dtype=self.dtype, cache_dir=self.cache_dir
-        )
+    def _is_url(self):
+        return self.path_or_url.startswith("https://") or self.path_or_url.startswith("http://")
 
-        self.context: Optional[torch.Tensor] = None
+    def _download_model_from_url(self) -> str:
+        """Download model from url to local cache_dir."""
+        model_file = self.path_or_url.split("/")[-1]
+        model_dir = model_file.split(".zip")[0]
+        full_model_path = f"{self.cache_dir}/{model_dir}"
+        if not os.path.exists(full_model_path):
+            request.urlretrieve(url=self.path_or_url, filename=model_file)
 
-    def _download_model_from_s3(self):
-        """Save model from s3 to cache_dir."""
-        model_path = self.model_name + ".zip"
-        url = f"http://etna-github-prod.cdn-tinkoff.ru/chronos/{model_path}"
-        request.urlretrieve(url=url, filename=model_path)
-
-        with zipfile.ZipFile(model_path, "r") as zip_ref:
-            zip_ref.extractall(self.cache_dir)
-        os.remove(model_path)
+            with zipfile.ZipFile(model_file, "r") as zip_ref:
+                zip_ref.extractall(self.cache_dir)
+            os.remove(model_file)
+        return full_model_path
 
     @property
     def context_size(self) -> int:
@@ -239,25 +243,26 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         pass
 
     def save(self, path: Path):
-        """Save the model. For this model, save does nothing.
+        """Save the model. This method doesn't save model's weights.
+         During ``load`` weights are loaded from the path where they were saved during ``init``
 
         Parameters
         ----------
         path:
             Path to save object to.
         """
-        pass
+        self._save(path=path, skip_attributes=["pipeline"])
 
     @classmethod
     def load(cls, path: Path):
-        """Load the model. For this model, load does nothing.
+        """Load the model.
 
         Parameters
         ----------
         path:
             Path to load object from.
         """
-        pass
+        return super().load(path=path)
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.

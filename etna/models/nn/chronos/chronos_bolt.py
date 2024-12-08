@@ -18,8 +18,6 @@ class ChronosBoltModel(ChronosBaseModel):
 
     This model is only for zero-shot forecasting: it doesn't support training on data during ``fit``.
 
-    Methods ``save`` and ``load`` do nothing.
-
     Official implementation: https://github.com/amazon-science/chronos-forecasting
 
     Note
@@ -30,22 +28,30 @@ class ChronosBoltModel(ChronosBaseModel):
 
     def __init__(
         self,
-        model_name: str,
+        path_or_url: str,
         encoder_length: int = 2048,
         device: str = "cpu",
         dtype: torch.dtype = torch.float32,
         limit_prediction_length: bool = False,
         batch_size: int = 128,
         cache_dir: Path = _DOWNLOAD_PATH,
-        from_s3: bool = False,
     ):
         """
-        Init Chronos model.
+        Init Chronos Bolt model.
 
         Parameters
         ----------
-        model_name:
-            Model name.
+        path_or_url:
+            Path to the model. It can be huggingface repository, local path or external url
+            - If huggingface repository, the available models are:
+                - 'amazon/chronos-bolt-tiny'
+                - 'amazon/chronos-bolt-mini'
+                - 'amazon/chronos-bolt-small'
+                - 'amazon/chronos-bolt-base'.
+                During the first initialization model is downloaded from huggingface and saved to local ``cache_dir``.
+                All following initializations model will be loaded from ``cache_dir``. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`
+            - If local path, model will not be saved to local ``cache_dir``.
+            - If external url, it must be zip archive with the same name as model directory inside. Model will be downloaded to ``cache_dir``.
         encoder_length:
             Number of last timestamps to use as a context.
         device:
@@ -59,34 +65,21 @@ class ChronosBoltModel(ChronosBaseModel):
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
             See ``cache_dir`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
-        from_s3:
-            Whether to load from s3 or huggingface. Mostly for developer usage.
-
-        Raises
-        ------
-        ValueError:
-            If `model_name` model version is not available.
         """
-        if model_name not in self.list_models():
-            raise NotImplementedError(
-                f"Model {model_name} is not available. To get list of available models use `list_models` method."
-            )
-        self.model_name = model_name
+        self.path_or_url = path_or_url
         self.encoder_length = encoder_length
         self.device = device
         self.dtype = dtype
         self.limit_prediction_length = limit_prediction_length
         self.batch_size = batch_size
         self.cache_dir = cache_dir
-        self.from_s3 = from_s3
 
         super().__init__(
-            model_name=model_name,
+            path_or_url=path_or_url,
             encoder_length=encoder_length,
             device=device,
             dtype=dtype,
             cache_dir=cache_dir,
-            from_s3=from_s3,
         )
 
     def forecast(
@@ -138,4 +131,9 @@ class ChronosBoltModel(ChronosBaseModel):
         :
             List of available pretrained chronos-bolt models.
         """
-        return ["chronos-bolt-tiny", "chronos-bolt-mini", "chronos-bolt-small", "chronos-bolt-base"]
+        return [
+            "amazon/chronos-bolt-tiny",
+            "amazon/chronos-bolt-mini",
+            "amazon/chronos-bolt-small",
+            "amazon/chronos-bolt-base",
+        ]

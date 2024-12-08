@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pytest
 from pandas.testing import assert_frame_equal
@@ -29,28 +30,36 @@ def expected_ts_increasing_integers():
 
 
 @pytest.mark.smoke
-def test_chronos_fail_unknown_model_name():
-    with pytest.raises(NotImplementedError, match="Model chronos-t5-supertiny is not available."):
-        _ = ChronosModel(model_name="chronos-t5-supertiny")
+def test_chronos_url(tmp_path):
+    model_name = "chronos-t5-tiny.zip"
+    model_dir = model_name.split(".zip")[0]
+    url = f"http://etna-github-prod.cdn-tinkoff.ru/chronos/{model_name}"
+    _ = ChronosModel(path_or_url=url, cache_dir=tmp_path)
+    assert os.path.exists(tmp_path / f"{tmp_path}/{model_dir}")
 
 
 @pytest.mark.smoke
-def test_chronos_bolt_fail_unknown_model_name():
-    with pytest.raises(NotImplementedError, match="Model chronos-bolt-supertiny is not available."):
-        _ = ChronosBoltModel(model_name="chronos-bolt-supertiny")
+def test_chronos_bolt_url(tmp_path):
+    model_name = "chronos-bolt-tiny.zip"
+    model_dir = model_name.split(".zip")[0]
+    url = f"http://etna-github-prod.cdn-tinkoff.ru/chronos/{model_name}"
+    _ = ChronosBoltModel(path_or_url=url, cache_dir=tmp_path)
+    assert os.path.exists(tmp_path / f"{tmp_path}/{model_dir}")
 
 
 @pytest.mark.smoke
 def test_chronos_custom_cache_dir(tmp_path):
-    model_name = "chronos-t5-tiny"
-    _ = ChronosModel(model_name=model_name, cache_dir=tmp_path)
+    path_or_url = "amazon/chronos-t5-tiny"
+    model_name = path_or_url.split("/")[-1]
+    _ = ChronosModel(path_or_url=path_or_url, cache_dir=tmp_path)
     assert os.path.exists(tmp_path / f"models--amazon--{model_name}")
 
 
 @pytest.mark.smoke
 def test_chronos_bolt_custom_cache_dir(tmp_path):
-    model_name = "chronos-bolt-tiny"
-    _ = ChronosBoltModel(model_name=model_name, cache_dir=tmp_path)
+    path_or_url = "amazon/chronos-bolt-tiny"
+    model_name = path_or_url.split("/")[-1]
+    _ = ChronosBoltModel(path_or_url=path_or_url, cache_dir=tmp_path)
     assert os.path.exists(tmp_path / f"models--amazon--{model_name}")
 
 
@@ -58,20 +67,8 @@ def test_chronos_bolt_custom_cache_dir(tmp_path):
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, from_s3=True),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10, from_s3=True),
-    ],
-)
-def test_from_s3(model):
-    assert os.path.exists(model.cache_dir / model.model_name)
-
-
-@pytest.mark.smoke
-@pytest.mark.parametrize(
-    "model",
-    [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10),
+        ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=10),
+        ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=10),
     ],
 )
 def test_context_size(model):
@@ -80,28 +77,30 @@ def test_context_size(model):
 
 @pytest.mark.smoke
 def test_chronos_get_model(example_tsds):
-    model = ChronosModel(model_name="chronos-t5-tiny")
+    model = ChronosModel(path_or_url="amazon/chronos-t5-tiny")
     assert isinstance(model.get_model(), ChronosModelForForecasting)
 
 
 @pytest.mark.smoke
 def test_chronos_bolt_get_model(example_tsds):
-    model = ChronosBoltModel(model_name="chronos-bolt-tiny")
+    model = ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny")
     assert isinstance(model.get_model(), ChronosBoltModelForForecasting)
 
 
 @pytest.mark.smoke
 @pytest.mark.parametrize(
-    "model", [ChronosModel(model_name="chronos-t5-tiny"), ChronosBoltModel(model_name="chronos-bolt-tiny")]
+    "model",
+    [ChronosModel(path_or_url="amazon/chronos-t5-tiny"), ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny")],
 )
 def test_fit(example_tsds, model):
-    model = ChronosModel(model_name="chronos-t5-tiny")
+    model = ChronosModel(path_or_url="amazon/chronos-t5-tiny")
     model.fit(example_tsds)
 
 
 @pytest.mark.smoke
 @pytest.mark.parametrize(
-    "model", [ChronosModel(model_name="chronos-t5-tiny"), ChronosBoltModel(model_name="chronos-bolt-tiny")]
+    "model",
+    [ChronosModel(path_or_url="amazon/chronos-t5-tiny"), ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny")],
 )
 def test_predict(example_tsds, model):
     with pytest.raises(NotImplementedError, match="Method predict isn't currently implemented!"):
@@ -112,8 +111,8 @@ def test_predict(example_tsds, model):
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=20),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=20),
+        ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=20),
+        ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=20),
     ],
 )
 def test_forecast_warns_big_context_size(ts_increasing_integers, model):
@@ -127,8 +126,8 @@ def test_forecast_warns_big_context_size(ts_increasing_integers, model):
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, limit_prediction_length=False),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10, limit_prediction_length=False),
+        ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=10, limit_prediction_length=False),
+        ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=10, limit_prediction_length=False),
     ],
 )
 def test_forecast_warns_big_prediction_length(ts_increasing_integers, model):
@@ -146,8 +145,8 @@ def test_forecast_warns_big_prediction_length(ts_increasing_integers, model):
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, limit_prediction_length=True),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10, limit_prediction_length=True),
+        ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=10, limit_prediction_length=True),
+        ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=10, limit_prediction_length=True),
     ],
 )
 def test_forecast_error_big_prediction_length(ts_increasing_integers, model):
@@ -164,8 +163,8 @@ def test_forecast_error_big_prediction_length(ts_increasing_integers, model):
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, num_samples=5),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10),
+        ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=10, num_samples=5),
+        ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=10),
     ],
 )
 def test_forecast(ts_increasing_integers, expected_ts_increasing_integers, model):
@@ -178,8 +177,8 @@ def test_forecast(ts_increasing_integers, expected_ts_increasing_integers, model
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=10, num_samples=3),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10),
+        ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=10, num_samples=3),
+        ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=10),
     ],
 )
 @pytest.mark.parametrize("ts", ["example_tsds", "example_tsds_int_timestamp"])
@@ -198,7 +197,7 @@ def test_forecast_prediction_intervals(ts, model, request):
 
 def test_chronos_bolt_forecast_prediction_intervals_unusual_quantiles(ts_increasing_integers):
     quantiles = [0.025, 0.975]
-    model = ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=10)
+    model = ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=10)
     pipeline = Pipeline(model=model, horizon=3)
     pipeline.fit(ts=ts_increasing_integers)
     with pytest.warns(
@@ -213,8 +212,8 @@ def test_chronos_bolt_forecast_prediction_intervals_unusual_quantiles(ts_increas
 @pytest.mark.parametrize(
     "model",
     [
-        ChronosModel(model_name="chronos-t5-tiny", encoder_length=2),
-        ChronosBoltModel(model_name="chronos-bolt-tiny", encoder_length=2),
+        ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=2),
+        ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=2),
     ],
 )
 def test_forecast_without_fit(ts, model, request):
@@ -225,7 +224,8 @@ def test_forecast_without_fit(ts, model, request):
 
 @pytest.mark.smoke
 @pytest.mark.parametrize(
-    "model", [ChronosModel(model_name="chronos-t5-tiny"), ChronosBoltModel(model_name="chronos-bolt-tiny")]
+    "model",
+    [ChronosModel(path_or_url="amazon/chronos-t5-tiny"), ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny")],
 )
 def test_forecast_fails_components(example_tsds, model):
     pipeline = Pipeline(model=model, horizon=1)
@@ -236,43 +236,46 @@ def test_forecast_fails_components(example_tsds, model):
 @pytest.mark.smoke
 def test_chronos_list_models():
     assert ChronosModel.list_models() == [
-        "chronos-t5-tiny",
-        "chronos-t5-mini",
-        "chronos-t5-small",
-        "chronos-t5-base",
-        "chronos-t5-large",
+        "amazon/chronos-t5-tiny",
+        "amazon/chronos-t5-mini",
+        "amazon/chronos-t5-small",
+        "amazon/chronos-t5-base",
+        "amazon/chronos-t5-large",
     ]
 
 
 @pytest.mark.smoke
 def test_chronos_bolt_list_models():
     assert ChronosBoltModel.list_models() == [
-        "chronos-bolt-tiny",
-        "chronos-bolt-mini",
-        "chronos-bolt-small",
-        "chronos-bolt-base",
+        "amazon/chronos-bolt-tiny",
+        "amazon/chronos-bolt-mini",
+        "amazon/chronos-bolt-small",
+        "amazon/chronos-bolt-base",
     ]
 
 
 @pytest.mark.smoke
-@pytest.mark.parametrize(
-    "model", [ChronosModel(model_name="chronos-t5-tiny"), ChronosBoltModel(model_name="chronos-bolt-tiny")]
-)
-def test_save(model):
-    assert model.save(".") is None
+def test_chronos_save_load(tmp_path):
+    path = Path(tmp_path) / "tmp.zip"
+    model = ChronosModel(path_or_url="amazon/chronos-t5-tiny")
+    model.save(path)
+    loaded_model = ChronosModel.load(path)
+    assert isinstance(loaded_model, ChronosModel)
+
+
+@pytest.mark.smoke
+def test_chronos_bolt_save_load(tmp_path):
+    path = Path(tmp_path) / "tmp.zip"
+    model = ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny")
+    model.save(path)
+    loaded_model = ChronosBoltModel.load(path)
+    assert isinstance(loaded_model, ChronosBoltModel)
 
 
 @pytest.mark.smoke
 @pytest.mark.parametrize(
-    "model", [ChronosModel(model_name="chronos-t5-tiny"), ChronosBoltModel(model_name="chronos-bolt-tiny")]
-)
-def test_load(model):
-    assert model.load(".") is None
-
-
-@pytest.mark.smoke
-@pytest.mark.parametrize(
-    "model", [ChronosModel(model_name="chronos-t5-tiny"), ChronosBoltModel(model_name="chronos-bolt-tiny")]
+    "model",
+    [ChronosModel(path_or_url="amazon/chronos-t5-tiny"), ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny")],
 )
 def test_params_to_tune(model):
     assert len(model.params_to_tune()) == 0
