@@ -2,6 +2,7 @@ from functools import partial
 
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricWithMissingHandling
+from etna.metrics.functional_metrics import count_missing_values
 from etna.metrics.functional_metrics import mae
 from etna.metrics.functional_metrics import mape
 from etna.metrics.functional_metrics import max_deviation
@@ -417,4 +418,59 @@ class WAPE(Metric):
         return False
 
 
-__all__ = ["MAE", "MSE", "RMSE", "R2", "MSLE", "MAPE", "SMAPE", "MedAE", "Sign", "MaxDeviation", "WAPE"]
+class MissingCounter(MetricWithMissingHandling):
+    """Missing values counter with multi-segment computation support.
+
+    .. math::
+        MissingCounter(y\_true, y\_pred) = \\sum_{i=1}^{n}{isnan(y\_true_i)}
+
+    Notes
+    -----
+    You can read more about logic of multi-segment metrics in Metric docs.
+    """
+
+    def __init__(self, mode: str = "per-segment", **kwargs):
+        """Init metric.
+
+        Parameters
+        ----------
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+        kwargs:
+            metric's computation arguments
+        """
+        count_missing_values_per_output = partial(count_missing_values, multioutput="raw_values")
+        super().__init__(
+            mode=mode,
+            metric_fn=count_missing_values_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode="ignore",
+            **kwargs,
+        )
+
+    @property
+    def greater_is_better(self) -> None:
+        """Whether higher metric value is better."""
+        return None
+
+
+__all__ = [
+    "MAE",
+    "MSE",
+    "RMSE",
+    "R2",
+    "MSLE",
+    "MAPE",
+    "SMAPE",
+    "MedAE",
+    "Sign",
+    "MaxDeviation",
+    "WAPE",
+    "MissingCounter",
+]

@@ -32,5 +32,6 @@ from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import WAPE
 from etna.metrics.metrics import MaxDeviation
 from etna.metrics.metrics import MedAE
+from etna.metrics.metrics import MissingCounter
 from etna.metrics.metrics import Sign
 from etna.metrics.utils import compute_metrics

@@ -296,4 +296,55 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     return np.sum(np.abs(y_true_array - y_pred_array), axis=axis) / np.sum(np.abs(y_true_array), axis=axis)  # type: ignore
 
 
-__all__ = ["mae", "mse", "msle", "medae", "r2_score", "mape", "smape", "sign", "max_deviation", "rmse", "wape"]
+def count_missing_values(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Count missing values in ``y_true``.
+
+    .. math::
+        MissingCounter(y\_true, y\_pred) = \\sum_{i=1}^{n}{isnan(y\_true_i)}
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A floating point value, or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    axis = _get_axis_by_multioutput(multioutput)
+
+    return np.sum(np.isnan(y_true), axis=axis).astype(float)
+
+
+__all__ = [
+    "mae",
+    "mse",
+    "msle",
+    "medae",
+    "r2_score",
+    "mape",
+    "smape",
+    "sign",
+    "max_deviation",
+    "rmse",
+    "wape",
+    "count_missing_values",
+]
