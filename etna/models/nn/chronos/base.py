@@ -41,6 +41,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         ----------
         path_or_url:
             Path to the model. It can be huggingface repository, local path or external url.
+
             - If huggingface repository, see available models in ``list_models`` of appropriate model class.
             During the first initialization model is downloaded from huggingface and saved to local ``cache_dir``.
             All following initializations model will be loaded from ``cache_dir``. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
