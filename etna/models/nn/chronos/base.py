@@ -82,11 +82,13 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         model_dir = model_file.split(".zip")[0]
         full_model_path = f"{self.cache_dir}/{model_dir}"
         if not os.path.exists(full_model_path):
-            request.urlretrieve(url=self.path_or_url, filename=model_file)
+            try:
+                request.urlretrieve(url=self.path_or_url, filename=model_file)
 
-            with zipfile.ZipFile(model_file, "r") as zip_ref:
-                zip_ref.extractall(self.cache_dir)
-            os.remove(model_file)
+                with zipfile.ZipFile(model_file, "r") as zip_ref:
+                    zip_ref.extractall(self.cache_dir)
+            finally:
+                os.remove(model_file)
         return full_model_path
 
     @property
@@ -244,6 +246,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
 
     def save(self, path: Path):
         """Save the model. This method doesn't save model's weights.
+
          During ``load`` weights are loaded from the path where they were saved during ``init``
 
         Parameters

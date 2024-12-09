@@ -217,7 +217,6 @@ filterwarnings = [
     "ignore: Given top_k=.* is less than n_segments=.*. Algo will filter data without Gale-Shapley run.",
     "ignore: This model doesn't work with exogenous features",
     "ignore: Some of external objects in input parameters could be not",
-    "ignore: We recommend keeping prediction length <= 64. The quality of longer predictions may degrade since the model is not optimized for it.",
     # external warnings
     "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
