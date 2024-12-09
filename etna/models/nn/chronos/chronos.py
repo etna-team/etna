@@ -46,7 +46,7 @@ class ChronosModel(ChronosBaseModel):
         Parameters
         ----------
         path_or_url:
-            Path to the model. It can be huggingface repository, local path or external url
+            Path to the model. It can be huggingface repository, local path or external url.
             - If huggingface repository, the available models are:
                 - 'amazon/chronos-t5-tiny'
                 - 'amazon/chronos-t5-mini'
@@ -54,7 +54,7 @@ class ChronosModel(ChronosBaseModel):
                 - 'amazon/chronos-t5-base'.
                 - 'amazon/chronos-t5-large'.
                 During the first initialization model is downloaded from huggingface and saved to local ``cache_dir``.
-                All following initializations model will be loaded from ``cache_dir``. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`
+                All following initializations model will be loaded from ``cache_dir``. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
             - If local path, model will not be saved to local ``cache_dir``.
             - If external url, it must be zip archive with the same name as model directory inside. Model will be downloaded to ``cache_dir``.
         device:

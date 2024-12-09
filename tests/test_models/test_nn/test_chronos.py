@@ -257,7 +257,7 @@ def test_chronos_bolt_list_models():
 @pytest.mark.smoke
 def test_chronos_save_load(tmp_path, ts_increasing_integers):
     path = Path(tmp_path) / "tmp.zip"
-    model = ChronosModel(path_or_url="amazon/chronos-t5-tiny")
+    model = ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=10)
     model.save(path)
     loaded_model = ChronosModel.load(path)
 
@@ -270,7 +270,7 @@ def test_chronos_save_load(tmp_path, ts_increasing_integers):
 @pytest.mark.smoke
 def test_chronos_bolt_save_load(tmp_path, ts_increasing_integers):
     path = Path(tmp_path) / "tmp.zip"
-    model = ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny")
+    model = ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=10)
     model.save(path)
     loaded_model = ChronosBoltModel.load(path)
 

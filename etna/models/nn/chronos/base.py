@@ -40,10 +40,10 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         Parameters
         ----------
         path_or_url:
-            Path to the model. It can be huggingface repository, local path or external url
+            Path to the model. It can be huggingface repository, local path or external url.
             - If huggingface repository, see available models in ``list_models`` of appropriate model class.
             During the first initialization model is downloaded from huggingface and saved to local ``cache_dir``.
-            All following initializations model will be loaded from ``cache_dir``. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`
+            All following initializations model will be loaded from ``cache_dir``. See ``pretrained_model_name_or_path`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
             - If local path, model will not be saved to local ``cache_dir``.
             - If external url, it must be zip archive with the same name as model directory inside. Model will be downloaded to ``cache_dir``.
         encoder_length:
@@ -63,6 +63,10 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         self.dtype = dtype
         self.cache_dir = cache_dir
 
+        self._set_pipeline()
+
+    def _set_pipeline(self):
+        """Set ``pipeline`` attribute."""
         if self._is_url():
             full_model_path = self._download_model_from_url()
             self.pipeline = BaseChronosPipeline.from_pretrained(
@@ -74,6 +78,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
             )
 
     def _is_url(self):
+        """Check whether ``path_or_url`` is url."""
         return self.path_or_url.startswith("https://") or self.path_or_url.startswith("http://")
 
     def _download_model_from_url(self) -> str:
@@ -265,7 +270,9 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         path:
             Path to load object from.
         """
-        return super().load(path=path)
+        obj: ChronosBaseModel = super().load(path=path)
+        obj._set_pipeline()
+        return obj
 
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get default grid for tuning hyperparameters.
