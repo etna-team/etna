@@ -13,6 +13,7 @@ from etna.distributions import CategoricalDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
 from etna.metrics import MAE
+from etna.metrics import MSE
 from etna.models import NaiveModel
 from etna.models import SimpleExpSmoothingModel
 from etna.pipeline import AutoRegressivePipeline
@@ -21,6 +22,7 @@ from etna.pipeline.hierarchical_pipeline import HierarchicalPipeline
 from etna.reconciliation import BottomUpReconciliator
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import TimeSeriesImputerTransform
 
 
 def test_objective(
@@ -51,6 +53,36 @@ def test_objective(
 
     initializer.assert_called_once()
     callback.assert_called_once()
+
+
+@pytest.mark.parametrize("ts_name", ["ts_with_fold_missing_tail", "ts_with_fold_missing_middle"])
+def test_objective_fail_none(
+    ts_name,
+    request,
+    target_metric=MSE(missing_mode="ignore"),
+    metric_aggregation: Literal["mean"] = "mean",
+    metrics=[MSE(missing_mode="ignore")],
+    backtest_params={},
+    initializer=MagicMock(spec=_Initializer),
+    callback=MagicMock(spec=_Callback),
+    pipeline=Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform()], horizon=7),
+    params_to_tune={},
+):
+    ts = request.getfixturevalue(ts_name)
+    trial = MagicMock()
+    _objective = Tune.objective(
+        ts=ts,
+        pipeline=pipeline,
+        params_to_tune=params_to_tune,
+        target_metric=target_metric,
+        metric_aggregation=metric_aggregation,
+        metrics=metrics,
+        backtest_params=backtest_params,
+        initializer=initializer,
+        callback=callback,
+    )
+    with pytest.raises(ValueError, match="Metric value is None"):
+        _ = _objective(trial)
 
 
 def test_fit_called_tune(
@@ -165,23 +197,30 @@ def test_top_k(
     assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(expected_k)]  # noqa C416
 
 
+@pytest.mark.parametrize("ts_name", ["example_tsds", "ts_with_few_missing"])
 @pytest.mark.parametrize(
     "pipeline",
     [
-        (Pipeline(NaiveModel(1), horizon=7)),
-        (AutoRegressivePipeline(model=NaiveModel(1), horizon=7, transforms=[])),
-        (AutoRegressivePipeline(model=NaiveModel(1), horizon=7, transforms=[DateFlagsTransform()])),
+        (Pipeline(NaiveModel(1), transforms=[TimeSeriesImputerTransform()], horizon=7)),
+        (AutoRegressivePipeline(model=NaiveModel(1), transforms=[TimeSeriesImputerTransform()], horizon=7)),
+        (
+            AutoRegressivePipeline(
+                model=NaiveModel(1), transforms=[DateFlagsTransform(), TimeSeriesImputerTransform()], horizon=7
+            )
+        ),
     ],
 )
-def test_tune_run(example_tsds, optuna_storage, pipeline):
+def test_tune_run(ts_name, optuna_storage, pipeline, request):
+    ts = request.getfixturevalue(ts_name)
     tune = Tune(
         pipeline=pipeline,
-        target_metric=MAE(),
+        target_metric=MSE(missing_mode="ignore"),
+        metrics=[MSE(missing_mode="ignore")],
         metric_aggregation="median",
         horizon=7,
         storage=optuna_storage,
     )
-    tune.fit(ts=example_tsds, n_trials=2)
+    tune.fit(ts=ts, n_trials=2)
 
     assert len(tune._optuna.study.trials) == 2
     assert len(tune.summary()) == 2
