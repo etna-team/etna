@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `MetricWithMissingHandling` base class, change signature of `etna.metrics.Metric` to return `None` values ([#514](https://github.com/etna-team/etna/pull/514))
 - Add `ChronosModel` ([#511](https://github.com/etna-team/etna/pull/511))
 - Add `ChronosBoltModel` ([#511](https://github.com/etna-team/etna/pull/511))
-- 
+- Add usage example of `ChronosModel` and `ChronosBoltModel` in `202-NN_examples` notebook ([#511](https://github.com/etna-team/etna/pull/511))
 - 
 - 
 - 
