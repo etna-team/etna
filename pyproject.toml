@@ -131,7 +131,7 @@ wandb = ["wandb"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
-chronos = ["torch", "transformers", "accelerate"]
+chronos = ["torch", "transformers", "accelerate", "huggingface-hub"]
 
 # dev deps
 release = ["click", "semver"]
@@ -147,7 +147,7 @@ all = [
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
     "statsforecast",
-    "transformers", "accelerate"
+    "transformers", "accelerate", "huggingface-hub"
 ]
 
 all-dev = [
@@ -163,7 +163,7 @@ all-dev = [
     "jupyter", "nbconvert", "ipywidgets",
     "pyts", "tsfresh",
     "statsforecast",
-    "transformers", "accelerate"
+    "transformers", "accelerate", "huggingface-hub"
 ]
 
 [tool.poetry.scripts]
