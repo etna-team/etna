@@ -484,7 +484,11 @@ class Auto(AutoBase):
             for metric in aggregated_metrics:
                 trial.set_user_attr(metric, aggregated_metrics[metric])
 
-            return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+            result_value = aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+            if result_value is None:
+                raise ValueError("Metric value is None! It should be float for optimization.")
+
+            return result_value
 
         return _objective
 
@@ -809,7 +813,11 @@ class Tune(AutoBase):
                 for metric in aggregated_metrics:
                     trial.set_user_attr(metric, aggregated_metrics[metric])
 
-                return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+                result_value = aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+                if result_value is None:
+                    raise ValueError("Metric value is None! It should be float for optimization.")
+
+                return result_value
 
         return _objective
 
