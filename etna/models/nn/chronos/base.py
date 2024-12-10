@@ -14,13 +14,14 @@ import pandas as pd
 from etna import SETTINGS
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
-from etna.libs.chronos import BaseChronosPipeline
-from etna.libs.chronos import ChronosBoltModelForForecasting
-from etna.libs.chronos import ChronosModelForForecasting
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 
 if SETTINGS.chronos_required:
     import torch
+
+    from etna.libs.chronos import BaseChronosPipeline
+    from etna.libs.chronos import ChronosBoltModelForForecasting
+    from etna.libs.chronos import ChronosModelForForecasting
 
 
 class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
