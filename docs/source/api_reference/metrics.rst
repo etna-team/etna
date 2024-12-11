@@ -47,6 +47,7 @@ Scalar metrics:
    MaxDeviation
    MedAE
    Sign
+   MissingCounter
 
 Interval metrics:
 

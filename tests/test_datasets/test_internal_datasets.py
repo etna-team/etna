@@ -206,12 +206,13 @@ def test_not_present_part():
             46,
             ("train", "test"),
         ),
-        (
+        pytest.param(
             "weather_10T",
             (52560 + 144, 21),
             pd.to_datetime("2020-01-01 00:10:00"),
             pd.to_datetime("2021-01-01 00:00:00"),
             ("train", "test"),
+            marks=pytest.mark.skip(reason="There is a problem with certificates during loading the dataset."),
         ),
         (
             "ETTm1",
@@ -396,7 +397,10 @@ def test_list_datasets():
         "tourism_monthly",
         "tourism_quarterly",
         "tourism_yearly",
-        "weather_10T",
+        pytest.param(
+            "weather_10T",
+            marks=pytest.mark.skip(reason="There is a problem with certificates during loading the dataset."),
+        ),
         "ETTm1",
         "ETTm2",
         "ETTh1",

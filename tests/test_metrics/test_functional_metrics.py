@@ -13,6 +13,7 @@ from etna.metrics import rmse
 from etna.metrics import sign
 from etna.metrics import smape
 from etna.metrics import wape
+from etna.metrics.functional_metrics import count_missing_values
 
 
 @pytest.fixture()
@@ -43,6 +44,7 @@ def y_pred_1d():
         (sign, -1),
         (max_deviation, 2),
         (wape, 1 / 2),
+        (count_missing_values, 0),
     ),
 )
 def test_all_1d_metrics(metric, right_metrics_value, y_true_1d, y_pred_1d):
@@ -65,6 +67,7 @@ def test_mle_metric_exception(y_true_1d, y_pred_1d):
         sign,
         max_deviation,
         wape,
+        count_missing_values,
     ),
 )
 def test_all_wrong_mode(metric, y_true_1d, y_pred_1d):
@@ -95,6 +98,7 @@ def y_pred_2d():
         (sign, 0),
         (max_deviation, 2),
         (wape, 1 / 6),
+        (count_missing_values, 0),
     ),
 )
 def test_all_2d_metrics_joint(metric, right_metrics_value, y_true_2d, y_pred_2d):
@@ -114,6 +118,7 @@ def test_all_2d_metrics_joint(metric, right_metrics_value, y_true_2d, y_pred_2d)
         (sign, {"multioutput": "raw_values"}, [0, 0]),
         (max_deviation, {"multioutput": "raw_values"}, [1, 1]),
         (wape, {"multioutput": "raw_values"}, [0.0952381, 2 / 3]),
+        (count_missing_values, {"multioutput": "raw_values"}, [0, 0]),
     ),
 )
 def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2d, y_pred_2d):
@@ -177,6 +182,69 @@ def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2
         ),
     ],
 )
-def test_values_ok(y_true, y_pred, multioutput, expected):
+def test_mse_ok(y_true, y_pred, multioutput, expected):
     result = mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    npt.assert_allclose(result, expected)
+
+
+@pytest.mark.parametrize(
+    "y_true, y_pred, multioutput, expected",
+    [
+        # 1d
+        (np.array([1.0]), np.array([1.0]), "joint", 0.0),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 0.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 1.0),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 0.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 1.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 1.0),
+        (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", 2.0),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", 3.0),
+        # 2d
+        (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T, "joint", 0.0),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "joint",
+            2.0,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "joint",
+            3.0,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "joint",
+            6.0,
+        ),
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "raw_values",
+            np.array([0.0, 0.0]),
+        ),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "raw_values",
+            np.array([1.0, 1.0]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "raw_values",
+            np.array([3.0, 0.0]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "raw_values",
+            np.array([3.0, 3.0]),
+        ),
+    ],
+)
+def test_count_missing_values_ok(y_true, y_pred, multioutput, expected):
+    result = count_missing_values(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
     npt.assert_allclose(result, expected)
