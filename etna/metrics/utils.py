@@ -140,7 +140,7 @@ def aggregate_metrics_df(metrics_df: pd.DataFrame) -> Dict[str, Optional[float]]
     if "fold_number" in metrics_df.columns:
         metrics_dict = (
             metrics_df.groupby("segment")
-            .apply(lambda x: x.mean(skipna=False, numeric_only=False))
+            .apply(lambda x: x.mean(skipna=False, numeric_only=True))
             .reset_index()
             .drop(["segment", "fold_number"], axis=1)
             .apply(list(METRICS_AGGREGATION_MAP.values()))
