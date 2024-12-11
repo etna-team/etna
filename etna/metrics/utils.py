@@ -77,7 +77,7 @@ def std_agg():
         with warnings.catch_warnings():
             # this helps to prevent warning in case of all nans
             warnings.filterwarnings(
-                message="Degrees of freedom <=",
+                message="Degrees of freedom <= 0",
                 action="ignore",
             )
             return np.nanstd(a=x.values)

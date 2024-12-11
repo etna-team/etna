@@ -124,6 +124,7 @@ def test_init_optuna(
     )
 
 
+@pytest.mark.filterwarnings("ignore: overflow encountered in multiply")
 @pytest.mark.parametrize(
     "params, model",
     [
