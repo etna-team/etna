@@ -49,11 +49,11 @@ from tests.utils import create_dummy_functional_metric
         (MAPE(), "MAPE(mode = 'per-segment', missing_mode = 'error', )"),
         (MAPE(missing_mode="ignore"), "MAPE(mode = 'per-segment', missing_mode = 'ignore', )"),
         (MAPE(mode="macro"), "MAPE(mode = 'macro', missing_mode = 'error', )"),
-        (MAPE(mode='macro', missing_mode="ignore"), "MAPE(mode = 'macro', missing_mode = 'ignore', )"),
+        (MAPE(mode="macro", missing_mode="ignore"), "MAPE(mode = 'macro', missing_mode = 'ignore', )"),
         (SMAPE(), "SMAPE(mode = 'per-segment', missing_mode = 'error', )"),
         (SMAPE(missing_mode="ignore"), "SMAPE(mode = 'per-segment', missing_mode = 'ignore', )"),
         (SMAPE(mode="macro"), "SMAPE(mode = 'macro', missing_mode = 'error', )"),
-        (SMAPE(mode='macro', missing_mode="ignore"), "SMAPE(mode = 'macro', missing_mode = 'ignore', )"),
+        (SMAPE(mode="macro", missing_mode="ignore"), "SMAPE(mode = 'macro', missing_mode = 'ignore', )"),
         (R2(), "R2(mode = 'per-segment', )"),
         (Sign(), "Sign(mode = 'per-segment', )"),
         (MaxDeviation(), "MaxDeviation(mode = 'per-segment', )"),
@@ -208,12 +208,7 @@ def test_invalid_nans_true(metric, train_test_dfs):
 
 @pytest.mark.parametrize(
     "metric",
-    (
-            MSE(missing_mode="ignore"),
-            MAPE(missing_mode="ignore"),
-            SMAPE(missing_mode="ignore"),
-            MissingCounter()
-    ),
+    (MSE(missing_mode="ignore"), MAPE(missing_mode="ignore"), SMAPE(missing_mode="ignore"), MissingCounter()),
 )
 def test_invalid_single_nan_ignore(metric, train_test_dfs):
     """Check metrics behavior in case of ignoring one nan in true values."""
@@ -229,10 +224,10 @@ def test_invalid_single_nan_ignore(metric, train_test_dfs):
 @pytest.mark.parametrize(
     "metric, expected_type",
     (
-            (MSE(mode="per-segment", missing_mode="ignore"), type(None)),
-            (MAPE(mode="per-segment", missing_mode="ignore"), type(None)),
-            (SMAPE(mode="per-segment", missing_mode="ignore"), type(None)),
-            (MissingCounter(mode="per-segment"), float)
+        (MSE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MAPE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (SMAPE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MissingCounter(mode="per-segment"), float),
     ),
 )
 def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_test_dfs):
@@ -255,10 +250,10 @@ def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_te
 @pytest.mark.parametrize(
     "metric",
     (
-            MSE(mode="macro", missing_mode="ignore"),
-            MAPE(mode="macro", missing_mode="ignore"),
-            SMAPE(mode="macro", missing_mode="ignore"),
-            MissingCounter(mode="macro")
+        MSE(mode="macro", missing_mode="ignore"),
+        MAPE(mode="macro", missing_mode="ignore"),
+        SMAPE(mode="macro", missing_mode="ignore"),
+        MissingCounter(mode="macro"),
     ),
 )
 def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
@@ -272,10 +267,10 @@ def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
 @pytest.mark.parametrize(
     "metric, expected_type",
     (
-            (MSE(mode="macro", missing_mode="ignore"), type(None)),
-            (MAPE(mode="macro", missing_mode="ignore"), type(None)),
-            (SMAPE(mode="macro", missing_mode="ignore"), type(None)),
-            (MissingCounter(mode="macro"), float)
+        (MSE(mode="macro", missing_mode="ignore"), type(None)),
+        (MAPE(mode="macro", missing_mode="ignore"), type(None)),
+        (SMAPE(mode="macro", missing_mode="ignore"), type(None)),
+        (MissingCounter(mode="macro"), float),
     ),
 )
 def test_invalid_all_nans_ignore_macro(metric, expected_type, train_test_dfs):

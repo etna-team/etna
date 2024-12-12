@@ -262,7 +262,12 @@ def test_count_missing_values_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2.0 * 100),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
         # 2d
-        (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T, "joint", 21.0 / 30.0 * 100),
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "joint",
+            21.0 / 30.0 * 100,
+        ),
         (
             np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
             np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
@@ -328,7 +333,7 @@ def test_mape_ok(y_true, y_pred, multioutput, expected):
             np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
             np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
             "joint",
-            311.0 / 540.0 * 100
+            311.0 / 540.0 * 100,
         ),
         (
             np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,

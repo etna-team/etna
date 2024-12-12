@@ -179,7 +179,7 @@ class MAPE(MetricWithMissingHandling):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", missing_mode: str = 'error', **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
@@ -203,7 +203,8 @@ class MAPE(MetricWithMissingHandling):
             metric_fn=mape_per_output,
             metric_fn_signature="matrix_to_array",
             missing_mode=missing_mode,
-            **kwargs)
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
@@ -225,7 +226,7 @@ class SMAPE(MetricWithMissingHandling):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", missing_mode: str = 'error', **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
@@ -249,7 +250,8 @@ class SMAPE(MetricWithMissingHandling):
             metric_fn=smape_per_output,
             metric_fn_signature="matrix_to_array",
             missing_mode=missing_mode,
-            **kwargs)
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
