@@ -96,6 +96,8 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: 
 
     `Scale-dependent errors <https://otexts.com/fpp3/accuracy.html#scale-dependent-errors>`_
 
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
     Parameters
     ----------
     y_true:
@@ -131,7 +133,15 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: 
 
     axis = _get_axis_by_multioutput(multioutput)
 
-    return np.mean(np.abs((y_true_array - y_pred_array) / y_true_array), axis=axis) * 100
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = np.nanmean(np.abs((y_true_array - y_pred_array) / y_true_array), axis=axis) * 100
+
+    return result
 
 
 def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
@@ -173,9 +183,17 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput:
 
     axis = _get_axis_by_multioutput(multioutput)
 
-    return 100 * np.mean(
-        2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps), axis=axis
-    )
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = 100 * np.nanmean(
+            2 * np.abs(y_pred_array - y_true_array) / (np.abs(y_true_array) + np.abs(y_pred_array)).clip(eps), axis=axis
+        )
+
+    return result
 
 
 def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:

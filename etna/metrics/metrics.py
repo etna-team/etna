@@ -165,18 +165,21 @@ class R2(Metric):
         return True
 
 
-class MAPE(Metric):
+class MAPE(MetricWithMissingHandling):
     """Mean absolute percentage error metric with multi-segment computation support.
 
     .. math::
        MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = 'error', **kwargs):
         """Init metric.
 
         Parameters
@@ -189,11 +192,18 @@ class MAPE(Metric):
             * if "per-segment" -- does not aggregate metrics
 
             See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
         mape_per_output = partial(mape, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=mape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=mape_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
@@ -201,18 +211,21 @@ class MAPE(Metric):
         return False
 
 
-class SMAPE(Metric):
+class SMAPE(MetricWithMissingHandling):
     """Symmetric mean absolute percentage error metric with multi-segment computation support.
 
     .. math::
        SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = 'error', **kwargs):
         """Init metric.
 
         Parameters
@@ -225,11 +238,18 @@ class SMAPE(Metric):
             * if "per-segment" -- does not aggregate metrics
 
             See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
         smape_per_output = partial(smape, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=smape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=smape_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs)
 
     @property
     def greater_is_better(self) -> bool:
