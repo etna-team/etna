@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add docstring warning about handling non-regressors (including target) to children of `WindowStatisticsTransform` ([#474](https://github.com/etna-team/etna/pull/474))
 - Add parameter `missing_mode` into `MSE` metric ([#515](https://github.com/etna-team/etna/pull/515))
 - Add parameter `missing_mode` into `MAE` metric ([#523](https://github.com/etna-team/etna/pull/523))
-- 
+- Add parameter `missing_mode` into `MAPE` and `SMAPE` metrics ([#524](https://github.com/etna-team/etna/issues/521))
 - 
 - 
 - 
