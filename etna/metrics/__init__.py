@@ -1,6 +1,5 @@
 """Module with metrics of forecasting quality."""
 
-from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import mean_squared_log_error as msle
 from sklearn.metrics import median_absolute_error as medae
 from sklearn.metrics import r2_score

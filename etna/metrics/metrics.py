@@ -16,29 +16,47 @@ from etna.metrics.functional_metrics import smape
 from etna.metrics.functional_metrics import wape
 
 
-class MAE(Metric):
+class MAE(MetricWithMissingHandling):
     """Mean absolute error metric with multi-segment computation support.
 
     .. math::
         MAE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{\\mid y\_true_i - y\_pred_i \\mid}}{n}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
         ----------
-        mode: 'macro' or 'per-segment'
-            metrics aggregation mode
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
         mae_per_output = partial(mae, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=mae_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=mae_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
@@ -83,8 +101,8 @@ class MSE(MetricWithMissingHandling):
         super().__init__(
             mode=mode,
             metric_fn=mse_per_output,
-            missing_mode=missing_mode,
             metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
             **kwargs,
         )
 
