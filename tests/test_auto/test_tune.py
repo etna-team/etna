@@ -13,7 +13,6 @@ from etna.distributions import CategoricalDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
 from etna.metrics import MAE
-from etna.metrics import MSE
 from etna.models import NaiveModel
 from etna.models import SimpleExpSmoothingModel
 from etna.pipeline import AutoRegressivePipeline

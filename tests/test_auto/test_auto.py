@@ -11,7 +11,6 @@ from etna.auto.auto import PoolGenerator
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
-from etna.metrics import MSE
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
 from etna.models import NaiveModel
