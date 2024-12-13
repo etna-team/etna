@@ -86,13 +86,13 @@ def std_agg():
     return func
 
 
-def size_agg():
-    """Size for pandas agg."""
+def notna_size_agg():
+    """Size of not-na elements for pandas agg."""
 
     def func(x):
         return len(x) - pd.isna(x.values).sum()
 
-    func.__name__ = "size"
+    func.__name__ = "notna_size"
     return func
 
 
@@ -113,14 +113,14 @@ def percentile(n: int):
 
 
 MetricAggregationStatistics = Literal[
-    "median", "mean", "std", "size", "percentile_5", "percentile_25", "percentile_75", "percentile_95"
+    "median", "mean", "std", "notna_size", "percentile_5", "percentile_25", "percentile_75", "percentile_95"
 ]
 
 METRICS_AGGREGATION_MAP: Dict[MetricAggregationStatistics, Union[str, Callable]] = {
     "median": mean_agg(),
     "mean": median_agg(),
     "std": std_agg(),
-    "size": size_agg(),
+    "notna_size": notna_size_agg(),
     "percentile_5": percentile(5),
     "percentile_25": percentile(25),
     "percentile_75": percentile(75),
@@ -140,7 +140,7 @@ def aggregate_metrics_df(metrics_df: pd.DataFrame) -> Dict[str, Optional[float]]
     if "fold_number" in metrics_df.columns:
         metrics_dict = (
             metrics_df.groupby("segment")
-            .apply(lambda x: x.mean(skipna=False, numeric_only=True))
+            .mean(numeric_only=False)
             .reset_index()
             .drop(["segment", "fold_number"], axis=1)
             .apply(list(METRICS_AGGREGATION_MAP.values()))

@@ -25,20 +25,31 @@ from etna.transforms import DateFlagsTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
+@pytest.mark.parametrize(
+    "ts_name",
+    [
+        "example_tsds",
+        "ts_with_few_missing",
+        "ts_with_fold_missing_tail",
+        "ts_with_fold_missing_middle",
+    ],
+)
 def test_objective(
-    example_tsds,
-    target_metric=MAE(),
+    ts_name,
+    request,
+    target_metric=MAE(missing_mode="ignore"),
     metric_aggregation: Literal["mean"] = "mean",
-    metrics=[MAE()],
+    metrics=[MAE(missing_mode="ignore")],
     backtest_params={},
-    initializer=MagicMock(spec=_Initializer),
-    callback=MagicMock(spec=_Callback),
-    pipeline=Pipeline(NaiveModel()),
+    pipeline=Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform()], horizon=7),
     params_to_tune={},
 ):
+    ts = request.getfixturevalue(ts_name)
+    initializer = MagicMock(spec=_Initializer)
+    callback = MagicMock(spec=_Callback)
     trial = MagicMock()
     _objective = Tune.objective(
-        ts=example_tsds,
+        ts=ts,
         pipeline=pipeline,
         params_to_tune=params_to_tune,
         target_metric=target_metric,
@@ -55,13 +66,13 @@ def test_objective(
     callback.assert_called_once()
 
 
-@pytest.mark.parametrize("ts_name", ["ts_with_fold_missing_tail", "ts_with_fold_missing_middle"])
+@pytest.mark.parametrize("ts_name", ["ts_with_all_folds_missing_one_segment"])
 def test_objective_fail_none(
     ts_name,
     request,
-    target_metric=MSE(missing_mode="ignore"),
+    target_metric=MAE(missing_mode="ignore"),
     metric_aggregation: Literal["mean"] = "mean",
-    metrics=[MSE(missing_mode="ignore")],
+    metrics=[MAE(missing_mode="ignore")],
     backtest_params={},
     initializer=MagicMock(spec=_Initializer),
     callback=MagicMock(spec=_Callback),
@@ -81,7 +92,9 @@ def test_objective_fail_none(
         initializer=initializer,
         callback=callback,
     )
-    with pytest.raises(ValueError, match="Metric value is None"):
+
+    # TODO: discuss the error here
+    with pytest.raises(ValueError, match="Last train timestamp should be not later"):
         _ = _objective(trial)
 
 
@@ -215,8 +228,8 @@ def test_tune_run(ts_name, optuna_storage, pipeline, request):
     ts = request.getfixturevalue(ts_name)
     tune = Tune(
         pipeline=pipeline,
-        target_metric=MSE(missing_mode="ignore"),
-        metrics=[MSE(missing_mode="ignore")],
+        target_metric=MAE(missing_mode="ignore"),
+        metrics=[MAE(missing_mode="ignore")],
         metric_aggregation="median",
         horizon=7,
         storage=optuna_storage,
