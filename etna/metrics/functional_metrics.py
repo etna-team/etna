@@ -6,7 +6,6 @@ from typing import Sequence
 from typing import Union
 
 import numpy as np
-from sklearn.metrics import mean_absolute_error as mae
 from sklearn.metrics import mean_squared_error as mse_sklearn
 from sklearn.metrics import mean_squared_log_error as msle
 from sklearn.metrics import median_absolute_error as medae
@@ -85,6 +84,52 @@ def mse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Arr
             action="ignore",
         )
         result = np.nanmean((y_true_array - y_pred_array) ** 2, axis=axis)
+    return result
+
+
+def mae(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Mean absolute error with missing values handling.
+
+    .. math::
+        MAE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{\\mid y\_true_i - y\_pred_i \\mid}}{n}
+
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A non-negative floating point value (the best value is 0.0), or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    axis = _get_axis_by_multioutput(multioutput)
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = np.nanmean(np.abs(y_true_array - y_pred_array), axis=axis)
     return result
 
 

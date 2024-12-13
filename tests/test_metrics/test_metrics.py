@@ -39,10 +39,11 @@ from tests.utils import create_dummy_functional_metric
 @pytest.mark.parametrize(
     "metric, expected_repr",
     (
-        (MAE(), "MAE(mode = 'per-segment', )"),
-        (MAE(mode="macro"), "MAE(mode = 'macro', )"),
+        (MAE(), "MAE(mode = 'per-segment', missing_mode = 'error', )"),
+        (MAE(mode="macro"), "MAE(mode = 'macro', missing_mode = 'error', )"),
+        (MAE(missing_mode="ignore"), "MAE(mode = 'per-segment', missing_mode = 'ignore', )"),
+        (MAE(mode="macro", missing_mode="ignore"), "MAE(mode = 'macro', missing_mode = 'ignore', )"),
         (MSE(), "MSE(mode = 'per-segment', missing_mode = 'error', )"),
-        (MSE(missing_mode="ignore"), "MSE(mode = 'per-segment', missing_mode = 'ignore', )"),
         (RMSE(), "RMSE(mode = 'per-segment', )"),
         (MedAE(), "MedAE(mode = 'per-segment', )"),
         (MSLE(), "MSLE(mode = 'per-segment', )"),
@@ -178,7 +179,7 @@ def test_invalid_nans_pred(metric_class, train_test_dfs):
 @pytest.mark.parametrize(
     "metric",
     (
-        MAE(),
+        MAE(missing_mode="error"),
         MSE(missing_mode="error"),
         RMSE(),
         MedAE(),
@@ -202,7 +203,7 @@ def test_invalid_nans_true(metric, train_test_dfs):
 
 @pytest.mark.parametrize(
     "metric",
-    (MSE(missing_mode="ignore"), MissingCounter()),
+    (MSE(missing_mode="ignore"), MAE(missing_mode="ignore"), MissingCounter()),
 )
 def test_invalid_single_nan_ignore(metric, train_test_dfs):
     """Check metrics behavior in case of ignoring one nan in true values."""
@@ -217,7 +218,11 @@ def test_invalid_single_nan_ignore(metric, train_test_dfs):
 
 @pytest.mark.parametrize(
     "metric, expected_type",
-    ((MSE(mode="per-segment", missing_mode="ignore"), type(None)), (MissingCounter(mode="per-segment"), float)),
+    (
+        (MSE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MAE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MissingCounter(mode="per-segment"), float),
+    ),
 )
 def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_test_dfs):
     """Check per-segment metrics behavior in case of ignoring segment of all nans in true values."""
@@ -238,7 +243,7 @@ def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_te
 
 @pytest.mark.parametrize(
     "metric",
-    (MSE(mode="macro", missing_mode="ignore"), MissingCounter(mode="macro")),
+    (MSE(mode="macro", missing_mode="ignore"), MAE(mode="macro", missing_mode="ignore"), MissingCounter(mode="macro")),
 )
 def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
     """Check macro metrics behavior in case of ignoring segment of all nans in true values."""
@@ -250,7 +255,11 @@ def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
 
 @pytest.mark.parametrize(
     "metric, expected_type",
-    ((MSE(mode="macro", missing_mode="ignore"), type(None)), (MissingCounter(mode="macro"), float)),
+    (
+        (MSE(mode="macro", missing_mode="ignore"), type(None)),
+        (MAE(mode="macro", missing_mode="ignore"), type(None)),
+        (MissingCounter(mode="macro"), float),
+    ),
 )
 def test_invalid_all_nans_ignore_macro(metric, expected_type, train_test_dfs):
     """Check macro metrics behavior in case of all nan values in true values."""
