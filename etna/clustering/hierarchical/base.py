@@ -5,8 +5,8 @@ from typing import Optional
 from typing import Union
 
 import pandas as pd
-from sklearn.cluster import AgglomerativeClustering
 from sklearn import __version__ as sklearn_version
+from sklearn.cluster import AgglomerativeClustering
 
 from etna.clustering.base import Clustering
 from etna.clustering.distances.base import Distance
@@ -84,7 +84,7 @@ class HierarchicalClustering(Clustering):
         self.linkage = ClusteringLinkageMode(linkage).name
 
         sklearn_version_tuple = tuple(map(int, sklearn_version.split(".")))
-        if sklearn_version_tuple < (1, 2, 0):
+        if sklearn_version_tuple < (1, 2):
             clustering_algo_params["affinity"] = "precomputed"
         else:
             clustering_algo_params["metric"] = "precomputed"
