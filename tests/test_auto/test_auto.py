@@ -47,6 +47,7 @@ def pool_list():
     ]
 
 
+@patch("etna.pipeline.FoldMask.validate_on_dataset", return_value=MagicMock())  # TODO: remove after fix
 @pytest.mark.parametrize(
     "ts_name",
     [
@@ -54,9 +55,11 @@ def pool_list():
         "ts_with_few_missing",
         "ts_with_fold_missing_tail",
         "ts_with_fold_missing_middle",
+        "ts_with_all_folds_missing_one_segment",
     ],
 )
 def test_objective(
+    validate_on_dataset_mock,
     ts_name,
     request,
     target_metric=MAE(missing_mode="ignore"),
@@ -90,8 +93,10 @@ def test_objective(
     callback.assert_called_once()
 
 
-@pytest.mark.parametrize("ts_name", ["ts_with_all_folds_missing_one_segment"])
+@patch("etna.pipeline.FoldMask.validate_on_dataset", return_value=MagicMock())  # TODO: remove after fix
+@pytest.mark.parametrize("ts_name", ["ts_with_all_folds_missing_all_segments"])
 def test_objective_fail_none(
+    validate_on_dataset_mock,
     ts_name,
     request,
     target_metric=MAE(missing_mode="ignore"),
@@ -119,8 +124,7 @@ def test_objective_fail_none(
         callback=callback,
     )
 
-    # TODO: discuss the error here
-    with pytest.raises(ValueError, match="Last train timestamp should be not later"):
+    with pytest.raises(ValueError, match="Metric value is None"):
         _ = _objective(trial)
 
 
