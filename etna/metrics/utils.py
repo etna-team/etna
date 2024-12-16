@@ -41,7 +41,7 @@ def compute_metrics(
 def mean_agg():
     """Mean for pandas agg."""
 
-    def func(x):
+    def func(x: pd.Series):
         with warnings.catch_warnings():
             # this helps to prevent warning in case of all nans
             warnings.filterwarnings(
@@ -57,7 +57,7 @@ def mean_agg():
 def median_agg():
     """Median for pandas agg."""
 
-    def func(x):
+    def func(x: pd.Series):
         with warnings.catch_warnings():
             # this helps to prevent warning in case of all nans
             warnings.filterwarnings(
@@ -73,7 +73,7 @@ def median_agg():
 def std_agg():
     """Std for pandas agg."""
 
-    def func(x):
+    def func(x: pd.Series):
         with warnings.catch_warnings():
             # this helps to prevent warning in case of all nans
             warnings.filterwarnings(
@@ -89,7 +89,7 @@ def std_agg():
 def notna_size_agg():
     """Size of not-na elements for pandas agg."""
 
-    def func(x):
+    def func(x: pd.Series):
         return len(x) - pd.isna(x.values).sum()
 
     func.__name__ = "notna_size"
@@ -99,7 +99,7 @@ def notna_size_agg():
 def percentile(n: int):
     """Percentile for pandas agg."""
 
-    def func(x):
+    def func(x: pd.Series):
         with warnings.catch_warnings():
             # this helps to prevent warning in case of all nans
             warnings.filterwarnings(
