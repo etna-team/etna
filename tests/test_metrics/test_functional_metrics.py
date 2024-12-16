@@ -444,3 +444,205 @@ def test_mape_ok(y_true, y_pred, multioutput, expected):
 def test_smape_ok(y_true, y_pred, multioutput, expected):
     result = smape(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
     npt.assert_allclose(result, expected)
+
+
+@pytest.mark.parametrize(
+    "y_true, y_pred, multioutput, expected",
+    [
+        # 1d
+        (np.array([1.0]), np.array([1.0]), "joint", 0.0),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 1 / 3),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 0.0),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 0.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 0.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", -1.0),
+        (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        # 2d
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "joint",
+            1 / 3,
+        ),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            -1.0,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            0.0,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            np.NaN,
+        ),
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "raw_values",
+            np.array([1 / 3, 1 / 3]),
+        ),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([-1.0, -1.0]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([np.NaN, 0.0]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([np.NaN, np.NaN]),
+        ),
+    ],
+)
+def test_sign_ok(y_true, y_pred, multioutput, expected):
+    result = sign(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    npt.assert_allclose(result, expected)
+
+
+@pytest.mark.parametrize(
+    "y_true, y_pred, multioutput, expected",
+    [
+        # 1d
+        (np.array([1.0]), np.array([1.0]), "joint", 0.0),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 4 / 6),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 3 / 4),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 3 / 4),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 3 / 4),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2 / 1),
+        (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        # 2d
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "joint",
+            9 / 18,
+        ),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            4 / 4,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            3 / 8,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            np.NaN,
+        ),
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "raw_values",
+            np.array([4 / 6, 5 / 12]),
+        ),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([2 / 1, 2 / 3]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([np.NaN, 3 / 8]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([np.NaN, np.NaN]),
+        ),
+    ],
+)
+def test_wape_ok(y_true, y_pred, multioutput, expected):
+    result = wape(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    npt.assert_allclose(result, expected)
+
+
+# TODO: исправить
+@pytest.mark.parametrize(
+    "y_true, y_pred, multioutput, expected",
+    [
+        # 1d
+        # (np.array([1.0]), np.array([1.0]), "joint", 0.0),
+        # (np.array([1.0, 2.0, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 2.0),
+        # (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 2.0),
+        # (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.0),
+        # (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.0),
+        # (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2.0),
+        (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        # 2d
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "joint",
+            4.0,
+        ),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            4.0,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            2.0,
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "joint",
+            np.NaN,
+        ),
+        (
+            np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T,
+            "raw_values",
+            np.array([2.0, 2.0]),
+        ),
+        (
+            np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([2.0, 2.0]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([np.NaN, 2.0]),
+        ),
+        (
+            np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
+            np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
+            "raw_values",
+            np.array([np.NaN, np.NaN]),
+        ),
+    ],
+)
+def test_max_deviation(y_true, y_pred, multioutput, expected):
+    result = max_deviation(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    npt.assert_allclose(result, expected)

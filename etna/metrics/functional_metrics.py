@@ -195,6 +195,8 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput:
     .. math::
        SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
 
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
     Parameters
     ----------
     y_true:
@@ -247,6 +249,8 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     .. math::
         Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{sign(y\_true_i - y\_pred_i)}
 
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
     Parameters
     ----------
     y_true:
@@ -275,8 +279,15 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         raise ValueError("Shapes of the labels must be the same")
 
     axis = _get_axis_by_multioutput(multioutput)
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = np.nanmean(np.sign(y_true_array - y_pred_array), axis=axis)
 
-    return np.mean(np.sign(y_true_array - y_pred_array), axis=axis)
+    return result
 
 
 def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
@@ -284,6 +295,8 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
 
     .. math::
         MaxDeviation(y\_true, y\_pred) = \\max_{1 \\le j \\le n} | y_j |, where \\, y_j = \\sum_{i=1}^{j}{y\_pred_i - y\_true_i}
+
+    The nans are ignored during computation. If all values are nans, the result is NaN.
 
     Parameters
     ----------
@@ -313,9 +326,14 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
         raise ValueError("Shapes of the labels must be the same")
 
     axis = _get_axis_by_multioutput(multioutput)
-
-    prefix_error_sum = np.cumsum(y_pred_array - y_true_array, axis=axis)
-    return np.max(np.abs(prefix_error_sum), axis=axis)
+    prefix_error_sum = np.nancumsum(y_pred_array - y_true_array, axis=axis)
+    isnan = np.all(np.isnan(y_pred_array - y_true_array), axis=axis)
+    raw_result = np.max(np.abs(prefix_error_sum), axis=axis)
+    result = np.where(isnan, np.NaN, raw_result)
+    try:
+        return result.item()
+    except ValueError as e:
+        return result  # type: ignore
 
 
 rmse = partial(mse_sklearn, squared=False)
@@ -327,6 +345,8 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     .. math::
         WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=1}^{n}|y\\_true_i|}
 
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
     Parameters
     ----------
     y_true:
@@ -355,8 +375,24 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         raise ValueError("Shapes of the labels must be the same")
 
     axis = _get_axis_by_multioutput(multioutput)
-
-    return np.sum(np.abs(y_true_array - y_pred_array), axis=axis) / np.sum(np.abs(y_true_array), axis=axis)  # type: ignore
+    numerator = np.nansum(np.abs(y_true_array - y_pred_array), axis=axis)
+    nans_mask = y_pred_array - y_pred_array
+    denominator = np.nansum(np.abs(y_true_array + nans_mask), axis=axis)
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="invalid value encountered in scalar divide",
+            action="ignore",
+        )
+        warnings.filterwarnings(
+            message="invalid value encountered in divide",
+            action="ignore",
+        )
+        result = np.where(denominator == 0, np.NaN, numerator / denominator)
+        try:
+            return result.item()
+        except ValueError as e:
+            return result  # type: ignore
 
 
 def count_missing_values(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:

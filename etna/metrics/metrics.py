@@ -350,18 +350,21 @@ class MSLE(Metric):
         return False
 
 
-class Sign(Metric):
+class Sign(MetricWithMissingHandling):
     """Sign error metric with multi-segment computation support.
 
     .. math::
         Sign(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{sign(y\_true_i - y\_pred_i)}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
@@ -374,11 +377,19 @@ class Sign(Metric):
             * if "per-segment" -- does not aggregate metrics
 
             See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
         sign_per_output = partial(sign, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=sign_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=sign_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> None:
@@ -386,18 +397,21 @@ class Sign(Metric):
         return None
 
 
-class MaxDeviation(Metric):
+class MaxDeviation(MetricWithMissingHandling):
     """Max Deviation metric with multi-segment computation support (maximum deviation value of cumulative sums).
 
     .. math::
         MaxDeviation(y\_true, y\_pred) = \\max_{1 \\le j \\le n} | y_j |, where \\, y_j = \\sum_{i=1}^{j}{y\_pred_i - y\_true_i}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
@@ -410,11 +424,19 @@ class MaxDeviation(Metric):
             * if "per-segment" -- does not aggregate metrics
 
             See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
         max_deviation_per_output = partial(max_deviation, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=max_deviation_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=max_deviation_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
@@ -422,18 +444,21 @@ class MaxDeviation(Metric):
         return False
 
 
-class WAPE(Metric):
+class WAPE(MetricWithMissingHandling):
     """Weighted average percentage Error metric with multi-segment computation support.
 
     .. math::
         WAPE(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n} |y\_true_i - y\_pred_i|}{\\sum_{i=1}^{n}|y\\_true_i|}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode: str = "error", **kwargs):
         """Init metric.
 
         Parameters
@@ -446,11 +471,19 @@ class WAPE(Metric):
             * if "per-segment" -- does not aggregate metrics
 
             See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
         wape_per_output = partial(wape, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=wape_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=wape_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
