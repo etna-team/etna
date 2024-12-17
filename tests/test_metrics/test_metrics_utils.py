@@ -22,7 +22,7 @@ def test_compute_metrics(train_test_dfs: Tuple[TSDataset, TSDataset]):
         "MAE(mode = 'per-segment', missing_mode = 'error', )",
         "MAE(mode = 'macro', missing_mode = 'error', )",
         "MSE(mode = 'per-segment', missing_mode = 'error', )",
-        "MAPE(mode = 'macro', eps = 1e-05, )",
+        "MAPE(mode = 'macro', missing_mode = 'error', eps = 1e-05, )",
     ]
     result = compute_metrics(metrics=metrics, y_true=true_df, y_pred=forecast_df)
     np.testing.assert_array_equal(sorted(expected_keys), sorted(result.keys()))
