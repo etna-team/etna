@@ -326,8 +326,9 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
         raise ValueError("Shapes of the labels must be the same")
 
     axis = _get_axis_by_multioutput(multioutput)
-    prefix_error_sum = np.nancumsum(y_pred_array - y_true_array, axis=axis)
-    isnan = np.all(np.isnan(y_pred_array - y_true_array), axis=axis)
+    diff = y_pred_array - y_true_array
+    prefix_error_sum = np.nancumsum(diff, axis=axis)
+    isnan = np.all(np.isnan(diff), axis=axis)
     raw_result = np.max(np.abs(prefix_error_sum), axis=axis)
     result = np.where(isnan, np.NaN, raw_result)
     try:
