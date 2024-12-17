@@ -154,6 +154,7 @@ def test_base_file_logger_log_backtest_run(example_tsds: TSDataset):
                 "median",
                 "mean",
                 "std",
+                "size",
                 "percentile_5",
                 "percentile_25",
                 "percentile_75",
@@ -213,7 +214,16 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
         with open(crossval_results_folder.joinpath("metrics_summary.json"), "r") as inf:
             metrics_summary = json.load(inf)
 
-        statistic_keys = ["median", "mean", "std", "percentile_5", "percentile_25", "percentile_75", "percentile_95"]
+        statistic_keys = [
+            "median",
+            "mean",
+            "std",
+            "size",
+            "percentile_5",
+            "percentile_25",
+            "percentile_75",
+            "percentile_95",
+        ]
         assert len(metrics_summary.keys()) == len(metrics) * len(statistic_keys)
 
     tslogger.remove(idx)
