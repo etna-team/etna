@@ -136,6 +136,9 @@ def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.5),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 4.0),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", np.NaN),
+        (np.array([1.0, 2.0, 3.0]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
         # 2d
         (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T, "joint", 2.5),
         (
@@ -198,6 +201,9 @@ def test_mse_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 1.5),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2.0),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", np.NaN),
+        (np.array([1.0, 2.0, 3.0]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
         # 2d
         (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T, "joint", 1.5),
         (
@@ -261,6 +267,7 @@ def test_mae_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 1.0),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", 2.0),
         (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", 3.0),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", 3.0),
         # 2d
         (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 1.0, 2.0], [5.0, 2.0, 4.0]]).T, "joint", 0.0),
         (
@@ -323,6 +330,9 @@ def test_count_missing_values_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 7.0 / 6.0 * 100),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2.0 * 100),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", np.NaN),
+        (np.array([1.0, 2.0, 3.0]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
         # 2d
         (
             np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
@@ -390,6 +400,9 @@ def test_mape_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 7.0 / 10.0 * 100),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 1.0 * 100),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", np.NaN),
+        (np.array([1.0, 2.0, 3.0]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
         # 2d
         (
             np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
@@ -457,6 +470,9 @@ def test_smape_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 0.0),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", -1.0),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", np.NaN),
+        (np.array([1.0, 2.0, 3.0]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
         # 2d
         (
             np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
@@ -524,6 +540,9 @@ def test_sign_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 3 / 4),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2 / 1),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", np.NaN),
+        (np.array([1.0, 2.0, 3.0]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
         # 2d
         (
             np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
@@ -591,6 +610,9 @@ def test_wape_ok(y_true, y_pred, multioutput, expected):
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.0),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2.0),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([3.0, 1.0, 2.0]), "joint", np.NaN),
+        (np.array([1.0, 2.0, 3.0]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
+        (np.array([np.NaN, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, np.NaN]), "joint", np.NaN),
         # 2d
         (
             np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,

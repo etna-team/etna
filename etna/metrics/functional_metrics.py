@@ -329,8 +329,8 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
     diff = y_pred_array - y_true_array
     prefix_error_sum = np.nancumsum(diff, axis=axis)
     isnan = np.all(np.isnan(diff), axis=axis)
-    raw_result = np.max(np.abs(prefix_error_sum), axis=axis)
-    result = np.where(isnan, np.NaN, raw_result)
+    result = np.max(np.abs(prefix_error_sum), axis=axis)
+    result = np.where(isnan, np.NaN, result)
     try:
         return result.item()
     except ValueError as e:
@@ -376,9 +376,10 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         raise ValueError("Shapes of the labels must be the same")
 
     axis = _get_axis_by_multioutput(multioutput)
-    numerator = np.nansum(np.abs(y_true_array - y_pred_array), axis=axis)
-    nans_mask = y_pred_array - y_pred_array
-    denominator = np.nansum(np.abs(y_true_array + nans_mask), axis=axis)
+    diff = y_true_array - y_pred_array
+    numerator = np.nansum(np.abs(diff), axis=axis)
+    isnan = np.isnan(diff)
+    denominator = np.nansum(np.abs(y_true_array * (~isnan)), axis=axis)
     with warnings.catch_warnings():
         # this helps to prevent warning in case of all nans
         warnings.filterwarnings(
@@ -389,7 +390,17 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
             message="invalid value encountered in divide",
             action="ignore",
         )
+        warnings.filterwarnings(
+            message="divide by zero encountered in scalar divide",
+            action="ignore",
+        )
+        warnings.filterwarnings(
+            message="divide by zero encountered in divide",
+            action="ignore",
+        )
+        isnan = np.all(isnan, axis=axis)
         result = np.where(denominator == 0, np.NaN, numerator / denominator)
+        result = np.where(isnan, np.NaN, result)
         try:
             return result.item()
         except ValueError as e:
