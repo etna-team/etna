@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add parameter `missing_mode` into `MAE` metric ([#523](https://github.com/etna-team/etna/pull/523))
 - Add parameter `missing_mode` into `MAPE` and `SMAPE` metrics ([#524](https://github.com/etna-team/etna/pull/524))
 - 
-- 
+- Update `aggregate_metrics_df` to work with `None` values ([#522](https://github.com/etna-team/etna/pull/522))
 - 
 - 
 - 
