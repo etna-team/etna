@@ -580,17 +580,16 @@ def test_wape_ok(y_true, y_pred, multioutput, expected):
     npt.assert_allclose(result, expected)
 
 
-# TODO: исправить
 @pytest.mark.parametrize(
     "y_true, y_pred, multioutput, expected",
     [
         # 1d
-        # (np.array([1.0]), np.array([1.0]), "joint", 0.0),
-        # (np.array([1.0, 2.0, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 2.0),
-        # (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 2.0),
-        # (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.0),
-        # (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.0),
-        # (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2.0),
+        (np.array([1.0]), np.array([1.0]), "joint", 0.0),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 2.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", 2.0),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", 2.0),
+        (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", 2.0),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
         # 2d
         (
