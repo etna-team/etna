@@ -94,7 +94,7 @@ def y_pred_2d():
         (mape, 42 + 3 / 11),
         (smape, 38.0952380),
         (medae, 1),
-        (r2_score, -3),
+        (r2_score, 0.9512195),
         (sign, 0),
         (max_deviation, 2),
         (wape, 1 / 6),

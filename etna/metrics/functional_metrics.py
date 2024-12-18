@@ -309,9 +309,9 @@ def r2_score(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -
         num_not_nans = np.sum(not_nan, axis=axis)
         result = np.where(num_not_nans < 2, np.NaN, result)
 
-        try:
+        if multioutput is FunctionalMetricMultioutput.joint:
             return result.item()
-        except ValueError as e:
+        else:
             return result  # type: ignore
 
 
@@ -449,10 +449,10 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
     isnan = np.all(np.isnan(diff), axis=axis)
     result = np.max(np.abs(prefix_error_sum), axis=axis)
     result = np.where(isnan, np.NaN, result)
-    try:
+    if multioutput is FunctionalMetricMultioutput.joint:
         return result.item()
-    except ValueError as e:
-        return result  # type: ignore
+    else:
+        return result
 
 
 rmse = partial(mse_sklearn, squared=False)
@@ -519,9 +519,9 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         isnan = np.all(isnan, axis=axis)
         result = np.where(denominator == 0, np.NaN, numerator / denominator)
         result = np.where(isnan, np.NaN, result)
-        try:
+        if multioutput is FunctionalMetricMultioutput.joint:
             return result.item()
-        except ValueError as e:
+        else:
             return result  # type: ignore
 
 
