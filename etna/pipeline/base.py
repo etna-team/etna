@@ -856,7 +856,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         metrics_df.sort_values(["segment", self._fold_column], inplace=True)
 
         if aggregate_metrics:
-            metrics_df = metrics_df.groupby("segment").mean().reset_index().drop(self._fold_column, axis=1)
+            metrics_df = (
+                metrics_df.groupby("segment").mean(numeric_only=False).reset_index().drop(self._fold_column, axis=1)
+            )
 
         return metrics_df
 
