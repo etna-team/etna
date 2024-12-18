@@ -187,6 +187,7 @@ def test_all_2d_metrics_per_output(metric, params, right_metrics_value, y_true_2
 )
 def test_mse_ok(y_true, y_pred, multioutput, expected):
     result = mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -252,6 +253,7 @@ def test_mse_ok(y_true, y_pred, multioutput, expected):
 )
 def test_mae_ok(y_true, y_pred, multioutput, expected):
     result = mae(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -316,6 +318,7 @@ def test_mae_ok(y_true, y_pred, multioutput, expected):
 )
 def test_count_missing_values_ok(y_true, y_pred, multioutput, expected):
     result = count_missing_values(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -386,6 +389,7 @@ def test_count_missing_values_ok(y_true, y_pred, multioutput, expected):
 )
 def test_mape_ok(y_true, y_pred, multioutput, expected):
     result = mape(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -456,6 +460,7 @@ def test_mape_ok(y_true, y_pred, multioutput, expected):
 )
 def test_smape_ok(y_true, y_pred, multioutput, expected):
     result = smape(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -526,6 +531,7 @@ def test_smape_ok(y_true, y_pred, multioutput, expected):
 )
 def test_sign_ok(y_true, y_pred, multioutput, expected):
     result = sign(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -596,6 +602,7 @@ def test_sign_ok(y_true, y_pred, multioutput, expected):
 )
 def test_wape_ok(y_true, y_pred, multioutput, expected):
     result = wape(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -666,6 +673,7 @@ def test_wape_ok(y_true, y_pred, multioutput, expected):
 )
 def test_max_deviation(y_true, y_pred, multioutput, expected):
     result = max_deviation(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -738,6 +746,7 @@ def test_max_deviation(y_true, y_pred, multioutput, expected):
 )
 def test_r2_score_ok(y_true, y_pred, multioutput, expected):
     result = r2_score(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected, atol=1e-5)
 
 
@@ -803,4 +812,5 @@ def test_r2_score_ok(y_true, y_pred, multioutput, expected):
 )
 def test_madae_ok(y_true, y_pred, multioutput, expected):
     result = medae(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
