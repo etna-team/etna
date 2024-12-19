@@ -1,13 +1,10 @@
 import warnings
 from enum import Enum
-from functools import partial
 from typing import Optional
 from typing import Sequence
 from typing import Union
 
 import numpy as np
-from sklearn.metrics import mean_squared_error as mse_sklearn
-from sklearn.metrics import mean_squared_log_error as msle
 from sklearn.metrics import median_absolute_error as medae
 from sklearn.metrics import r2_score
 from typing_extensions import assert_never
@@ -134,10 +131,10 @@ def mae(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Arr
 
 
 def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
-    """Mean absolute percentage error.
+    """Mean absolute percentage error with missing values handling.
 
     .. math::
-       MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
+        MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
 
     `Scale-dependent errors <https://otexts.com/fpp3/accuracy.html#scale-dependent-errors>`_
 
@@ -190,10 +187,10 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: 
 
 
 def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: str = "joint") -> ArrayLike:
-    """Symmetric mean absolute percentage error.
+    """Symmetric mean absolute percentage error with missing values handling.
 
     .. math::
-       SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
+        SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
 
     The nans are ignored during computation. If all values are nans, the result is NaN.
 
@@ -337,7 +334,105 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
         return result  # type: ignore
 
 
-rmse = partial(mse_sklearn, squared=False)
+def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Root mean squared error with missing values handling
+
+    .. math::
+        RMSE(y\_true, y\_pred) = \\sqrt\\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
+
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A non-negative floating point value (the best value is 0.0), or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    axis = _get_axis_by_multioutput(multioutput)
+
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = np.nanmean((y_true_array - y_pred_array) ** 2, axis=axis)
+
+    return np.sqrt(result)
+
+
+def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Mean squared logarithmic error with missing values handling
+
+    .. math::
+        MSLE(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{(log(1 + y\_true_i) - log(1 + y\_pred_i))^2}
+
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A non-negative floating point value (the best value is 0.0), or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    if (y_true_array < 0).any() or (y_pred_array < 0).any():
+        raise ValueError(
+            "Mean Squared Logarithmic Error cannot be used when targets contain negative values."
+        )
+
+    axis = _get_axis_by_multioutput(multioutput)
+
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="Mean of empty slice",
+            action="ignore",
+        )
+        result = np.nanmean((np.log1p(y_true_array) - np.log1p(y_pred_array)) ** 2, axis=axis)
+
+    return result
 
 
 def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
