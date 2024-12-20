@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Update `aggregate_metrics_df` to work with `None` values ([#522](https://github.com/etna-team/etna/pull/522))
 - 
-- 
+- Update `analysis.forecast.plots.plot_metric_per_segment` to handle `None` from metrics ([#540](https://github.com/etna-team/etna/pull/540))
 - 
 - 
 - 
