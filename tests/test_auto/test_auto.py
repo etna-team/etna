@@ -47,7 +47,6 @@ def pool_list():
     ]
 
 
-@patch("etna.pipeline.FoldMask.validate_on_dataset", return_value=MagicMock())  # TODO: remove after fix
 @pytest.mark.parametrize(
     "ts_name",
     [
@@ -59,7 +58,6 @@ def pool_list():
     ],
 )
 def test_objective(
-    validate_on_dataset_mock,
     ts_name,
     request,
     target_metric=MAE(missing_mode="ignore"),
@@ -93,10 +91,8 @@ def test_objective(
     callback.assert_called_once()
 
 
-@patch("etna.pipeline.FoldMask.validate_on_dataset", return_value=MagicMock())  # TODO: remove after fix
 @pytest.mark.parametrize("ts_name", ["ts_with_all_folds_missing_all_segments"])
 def test_objective_fail_none(
-    validate_on_dataset_mock,
     ts_name,
     request,
     target_metric=MAE(missing_mode="ignore"),
