@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -29,7 +32,6 @@ def get_datasets_with_intervals(df, lower_name, upper_name):
 
 @pytest.fixture
 def tsdataset_with_zero_width_quantiles(example_df):
-
     df = TSDataset.to_dataset(example_df)
     ts_train = TSDataset(df, freq="H")
 
@@ -71,6 +73,88 @@ def tsdataset_with_quantiles_and_lower_upper_borders(example_df):
 
     test_ts.add_prediction_intervals(prediction_intervals_df=intervals_df)
     return train_ts, test_ts
+
+
+@pytest.fixture
+def tsdataset_with_quantiles_missing_values(tsdataset_with_zero_width_quantiles):
+    _, true_ts = tsdataset_with_zero_width_quantiles
+    true_ts.df.loc["2020-01-31":, pd.IndexSlice[:, "target_0.025"]] = np.NaN
+    true_ts.df.loc[:"2020-01-02", pd.IndexSlice[:, "target_0.975"]] = np.NaN
+
+    forecast_ts = deepcopy(true_ts)
+    forecast_ts.df.fillna(0, inplace=True)
+
+    return forecast_ts, true_ts
+
+
+@pytest.fixture
+def tsdataset_with_borders_missing_values(tsdataset_with_lower_upper_borders):
+    _, true_ts = tsdataset_with_lower_upper_borders
+    true_ts.df.loc["2020-01-31":, pd.IndexSlice[:, "target_lower"]] = np.NaN
+    true_ts.df.loc[:"2020-01-02", pd.IndexSlice[:, "target_upper"]] = np.NaN
+
+    forecast_ts = deepcopy(true_ts)
+    forecast_ts.df.fillna(0, inplace=True)
+
+    return forecast_ts, true_ts
+
+
+@pytest.fixture
+def tsdataset_with_intervals_and_missing_values(tsdataset_with_quantiles_and_lower_upper_borders):
+    _, true_ts = tsdataset_with_quantiles_and_lower_upper_borders
+    true_ts.df.loc["2020-01-31":, pd.IndexSlice[:, "target"]] = np.NaN
+    true_ts.df.loc[:"2020-01-02", pd.IndexSlice[:, "target"]] = np.NaN
+
+    forecast_ts = deepcopy(true_ts)
+    forecast_ts.df.fillna(0, inplace=True)
+
+    return forecast_ts, true_ts
+
+
+@pytest.fixture
+def tsdataset_with_intervals_and_missing_segment(tsdataset_with_quantiles_and_lower_upper_borders):
+    _, true_ts = tsdataset_with_quantiles_and_lower_upper_borders
+    true_ts.df.loc[:, pd.IndexSlice["segment_1", "target"]] = np.NaN
+
+    forecast_ts = deepcopy(true_ts)
+    forecast_ts.df.fillna(0, inplace=True)
+
+    return forecast_ts, true_ts
+
+
+@pytest.mark.parametrize(
+    "metric, expected_repr",
+    (
+        (
+            Coverage(),
+            "Coverage(quantiles = [0.025, 0.975], mode = 'per-segment', upper_name = None, lower_name = None, missing_mode = 'error', )",
+        ),
+        (
+            Coverage(mode="macro"),
+            "Coverage(quantiles = [0.025, 0.975], mode = 'macro', upper_name = None, lower_name = None, missing_mode = 'error', )",
+        ),
+        (
+            Coverage(mode="macro"),
+            "Coverage(quantiles = [0.025, 0.975], mode = 'macro', upper_name = None, lower_name = None, missing_mode = 'error', )",
+        ),
+        (
+            Coverage(missing_mode="ignore"),
+            "Coverage(quantiles = [0.025, 0.975], mode = 'per-segment', upper_name = None, lower_name = None, missing_mode = 'ignore', )",
+        ),
+        (
+            Coverage(mode="macro", missing_mode="ignore"),
+            "Coverage(quantiles = [0.025, 0.975], mode = 'macro', upper_name = None, lower_name = None, missing_mode = 'ignore', )",
+        ),
+        (
+            Width(),
+            "Width(quantiles = [0.025, 0.975], mode = 'per-segment', upper_name = None, lower_name = None, missing_mode = 'error', )",
+        ),
+    ),
+)
+def test_repr(metric, expected_repr):
+    """Check metrics __repr__ method"""
+    metric_repr = metric.__repr__()
+    assert metric_repr == expected_repr
 
 
 @pytest.mark.parametrize("metric_class", (Coverage, Width))
@@ -120,6 +204,20 @@ def test_quantiles_not_presented_error(tsdataset_with_lower_upper_borders, metri
 def test_no_intervals_error(example_tsds, metric_class):
     with pytest.raises(ValueError, match="All quantiles must be presented in the dataset!"):
         _ = metric_class()(y_true=example_tsds, y_pred=example_tsds)
+
+
+@pytest.mark.parametrize("metric_class", (Coverage, Width))
+def test_missing_values_in_quantiles_error(tsdataset_with_quantiles_missing_values, metric_class):
+    _, ts = tsdataset_with_quantiles_missing_values
+    with pytest.raises(ValueError, match="Quantiles contain missing values!"):
+        _ = metric_class()(y_true=ts, y_pred=ts)
+
+
+@pytest.mark.parametrize("metric_class", (Coverage, Width))
+def test_missing_values_in_borders_error(tsdataset_with_borders_missing_values, metric_class):
+    _, ts = tsdataset_with_borders_missing_values
+    with pytest.raises(ValueError, match="Provided intervals borders contain missing values!"):
+        _ = metric_class(lower_name="target_lower", upper_name="target_upper")(y_true=ts, y_pred=ts)
 
 
 def test_width_metric_with_zero_width_quantiles(tsdataset_with_zero_width_quantiles):
@@ -190,3 +288,84 @@ def test_using_not_presented_quantiles(metric, tsdataset_with_zero_width_quantil
 )
 def test_metrics_greater_is_better(metric, greater_is_better):
     assert metric.greater_is_better == greater_is_better
+
+
+@pytest.mark.parametrize(
+    "metric_class",
+    (Coverage, Width),
+)
+def test_invalid_nans_pred(metric_class, tsdataset_with_intervals_and_missing_values):
+    true_ts, forecast_ts = tsdataset_with_intervals_and_missing_values
+    metric = metric_class()
+    with pytest.raises(ValueError, match="There are NaNs in y_pred"):
+        _ = metric(y_true=true_ts, y_pred=forecast_ts)
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (
+        Coverage(missing_mode="error"),
+        Width(missing_mode="error"),
+    ),
+)
+def test_invalid_nans_true(metric, tsdataset_with_intervals_and_missing_values):
+    forecast_ts, true_ts = tsdataset_with_intervals_and_missing_values
+    with pytest.raises(ValueError, match="There are NaNs in y_true"):
+        _ = metric(y_true=true_ts, y_pred=forecast_ts)
+
+
+@pytest.mark.parametrize(
+    "metric, expected_type",
+    (
+        (Coverage(mode="per-segment", missing_mode="ignore"), type(None)),
+        (Width(mode="per-segment", missing_mode="ignore"), float),
+    ),
+)
+@pytest.mark.parametrize(
+    "dataset_name, empty_segment",
+    (
+        ("tsdataset_with_intervals_and_missing_values", None),
+        ("tsdataset_with_intervals_and_missing_segment", "segment_1"),
+    ),
+)
+def test_nans_ignore_per_segment(metric, dataset_name, empty_segment, expected_type, request):
+    forecast_ts, true_ts = request.getfixturevalue(dataset_name)
+    segments = set(forecast_ts.segments)
+
+    value = metric(y_true=true_ts, y_pred=forecast_ts)
+
+    assert isinstance(value, dict)
+    assert value.keys() == segments
+
+    if empty_segment is not None:
+        assert isinstance(value[empty_segment], expected_type)
+        value.pop(empty_segment)
+
+    assert all(isinstance(cur_value, float) for cur_value in value.values())
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (
+        Coverage(mode="macro", missing_mode="ignore"),
+        Width(mode="macro", missing_mode="ignore"),
+    ),
+)
+@pytest.mark.parametrize(
+    "dataset_name", ("tsdataset_with_intervals_and_missing_values", "tsdataset_with_intervals_and_missing_segment")
+)
+def test_invalid_segment_nans_ignore_macro(metric, dataset_name, request):
+    forecast_df, true_df = request.getfixturevalue(dataset_name)
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert isinstance(value, float)
+
+
+@pytest.mark.parametrize(
+    "metric,expected_type",
+    ((Coverage(mode="macro", missing_mode="ignore"), type(None)), (Width(mode="macro", missing_mode="ignore"), float)),
+)
+def test_invalid_all_nans_ignore_macro(metric, tsdataset_with_intervals_and_missing_segment, expected_type):
+    forecast_ts, true_ts = tsdataset_with_intervals_and_missing_segment
+    true_ts.df.iloc[:, :] = np.NaN
+    value = metric(y_true=true_ts, y_pred=forecast_ts)
+    assert isinstance(value, expected_type)

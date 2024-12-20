@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict
 from typing import Optional
 from typing import Sequence
@@ -8,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.metrics.base import Metric
+from etna.metrics.base import MetricWithMissingHandling
 from etna.metrics.functional_metrics import ArrayLike
 
 
@@ -34,16 +35,35 @@ class _IntervalsMetricMixin:
             if not borders_presented:
                 raise ValueError("Provided intervals borders names must be in dataset!")
 
+            else:
+                missing_per_segment = ts.loc[:, pd.IndexSlice[:, list(borders_set)]].isna().any()
+                if missing_per_segment.any():
+                    raise ValueError(
+                        "Provided intervals borders contain missing values! "
+                        f"Series with missing values {missing_per_segment[missing_per_segment].index.tolist()}"
+                    )
+
         else:
             if not quantiles_presented:
                 raise ValueError("All quantiles must be presented in the dataset!")
 
+            else:
+                missing_per_segment = ts.loc[:, pd.IndexSlice[:, list(quantiles_set)]].isna().any()
+                if missing_per_segment.any():
+                    raise ValueError(
+                        "Quantiles contain missing values! "
+                        f"Series with missing values {missing_per_segment[missing_per_segment].index.tolist()}"
+                    )
 
-class Coverage(Metric, _IntervalsMetricMixin):
+
+class Coverage(MetricWithMissingHandling, _IntervalsMetricMixin):
     """Coverage metric for prediction intervals - precenteage of samples in the interval ``[lower quantile, upper quantile]``.
 
     .. math::
         Coverage(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}{[ y\_true_i \\ge y\_pred_i^{lower\_quantile}] * [y\_true_i \\le y\_pred_i^{upper\_quantile}] }}{n}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
@@ -58,6 +78,7 @@ class Coverage(Metric, _IntervalsMetricMixin):
         mode: str = "per-segment",
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
+        missing_mode: str = "error",
         **kwargs,
     ):
         """Init metric.
@@ -78,6 +99,8 @@ class Coverage(Metric, _IntervalsMetricMixin):
             name of column with upper border of the interval
         lower_name:
             name of column with lower border of the interval
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
@@ -96,7 +119,7 @@ class Coverage(Metric, _IntervalsMetricMixin):
         if quantiles is None and lower_name is None:
             quantiles = (0.025, 0.975)
 
-        super().__init__(mode=mode, metric_fn=dummy, **kwargs)
+        super().__init__(mode=mode, metric_fn=dummy, missing_mode=missing_mode, **kwargs)
         self.quantiles = sorted(quantiles if quantiles is not None else tuple())
         self.upper_name = upper_name
         self.lower_name = lower_name
@@ -136,7 +159,7 @@ class Coverage(Metric, _IntervalsMetricMixin):
             lower_border = f"target_{self.quantiles[0]:.4g}"
             upper_border = f"target_{self.quantiles[1]:.4g}"
 
-        df_true = y_true[:, :, "target"].sort_index(axis=1)
+        df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
 
         intervals_df: pd.DataFrame = y_pred.get_prediction_intervals()
         df_pred_lower = intervals_df.loc[:, pd.IndexSlice[:, lower_border]].sort_index(axis=1)
@@ -146,8 +169,19 @@ class Coverage(Metric, _IntervalsMetricMixin):
 
         upper_quantile_flag = df_true.values <= df_pred_upper.values
         lower_quantile_flag = df_true.values >= df_pred_lower.values
-        values = np.mean(upper_quantile_flag * lower_quantile_flag, axis=0)
-        metrics_per_segment = dict(zip(segments, values))
+
+        nan_mask = np.isnan(df_true.values) | np.isnan(df_pred_upper.values) | np.isnan(df_pred_lower.values)
+        in_bounds = (upper_quantile_flag * lower_quantile_flag).astype(float)
+        in_bounds[nan_mask] = np.NaN
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                message="Mean of empty slice",
+                action="ignore",
+            )
+            values = np.nanmean(in_bounds, axis=0)
+
+        metrics_per_segment = dict(zip(segments, (None if np.isnan(x) else x for x in values)))
 
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
@@ -158,11 +192,14 @@ class Coverage(Metric, _IntervalsMetricMixin):
         return None
 
 
-class Width(Metric, _IntervalsMetricMixin):
+class Width(MetricWithMissingHandling, _IntervalsMetricMixin):
     """Mean width of prediction intervals.
 
     .. math::
         Width(y\_true, y\_pred) = \\frac{\\sum_{i=1}^{n}\\mid y\_pred_i^{upper\_quantile} - y\_pred_i^{lower\_quantile} \\mid}{n}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
@@ -177,6 +214,7 @@ class Width(Metric, _IntervalsMetricMixin):
         mode: str = "per-segment",
         upper_name: Optional[str] = None,
         lower_name: Optional[str] = None,
+        missing_mode: str = "error",
         **kwargs,
     ):
         """Init metric.
@@ -197,6 +235,8 @@ class Width(Metric, _IntervalsMetricMixin):
             name of column with upper border of the interval
         lower_name:
             name of column with lower border of the interval
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
@@ -215,7 +255,7 @@ class Width(Metric, _IntervalsMetricMixin):
         if quantiles is None and lower_name is None:
             quantiles = (0.025, 0.975)
 
-        super().__init__(mode=mode, metric_fn=dummy, **kwargs)
+        super().__init__(mode=mode, metric_fn=dummy, missing_mode=missing_mode, **kwargs)
         self.quantiles = sorted(quantiles if quantiles is not None else tuple())
         self.upper_name = upper_name
         self.lower_name = lower_name
@@ -255,7 +295,7 @@ class Width(Metric, _IntervalsMetricMixin):
             lower_border = f"target_{self.quantiles[0]:.4g}"
             upper_border = f"target_{self.quantiles[1]:.4g}"
 
-        df_true = y_true[:, :, "target"].sort_index(axis=1)
+        df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
 
         intervals_df: pd.DataFrame = y_pred.get_prediction_intervals()
         df_pred_lower = intervals_df.loc[:, pd.IndexSlice[:, lower_border]].sort_index(axis=1)
@@ -263,8 +303,14 @@ class Width(Metric, _IntervalsMetricMixin):
 
         segments = df_true.columns.get_level_values("segment").unique()
 
-        values = np.mean(np.abs(df_pred_upper.values - df_pred_lower.values), axis=0)
-        metrics_per_segment = dict(zip(segments, values))
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                message="Mean of empty slice",
+                action="ignore",
+            )
+            values = np.nanmean(np.abs(df_pred_upper.values - df_pred_lower.values), axis=0)
+
+        metrics_per_segment = dict(zip(segments, (None if np.isnan(x) else x for x in values)))
 
         metrics = self._aggregate_metrics(metrics_per_segment)
         return metrics
