@@ -294,6 +294,7 @@ def r2_score(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -
         )
 
         numerator = np.asarray(mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput))
+        y_true_array = y_true_array.astype(float)  # otherwise we can't assign NaN to it
         y_true_array[~not_nan] = np.NaN
         denominator = np.asarray(np.nanvar(y_true_array, axis=axis))
         nonzero_numerator = np.asarray(numerator != 0)
