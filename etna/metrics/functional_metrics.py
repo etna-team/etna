@@ -294,7 +294,8 @@ def r2_score(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -
         )
 
         numerator = np.asarray(mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput))
-        denominator = np.asarray(np.nanvar(y_true_array * not_nan, axis=axis))
+        y_true_array[~not_nan] = np.NaN
+        denominator = np.asarray(np.nanvar(y_true_array, axis=axis))
         nonzero_numerator = np.asarray(numerator != 0)
         nonzero_denominator = np.asarray(denominator != 0)
 
@@ -302,7 +303,7 @@ def r2_score(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -
         valid_score = nonzero_denominator & nonzero_numerator
         # if numerator and denominator aren't zero, then just compute r2_score
         result[valid_score] = 1 - (numerator[valid_score] / denominator[valid_score])
-        # if numerator is non-zero, the answer is 0.0, otherwise the answer is 1.0
+        # if numerator is non-zero, the answer is 0.0, otherwise (getting 0/0) the answer is 1.0
         result[nonzero_numerator & ~nonzero_denominator] = 0.0
 
         # if there are less than 2 values, result is NaN

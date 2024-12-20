@@ -686,7 +686,7 @@ def test_max_deviation(y_true, y_pred, multioutput, expected):
         (np.array([1.0, 1.0]), np.array([1.0, 2.0]), "joint", 0.0),
         (np.array([1.0, 2.0, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", -2),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, 2.0]), "joint", -1.5),
-        (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", -0.607143),
+        (np.array([1.0, 2.0, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", -1.5),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, np.NaN, 2.0]), "joint", -1.5),
         (np.array([1.0, np.NaN, 3.0]), np.array([3.0, 1.0, np.NaN]), "joint", np.NaN),
         (np.array([1.0, np.NaN, np.NaN]), np.array([np.NaN, np.NaN, 2.0]), "joint", np.NaN),
@@ -704,13 +704,13 @@ def test_max_deviation(y_true, y_pred, multioutput, expected):
             np.array([[1.0, np.NaN, 3.0], [3.0, 4.0, np.NaN]]).T,
             np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
             "joint",
-            -5 / 3,
+            -3.0,
         ),
         (
             np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
             np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
             "joint",
-            0.407895,
+            -1.5,
         ),
         (
             np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
@@ -734,7 +734,7 @@ def test_max_deviation(y_true, y_pred, multioutput, expected):
             np.array([[np.NaN, np.NaN, np.NaN], [3.0, 4.0, 5.0]]).T,
             np.array([[3.0, 1.0, np.NaN], [5.0, np.NaN, 4.0]]).T,
             "raw_values",
-            np.array([np.NaN, 0.407895]),
+            np.array([np.NaN, -1.5]),
         ),
         (
             np.array([[np.NaN, np.NaN, np.NaN], [np.NaN, np.NaN, np.NaN]]).T,
