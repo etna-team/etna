@@ -1,3 +1,4 @@
+import reprlib
 import warnings
 from copy import deepcopy
 from typing import TYPE_CHECKING
@@ -119,3 +120,32 @@ def _validate_intersecting_segments(fold_numbers: pd.Series):
     for fold_info_1, fold_info_2 in zip(fold_info[:-1], fold_info[1:]):
         if fold_info_2["fold_start"] <= fold_info_1["fold_end"]:
             raise ValueError("Folds are intersecting")
+
+
+def _check_metrics_df_empty_segments(metrics_df: pd.DataFrame, metric_name: str) -> None:
+    """Check if there are segments without any non-missing metrics."""
+    df = metrics_df[["segment", metric_name]]
+    initial_segments = set(df["segment"].unique())
+    df = df.dropna(subset=[metric_name])
+    filtered_segments = set(df["segment"].unique())
+
+    if initial_segments != filtered_segments:
+        missing_segments = initial_segments - filtered_segments
+        missing_segments_repr = reprlib.repr(missing_segments)
+        warnings.warn(
+            f"There are segments without non-missing metric values, they won't be plotted: {missing_segments_repr}."
+        )
+
+
+def _check_metrics_df_same_folds_for_each_segment(metrics_df: pd.DataFrame, metric_name: str) -> None:
+    """Check if the same set of folds is present for each segment."""
+    if "fold_number" not in metrics_df.columns:
+        return
+
+    df = metrics_df[["segment", "fold_number", metric_name]]
+    # we don't take into account segments without any non-missing metrics, they are handled by other check
+    df = df.dropna(subset=[metric_name])
+    fold_sets = df.groupby("segment")["fold_number"].apply(set)
+    all_sets_equal = all(fold_sets.iloc[0] == s for s in fold_sets)
+    if not all_sets_equal:
+        warnings.warn("Some segments have different set of folds to be aggregated on due to missing values.")
