@@ -1,4 +1,5 @@
 import warnings
+from reprlib import repr
 from typing import Dict
 from typing import Optional
 from typing import Sequence
@@ -40,7 +41,7 @@ class _IntervalsMetricMixin:
                 if missing_per_segment.any():
                     raise ValueError(
                         "Provided intervals borders contain missing values! "
-                        f"Series with missing values {missing_per_segment[missing_per_segment].index.tolist()}"
+                        f"Series with missing values {repr(missing_per_segment[missing_per_segment].index.tolist())}"
                     )
 
         else:
@@ -52,7 +53,7 @@ class _IntervalsMetricMixin:
                 if missing_per_segment.any():
                     raise ValueError(
                         "Quantiles contain missing values! "
-                        f"Series with missing values {missing_per_segment[missing_per_segment].index.tolist()}"
+                        f"Series with missing values {repr(missing_per_segment[missing_per_segment].index.tolist())}"
                     )
 
 
