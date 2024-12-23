@@ -689,7 +689,7 @@ def plot_metric_per_segment(
 ):
     """Plot barplot with per-segment metrics.
 
-    If for some segment there aren't any non-missing metrics, it isn't plotted, and the warning is raised.
+    If for some segment all metric values are missing, it isn't plotted, and the warning is raised.
 
     If some segments have different set of folds with non-missing metrics,
     it can lead to incompatible values between folds. The warning is raised in such case.
@@ -735,7 +735,6 @@ def plot_metric_per_segment(
 
     aggregation_mode = PerFoldAggregation(per_fold_aggregation_mode)
 
-    # TODO: проверить
     _check_metrics_df_empty_segments(metrics_df=metrics_df, metric_name=metric_name)
     _check_metrics_df_same_folds_for_each_segment(metrics_df=metrics_df, metric_name=metric_name)
 

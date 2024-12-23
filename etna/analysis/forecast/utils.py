@@ -133,7 +133,7 @@ def _check_metrics_df_empty_segments(metrics_df: pd.DataFrame, metric_name: str)
         missing_segments = initial_segments - filtered_segments
         missing_segments_repr = reprlib.repr(missing_segments)
         warnings.warn(
-            f"There are segments without non-missing metric values, they won't be plotted: {missing_segments_repr}."
+            f"There are segments with all missing metric values, they won't be plotted: {missing_segments_repr}."
         )
 
 

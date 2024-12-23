@@ -98,7 +98,7 @@ def test_plot_metric_per_segment_ok(df_name, metric_name, request):
 )
 def test_plot_metric_per_segment_warning_empty_segments(df_name, metric_name, request):
     metrics_df = request.getfixturevalue(df_name)
-    with pytest.warns(UserWarning, match="There are segments without non-missing metric values"):
+    with pytest.warns(UserWarning, match="There are segments with all missing metric values"):
         plot_metric_per_segment(metrics_df=metrics_df, metric_name=metric_name)
 
 
