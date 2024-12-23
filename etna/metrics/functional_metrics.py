@@ -538,10 +538,10 @@ def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     ValueError:
         If the shapes of the input arrays do not match.
     """
-    mse_result = np.asarray(mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput))
+    mse_result = mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
     result = np.sqrt(mse_result)
 
-    return result
+    return result  # type: ignore
 
 
 def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
