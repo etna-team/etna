@@ -145,7 +145,6 @@ def _check_metrics_df_same_folds_for_each_segment(metrics_df: pd.DataFrame, metr
     df = metrics_df[["segment", "fold_number", metric_name]]
     # we don't take into account segments without any non-missing metrics, they are handled by other check
     df = df.dropna(subset=[metric_name])
-    fold_sets = df.groupby("segment")["fold_number"].apply(set)
-    all_sets_equal = all(fold_sets.iloc[0] == s for s in fold_sets)
-    if not all_sets_equal:
+    num_unique = df.groupby("segment")["fold_number"].apply(frozenset).nunique()
+    if num_unique > 1:
         warnings.warn("Some segments have different set of folds to be aggregated on due to missing values.")
