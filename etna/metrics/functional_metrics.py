@@ -525,6 +525,7 @@ def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     :
     ValueError:
         If the shapes of the input arrays do not match.
+    ValueError:
         If input arrays contain negative values.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
@@ -533,7 +534,7 @@ def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         raise ValueError("Shapes of the labels must be the same")
 
     if (y_true_array < 0).any() or (y_pred_array < 0).any():
-        raise ValueError("Mean Squared Logarithmic Error cannot be used when targets contain negative values.")
+        raise ValueError("Mean squared logarithmic error cannot be used when targets contain negative values.")
 
     axis = _get_axis_by_multioutput(multioutput)
 
