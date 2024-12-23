@@ -5,8 +5,6 @@ from typing import Sequence
 from typing import Union
 
 import numpy as np
-from sklearn.metrics import median_absolute_error as medae
-from sklearn.metrics import r2_score
 from typing_extensions import assert_never
 
 ArrayLike = Union[float, Sequence[float], Sequence[Sequence[float]]]
@@ -240,6 +238,128 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput:
     return result
 
 
+def r2_score(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Coefficient of determination metric.
+
+    .. math::
+        R^2(y\_true, y\_pred) = 1 - \\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{\\sum_{i=1}^{n}{(y\_true_i - \\overline{y\_true})^2}}
+
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A floating point value, or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    axis = _get_axis_by_multioutput(multioutput)
+    not_nan = ~np.isnan(y_true_array - y_pred_array)
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="invalid value encountered in scalar divide",
+            action="ignore",
+        )
+        warnings.filterwarnings(
+            message="invalid value encountered in divide",
+            action="ignore",
+        )
+        warnings.filterwarnings(
+            message="Degrees of freedom <= 0 for slice",
+            action="ignore",
+        )
+
+        numerator = np.asarray(mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput))
+        y_true_array = y_true_array.astype(float)  # otherwise we can't assign NaN to it
+        y_true_array[~not_nan] = np.NaN
+        denominator = np.asarray(np.nanvar(y_true_array, axis=axis))
+        nonzero_numerator = np.asarray(numerator != 0)
+        nonzero_denominator = np.asarray(denominator != 0)
+
+        result = np.ones_like(numerator, dtype=float)
+        valid_score = nonzero_denominator & nonzero_numerator
+        # if numerator and denominator aren't zero, then just compute r2_score
+        result[valid_score] = 1 - (numerator[valid_score] / denominator[valid_score])
+        # if numerator is non-zero, the answer is 0.0, otherwise (getting 0/0) the answer is 1.0
+        result[nonzero_numerator & ~nonzero_denominator] = 0.0
+
+        # if there are less than 2 values, result is NaN
+        num_not_nans = np.sum(not_nan, axis=axis)
+        result = np.where(num_not_nans < 2, np.NaN, result)
+
+        if multioutput is FunctionalMetricMultioutput.joint:
+            return result.item()
+        else:
+            return result  # type: ignore
+
+
+def medae(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
+    """Median absolute error metric.
+
+    .. math::
+       MedAE(y\_true, y\_pred) = median(\\mid y\_true_1 - y\_pred_1 \\mid, \\cdots, \\mid y\_true_n - y\_pred_n \\mid)
+
+    The nans are ignored during computation. If all values are nans, the result is NaN.
+
+    Parameters
+    ----------
+    y_true:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Ground truth (correct) target values.
+
+    y_pred:
+        array-like of shape (n_samples,) or (n_samples, n_outputs)
+
+        Estimated target values.
+
+    multioutput:
+        Defines aggregating of multiple output values
+        (see :py:class:`~etna.metrics.functional_metrics.FunctionalMetricMultioutput`).
+
+    Returns
+    -------
+    :
+        A non-negative floating point value (the best value is 0.0), or an array of floating point values,
+        one for each individual target.
+    """
+    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+
+    if len(y_true_array.shape) != len(y_pred_array.shape):
+        raise ValueError("Shapes of the labels must be the same")
+
+    axis = _get_axis_by_multioutput(multioutput)
+    with warnings.catch_warnings():
+        # this helps to prevent warning in case of all nans
+        warnings.filterwarnings(
+            message="All-NaN slice encountered",
+            action="ignore",
+        )
+        result = np.nanmedian(np.abs(y_true_array - y_pred_array), axis=axis)
+    return result
+
+
 def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
     """Sign error metric.
 
@@ -328,10 +448,10 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
     isnan = np.all(np.isnan(diff), axis=axis)
     result = np.max(np.abs(prefix_error_sum), axis=axis)
     result = np.where(isnan, np.NaN, result)
-    try:
+    if multioutput is FunctionalMetricMultioutput.joint:
         return result.item()
-    except ValueError as e:
-        return result  # type: ignore
+    else:
+        return result
 
 
 def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
@@ -494,9 +614,9 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         isnan = np.all(isnan, axis=axis)
         result = np.where(denominator == 0, np.NaN, numerator / denominator)
         result = np.where(isnan, np.NaN, result)
-        try:
+        if multioutput is FunctionalMetricMultioutput.joint:
             return result.item()
-        except ValueError as e:
+        else:
             return result  # type: ignore
 
 
