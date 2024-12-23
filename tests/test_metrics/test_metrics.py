@@ -44,9 +44,9 @@ from tests.utils import create_dummy_functional_metric
         (MAE(missing_mode="ignore"), "MAE(mode = 'per-segment', missing_mode = 'ignore', )"),
         (MAE(mode="macro", missing_mode="ignore"), "MAE(mode = 'macro', missing_mode = 'ignore', )"),
         (MSE(), "MSE(mode = 'per-segment', missing_mode = 'error', )"),
-        (RMSE(), "RMSE(mode = 'per-segment', )"),
+        (RMSE(), "RMSE(mode = 'per-segment', missing_mode = 'error', )"),
         (MedAE(), "MedAE(mode = 'per-segment', )"),
-        (MSLE(), "MSLE(mode = 'per-segment', )"),
+        (MSLE(), "MSLE(mode = 'per-segment', missing_mode = 'error', )"),
         (MAPE(), "MAPE(mode = 'per-segment', missing_mode = 'error', )"),
         (SMAPE(), "SMAPE(mode = 'per-segment', missing_mode = 'error', )"),
         (R2(), "R2(mode = 'per-segment', )"),
@@ -181,9 +181,9 @@ def test_invalid_nans_pred(metric_class, train_test_dfs):
     (
         MAE(missing_mode="error"),
         MSE(missing_mode="error"),
-        RMSE(),
+        RMSE(missing_mode="error"),
         MedAE(),
-        MSLE(),
+        MSLE(missing_mode="error"),
         MAPE(missing_mode="error"),
         SMAPE(missing_mode="error"),
         R2(),
@@ -212,6 +212,8 @@ def test_invalid_nans_true(metric, train_test_dfs):
         WAPE(missing_mode="ignore"),
         MaxDeviation(missing_mode="ignore"),
         MissingCounter(),
+        RMSE(missing_mode="ignore"),
+        MSLE(missing_mode="ignore")
     ),
 )
 def test_invalid_single_nan_ignore(metric, train_test_dfs):
@@ -235,6 +237,8 @@ def test_invalid_single_nan_ignore(metric, train_test_dfs):
         (Sign(mode="per-segment", missing_mode="ignore"), type(None)),
         (WAPE(mode="per-segment", missing_mode="ignore"), type(None)),
         (MaxDeviation(mode="per-segment", missing_mode="ignore"), type(None)),
+        (RMSE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MSLE(mode="per-segment", missing_mode="ignore"), type(None)),
         (MissingCounter(mode="per-segment"), float),
     ),
 )
@@ -265,6 +269,8 @@ def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_te
         Sign(mode="macro", missing_mode="ignore"),
         WAPE(mode="macro", missing_mode="ignore"),
         MaxDeviation(mode="macro", missing_mode="ignore"),
+        RMSE(mode="macro", missing_mode="ignore"),
+        MSLE(mode="macro", missing_mode="ignore"),
         MissingCounter(mode="macro"),
     ),
 )
@@ -286,6 +292,8 @@ def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
         (Sign(mode="macro", missing_mode="ignore"), type(None)),
         (WAPE(mode="macro", missing_mode="ignore"), type(None)),
         (MaxDeviation(mode="macro", missing_mode="ignore"), type(None)),
+        (RMSE(mode="macro", missing_mode="ignore"), type(None)),
+        (MSLE(mode="macro", missing_mode="ignore"), type(None)),
         (MissingCounter(mode="macro"), float),
     ),
 )
