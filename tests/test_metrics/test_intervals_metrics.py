@@ -295,7 +295,7 @@ def test_metrics_greater_is_better(metric, greater_is_better):
     "metric_class",
     (Coverage, Width),
 )
-def test_nans_in_pred_error(metric_class, tsdataset_with_intervals_and_missing_values):
+def test_missing_values_in_pred_error(metric_class, tsdataset_with_intervals_and_missing_values):
     true_ts, forecast_ts = tsdataset_with_intervals_and_missing_values
     metric = metric_class()
     with pytest.raises(ValueError, match="There are NaNs in y_pred"):
@@ -309,7 +309,7 @@ def test_nans_in_pred_error(metric_class, tsdataset_with_intervals_and_missing_v
         Width(missing_mode="error"),
     ),
 )
-def test_nans_in_true_error(metric, tsdataset_with_intervals_and_missing_values):
+def test_missing_values_in_true_error(metric, tsdataset_with_intervals_and_missing_values):
     forecast_ts, true_ts = tsdataset_with_intervals_and_missing_values
     with pytest.raises(ValueError, match="There are NaNs in y_true"):
         _ = metric(y_true=true_ts, y_pred=forecast_ts)
@@ -329,7 +329,7 @@ def test_nans_in_true_error(metric, tsdataset_with_intervals_and_missing_values)
         ("tsdataset_with_intervals_and_missing_segment", "segment_1"),
     ),
 )
-def test_nans_ignore_per_segment(metric, dataset_name, empty_segment, expected_type, request):
+def test_missing_values_ignore_per_segment(metric, dataset_name, empty_segment, expected_type, request):
     forecast_ts, true_ts = request.getfixturevalue(dataset_name)
     segments = set(forecast_ts.segments)
 
@@ -355,7 +355,7 @@ def test_nans_ignore_per_segment(metric, dataset_name, empty_segment, expected_t
 @pytest.mark.parametrize(
     "dataset_name", ("tsdataset_with_intervals_and_missing_values", "tsdataset_with_intervals_and_missing_segment")
 )
-def test_invalid_segment_nans_ignore_macro(metric, dataset_name, request):
+def test_segment_all_missing_ignore_macro(metric, dataset_name, request):
     forecast_df, true_df = request.getfixturevalue(dataset_name)
     value = metric(y_true=true_df, y_pred=forecast_df)
     assert isinstance(value, float)
@@ -365,7 +365,7 @@ def test_invalid_segment_nans_ignore_macro(metric, dataset_name, request):
     "metric,expected_type",
     ((Coverage(mode="macro", missing_mode="ignore"), type(None)), (Width(mode="macro", missing_mode="ignore"), float)),
 )
-def test_invalid_all_nans_ignore_macro(metric, tsdataset_with_intervals_and_missing_segment, expected_type):
+def test_all_missing_values_ignore_macro(metric, tsdataset_with_intervals_and_missing_segment, expected_type):
     forecast_ts, true_ts = tsdataset_with_intervals_and_missing_segment
     true_ts.df.iloc[:, :] = np.NaN
     value = metric(y_true=true_ts, y_pred=forecast_ts)
@@ -381,7 +381,7 @@ def test_invalid_all_nans_ignore_macro(metric, tsdataset_with_intervals_and_miss
 )
 @patch("etna.metrics.MetricWithMissingHandling._validate_nans")
 @patch("etna.metrics.intervals_metrics._IntervalsMetricMixin._validate_tsdataset_intervals")
-def test_mocked_width_nans_handling(
+def test_mocked_width_missing_values_handling(
     pred_check_mock, intervals_check_mock, dataset_name, upper_name, lower_name, request
 ):
     true_ts, forecast_ts = request.getfixturevalue(dataset_name)
