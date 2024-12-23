@@ -745,13 +745,13 @@ def plot_metric_per_segment(
 
     if "fold_number" in metrics_df.columns:
         metrics_dict = (
-            metrics_df.groupby("segment").agg({metric_name: aggregation_mode.get_function()}).to_dict()[metric_name]
+            metrics_df.groupby("segment")
+            .agg({metric_name: aggregation_mode.get_function()})
+            .dropna()
+            .to_dict()[metric_name]
         )
     else:
-        metrics_dict = metrics_df[["segment", metric_name]].to_dict()[metric_name]
-
-    # remove empty values from plotting
-    metrics_dict = {k: v for k, v in metrics_dict.items() if not pd.isna(v)}
+        metrics_dict = metrics_df[["segment", metric_name]].set_index("segment").dropna().to_dict()[metric_name]
 
     segments = np.array(list(metrics_dict.keys()))
     values = np.array(list(metrics_dict.values()))
