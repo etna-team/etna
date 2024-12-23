@@ -478,6 +478,12 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
