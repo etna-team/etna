@@ -1,6 +1,5 @@
 from functools import partial
 
-from etna.metrics.base import Metric
 from etna.metrics.base import MetricWithMissingHandling
 from etna.metrics.functional_metrics import count_missing_values
 from etna.metrics.functional_metrics import mae

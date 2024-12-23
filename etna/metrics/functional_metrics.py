@@ -455,7 +455,7 @@ def max_deviation(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "join
 
 
 def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
-    """Root mean squared error with missing values handling
+    """Root mean squared error with missing values handling.
 
     .. math::
         RMSE(y\_true, y\_pred) = \\sqrt\\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
@@ -503,7 +503,7 @@ def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
 
 
 def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
-    """Mean squared logarithmic error with missing values handling
+    """Mean squared logarithmic error with missing values handling.
 
     .. math::
         MSLE(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{(log(1 + y\_true_i) - log(1 + y\_pred_i))^2}
