@@ -994,15 +994,11 @@ def test_msle_ok(y_true, y_pred, multioutput, expected):
     "y_true, y_pred, multioutput",
     [
         # 1d
-        (np.array([1.0, 2.0, -3.0]), np.array([3.0, 2.0, 1.0]), "joint"),
-        (np.array([1.0, 2.0, 3.0]), np.array([-3.0, 2.0, 1.0]), "joint"),
-        (np.array([1.0, -2.0, 3.0]), np.array([3.0, 2.0, -1.0]), "joint"),
+        (np.array([-1.0, 2.0, -3.0]), np.array([3.0, 2.0, 1.0]), "joint"),
+        (np.array([1.0, 2.0, 3.0]), np.array([-3.0, 2.0, -1.0]), "joint"),
         # 2d
-        (np.array([[1.0, 2.0, -3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 2.0, 1.0], [5.0, 4.0, 3.0]]).T, "joint"),
-        (np.array([[1.0, 2.0, 3.0], [-3.0, 4.0, 5.0]]).T, np.array([[3.0, 2.0, 1.0], [5.0, 4.0, 3.0]]).T, "joint"),
-        (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 2.0, -1.0], [5.0, 4.0, 3.0]]).T, "joint"),
-        (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 2.0, 1.0], [-5.0, 4.0, 3.0]]).T, "joint"),
-        (np.array([[1.0, 2.0, -3.0], [3.0, 4.0, -5.0]]).T, np.array([[3.0, -2.0, 1.0], [5.0, 4.0, -3.0]]).T, "joint"),
+        (np.array([[1.0, 2.0, -3.0], [3.0, -4.0, 5.0]]).T, np.array([[3.0, 2.0, 1.0], [5.0, 4.0, 3.0]]).T, "joint"),
+        (np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T, np.array([[3.0, 2.0, -1.0], [-5.0, 4.0, -3.0]]).T, "joint"),
         (
             np.array([[1.0, 2.0, -3.0], [3.0, 4.0, -5.0]]).T,
             np.array([[3.0, 2.0, 1.0], [5.0, 4.0, 3.0]]).T,
@@ -1010,11 +1006,13 @@ def test_msle_ok(y_true, y_pred, multioutput, expected):
         ),
         (
             np.array([[1.0, 2.0, 3.0], [3.0, 4.0, 5.0]]).T,
-            np.array([[3.0, -2.0, 1.0], [-5.0, 4.0, 3.0]]).T,
+            np.array([[3.0, -2.0, 1.0], [-5.0, 4.0, -3.0]]).T,
             "raw_values",
         ),
     ],
 )
 def test_msle_negative(y_true, y_pred, multioutput):
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Mean Squared Logarithmic Error cannot be used when targets contain negative values."
+    ):
         msle(y_true=y_true, y_pred=y_pred, multioutput=multioutput)

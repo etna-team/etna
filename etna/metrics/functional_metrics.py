@@ -484,22 +484,9 @@ def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
     """
-    y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
+    mse_result = mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
 
-    if len(y_true_array.shape) != len(y_pred_array.shape):
-        raise ValueError("Shapes of the labels must be the same")
-
-    axis = _get_axis_by_multioutput(multioutput)
-
-    with warnings.catch_warnings():
-        # this helps to prevent warning in case of all nans
-        warnings.filterwarnings(
-            message="Mean of empty slice",
-            action="ignore",
-        )
-        result = np.nanmean((y_true_array - y_pred_array) ** 2, axis=axis)
-
-    return np.sqrt(result)
+    return np.sqrt(mse_result)
 
 
 def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
@@ -531,6 +518,13 @@ def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
+        If input arrays contain negative values.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 

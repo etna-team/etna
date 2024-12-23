@@ -39,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Rework validation of `FoldMask` to not fail on tail nans ([#536](https://github.com/etna-team/etna/pull/536))
 - Add parameter `missing_mode` into `R2` and `MedAE` metrics ([#537](https://github.com/etna-team/etna/pull/537))
-- Add parameer `missing_mode` into `RMSE` and `MSLE` metrics ([#542](https://github.com/etna-team/etna/pull/542))
+- Add parameter `missing_mode` into `RMSE` and `MSLE` metrics ([#542](https://github.com/etna-team/etna/pull/542))
 - 
 
 ### Fixed
