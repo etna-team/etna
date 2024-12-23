@@ -5,6 +5,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from sklearn import __version__ as sklearn_version
 from sklearn import preprocessing
 from sklearn.utils._encode import _check_unknown
 from sklearn.utils._encode import _encode
@@ -215,7 +216,15 @@ class OneHotEncoderTransform(IrreversibleTransform):
         self.in_column = in_column
         self.out_column = out_column
         self.return_type = ReturnType(return_type)
-        self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", sparse=False, dtype=int)
+
+        sklearn_version_tuple = tuple(map(int, sklearn_version.split(".")))
+        encoder_params = {}
+        if sklearn_version_tuple < (1, 2):
+            encoder_params["sparse"] = False
+        else:
+            encoder_params["sparse_output"] = False
+        self.ohe = preprocessing.OneHotEncoder(handle_unknown="ignore", dtype=int, **encoder_params)
+
         self.in_column_regressor: Optional[bool] = None
 
     def get_regressors_info(self) -> List[str]:

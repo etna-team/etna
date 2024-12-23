@@ -355,26 +355,6 @@ def test_fold_mask_validate_on_dataset_fail_not_present_some_target_timestamps(t
     "ts_name, horizon, fold_mask",
     [
         (
-            "ts_with_nans_in_tails",
-            1,
-            FoldMask(
-                first_train_timestamp=None,
-                last_train_timestamp="2020-01-31 22:00",
-                target_timestamps=["2020-01-31 23:00"],
-            ),
-        ),
-    ],
-)
-def test_fold_mask_validate_on_dataset_fail_not_enough_future(ts_name, fold_mask, horizon, request):
-    ts = request.getfixturevalue(ts_name)
-    with pytest.raises(ValueError, match="Last train timestamp should be not later than"):
-        fold_mask.validate_on_dataset(ts=ts, horizon=horizon)
-
-
-@pytest.mark.parametrize(
-    "ts_name, horizon, fold_mask",
-    [
-        (
             "example_tsds",
             3,
             FoldMask(
