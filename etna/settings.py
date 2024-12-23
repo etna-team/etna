@@ -52,6 +52,21 @@ def _is_chronos_available():
         return False
 
 
+def _is_timesfm_available():
+    true_case = (
+        _module_available("torch")
+        & _module_available("jax")
+        & _module_available("jaxlib")
+        & _module_available("huggingface_hub")
+        & _module_available("utilsforecast")
+    )
+    if true_case:
+        return True
+    else:
+        warnings.warn("etna[timesfm] is not available, to install it, run `pip install etna[timesfm]`")
+        return False
+
+
 def _is_wandb_available():
     if _module_available("wandb"):
         return True
@@ -112,6 +127,7 @@ class Settings:
         self,
         torch_required: Optional[bool] = None,
         chronos_required: Optional[bool] = None,
+        timesfm_required: Optional[bool] = None,
         prophet_required: Optional[bool] = None,
         wandb_required: Optional[bool] = None,
         classification_required: Optional[bool] = None,
@@ -130,6 +146,11 @@ class Settings:
             chronos_required,
             _is_chronos_available,
             "etna[chronos] is not available, to install it, run `pip install etna[chronos]`.",
+        )
+        self.timesfm_required: bool = _get_optional_value(
+            timesfm_required,
+            _is_timesfm_available,
+            "etna[timesfm] is not available, to install it, run `pip install etna[timesfm]`.",
         )
         self.wandb_required: bool = _get_optional_value(
             wandb_required, _is_wandb_available, "wandb is not available, to install it, " "run `pip install wandb`."
