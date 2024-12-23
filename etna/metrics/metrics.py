@@ -126,7 +126,7 @@ class RMSE(MetricWithMissingHandling):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", missing_mode='error', **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode="error", **kwargs):
         """Init metric.
 
         Parameters
@@ -151,7 +151,8 @@ class RMSE(MetricWithMissingHandling):
             metric_fn=rmse_per_output,
             metric_fn_signature="matrix_to_array",
             missing_mode=missing_mode,
-            **kwargs)
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
@@ -338,7 +339,7 @@ class MSLE(MetricWithMissingHandling):
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", missing_mode='error', **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode="error", **kwargs):
         """Init metric.
 
         Parameters
@@ -364,7 +365,7 @@ class MSLE(MetricWithMissingHandling):
             metric_fn=msle_per_output,
             metric_fn_signature="matrix_to_array",
             missing_mode=missing_mode,
-            **kwargs
+            **kwargs,
         )
 
     @property

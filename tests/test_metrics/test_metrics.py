@@ -213,7 +213,7 @@ def test_invalid_nans_true(metric, train_test_dfs):
         MaxDeviation(missing_mode="ignore"),
         MissingCounter(),
         RMSE(missing_mode="ignore"),
-        MSLE(missing_mode="ignore")
+        MSLE(missing_mode="ignore"),
     ),
 )
 def test_invalid_single_nan_ignore(metric, train_test_dfs):
