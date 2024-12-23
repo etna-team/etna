@@ -15,7 +15,6 @@ from etna.metrics.functional_metrics import rmse
 from etna.metrics.functional_metrics import sign
 from etna.metrics.functional_metrics import smape
 from etna.metrics.functional_metrics import wape
-from etna.metrics.functional_metrics import msle
 from etna.metrics.intervals_metrics import Coverage
 from etna.metrics.intervals_metrics import Width
 from etna.metrics.metrics import MAE
