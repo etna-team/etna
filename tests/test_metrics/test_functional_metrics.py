@@ -881,8 +881,9 @@ def test_madae_ok(y_true, y_pred, multioutput, expected):
         ),
     ],
 )
-def test_mse_ok(y_true, y_pred, multioutput, expected):
+def test_rmse_ok(y_true, y_pred, multioutput, expected):
     result = rmse(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -987,6 +988,7 @@ def test_mse_ok(y_true, y_pred, multioutput, expected):
 )
 def test_msle_ok(y_true, y_pred, multioutput, expected):
     result = msle(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    assert np.shape(result) == np.shape(expected)
     npt.assert_allclose(result, expected)
 
 
@@ -1013,6 +1015,6 @@ def test_msle_ok(y_true, y_pred, multioutput, expected):
 )
 def test_msle_negative(y_true, y_pred, multioutput):
     with pytest.raises(
-        ValueError, match="Mean Squared Logarithmic Error cannot be used when targets contain negative values."
+        ValueError, match="Mean squared logarithmic error cannot be used when targets contain negative values."
     ):
         msle(y_true=y_true, y_pred=y_pred, multioutput=multioutput)

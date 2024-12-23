@@ -65,6 +65,12 @@ def mse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Arr
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -111,6 +117,12 @@ def mae(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Arr
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -163,6 +175,12 @@ def mape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput: 
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -217,6 +235,12 @@ def smape(y_true: ArrayLike, y_pred: ArrayLike, eps: float = 1e-15, multioutput:
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -267,6 +291,12 @@ def r2_score(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -
     :
         A floating point value, or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -343,6 +373,12 @@ def medae(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> A
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -389,6 +425,12 @@ def sign(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     :
         A floating point value, or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -483,6 +525,12 @@ def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     mse_result = np.asarray(mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput))
     result = np.sqrt(mse_result)
@@ -578,6 +626,12 @@ def wape(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
     :
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
@@ -643,6 +697,12 @@ def count_missing_values(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str 
     :
         A floating point value, or an array of floating point values,
         one for each individual target.
+
+    Raises
+    ------
+    :
+    ValueError:
+        If the shapes of the input arrays do not match.
     """
     y_true_array, y_pred_array = np.asarray(y_true), np.asarray(y_pred)
 
