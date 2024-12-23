@@ -484,9 +484,10 @@ def rmse(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> Ar
         A non-negative floating point value (the best value is 0.0), or an array of floating point values,
         one for each individual target.
     """
-    mse_result = mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput)
+    mse_result = np.asarray(mse(y_true=y_true, y_pred=y_pred, multioutput=multioutput))
+    result = np.sqrt(mse_result)
 
-    return np.sqrt(mse_result)
+    return result
 
 
 def msle(y_true: ArrayLike, y_pred: ArrayLike, multioutput: str = "joint") -> ArrayLike:
