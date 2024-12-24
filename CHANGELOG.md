@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `ChronosModel` ([#511](https://github.com/etna-team/etna/pull/511))
 - Add `ChronosBoltModel` ([#511](https://github.com/etna-team/etna/pull/511))
 - Add usage example of `ChronosModel` and `ChronosBoltModel` in `202-NN_examples` notebook ([#511](https://github.com/etna-team/etna/pull/511))
-- 
-- 
+- Add `TimesFMModel` ([#544](https://github.com/etna-team/etna/pull/544))
+- Add usage example of `TimesFMModel` in `202-NN_examples` notebook ([#544](https://github.com/etna-team/etna/pull/544))
 - 
 - 
 - Add `MissingCounter` metric ([#520](https://github.com/etna-team/etna/pull/520))
