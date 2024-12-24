@@ -274,7 +274,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         else:
             if ts.freq is None:
                 raise NotImplementedError(
-                    "Data with None frequency isn't currently implemented for forecasting without exogenous features."
+                    "Forecasting misaligned data with freq=None without exogenous features isn't currently implemented."
                 )
 
             target = ts.to_pandas(flatten=True, features=["target"]).dropna()

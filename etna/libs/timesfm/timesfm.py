@@ -206,7 +206,7 @@ class TimesFmTorch(timesfm_base.TimesFmBase):
         torch.cuda.is_available() and self.backend == "gpu") else "cpu")
     self._median_index = -1
 
-  def _set_horizon(self, horizon):
+  def _set_horizon(self, horizon):  # changed: added to change horizon after initialization
       self.horizon_len = horizon
 
   def load_from_checkpoint(
@@ -216,10 +216,10 @@ class TimesFmTorch(timesfm_base.TimesFmBase):
     """Loads a checkpoint and compiles the decoder."""
     checkpoint_path = checkpoint.path
     repo_id = checkpoint.huggingface_repo_id
-    if not os.path.exists(checkpoint_path):
+    if not os.path.exists(checkpoint_path):  # changed: make loading similar to chronos
       checkpoint_path = path.join(snapshot_download(checkpoint_path, cache_dir=checkpoint.local_dir), "torch_model.ckpt")
     self._model = ppd.PatchedTimeSeriesDecoder(self._model_config)
-    loaded_checkpoint = torch.load(checkpoint_path)  # TODO weights_only=True
+    loaded_checkpoint = torch.load(checkpoint_path)  # changed: remove weights_only=True due to attribute absence in low torch versions
     logging.info("Loading checkpoint from %s", checkpoint_path)
     self._model.load_state_dict(loaded_checkpoint)
     logging.info("Sending checkpoint to device %s", f"{self._device}")

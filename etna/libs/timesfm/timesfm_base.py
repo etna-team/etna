@@ -207,7 +207,7 @@ def moving_average(arr, window_size):
 
 def freq_map(freq: Optional[str]):
   """Returns the frequency map for the given frequency string."""
-  if freq is None:
+  if freq is None:  # changed: added this case to handle int timestamps during forecasting with exogenous features
       warnings.warn("Frequency is None. Mapping it to 0, that can be not optimal. Better to set it to known frequency")
       return 0
   freq = str.upper(freq)
@@ -764,7 +764,7 @@ class TimesFmBase:
     uids = []
     if num_jobs == 1:
       if verbose:
-        logging.info("Processing dataframe with single process.")
+        logging.info("Processing dataframe with single process.")  # changed: replace print
       for key, group in df_sorted.groupby("unique_id"):
         inp, uid = process_group(
             key,
@@ -778,7 +778,7 @@ class TimesFmBase:
       if num_jobs == -1:
         num_jobs = multiprocessing.cpu_count()
       if verbose:
-        logging.info("Processing dataframe with multiple processes.")
+        logging.info("Processing dataframe with multiple processes.")   # changed: replace print
       with multiprocessing.Pool(processes=num_jobs) as pool:
         results = pool.starmap(
             process_group,
@@ -787,7 +787,7 @@ class TimesFmBase:
         )
       new_inputs, uids = zip(*results)
     if verbose:
-      logging.info("Finished preprocessing dataframe.")
+      logging.info("Finished preprocessing dataframe.")   # changed: replace print
     freq_inps = [freq_map(freq)] * len(new_inputs)
     _, full_forecast = self.forecast(new_inputs,
                                      freq=freq_inps,

@@ -33,7 +33,7 @@ def expected_ts_increasing_integers():
 
 
 @pytest.mark.smoke
-def test_chronos_url(tmp_path):
+def test_url(tmp_path):
     model_name = "timesfm-1.0-200m-pytorch.ckpt"
     url = f"http://etna-github-prod.cdn-tinkoff.ru/timesfm/{model_name}"
     _ = TimesFMModel(path_or_url=url, cache_dir=tmp_path)
@@ -41,7 +41,7 @@ def test_chronos_url(tmp_path):
 
 
 @pytest.mark.smoke
-def test_chronos_custom_cache_dir(tmp_path):
+def test_cache_dir(tmp_path):
     path_or_url = "google/timesfm-1.0-200m-pytorch"
     model_name = path_or_url.split("/")[-1]
     _ = TimesFMModel(path_or_url=path_or_url, cache_dir=tmp_path)
@@ -55,7 +55,7 @@ def test_context_size():
 
 
 @pytest.mark.smoke
-def test_chronos_get_model(example_tsds):
+def test_get_model(example_tsds):
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch")
     assert isinstance(model.get_model(), TimesFmTorch)
 
