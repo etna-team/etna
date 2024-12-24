@@ -118,7 +118,7 @@ def test_forecast_only_target_failed_int_timestamps(example_tsds_int_timestamp):
     pipeline.fit(example_tsds_int_timestamp)
     with pytest.raises(
         NotImplementedError,
-        match="Data with None frequency isn't currently implemented for forecasting without exogenous features.",
+        match="Forecasting misaligned data with freq=None without exogenous features isn't currently implemented.",
     ):
         _ = pipeline.forecast()
 
