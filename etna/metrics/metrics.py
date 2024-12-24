@@ -1,6 +1,5 @@
 from functools import partial
 
-from etna.metrics.base import Metric
 from etna.metrics.base import MetricWithMissingHandling
 from etna.metrics.functional_metrics import count_missing_values
 from etna.metrics.functional_metrics import mae
@@ -112,18 +111,21 @@ class MSE(MetricWithMissingHandling):
         return False
 
 
-class RMSE(Metric):
+class RMSE(MetricWithMissingHandling):
     """Root mean squared error metric with multi-segment computation support.
 
     .. math::
         RMSE(y\_true, y\_pred) = \\sqrt\\frac{\\sum_{i=1}^{n}{(y\_true_i - y\_pred_i)^2}}{n}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode="error", **kwargs):
         """Init metric.
 
         Parameters
@@ -136,11 +138,20 @@ class RMSE(Metric):
             * if "per-segment" -- does not aggregate metrics
 
             See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
         """
         rmse_per_output = partial(rmse, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=rmse_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=rmse_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:
@@ -199,7 +210,7 @@ class MAPE(MetricWithMissingHandling):
     """Mean absolute percentage error metric with multi-segment computation support.
 
     .. math::
-       MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
+        MAPE(y\_true, y\_pred) = \\frac{1}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \epsilon}
 
     This metric can handle missing values with parameter ``missing_mode``.
     If there are too many of them in ``ignore`` mode, the result will be ``None``.
@@ -246,7 +257,7 @@ class SMAPE(MetricWithMissingHandling):
     """Symmetric mean absolute percentage error metric with multi-segment computation support.
 
     .. math::
-       SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
+        SMAPE(y\_true, y\_pred) = \\frac{2 \\cdot 100 \\%}{n} \\cdot \\sum_{i=1}^{n} \\frac{\\mid y\_true_i - y\_pred_i\\mid}{\\mid y\_true_i \\mid + \\mid y\_pred_i \\mid}
 
     This metric can handle missing values with parameter ``missing_mode``.
     If there are too many of them in ``ignore`` mode, the result will be ``None``.
@@ -336,18 +347,21 @@ class MedAE(MetricWithMissingHandling):
         return False
 
 
-class MSLE(Metric):
+class MSLE(MetricWithMissingHandling):
     """Mean squared logarithmic error metric with multi-segment computation support.
 
     .. math::
-       MSLE(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{(ln(1 + y\_true_i) - ln(1 + y\_pred_i))^2}
+        MSLE(y\_true, y\_pred) = \\frac{1}{n}\\cdot\\sum_{i=1}^{n}{(ln(1 + y\_true_i) - ln(1 + y\_pred_i))^2}
+
+    This metric can handle missing values with parameter ``missing_mode``.
+    If there are too many of them in ``ignore`` mode, the result will be ``None``.
 
     Notes
     -----
     You can read more about logic of multi-segment metrics in Metric docs.
     """
 
-    def __init__(self, mode: str = "per-segment", **kwargs):
+    def __init__(self, mode: str = "per-segment", missing_mode="error", **kwargs):
         """Init metric.
 
         Parameters
@@ -360,12 +374,21 @@ class MSLE(Metric):
             * if "per-segment" -- does not aggregate metrics
 
             See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
         kwargs:
             metric's computation arguments
 
         """
         msle_per_output = partial(msle, multioutput="raw_values")
-        super().__init__(mode=mode, metric_fn=msle_per_output, metric_fn_signature="matrix_to_array", **kwargs)
+        super().__init__(
+            mode=mode,
+            metric_fn=msle_per_output,
+            metric_fn_signature="matrix_to_array",
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     @property
     def greater_is_better(self) -> bool:

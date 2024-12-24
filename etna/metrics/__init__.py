@@ -1,7 +1,5 @@
 """Module with metrics of forecasting quality."""
 
-from sklearn.metrics import mean_squared_log_error as msle
-
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.base import MetricMissingMode
