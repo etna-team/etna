@@ -165,6 +165,9 @@
 # limitations under the License.
 
 # Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/154248137ccce29b01f4c3a765e85c3d9e4d92ba/src/timesfm/timesfm_base.py)
+# replace print with logging
+
+import warnings
 
 """Base class for TimesFM inference. This will be common to PAX and Pytorch."""
 
@@ -172,8 +175,8 @@ import collections
 import dataclasses
 import logging
 import multiprocessing
-from typing import Any, Literal, Sequence, Optional, Tuple, List, Dict
-
+from typing import Any, Literal, Sequence, Optional, Tuple, List, Dict, Union
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
@@ -202,8 +205,11 @@ def moving_average(arr, window_size):
   return [smoothed_arr, arr - smoothed_arr]
 
 
-def freq_map(freq: str):
+def freq_map(freq: Optional[str]):
   """Returns the frequency map for the given frequency string."""
+  if freq is None:
+      warnings.warn("Frequency is None. Mapping it to 0, that can be not optimal. Better to set it to known frequency")
+      return 0
   freq = str.upper(freq)
   if (freq.endswith("H") or freq.endswith("T") or freq.endswith("MIN") or
       freq.endswith("D") or freq.endswith("B") or freq.endswith("U")):
@@ -284,11 +290,11 @@ class TimesFmCheckpoint:
   """
 
   version: str = "jax"
-  path: Optional[str] = None
+  path: Optional[Union[str, Path]] = None
   huggingface_repo_id: Optional[str] = None
   type: Any = None
   step: Optional[int]  = None
-  local_dir: Optional[str] = None
+  local_dir: Optional[Union[str, Path]] = None
 
 
 class TimesFmBase:
@@ -758,7 +764,7 @@ class TimesFmBase:
     uids = []
     if num_jobs == 1:
       if verbose:
-        print("Processing dataframe with single process.")
+        logging.info("Processing dataframe with single process.")
       for key, group in df_sorted.groupby("unique_id"):
         inp, uid = process_group(
             key,
@@ -772,7 +778,7 @@ class TimesFmBase:
       if num_jobs == -1:
         num_jobs = multiprocessing.cpu_count()
       if verbose:
-        print("Processing dataframe with multiple processes.")
+        logging.info("Processing dataframe with multiple processes.")
       with multiprocessing.Pool(processes=num_jobs) as pool:
         results = pool.starmap(
             process_group,
@@ -781,13 +787,13 @@ class TimesFmBase:
         )
       new_inputs, uids = zip(*results)
     if verbose:
-      print("Finished preprocessing dataframe.")
+      logging.info("Finished preprocessing dataframe.")
     freq_inps = [freq_map(freq)] * len(new_inputs)
     _, full_forecast = self.forecast(new_inputs,
                                      freq=freq_inps,
                                      window_size=window_size)
     if verbose:
-      print("Finished forecasting.")
+      logging.info("Finished forecasting.")
     fcst_df = make_future_dataframe(
         uids=uids,
         last_times=df_sorted.groupby("unique_id")["ds"].tail(1),

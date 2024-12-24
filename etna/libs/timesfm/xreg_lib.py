@@ -165,7 +165,7 @@
 # limitations under the License.
 
 # Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/154248137ccce29b01f4c3a765e85c3d9e4d92ba/src/timesfm/xreg_lib.py)
-
+# add check of sklearn version for OHE
 """Helper functions for in-context covariates and regression."""
 
 import itertools
@@ -176,6 +176,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from sklearn import preprocessing
+from sklearn import __version__ as sklearn_version
 
 Category = Union[int, str]
 
@@ -496,11 +497,18 @@ class BatchedInContextXRegBase:
       x_train = [(x_train - x_mean) / x_std]
       x_test = [(x_test - x_mean) / x_std]
 
+    sklearn_version_tuple = tuple(map(int, sklearn_version.split(".")))
+    encoder_params = {}
+    if sklearn_version_tuple < (1, 2):
+        encoder_params["sparse"] = False
+    else:
+        encoder_params["sparse_output"] = False
+
     # Categorical features. Encode one by one.
     one_hot_encoder = preprocessing.OneHotEncoder(
         drop=one_hot_encoder_drop,
-        sparse_output=False,
         handle_unknown="ignore",
+        **encoder_params
     )
     for name in sorted(self.train_dynamic_categorical_covariates.keys()):
       ohe_train = _unnest(

@@ -3,8 +3,11 @@ import warnings
 from pathlib import Path
 from typing import Dict
 from typing import List
+from typing import Literal
+from typing import Optional
 from urllib import request
 
+import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
@@ -16,6 +19,7 @@ if SETTINGS.timesfm_required:
     from etna.libs.timesfm import TimesFmCheckpoint
     from etna.libs.timesfm import TimesFmHparams
     from etna.libs.timesfm import TimesFmTorch
+    from etna.libs.timesfm.timesfm_base import freq_map
 
 _DOWNLOAD_PATH = Path.home() / ".etna" / "timesfm"
 
@@ -32,6 +36,8 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
     -------
     This model doesn't support forecasting on misaligned data with `freq=None`.
 
+    Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill NaNs for stable behaviour.
+
     Note
     ----
     This model requires ``timesfm`` extension to be installed.
@@ -42,8 +48,12 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         self,
         path_or_url: str,
         encoder_length: int = 512,
-        device: str = "cpu",
+        device: Literal["cpu", "gpu"] = "cpu",
         batch_size: int = 128,
+        static_reals: Optional[List[str]] = None,
+        static_categoricals: Optional[List[str]] = None,
+        time_varying_reals: Optional[List[str]] = None,
+        time_varying_categoricals: Optional[List[str]] = None,
         cache_dir: Path = _DOWNLOAD_PATH,
     ):
         """
@@ -62,11 +72,19 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             - If local path, it should be a file with model weights, that can be loaded by :py:func:`torch.load`.
             - If external url, it must be a file with model weights, that can be loaded by :py:func:`torch.load`. Model will be downloaded to ``cache_dir``.
         device:
-            Device type. Can be "cpu", "gpu".
+            Device type. Can be "cpu" or "gpu".
         encoder_length:
             Number of last timestamps to use as a context. It needs to be a multiplier of 32.
         batch_size:
             Batch size. It can be useful when inference is done on gpu.
+        static_reals:
+            Continuous features that have one unique feature value for the whole series. The first value in the series will be used for each feature.
+        static_categoricals:
+            Categorical features that have one unique feature value for the whole series. The first value in the series will be used for each feature.
+        time_varying_reals:
+            Time varying continuous features known for future.
+        time_varying_categoricals:
+            Time varying categorical features known for future.
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
         """
@@ -74,6 +92,10 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         self.encoder_length = encoder_length
         self.device = device
         self.batch_size = batch_size
+        self.static_reals = static_reals
+        self.static_categoricals = static_categoricals
+        self.time_varying_reals = time_varying_reals
+        self.time_varying_categoricals = time_varying_categoricals
         self.cache_dir = cache_dir
 
         self._set_pipeline()
@@ -189,11 +211,8 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         ValueError:
             if dataset doesn't have any context timestamps.
         NotImplementedError:
-            if data with None frequency is used.
+            if forecasting is done without exogenous features and dataset has None frequency.
         """
-        if ts.freq is None:
-            raise NotImplementedError("Data with None frequency isn't currently implemented!")
-
         if return_components:
             raise NotImplementedError("This mode isn't currently implemented!")
 
@@ -203,25 +222,71 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
         if max_context_size < self.context_size:
             warnings.warn("Actual length of a dataset is less that context size. All history will be used as context.")
-        available_context_size = min(max_context_size, self.context_size)
 
         self.tfm._set_horizon(prediction_size)
 
-        target = ts.df.loc[ts.index[:-prediction_size], pd.IndexSlice[:, "target"]]
-        target = target.iloc[-available_context_size:]
-        df = TSDataset.to_flatten(target).dropna()
-        df = df.rename(columns={"segment": "unique_id", "timestamp": "ds"})
-
-        predictions = self.tfm.forecast_on_df(df, freq=ts.freq, value_name="target")
-
         end_idx = len(ts.index)
-        future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
-        predictions = predictions.rename(columns={"unique_id": "segment", "ds": "timestamp", "timesfm": "target"})
-        predictions = TSDataset.to_dataset(predictions)
-        future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = predictions.loc[
-            :, pd.IndexSlice[:, "target"]
-        ].values  # .values is needed to cast predictions type of initial target type in ts
 
+        static_reals_dict = (
+            {column: ts.df.loc[ts.index[0], pd.IndexSlice[:, column]].values.tolist() for column in self.static_reals}
+            if self.static_reals is not None
+            else None
+        )
+        static_categoricals_dict = (
+            {
+                column: ts.df.loc[ts.index[0], pd.IndexSlice[:, column]].values.tolist()
+                for column in self.static_categoricals
+            }
+            if self.static_categoricals is not None
+            else None
+        )
+        time_varying_reals_dict = (
+            {
+                column: ts.df.loc[:, pd.IndexSlice[:, column]].values.swapaxes(1, 0).tolist()
+                for column in self.time_varying_reals
+            }
+            if self.time_varying_reals is not None
+            else None
+        )
+        time_varying_categoricals_dict = (
+            {
+                column: ts.df.loc[:, pd.IndexSlice[:, column]].values.swapaxes(1, 0).tolist()
+                for column in self.time_varying_categoricals
+            }
+            if self.time_varying_categoricals is not None
+            else None
+        )
+
+        future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
+
+        if static_reals_dict or static_categoricals_dict or time_varying_reals_dict or time_varying_categoricals_dict:
+            target = ts.df.loc[:, pd.IndexSlice[:, "target"]].dropna().values.swapaxes(1, 0).tolist()
+
+            complex_forecast, _ = self.tfm.forecast_with_covariates(
+                inputs=target,
+                dynamic_numerical_covariates=time_varying_reals_dict,
+                dynamic_categorical_covariates=time_varying_categoricals_dict,
+                static_numerical_covariates=static_reals_dict,
+                static_categorical_covariates=static_categoricals_dict,
+                freq=[freq_map(ts.freq)] * len(ts.segments),
+            )
+            future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)
+        else:
+            if ts.freq is None:
+                raise NotImplementedError(
+                    "Data with None frequency isn't currently implemented for forecasting without exogenous features."
+                )
+
+            target = ts.to_pandas(flatten=True, features=["target"]).dropna()
+            target = target.rename(columns={"segment": "unique_id", "timestamp": "ds"})
+
+            predictions = self.tfm.forecast_on_df(target, freq=ts.freq, value_name="target")
+
+            predictions = predictions.rename(columns={"unique_id": "segment", "ds": "timestamp", "timesfm": "target"})
+            predictions = TSDataset.to_dataset(predictions)
+            future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = predictions.loc[
+                :, pd.IndexSlice[:, "target"]
+            ].values  # .values is needed to cast predictions type of initial target type in ts
         return future_ts
 
     @staticmethod

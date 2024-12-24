@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
 
@@ -9,6 +10,9 @@ from etna.datasets import generate_ar_df
 from etna.libs.timesfm import TimesFmTorch
 from etna.models.nn import TimesFMModel
 from etna.pipeline import Pipeline
+from etna.transforms import DateFlagsTransform
+from etna.transforms import LagTransform
+from etna.transforms import SegmentEncoderTransform
 
 
 @pytest.fixture
@@ -22,8 +26,8 @@ def ts_increasing_integers():
 
 @pytest.fixture
 def expected_ts_increasing_integers():
-    df = generate_ar_df(start_time="2001-03-06", periods=1, n_segments=2)
-    df["target"] = [128.0] + [228.0]
+    df = generate_ar_df(start_time="2001-05-09", periods=2, n_segments=2)
+    df["target"] = [128.0, 129.0] + [228.0, 229.0]
     ts = TSDataset(df, freq="D")
     return ts
 
@@ -81,18 +85,60 @@ def test_forecast_warns_big_context_size(ts_increasing_integers):
 @pytest.mark.parametrize("encoder_length", [32, 64, 128])
 def test_forecast(ts_increasing_integers, expected_ts_increasing_integers, encoder_length):
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=encoder_length)
-    pipeline = Pipeline(model=model, horizon=1)
+    pipeline = Pipeline(model=model, horizon=2)
     pipeline.fit(ts_increasing_integers)
     forecast = pipeline.forecast()
-    assert_frame_equal(forecast.df, expected_ts_increasing_integers.df, atol=2)
+    assert_frame_equal(forecast.df, expected_ts_increasing_integers.df, atol=1)
+
+
+def test_forecast_exogenous_features(ts_increasing_integers, expected_ts_increasing_integers):
+    horizon = 2
+    transforms = [
+        SegmentEncoderTransform(),
+        LagTransform(in_column="target", lags=[horizon], out_column="lag"),
+        DateFlagsTransform(day_number_in_week=True, day_number_in_month=False, is_weekend=False, out_column="flag"),
+    ]
+    model = TimesFMModel(
+        path_or_url="google/timesfm-1.0-200m-pytorch",
+        encoder_length=32,
+        static_categoricals=["segment_code"],
+        time_varying_reals=[f"lag_{horizon}"],
+        time_varying_categoricals=["flag_day_number_in_week"],
+    )
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    pipeline.fit(ts_increasing_integers)
+    forecast = pipeline.forecast()
+    assert_frame_equal(forecast.df.loc[:, pd.IndexSlice[:, "target"]], expected_ts_increasing_integers.df, atol=1)
 
 
 @pytest.mark.smoke
-def test_forecast_failed_int_timestamps(example_tsds_int_timestamp):
-    model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch")
+def test_forecast_only_target_failed_int_timestamps(example_tsds_int_timestamp):
+    model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32)
     pipeline = Pipeline(model=model, horizon=1)
     pipeline.fit(example_tsds_int_timestamp)
-    with pytest.raises(NotImplementedError, match="Data with None frequency isn't currently implemented!"):
+    with pytest.raises(
+        NotImplementedError,
+        match="Data with None frequency isn't currently implemented for forecasting without exogenous features.",
+    ):
+        _ = pipeline.forecast()
+
+
+@pytest.mark.smoke
+def test_forecast_exog_int_timestamps(example_tsds_int_timestamp):
+    horizon = 2
+    transforms = [SegmentEncoderTransform(), LagTransform(in_column="target", lags=[horizon], out_column="lag")]
+    model = TimesFMModel(
+        path_or_url="google/timesfm-1.0-200m-pytorch",
+        encoder_length=32,
+        static_categoricals=["segment_code"],
+        time_varying_reals=[f"lag_{horizon}"],
+    )
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    pipeline.fit(example_tsds_int_timestamp)
+    with pytest.warns(
+        UserWarning,
+        match="Frequency is None. Mapping it to 0, that can be not optimal. Better to set it to known frequency",
+    ):
         _ = pipeline.forecast()
 
 
