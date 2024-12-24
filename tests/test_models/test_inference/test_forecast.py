@@ -46,6 +46,7 @@ from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.models.nn import TFTNativeModel
+from etna.models.nn import TimesFMModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import LagTransform
@@ -245,6 +246,17 @@ class TestForecastInSampleFullNoTarget:
         with pytest.raises(ValueError, match="Dataset doesn't have any context timestamps."):
             self._test_forecast_in_sample_full_no_target(ts, model, transforms)
 
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_in_sample_full_no_target_failed_timesfm(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(ValueError, match="Dataset doesn't have any context timestamps."):
+            self._test_forecast_in_sample_full_no_target(ts, model, transforms)
+
 
 class TestForecastInSampleFull:
     """Test forecast on full train dataset.
@@ -402,7 +414,18 @@ class TestForecastInSampleFull:
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
         ],
     )
-    def test_forecast_in_sample_full_no_target_failed_chronos(self, model, transforms, dataset_name, request):
+    def test_forecast_in_sample_full_failed_chronos(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(ValueError, match="Dataset doesn't have any context timestamps."):
+            _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_in_sample_full_failed_timesfm(self, model, transforms, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
         with pytest.raises(ValueError, match="Dataset doesn't have any context timestamps."):
             _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
@@ -493,6 +516,7 @@ class TestForecastInSampleSuffixNoTarget:
             (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
         ],
     )
     def test_forecast_in_sample_suffix_no_target(self, model, transforms, dataset_name, request):
@@ -617,6 +641,7 @@ class TestForecastInSampleSuffix:
             (NBeatsGenericModel(input_size=7, output_size=50, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
         ],
     )
     def test_forecast_in_sample_suffix(self, model, transforms, dataset_name, request):
@@ -792,6 +817,7 @@ class TestForecastOutSample:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
         ],
     )
     def test_forecast_out_sample_datetime_timestamp(self, model, transforms, dataset_name, request):
@@ -890,6 +916,18 @@ class TestForecastOutSample:
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
+
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_out_sample_int_timestamp_failed_timesfm(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
+        with pytest.raises(NotImplementedError, match="Data with None frequency isn't currently implemented!"):
+            self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms, dataset_name",
@@ -1047,6 +1085,7 @@ class TestForecastOutSamplePrefix:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
         ],
     )
     def test_forecast_out_sample_prefix(self, model, transforms, dataset_name, request):
@@ -1255,6 +1294,17 @@ class TestForecastOutSampleSuffix:
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(ts, model, transforms)
 
+    @pytest.mark.parametrize(
+        "model, transforms, dataset_name",
+        [
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
+        ],
+    )
+    def test_forecast_out_sample_suffix_failed_timesfm(self, model, transforms, dataset_name, request):
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(AssertionError):
+            self._test_forecast_out_sample_suffix(ts, model, transforms)
+
     @to_be_fixed(
         raises=NotImplementedError,
         match="This model can't make forecast on out-of-sample data that goes after training data with a gap",
@@ -1395,6 +1445,7 @@ class TestForecastMixedInOutSample:
             (NBeatsGenericModel(input_size=7, output_size=55, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
         ],
     )
     def test_forecast_mixed_in_out_sample(self, model, transforms, dataset_name, request):
@@ -1557,6 +1608,7 @@ class TestForecastSubsetSegments:
             ),
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
         ],
     )
     def test_forecast_subset_segments(self, model, transforms, dataset_name, request):
@@ -1734,6 +1786,7 @@ class TestForecastNewSegments:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
+            (TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32), [], "example_tsds"),
         ],
     )
     def test_forecast_new_segments(self, model, transforms, dataset_name, request):

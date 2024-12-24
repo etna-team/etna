@@ -123,3 +123,4 @@ Pretrained neural network models:
 
    nn.ChronosModel
    nn.ChronosBoltModel
+   nn.TimesFMModel
