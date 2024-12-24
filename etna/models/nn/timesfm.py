@@ -34,7 +34,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
     Warning
     -------
-    This model doesn't support forecasting on misaligned data with `freq=None`.
+    This model doesn't support forecasting on misaligned data with `freq=None` without exogenous features.
 
     Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill NaNs for stable behaviour.
 
