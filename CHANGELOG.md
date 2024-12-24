@@ -32,10 +32,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add parameter `missing_mode` into `MSE` metric ([#515](https://github.com/etna-team/etna/pull/515))
 - Add parameter `missing_mode` into `MAE` metric ([#523](https://github.com/etna-team/etna/pull/523))
 - Add parameter `missing_mode` into `MAPE` and `SMAPE` metrics ([#524](https://github.com/etna-team/etna/pull/524))
+- Add parameter `missing_mode` into `Sign`, `WAPE` and `MaxDeviation` metrics ([#530](https://github.com/etna-team/etna/pull/530))
+- Add parameter `missing_mode` into `Coverage` and `Width` metrics ([#541](https://github.com/etna-team/etna/pull/541))
+- 
+- Update `aggregate_metrics_df` to work with `None` values ([#522](https://github.com/etna-team/etna/pull/522))
 - 
 - 
-- 
-- 
+- Rework validation of `FoldMask` to not fail on tail nans ([#536](https://github.com/etna-team/etna/pull/536))
+- Add parameter `missing_mode` into `R2` and `MedAE` metrics ([#537](https://github.com/etna-team/etna/pull/537))
+- Update `analysis.forecast.plots.plot_metric_per_segment` to handle `None` from metrics ([#540](https://github.com/etna-team/etna/pull/540))
+- Add parameter `missing_mode` into `RMSE` and `MSLE` metrics ([#542](https://github.com/etna-team/etna/pull/542))
 - 
 - 
 - 
@@ -48,7 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix working with NaN target in `MeanEncoderTransform` ([#492](https://github.com/etna-team/etna/pull/492))
 - Fix `target` leakage in `MeanSegmentEncoderTransform` ([#503](https://github.com/etna-team/etna/pull/503))
 - 
-- 
+- Add handling scikit-learn version >= 1.4 in `OneHotEncoderTransform` and `HierarchicalClustering` ([#529](https://github.com/etna-team/etna/pull/529))
 - 
 - 
 - 

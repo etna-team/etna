@@ -185,8 +185,6 @@ class FoldMask(BaseMixin):
         ValueError:
             First train timestamp should be later than minimal dataset timestamp
         ValueError:
-            Last train timestamp should be not later than the ending of the shortest segment
-        ValueError:
             Last target timestamp should be not later than horizon steps after last train timestamp
         """
         timestamps = ts.index.to_list()
@@ -200,12 +198,6 @@ class FoldMask(BaseMixin):
         if not set(self.target_timestamps).issubset(set(timestamps)):
             diff = set(self.target_timestamps).difference(set(timestamps))
             raise ValueError(f"Some target timestamps aren't present in a given dataset: {reprlib.repr(diff)}")
-
-        dataset_description = ts.describe()
-
-        dataset_min_last_timestamp = dataset_description["end_timestamp"].min()
-        if self.last_train_timestamp > dataset_min_last_timestamp:
-            raise ValueError(f"Last train timestamp should be not later than {dataset_min_last_timestamp}!")
 
         dataset_horizon_border_timestamp = timestamps[timestamps.index(self.last_train_timestamp) + horizon]
         mask_last_target_timestamp = self.target_timestamps[-1]
@@ -856,7 +848,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         metrics_df.sort_values(["segment", self._fold_column], inplace=True)
 
         if aggregate_metrics:
-            metrics_df = metrics_df.groupby("segment").mean().reset_index().drop(self._fold_column, axis=1)
+            metrics_df = (
+                metrics_df.groupby("segment").mean(numeric_only=False).reset_index().drop(self._fold_column, axis=1)
+            )
 
         return metrics_df
 
