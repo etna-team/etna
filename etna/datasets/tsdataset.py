@@ -1148,6 +1148,9 @@ class TSDataset:
 
         In case of inconsistencies between ``test_size`` and (``test_start``, ``test_end``), ``test_size`` is ignored
 
+        During splitting all the features are kept in train and test parts including target, regressors,
+        target components, prediction intervals.
+
         Parameters
         ----------
         train_start:
@@ -1210,7 +1213,8 @@ class TSDataset:
         if train_start_defined < self.df.index.min():
             warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
 
-        train_df = self.df.loc[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
+        # TODO: why do we use self.raw_df.columns instead of self.df.columns? Need to be discussed
+        train_df = self.df.loc[train_start_defined:train_end_defined][self.df.columns]  # type: ignore
         train_raw_df = self.raw_df.loc[train_start_defined:train_end_defined]  # type: ignore
         train = TSDataset(
             df=train_df,
@@ -1224,7 +1228,9 @@ class TSDataset:
         train._target_components_names = deepcopy(self.target_components_names)
         train._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
 
-        test_df = self.df.loc[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
+        # TODO: why do we use self.raw_df.columns instead of self.df.columns? Need to be discussed
+        test_df = self.df.loc[test_start_defined:test_end_defined][self.df.columns]  # type: ignore
+        # TODO: why do we start from train_start_defined here? Need to be discussed
         test_raw_df = self.raw_df.loc[train_start_defined:test_end_defined]  # type: ignore
         test = TSDataset(
             df=test_df,
