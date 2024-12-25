@@ -73,7 +73,6 @@ def test_predict(example_tsds):
         model.predict(ts=example_tsds, prediction_size=1)
 
 
-@pytest.mark.smoke
 def test_forecast_warns_big_context_size(ts_increasing_integers):
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=512)
     pipeline = Pipeline(model=model, horizon=1)
@@ -142,7 +141,6 @@ def test_forecast_exog_int_timestamps(example_tsds_int_timestamp):
         _ = pipeline.forecast()
 
 
-@pytest.mark.smoke
 @pytest.mark.parametrize("encoder_length", [16, 33])
 def test_forecast_wrong_context_len(ts_increasing_integers, encoder_length):
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=encoder_length)

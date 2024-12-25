@@ -1301,6 +1301,7 @@ class TestForecastOutSampleSuffix:
         ],
     )
     def test_forecast_out_sample_suffix_failed_timesfm(self, model, transforms, dataset_name, request):
+        """This test is expected to fail due to patch strategy in TimesFM"""
         ts = request.getfixturevalue(dataset_name)
         with pytest.raises(AssertionError):
             self._test_forecast_out_sample_suffix(ts, model, transforms)
