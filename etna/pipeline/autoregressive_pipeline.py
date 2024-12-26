@@ -1,4 +1,5 @@
 import warnings
+from copy import deepcopy
 from typing import Sequence
 from typing import cast
 
@@ -94,6 +95,10 @@ class AutoRegressivePipeline(
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
 
+        Method doesn't change the given ``ts``.
+
+        Saved ``ts`` is the link to given ``ts``.
+
         Parameters
         ----------
         ts:
@@ -106,9 +111,9 @@ class AutoRegressivePipeline(
         :
             Fitted Pipeline instance
         """
-        ts.fit_transform(self.transforms)
-        self.model.fit(ts)
-        ts.inverse_transform(self.transforms)
+        cur_ts = deepcopy(ts)
+        cur_ts.fit_transform(self.transforms)
+        self.model.fit(cur_ts)
 
         if save_ts:
             self.ts = ts
