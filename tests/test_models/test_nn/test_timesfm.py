@@ -23,6 +23,13 @@ def generate_increasing_df():
     return df
 
 
+def generate_exog():
+    n = 128
+    df_exog = generate_ar_df(start_time="2001-01-01", periods=n + 2, n_segments=2)
+    df_exog.rename(columns={"target": "exog"}, inplace=True)
+    return df_exog
+
+
 @pytest.fixture
 def ts_increasing_integers():
     df = generate_increasing_df()
@@ -51,6 +58,24 @@ def expected_ts_increasing_integers():
     df = generate_ar_df(start_time="2001-05-09", periods=2, n_segments=2)
     df["target"] = [128.0, 129.0] + [228.0, 229.0]
     ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_exog_middle_nan():
+    df = generate_increasing_df()
+    df_exog = generate_exog()
+    df_exog.loc[120, "exog"] = np.NaN
+    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+    return ts
+
+
+@pytest.fixture
+def ts_exog_all_nan():
+    df = generate_increasing_df()
+    df_exog = generate_exog()
+    df_exog["exog"] = np.NaN
+    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
     return ts
 
 
@@ -118,7 +143,7 @@ def test_forecast_failed_nan_middle_target(ts_nan_middle):
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=128)
     pipeline = Pipeline(model=model, horizon=2)
     pipeline.fit(ts_nan_middle)
-    with pytest.raises(ValueError, match="There are NaNs in the middle or end of the time series."):
+    with pytest.raises(ValueError, match=r"There are NaNs in the middle or at the end of target. Segments with NaNs:"):
         _ = pipeline.forecast()
 
 
@@ -162,7 +187,25 @@ def test_forecast_exog_features_failed_nan_middle_target(ts_nan_middle):
     )
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     pipeline.fit(ts_nan_middle)
-    with pytest.raises(ValueError, match="There are NaNs in the middle or end of the time series."):
+    with pytest.raises(ValueError, match="There are NaNs in the middle or at the end of target. Segments with NaNs:"):
+        _ = pipeline.forecast()
+
+
+@pytest.mark.parametrize("ts", ["ts_exog_middle_nan", "ts_exog_all_nan"])
+def test_forecast_exog_features_failed_exog_nan(ts, request):
+    ts = request.getfixturevalue(ts)
+
+    horizon = 2
+    model = TimesFMModel(
+        path_or_url="google/timesfm-1.0-200m-pytorch",
+        encoder_length=128,
+        time_varying_reals=["exog"],
+    )
+    pipeline = Pipeline(model=model, transforms=[], horizon=horizon)
+    pipeline.fit(ts)
+    with pytest.raises(
+        ValueError, match="There are NaNs in the middle or at the end of exogenous features. Segments with NaNs:"
+    ):
         _ = pipeline.forecast()
 
 

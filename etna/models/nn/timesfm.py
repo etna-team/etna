@@ -1,4 +1,5 @@
 import os
+import reprlib
 import warnings
 from pathlib import Path
 from typing import Dict
@@ -32,7 +33,8 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
     This model doesn't support forecasting on misaligned data with `freq=None` without exogenous features.
 
-    Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill NaNs for stable behaviour.
+    This model doesn't support NaN in the middle or at the end of time series.
+    Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill them.
 
     Official implementation: https://github.com/google-research/timesfm
 
@@ -179,7 +181,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         """
         raise NotImplementedError("Method predict isn't currently implemented!")
 
-    def _get_exog_features(self) -> List[str]:
+    def _exog_сolumns(self) -> List[str]:
         static_reals = [] if self.static_reals is None else self.static_reals
         static_categoricals = [] if self.static_categoricals is None else self.static_categoricals
         time_varying_reals = [] if self.time_varying_reals is None else self.time_varying_reals
@@ -235,13 +237,20 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
         end_idx = len(ts.index)
 
-        all_exog = self._get_exog_features()
+        all_exog = self._exog_сolumns()
         df_slice = ts.df.loc[:, pd.IndexSlice[:, all_exog + ["target"]]]
-        first_valid_index = df_slice.isna().any(axis=1).idxmin()
+        first_valid_index = (
+            df_slice.isna().any(axis=1).idxmin()
+        )  # If all timestamps contains NaNs, idxmin() returns the first timestamp
 
         target_df = df_slice.loc[first_valid_index : ts.index[-prediction_size - 1], pd.IndexSlice[:, "target"]]
-        if target_df.isna().any().any():
-            raise ValueError("There are NaNs in the middle or end of the time series.")
+
+        nan_segment_mask = target_df.isna().any()
+        if nan_segment_mask.any():
+            nan_segments = nan_segment_mask.loc[:, nan_segment_mask].index.get_level_values(0).tolist()
+            raise ValueError(
+                f"There are NaNs in the middle or at the end of target. Segments with NaNs: {reprlib.repr(nan_segments)}."
+            )
 
         future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
 
@@ -249,8 +258,13 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             target = target_df.values.swapaxes(1, 0).tolist()
 
             exog_df = df_slice.loc[first_valid_index:, pd.IndexSlice[:, all_exog]]
-            if exog_df.isna().any().any():
-                raise ValueError("There are NaNs in the middle or end of the exogenous features.")
+
+            nan_segment_mask = exog_df.isna().any()
+            if nan_segment_mask.any():
+                nan_segments = nan_segment_mask.loc[:, nan_segment_mask].index.get_level_values(0).tolist()
+                raise ValueError(
+                    f"There are NaNs in the middle or at the end of exogenous features. Segments with NaNs: {reprlib.repr(nan_segments)}."
+                )
 
             static_reals_dict = (
                 {
