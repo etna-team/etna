@@ -33,7 +33,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
     This model doesn't support forecasting on misaligned data with `freq=None` without exogenous features.
 
-    This model doesn't support NaN in the middle or at the end of time series.
+    This model doesn't support NaN in the middle or at the end of target and exogenous features.
     Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill them.
 
     Official implementation: https://github.com/google-research/timesfm
@@ -181,7 +181,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         """
         raise NotImplementedError("Method predict isn't currently implemented!")
 
-    def _exog_сolumns(self) -> List[str]:
+    def _exog_columns(self) -> List[str]:
         static_reals = [] if self.static_reals is None else self.static_reals
         static_categoricals = [] if self.static_categoricals is None else self.static_categoricals
         time_varying_reals = [] if self.time_varying_reals is None else self.time_varying_reals
@@ -247,7 +247,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
         nan_segment_mask = target_df.isna().any()
         if nan_segment_mask.any():
-            nan_segments = nan_segment_mask.loc[:, nan_segment_mask].index.get_level_values(0).tolist()
+            nan_segments = nan_segment_mask.loc[:, nan_segment_mask].index.get_level_values(0).unique().tolist()
             raise ValueError(
                 f"There are NaNs in the middle or at the end of target. Segments with NaNs: {reprlib.repr(nan_segments)}."
             )
@@ -261,7 +261,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
             nan_segment_mask = exog_df.isna().any()
             if nan_segment_mask.any():
-                nan_segments = nan_segment_mask.loc[:, nan_segment_mask].index.get_level_values(0).tolist()
+                nan_segments = nan_segment_mask.loc[:, nan_segment_mask].index.get_level_values(0).unique().tolist()
                 raise ValueError(
                     f"There are NaNs in the middle or at the end of exogenous features. Segments with NaNs: {reprlib.repr(nan_segments)}."
                 )
