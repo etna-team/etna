@@ -22,6 +22,7 @@ Loggers:
    LocalFileLogger
    S3FileLogger
    WandbLogger
+   ClearMLLogger
 
 There is global object :code:`tslogger` that can be imported. It has a class:
 

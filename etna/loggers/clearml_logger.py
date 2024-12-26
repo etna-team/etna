@@ -99,6 +99,21 @@ class ClearMLLogger(BaseLogger):
         self.table = table
         self.config = config
 
+        self._task = Task.init(
+            project_name=self.project_name,
+            task_name=self.task_name,
+            task_type=self.task_type,
+            tags=self.tags,
+            output_uri=self.output_uri,
+            auto_connect_frameworks=self.auto_connect_frameworks,
+            auto_resource_monitoring=self.auto_resource_monitoring,
+            auto_connect_streams=self.auto_connect_streams,
+            reuse_last_task_id=False,
+        )
+        # self._task.launch_multi_node(total_num_nodes=3)
+        if self.config is not None:
+            self._task.connect(mutable=self.config)
+
         self._task: Optional[Task] = None
 
     def log(self, msg: Union[str, Dict[str, Any]], **kwargs):
@@ -133,6 +148,8 @@ class ClearMLLogger(BaseLogger):
         fold_info_df:
             Fold information from backtest
         """
+
+        """
         from etna.analysis import plot_backtest_interactive
         from etna.datasets import TSDataset
         from etna.metrics.utils import aggregate_metrics_df
@@ -151,6 +168,7 @@ class ClearMLLogger(BaseLogger):
         metrics_dict = aggregate_metrics_df(metrics_df)
         for metric, value in metrics_dict.items():
             self.task.logger.report_single_value(name=metric, value=value)
+        """
 
     def log_backtest_run(self, metrics: pd.DataFrame, forecast: pd.DataFrame, test: pd.DataFrame):
         """
@@ -164,6 +182,8 @@ class ClearMLLogger(BaseLogger):
             Dataframe with forecast
         test:
             Dataframe with ground truth
+        """
+
         """
         from etna.datasets import TSDataset
         from etna.metrics.utils import aggregate_metrics_df
@@ -179,8 +199,13 @@ class ClearMLLogger(BaseLogger):
             self.task.logger.report_table(title="Test", series=self.job_type, iteration=self.fold_id, table_plot=TSDataset.to_flatten(test))
 
         metrics_dict = aggregate_metrics_df(metrics)
+        #metrics_dict = pd.Series(metrics_dict).to_frame()
+        #self.task.logger.report_table(title="Metrics Summary", series=self.job_type, iteration=self.fold_id, table_plot=metrics_dict)
         for metric, value in metrics_dict.items():
             self.task.logger.report_scalar(title=metric, series=self.job_type, iteration=self.fold_id, value=value)
+        print(str(self.job_type) + str(self.fold_id))
+        #self.task.flush()
+        """
 
 
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
@@ -202,7 +227,8 @@ class ClearMLLogger(BaseLogger):
             self.fold_id = int(group)
         except:
             self.fold_id = group
-        #self.reinit_task()
+        if self._task is None:
+            self.reinit_task()
 
     def reinit_task(self):
         """Reinit Task."""
@@ -217,6 +243,7 @@ class ClearMLLogger(BaseLogger):
             auto_connect_streams=self.auto_connect_streams,
             reuse_last_task_id=False,
         )
+        #self._task.launch_multi_node(total_num_nodes=3)
         if self.config is not None:
             self._task.connect(mutable=self.config)
 
