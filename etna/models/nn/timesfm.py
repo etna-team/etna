@@ -237,7 +237,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
         end_idx = len(ts.index)
 
-        all_exog = self._exog_сolumns()
+        all_exog = self._exog_columns()
         df_slice = ts.df.loc[:, pd.IndexSlice[:, all_exog + ["target"]]]
         first_valid_index = (
             df_slice.isna().any(axis=1).idxmin()
