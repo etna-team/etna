@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
@@ -15,11 +16,32 @@ from etna.transforms import LagTransform
 from etna.transforms import SegmentEncoderTransform
 
 
-@pytest.fixture
-def ts_increasing_integers():
+def generate_increasing_df():
     n = 128
     df = generate_ar_df(start_time="2001-01-01", periods=n, n_segments=2)
     df["target"] = list(range(n)) + list(range(100, 100 + n))
+    return df
+
+
+@pytest.fixture
+def ts_increasing_integers():
+    df = generate_increasing_df()
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_nan_start():
+    df = generate_increasing_df()
+    df.loc[0, "target"] = np.NaN
+    ts = TSDataset(df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def ts_nan_middle():
+    df = generate_increasing_df()
+    df.loc[120, "target"] = np.NaN
     ts = TSDataset(df, freq="D")
     return ts
 
@@ -82,32 +104,66 @@ def test_forecast_warns_big_context_size(ts_increasing_integers):
 
 
 @pytest.mark.parametrize("encoder_length", [32, 64, 128])
-def test_forecast(ts_increasing_integers, expected_ts_increasing_integers, encoder_length):
+@pytest.mark.parametrize("ts", ["ts_increasing_integers", "ts_nan_start"])
+def test_forecast(ts, expected_ts_increasing_integers, encoder_length, request):
+    ts = request.getfixturevalue(ts)
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=encoder_length)
     pipeline = Pipeline(model=model, horizon=2)
-    pipeline.fit(ts_increasing_integers)
+    pipeline.fit(ts)
     forecast = pipeline.forecast()
     assert_frame_equal(forecast.df, expected_ts_increasing_integers.df, atol=1)
 
 
-def test_forecast_exogenous_features(ts_increasing_integers, expected_ts_increasing_integers):
+def test_forecast_failed_nan_middle_target(ts_nan_middle):
+    model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=128)
+    pipeline = Pipeline(model=model, horizon=2)
+    pipeline.fit(ts_nan_middle)
+    with pytest.raises(ValueError, match="There are NaNs in the middle or end of the time series."):
+        _ = pipeline.forecast()
+
+
+@pytest.mark.parametrize("encoder_length", [32, 64, 128])
+@pytest.mark.parametrize("ts", ["ts_increasing_integers", "ts_nan_start"])
+def test_forecast_exogenous_features(ts, expected_ts_increasing_integers, encoder_length, request):
+    ts = request.getfixturevalue(ts)
+
     horizon = 2
     transforms = [
         SegmentEncoderTransform(),
-        LagTransform(in_column="target", lags=[horizon], out_column="lag"),
+        LagTransform(in_column="target", lags=[horizon, horizon + 1], out_column="lag"),
         DateFlagsTransform(day_number_in_week=True, day_number_in_month=False, is_weekend=False, out_column="flag"),
     ]
     model = TimesFMModel(
         path_or_url="google/timesfm-1.0-200m-pytorch",
-        encoder_length=32,
+        encoder_length=encoder_length,
         static_categoricals=["segment_code"],
-        time_varying_reals=[f"lag_{horizon}"],
+        time_varying_reals=[f"lag_{horizon}", f"lag_{horizon+1}"],
         time_varying_categoricals=["flag_day_number_in_week"],
     )
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
-    pipeline.fit(ts_increasing_integers)
+    pipeline.fit(ts)
     forecast = pipeline.forecast()
     assert_frame_equal(forecast.df.loc[:, pd.IndexSlice[:, "target"]], expected_ts_increasing_integers.df, atol=1)
+
+
+def test_forecast_exog_features_failed_nan_middle_target(ts_nan_middle):
+    horizon = 2
+    transforms = [
+        SegmentEncoderTransform(),
+        LagTransform(in_column="target", lags=[horizon, horizon + 1], out_column="lag"),
+        DateFlagsTransform(day_number_in_week=True, day_number_in_month=False, is_weekend=False, out_column="flag"),
+    ]
+    model = TimesFMModel(
+        path_or_url="google/timesfm-1.0-200m-pytorch",
+        encoder_length=128,
+        static_categoricals=["segment_code"],
+        time_varying_reals=[f"lag_{horizon}", f"lag_{horizon+1}"],
+        time_varying_categoricals=["flag_day_number_in_week"],
+    )
+    pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
+    pipeline.fit(ts_nan_middle)
+    with pytest.raises(ValueError, match="There are NaNs in the middle or end of the time series."):
+        _ = pipeline.forecast()
 
 
 @pytest.mark.smoke

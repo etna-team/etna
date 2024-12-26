@@ -30,13 +30,11 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
     This model is only for zero-shot forecasting: it doesn't support training on data during ``fit``.
 
-    Official implementation: https://github.com/google-research/timesfm
-
-    Warning
-    -------
     This model doesn't support forecasting on misaligned data with `freq=None` without exogenous features.
 
     Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill NaNs for stable behaviour.
+
+    Official implementation: https://github.com/google-research/timesfm
 
     Note
     ----
@@ -181,6 +179,14 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         """
         raise NotImplementedError("Method predict isn't currently implemented!")
 
+    def _get_exog_features(self) -> List[str]:
+        static_reals = [] if self.static_reals is None else self.static_reals
+        static_categoricals = [] if self.static_categoricals is None else self.static_categoricals
+        time_varying_reals = [] if self.time_varying_reals is None else self.time_varying_reals
+        time_varying_categoricals = [] if self.time_varying_categoricals is None else self.time_varying_categoricals
+
+        return static_reals + static_categoricals + time_varying_reals + time_varying_categoricals
+
     def forecast(
         self,
         ts: TSDataset,
@@ -210,6 +216,8 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             if return_components mode is used.
         ValueError:
             if dataset doesn't have any context timestamps.
+        ValueError:
+            if there are NaNs in the middle or end of the time series.
         NotImplementedError:
             if forecasting is done without exogenous features and dataset has None frequency.
         """
@@ -227,40 +235,55 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
         end_idx = len(ts.index)
 
-        static_reals_dict = (
-            {column: ts.df.loc[ts.index[0], pd.IndexSlice[:, column]].values.tolist() for column in self.static_reals}
-            if self.static_reals is not None
-            else None
-        )
-        static_categoricals_dict = (
-            {
-                column: ts.df.loc[ts.index[0], pd.IndexSlice[:, column]].values.tolist()
-                for column in self.static_categoricals
-            }
-            if self.static_categoricals is not None
-            else None
-        )
-        time_varying_reals_dict = (
-            {
-                column: ts.df.loc[:, pd.IndexSlice[:, column]].values.swapaxes(1, 0).tolist()
-                for column in self.time_varying_reals
-            }
-            if self.time_varying_reals is not None
-            else None
-        )
-        time_varying_categoricals_dict = (
-            {
-                column: ts.df.loc[:, pd.IndexSlice[:, column]].values.swapaxes(1, 0).tolist()
-                for column in self.time_varying_categoricals
-            }
-            if self.time_varying_categoricals is not None
-            else None
-        )
+        all_exog = self._get_exog_features()
+        df_slice = ts.df.loc[:, pd.IndexSlice[:, all_exog + ["target"]]]
+        first_valid_index = df_slice.isna().any(axis=1).idxmin()
+
+        target_df = df_slice.loc[first_valid_index : ts.index[-prediction_size - 1], pd.IndexSlice[:, "target"]]
+        if target_df.isna().any().any():
+            raise ValueError("There are NaNs in the middle or end of the time series.")
 
         future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
 
-        if static_reals_dict or static_categoricals_dict or time_varying_reals_dict or time_varying_categoricals_dict:
-            target = ts.df.loc[:, pd.IndexSlice[:, "target"]].dropna().values.swapaxes(1, 0).tolist()
+        if len(all_exog) > 0:
+            target = target_df.values.swapaxes(1, 0).tolist()
+
+            exog_df = df_slice.loc[first_valid_index:, pd.IndexSlice[:, all_exog]]
+            if exog_df.isna().any().any():
+                raise ValueError("There are NaNs in the middle or end of the exogenous features.")
+
+            static_reals_dict = (
+                {
+                    column: exog_df.loc[exog_df.index[0], pd.IndexSlice[:, column]].values.tolist()
+                    for column in self.static_reals
+                }
+                if self.static_reals is not None
+                else None
+            )
+            static_categoricals_dict = (
+                {
+                    column: exog_df.loc[exog_df.index[0], pd.IndexSlice[:, column]].values.tolist()
+                    for column in self.static_categoricals
+                }
+                if self.static_categoricals is not None
+                else None
+            )
+            time_varying_reals_dict = (
+                {
+                    column: exog_df.loc[:, pd.IndexSlice[:, column]].values.swapaxes(1, 0).tolist()
+                    for column in self.time_varying_reals
+                }
+                if self.time_varying_reals is not None
+                else None
+            )
+            time_varying_categoricals_dict = (
+                {
+                    column: exog_df.loc[:, pd.IndexSlice[:, column]].values.swapaxes(1, 0).tolist()
+                    for column in self.time_varying_categoricals
+                }
+                if self.time_varying_categoricals is not None
+                else None
+            )
 
             complex_forecast, _ = self.tfm.forecast_with_covariates(
                 inputs=target,
@@ -277,7 +300,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                     "Forecasting misaligned data with freq=None without exogenous features isn't currently implemented."
                 )
 
-            target = ts.to_pandas(flatten=True, features=["target"]).dropna()
+            target = TSDataset.to_flatten(df=target_df)
             target = target.rename(columns={"segment": "unique_id", "timestamp": "ds"})
 
             predictions = self.tfm.forecast_on_df(target, freq=ts.freq, value_name="target")
