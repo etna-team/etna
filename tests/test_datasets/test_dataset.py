@@ -976,18 +976,26 @@ def test_train_test_split_pass_transform_regressors_to_output(df_and_regressors)
 
 def test_train_test_split_pass_target_components_to_output(ts_with_target_components):
     train, test = ts_with_target_components.train_test_split(test_size=5)
+    train_target_components = train.get_target_components()
+    test_target_components = test.get_target_components()
     assert set(train.target_components_names).issubset(set(train.features))
     assert set(test.target_components_names).issubset(set(test.features))
     assert sorted(train.target_components_names) == sorted(ts_with_target_components.target_components_names)
     assert sorted(test.target_components_names) == sorted(ts_with_target_components.target_components_names)
+    assert set(train_target_components.columns.get_level_values("feature")) == set(train.target_components_names)
+    assert set(test_target_components.columns.get_level_values("feature")) == set(test.target_components_names)
 
 
 def test_train_test_split_pass_prediction_intervals_to_output(ts_with_prediction_intervals):
     train, test = ts_with_prediction_intervals.train_test_split(test_size=5)
+    train_prediction_intervals = train.get_prediction_intervals()
+    test_prediction_intervals = test.get_prediction_intervals()
     assert set(train.prediction_intervals_names).issubset(set(train.features))
     assert set(test.prediction_intervals_names).issubset(set(test.features))
     assert sorted(train.prediction_intervals_names) == sorted(ts_with_prediction_intervals.prediction_intervals_names)
     assert sorted(test.prediction_intervals_names) == sorted(ts_with_prediction_intervals.prediction_intervals_names)
+    assert set(train_prediction_intervals.columns.get_level_values("feature")) == set(train.prediction_intervals_names)
+    assert set(test_prediction_intervals.columns.get_level_values("feature")) == set(test.prediction_intervals_names)
 
 
 def test_to_dataset_datetime_conversion():
