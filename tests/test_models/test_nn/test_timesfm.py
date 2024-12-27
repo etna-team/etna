@@ -79,7 +79,6 @@ def ts_exog_all_nan():
     return ts
 
 
-@pytest.mark.skip(reason="Model causes OOM in GitHub Actions.")
 @pytest.mark.smoke
 def test_url(tmp_path):
     model_name = "timesfm-1.0-200m-pytorch.ckpt"
