@@ -135,6 +135,7 @@ def test_forecast_warns_big_context_size(ts_increasing_integers):
         _ = pipeline.forecast()
 
 
+@pytest.mark.skip(reason="Model causes OOM in GitHub Actions.")
 @pytest.mark.parametrize("encoder_length", [32, 64, 128])
 @pytest.mark.parametrize("ts", ["ts_increasing_integers", "ts_nan_start"])
 def test_forecast(ts, expected_ts_increasing_integers, encoder_length, request):
@@ -155,6 +156,7 @@ def test_forecast_failed_nan_middle_target(ts_nan_middle):
         _ = pipeline.forecast()
 
 
+@pytest.mark.skip(reason="Model causes OOM in GitHub Actions.")
 @pytest.mark.parametrize("encoder_length", [32, 64, 128])
 @pytest.mark.parametrize("ts", ["ts_increasing_integers", "ts_nan_start"])
 def test_forecast_exogenous_features(ts, expected_ts_increasing_integers, encoder_length, request):
