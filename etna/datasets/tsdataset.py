@@ -1213,40 +1213,14 @@ class TSDataset:
         if train_start_defined < self.df.index.min():
             warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
 
-        # TODO: why do we use self.raw_df.columns instead of self.df.columns? Need to be discussed
-        train_df_init = self.df.loc[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
-        train_df = self.df.loc[train_start_defined:train_end_defined][self.df.columns]  # type: ignore
-        train_raw_df = self.raw_df.loc[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(
-            df=train_df_init,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        train.df = train_df
-        train.raw_df = train_raw_df
-        train._regressors = deepcopy(self.regressors)
-        train._target_components_names = deepcopy(self.target_components_names)
-        train._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+        train = deepcopy(self)
+        train.df = train.df.loc[train_start_defined:train_end_defined]
+        train.raw_df = train.raw_df.loc[train_start_defined:train_end_defined]
 
-        # TODO: why do we use self.raw_df.columns instead of self.df.columns? Need to be discussed
-        test_df_init = self.df.loc[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
-        test_df = self.df.loc[test_start_defined:test_end_defined][self.df.columns]  # type: ignore
-        # TODO: why do we start from train_start_defined here? Need to be discussed
-        test_raw_df = self.raw_df.loc[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(
-            df=test_df_init,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        test.df = test_df
-        test.raw_df = test_raw_df
-        test._regressors = deepcopy(self.regressors)
-        test._target_components_names = deepcopy(self.target_components_names)
-        test._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+        test = deepcopy(self)
+        test.df = test.df.loc[test_start_defined:test_end_defined]
+        test.raw_df = test.raw_df.loc[train_start_defined:test_end_defined]
+
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
