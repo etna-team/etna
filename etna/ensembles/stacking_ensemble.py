@@ -1,5 +1,4 @@
 import warnings
-from copy import deepcopy
 from typing import Any
 from typing import Dict
 from typing import List
@@ -143,6 +142,10 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def fit(self, ts: TSDataset, save_ts: bool = True) -> "StackingEnsemble":
         """Fit the ensemble.
 
+        Method doesn't change the given ``ts``.
+
+        Saved ``ts`` is the link to given ``ts``.
+
         Parameters
         ----------
         ts:
@@ -157,7 +160,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         """
         # Get forecasts from base models on backtest to fit the final model on
         forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-            delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
+            delayed(self._backtest_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
 
         # Fit the final model
@@ -167,7 +170,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
 
         # Fit the base models
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-            delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
+            delayed(self._fit_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
 
         if save_ts:

@@ -1148,6 +1148,9 @@ class TSDataset:
 
         In case of inconsistencies between ``test_size`` and (``test_start``, ``test_end``), ``test_size`` is ignored
 
+        During splitting all the features are kept in train and test parts including target, regressors,
+        target components, prediction intervals.
+
         Parameters
         ----------
         train_start:
@@ -1210,33 +1213,32 @@ class TSDataset:
         if train_start_defined < self.df.index.min():
             warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
 
-        train_df = self.df.loc[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
-        train_raw_df = self.raw_df.loc[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(
-            df=train_df,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        train.raw_df = train_raw_df
-        train._regressors = deepcopy(self.regressors)
-        train._target_components_names = deepcopy(self.target_components_names)
-        train._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+        # TODO: there is a risk that some methods with inplace=True dropping of columns will affect train and test dataframes,
+        #     e.g. `drop_features`, `drop_target_components`, `drop_prediction_interval`.
+        #     The change could also happen from the outside.
+        self_df = self.df
+        self_raw_df = self.raw_df
+        self_df_exog = self.df_exog
+        try:
+            # we do this to optimize memory consumption
+            self.df_exog = None
+            self.df = None
+            self.raw_df = None
+            train = deepcopy(self)
+            train.df = self_df.loc[train_start_defined:train_end_defined]
+            train.raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
+            train.df_exog = self_df_exog
 
-        test_df = self.df.loc[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
-        test_raw_df = self.raw_df.loc[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(
-            df=test_df,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        test.raw_df = test_raw_df
-        test._regressors = deepcopy(self.regressors)
-        test._target_components_names = deepcopy(self.target_components_names)
-        test._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+            test = deepcopy(self)
+            test.df = self_df.loc[test_start_defined:test_end_defined]
+            test.raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
+            # we do this to optimize memory consumption
+            test.df_exog = self_df_exog
+        finally:
+            self.df = self_df
+            self.raw_df = self_raw_df
+            self.df_exog = self_df_exog
+
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):

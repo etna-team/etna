@@ -93,9 +93,7 @@ def test_fit(example_tsds, save_ts):
     transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
     pipeline.fit(example_tsds, save_ts=save_ts)
-    original_ts.fit_transform(transforms)
-    original_ts.inverse_transform(transforms)
-    assert np.all(original_ts.df.values == example_tsds.df.values)
+    pd.testing.assert_frame_equal(original_ts.df, example_tsds.df)
 
 
 @pytest.mark.parametrize("save_ts", [False, True])
