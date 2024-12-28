@@ -726,7 +726,7 @@ def plot_metric_per_segment(
     Warnings
     --------
     UserWarning:
-        There are segments without non-missing metric values.
+        There are segments with all missing metric values.
     UserWarning:
         Some segments have different set of folds to be aggregated on due to missing values.
     """
@@ -803,7 +803,12 @@ def metric_per_segment_distribution_plot(
     seaborn_params: Optional[Dict[str, Any]] = None,
     figsize: Tuple[int, int] = (10, 5),
 ):
-    """Plot per-segment metrics distribution.
+    """Plot distribution of metric values over all segments.
+
+    If for some segment all metric values are missing, it isn't plotted, and the warning is raised.
+
+    If some segments have different set of folds with non-missing metrics,
+    it can lead to incompatible values between folds. The warning is raised in such case.
 
     Parameters
     ----------
@@ -831,6 +836,13 @@ def metric_per_segment_distribution_plot(
         if ``metric_name`` isn't present in ``metrics_df``
     NotImplementedError:
         unknown ``per_fold_aggregation_mode`` is given
+
+    Warnings
+    --------
+    UserWarning:
+        There are segments with all missing metric values.
+    UserWarning:
+        Some segments have different set of folds to be aggregated on due to missing values.
     """
     if seaborn_params is None:
         seaborn_params = {}
@@ -843,6 +855,9 @@ def metric_per_segment_distribution_plot(
 
     if metric_name not in metrics_df.columns:
         raise ValueError("Given metric_name isn't present in metrics_df")
+
+    _check_metrics_df_empty_segments(metrics_df=metrics_df, metric_name=metric_name)
+    _check_metrics_df_same_folds_for_each_segment(metrics_df=metrics_df, metric_name=metric_name)
 
     # draw plot for each fold
     if per_fold_aggregation_mode is None and "fold_number" in metrics_df.columns:

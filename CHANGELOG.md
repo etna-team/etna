@@ -42,9 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add parameter `missing_mode` into `R2` and `MedAE` metrics ([#537](https://github.com/etna-team/etna/pull/537))
 - Update `analysis.forecast.plots.plot_metric_per_segment` to handle `None` from metrics ([#540](https://github.com/etna-team/etna/pull/540))
 - Add parameter `missing_mode` into `RMSE` and `MSLE` metrics ([#542](https://github.com/etna-team/etna/pull/542))
+- Update `analysis.forecast.plots.metric_per_segment_distribution_plot` to handle `None` from metrics ([#543](https://github.com/etna-team/etna/pull/543))
 - 
-- 
-- 
+- Add example on using custom `params_to_tune` in `Tune` ([#547](https://github.com/etna-team/etna/pull/547))
 
 ### Fixed
 - Fix working with `embedding_sizes` in `202-NN_examples` notebook ([#489](https://github.com/etna-team/etna/pull/489))
