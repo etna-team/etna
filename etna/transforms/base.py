@@ -125,7 +125,12 @@ class Transform(SaveMixin, BaseMixin):
         df = ts.to_pandas(flatten=False, features=self.required_features)
         columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._transform(df=df)
-        ts = self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
+
+        updated_columns = set(df_transformed.columns.get_level_values("feature")) & set(
+            ts.df.columns.get_level_values("feature")
+        )
+
+        ts = self._update_dataset(ts=ts, columns_before=columns_before | updated_columns, df_transformed=df_transformed)
         return ts
 
     def fit_transform(self, ts: TSDataset) -> TSDataset:
