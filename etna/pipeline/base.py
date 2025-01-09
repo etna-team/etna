@@ -28,7 +28,7 @@ from etna.datasets import TSDataset
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import timestamp_range
 from etna.distributions import BaseDistribution
-from etna.loggers import tslogger
+from etna.loggers import tslogger, _Logger
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics.functional_metrics import ArrayLike
@@ -821,9 +821,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         fold_number: int,
         mask: FoldMask,
         metrics: List[Metric],
+        logger: _Logger,
     ) -> Dict[str, Any]:
         """Process forecast made for a fold."""
-        tslogger.start_experiment(job_type="crossval", group=str(fold_number))
+        logger.start_experiment(job_type="crossval", group=str(fold_number))
 
         fold: Dict[str, Any] = {}
         for stage_name, stage_df in zip(("train", "test"), (train, test)):
@@ -837,8 +838,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         fold["forecast"] = forecast
         fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
-        tslogger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
-        tslogger.finish_experiment()
+        logger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
+        logger.finish_experiment()
 
         return fold
 
@@ -1001,6 +1002,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
                     mask=fold_groups[group_idx]["forecast_masks"][idx],
                     metrics=metrics,
+                    logger=tslogger
                 )
                 for group_idx, (train, group_fold_process_test_datasets) in enumerate(
                     zip(fold_process_train_datasets, fold_process_test_datasets)
