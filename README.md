@@ -262,7 +262,7 @@ Current team members:
 [Ivan Nedosekov](https://github.com/GrozniyToaster),
 [Rodion Petrov](https://github.com/Noidor1),
 [Maxim Zherelo](https://github.com/brsnw250),
-[Yakov Malyshev](https://github.com/ostreech1997)
+[Yakov Malyshev](https://github.com/ostreech1997),
 [Egor Baturin](https://github.com/egoriyaa),
 [Mikhail Bolev](https://github.com/kenshi777),
 [Danil Smorchkov](https://github.com/DanilSmorchkov),
