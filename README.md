@@ -265,7 +265,7 @@ Current team members:
 [Yakov Malyshev](https://github.com/ostreech1997)
 [Egor Baturin](https://github.com/egoriyaa),
 [Mikhail Bolev](https://github.com/kenshi777),
-[DanilSmorchkov](https://github.com/DanilSmorchkov),
+[Danil Smorchkov](https://github.com/DanilSmorchkov),
 
 Former team members:
 [Andrey Alekseev](https://github.com/iKintosh),
