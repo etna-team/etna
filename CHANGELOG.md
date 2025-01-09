@@ -7,17 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add `load_dataset` to public API ([#484](https://github.com/etna-team/etna/pull/484))
-- Add example of using custom pipeline pools in `Auto` ([#504](https://github.com/etna-team/etna/pull/504))
-- Add `MetricWithMissingHandling` base class, change signature of `etna.metrics.Metric` to return `None` values ([#514](https://github.com/etna-team/etna/pull/514))
-- Add `ChronosModel` ([#511](https://github.com/etna-team/etna/pull/511))
-- Add `ChronosBoltModel` ([#511](https://github.com/etna-team/etna/pull/511))
-- Add usage example of `ChronosModel` and `ChronosBoltModel` in `202-NN_examples` notebook ([#511](https://github.com/etna-team/etna/pull/511))
-- Add `TimesFMModel` ([#544](https://github.com/etna-team/etna/pull/544))
-- Add usage example of `TimesFMModel` in `202-NN_examples` notebook ([#544](https://github.com/etna-team/etna/pull/544))
 - 
 - 
-- Add `MissingCounter` metric ([#520](https://github.com/etna-team/etna/pull/520))
+- 
+- 
 - 
 - 
 - 
@@ -28,22 +21,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - 
 - 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+### Fixed
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+- 
+
+## [2.10.0] - 2025-01-09
+### Added
+- Add `load_dataset` to public API ([#484](https://github.com/etna-team/etna/pull/484))
+- Add example of using custom pipeline pools in `Auto` ([#504](https://github.com/etna-team/etna/pull/504))
+- Add `MetricWithMissingHandling` base class, change signature of `etna.metrics.Metric` to return `None` values ([#514](https://github.com/etna-team/etna/pull/514))
+- Add `ChronosModel` ([#511](https://github.com/etna-team/etna/pull/511))
+- Add `ChronosBoltModel` ([#511](https://github.com/etna-team/etna/pull/511))
+- Add usage example of `ChronosModel` and `ChronosBoltModel` in `202-NN_examples` notebook ([#511](https://github.com/etna-team/etna/pull/511))
+- Add `TimesFMModel` ([#544](https://github.com/etna-team/etna/pull/544))
+- Add usage example of `TimesFMModel` in `202-NN_examples` notebook ([#544](https://github.com/etna-team/etna/pull/544))
+- Add `MissingCounter` metric ([#520](https://github.com/etna-team/etna/pull/520))
+
+### Changed
 - Add docstring warning about handling non-regressors (including target) to children of `WindowStatisticsTransform` ([#474](https://github.com/etna-team/etna/pull/474))
 - Add parameter `missing_mode` into `MSE` metric ([#515](https://github.com/etna-team/etna/pull/515))
 - Add parameter `missing_mode` into `MAE` metric ([#523](https://github.com/etna-team/etna/pull/523))
 - Add parameter `missing_mode` into `MAPE` and `SMAPE` metrics ([#524](https://github.com/etna-team/etna/pull/524))
 - Add parameter `missing_mode` into `Sign`, `WAPE` and `MaxDeviation` metrics ([#530](https://github.com/etna-team/etna/pull/530))
 - Add parameter `missing_mode` into `Coverage` and `Width` metrics ([#541](https://github.com/etna-team/etna/pull/541))
-- 
 - Update `aggregate_metrics_df` to work with `None` values ([#522](https://github.com/etna-team/etna/pull/522))
-- 
-- 
 - Rework validation of `FoldMask` to not fail on tail nans ([#536](https://github.com/etna-team/etna/pull/536))
 - Add parameter `missing_mode` into `R2` and `MedAE` metrics ([#537](https://github.com/etna-team/etna/pull/537))
 - Update `analysis.forecast.plots.plot_metric_per_segment` to handle `None` from metrics ([#540](https://github.com/etna-team/etna/pull/540))
 - Add parameter `missing_mode` into `RMSE` and `MSLE` metrics ([#542](https://github.com/etna-team/etna/pull/542))
 - Update `analysis.forecast.plots.metric_per_segment_distribution_plot` to handle `None` from metrics ([#543](https://github.com/etna-team/etna/pull/543))
-- 
 - Add example on using custom `params_to_tune` in `Tune` ([#547](https://github.com/etna-team/etna/pull/547))
 
 ### Fixed
@@ -53,13 +76,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimize memory usage in `DeepStateModel` and `DeepARNativeModel` by eliminating copying during making samples ([#499](https://github.com/etna-team/etna/pull/499))
 - Fix working with NaN target in `MeanEncoderTransform` ([#492](https://github.com/etna-team/etna/pull/492))
 - Fix `target` leakage in `MeanSegmentEncoderTransform` ([#503](https://github.com/etna-team/etna/pull/503))
-- 
 - Add handling scikit-learn version >= 1.4 in `OneHotEncoderTransform` and `HierarchicalClustering` ([#529](https://github.com/etna-team/etna/pull/529))
-- 
-- 
-- 
-- 
--
 
 ## [2.9.0] - 2024-09-06
 ### Added
