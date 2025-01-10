@@ -508,3 +508,13 @@ def test_get_level_dataset_with_target_components(
     reconciled_ts = product_level_constant_forecast_with_target_components.get_level_dataset(target_level=target_level)
     pd.testing.assert_frame_equal(reconciled_ts.get_target_components(), expected_ts.get_target_components())
     pd.testing.assert_frame_equal(reconciled_ts.to_pandas(), expected_ts.to_pandas())
+
+
+def test_train_test_split_pass_hierarchy_to_output(simple_hierarchical_ts):
+    train, test = simple_hierarchical_ts.train_test_split(test_size=1)
+    assert train.hierarchical_structure is not None
+    assert test.hierarchical_structure is not None
+    assert train.hierarchical_structure.level_structure == simple_hierarchical_ts.hierarchical_structure.level_structure
+    assert test.hierarchical_structure.level_structure == simple_hierarchical_ts.hierarchical_structure.level_structure
+    assert train.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names
+    assert test.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names

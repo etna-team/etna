@@ -1213,31 +1213,46 @@ class TSDataset:
         if train_start_defined < self.df.index.min():
             warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
 
-        # TODO: there is a risk that some methods with inplace=True dropping of columns will affect train and test dataframes,
-        #     e.g. `drop_features`, `drop_target_components`, `drop_prediction_interval`.
-        #     The change could also happen from the outside.
         self_df = self.df
         self_raw_df = self.raw_df
-        self_df_exog = self.df_exog
         try:
-            # we do this to optimize memory consumption
-            self.df_exog = None
+            # we do this to avoid redundant copying of data
             self.df = None
             self.raw_df = None
             train = deepcopy(self)
-            train.df = self_df.loc[train_start_defined:train_end_defined]
-            train.raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
-            train.df_exog = self_df_exog
 
+            # we want to make sure it makes only one copy
+            train_df = self_df.loc[train_start_defined:train_end_defined]
+            if train_df._is_view:
+                train.df = train_df.copy()
+            else:
+                train.df = train_df
+
+            # we want to make sure it makes only one copy
+            train_raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
+            if train_raw_df._is_view:
+                train.raw_df = train_raw_df.copy()
+            else:
+                train.raw_df = train_raw_df
+
+            # we want to make sure it makes only one copy
             test = deepcopy(self)
-            test.df = self_df.loc[test_start_defined:test_end_defined]
-            test.raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
-            # we do this to optimize memory consumption
-            test.df_exog = self_df_exog
+            test_df = self_df.loc[test_start_defined:test_end_defined]
+            if test_df._is_view:
+                test.df = test_df.copy()
+            else:
+                test.df = test_df
+
+            # we want to make sure it makes only one copy
+            test_raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
+            if test_raw_df._is_view:
+                test.raw_df = test_raw_df.copy()
+            else:
+                test.raw_df = test_raw_df
+
         finally:
             self.df = self_df
             self.raw_df = self_raw_df
-            self.df_exog = self_df_exog
 
         return train, test
 
