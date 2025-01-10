@@ -149,7 +149,8 @@ Available user extensions are the following:
 * `auto`: adds AutoML functionality,
 * `statsforecast`: adds models from [statsforecast](https://nixtla.github.io/statsforecast/),
 * `classiciation`: adds time series classification functionality,
-* `chronos`: adds Chronos-like pretrained models.
+* `chronos`: adds Chronos-like pretrained models,
+* `timesfm`: adds TimesFM pretrained models.
 
 Install extension:
 ```bash
@@ -259,11 +260,12 @@ Current team members:
 [Ivan Mitskovets](https://github.com/imitskovets),
 [Albina Munirova](https://github.com/albinamunirova),
 [Ivan Nedosekov](https://github.com/GrozniyToaster),
-[Rodion Petrov](https://github.com/Noidor1)
-[Maxim Zherelo](https://github.com/brsnw250)
-[Yakov Malyshev](https://github.com/ostreech1997)
-[Egor Baturin](https://github.com/egoriyaa)
+[Rodion Petrov](https://github.com/Noidor1),
+[Maxim Zherelo](https://github.com/brsnw250),
+[Yakov Malyshev](https://github.com/ostreech1997),
+[Egor Baturin](https://github.com/egoriyaa),
 [Mikhail Bolev](https://github.com/kenshi777),
+[Danil Smorchkov](https://github.com/DanilSmorchkov),
 
 Former team members:
 [Andrey Alekseev](https://github.com/iKintosh),

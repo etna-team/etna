@@ -202,10 +202,9 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
 
         if max_context_size < self.context_size:
             warnings.warn("Actual length of a dataset is less that context size. All history will be used as context.")
-        available_context_size = min(max_context_size, self.context_size)
 
-        target = ts.df.loc[:, pd.IndexSlice[:, "target"]]
-        context = torch.tensor(target.values.T[:, :available_context_size])
+        target = ts.df.loc[:, pd.IndexSlice[:, "target"]].dropna()
+        context = torch.tensor(target.values.T)
 
         if prediction_interval:
             quantiles_forecast, target_forecast = self.pipeline.predict_quantiles(

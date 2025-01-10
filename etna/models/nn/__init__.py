@@ -16,3 +16,6 @@ if SETTINGS.torch_required:
 if SETTINGS.chronos_required:
     from etna.models.nn.chronos import ChronosBoltModel
     from etna.models.nn.chronos import ChronosModel
+
+if SETTINGS.timesfm_required:
+    from etna.models.nn.timesfm import TimesFMModel

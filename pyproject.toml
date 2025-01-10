@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "etna"
-version = "2.9.0"
+version = "2.10.0"
 repository = "https://github.com/etna-team/etna"
 readme = "README.md"
 description = "ETNA is the first python open source framework of T-Bank AI Center. It is designed to make working with time series simple, productive, and fun."
@@ -89,6 +89,10 @@ transformers = {version = "<5", optional = true}
 accelerate = {version = "<1", optional = true}
 huggingface-hub = {version = ">=0.21,<0.23", optional = true}
 
+jax = {version = "<1", optional = true}
+jaxlib = {version = "<1", optional = true}
+utilsforecast = {version = ">=0.1.10,<1", optional = true}
+
 sphinx-mathjax-offline = {version = "^0.0.2", optional = true}
 nbsphinx = {version = "^0.9.0", optional = true}
 Sphinx = {version = "^6.2", optional = true}
@@ -132,6 +136,7 @@ auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
 chronos = ["torch", "transformers", "accelerate", "huggingface-hub"]
+timesfm = ["torch", "jax", "jaxlib", "huggingface-hub", "utilsforecast"]
 
 # dev deps
 release = ["click", "semver"]
@@ -147,7 +152,8 @@ all = [
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
     "statsforecast",
-    "transformers", "accelerate", "huggingface-hub"
+    "transformers", "accelerate", "huggingface-hub",
+    "jax", "jaxlib", "utilsforecast"
 ]
 
 all-dev = [
@@ -163,7 +169,8 @@ all-dev = [
     "jupyter", "nbconvert", "ipywidgets",
     "pyts", "tsfresh",
     "statsforecast",
-    "transformers", "accelerate", "huggingface-hub"
+    "transformers", "accelerate", "huggingface-hub",
+    "jax", "jaxlib", "utilsforecast"
 ]
 
 [tool.poetry.scripts]
