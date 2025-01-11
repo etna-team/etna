@@ -795,21 +795,24 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self,
         ts: TSDataset,
         fold_number: int,
+        logger: _Logger
     ) -> "BasePipeline":
         """Fit pipeline for a given data in backtest."""
-        tslogger.start_experiment(job_type="training", group=str(fold_number))
-        pipeline = deepcopy(self)
-        pipeline.fit(ts=ts, save_ts=False)
-        tslogger.finish_experiment()
+        with logger.capture_tslogger():
+            logger.start_experiment(job_type="training", group=str(fold_number))
+            pipeline = deepcopy(self)
+            pipeline.fit(ts=ts, save_ts=False)
+            logger.finish_experiment()
         return pipeline
 
     def _forecast_backtest_pipeline(
-        self, pipeline: "BasePipeline", ts: TSDataset, fold_number: int, forecast_params: Dict[str, Any]
+        self, pipeline: "BasePipeline", ts: TSDataset, fold_number: int, forecast_params: Dict[str, Any], logger: _Logger
     ) -> TSDataset:
         """Make a forecast with a given pipeline in backtest."""
-        tslogger.start_experiment(job_type="forecasting", group=str(fold_number))
-        forecast = pipeline.forecast(ts=ts, **forecast_params)
-        tslogger.finish_experiment()
+        with logger.capture_tslogger():
+            logger.start_experiment(job_type="forecasting", group=str(fold_number))
+            forecast = pipeline.forecast(ts=ts, **forecast_params)
+            logger.finish_experiment()
         return forecast
 
     def _process_fold_forecast(
@@ -824,22 +827,23 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         logger: _Logger,
     ) -> Dict[str, Any]:
         """Process forecast made for a fold."""
-        logger.start_experiment(job_type="crossval", group=str(fold_number))
+        with logger.capture_tslogger():
+            logger.start_experiment(job_type="crossval", group=str(fold_number))
 
-        fold: Dict[str, Any] = {}
-        for stage_name, stage_df in zip(("train", "test"), (train, test)):
-            fold[f"{stage_name}_timerange"] = {}
-            fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
-            fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
+            fold: Dict[str, Any] = {}
+            for stage_name, stage_df in zip(("train", "test"), (train, test)):
+                fold[f"{stage_name}_timerange"] = {}
+                fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
+                fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
 
-        forecast.df = forecast.df.loc[mask.target_timestamps]
-        test.df = test.df.loc[mask.target_timestamps]
+            forecast.df = forecast.df.loc[mask.target_timestamps]
+            test.df = test.df.loc[mask.target_timestamps]
 
-        fold["forecast"] = forecast
-        fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
+            fold["forecast"] = forecast
+            fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
 
-        logger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
-        logger.finish_experiment()
+            logger.log_backtest_run(pd.DataFrame(fold["metrics"]), forecast.to_pandas(), test.to_pandas())
+            logger.finish_experiment()
 
         return fold
 
@@ -954,7 +958,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 train for train, _ in self._generate_folds_datasets(ts=ts, masks=fit_masks, horizon=self.horizon)
             )
             pipelines = parallel(
-                delayed(self._fit_backtest_pipeline)(ts=fit_ts, fold_number=fold_groups[group_idx]["train_fold_number"])
+                delayed(self._fit_backtest_pipeline)(ts=fit_ts, fold_number=fold_groups[group_idx]["train_fold_number"], logger=tslogger)
                 for group_idx, fit_ts in enumerate(fit_datasets)
             )
 
@@ -975,6 +979,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     pipeline=pipelines[group_idx],
                     fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
                     forecast_params=forecast_params,
+                    logger=tslogger
                 )
                 for group_idx, group_forecast_datasets in enumerate(forecast_datasets)
                 for idx, forecast_ts in enumerate(group_forecast_datasets)

@@ -58,14 +58,14 @@ def backtest():
     # Init pipeline
     # pipeline: Pipeline = hydra_slayer.get_from_params(**config["pipeline"])
     pipeline = Pipeline(
-        model=NaiveModel(),
-        # model=MLPModel(
-        #     input_size=8,
-        #     decoder_length=14,
-        #     hidden_size=[7, 7],
-        #     trainer_params=dict(max_epochs=30),
-        #     split_params=dict(train_size=0.75)
-        # ),
+        # model=NaiveModel(),
+        model=MLPModel(
+            input_size=8,
+            decoder_length=14,
+            hidden_size=[7, 7],
+            trainer_params=dict(max_epochs=30, enable_checkpointing=False),
+            split_params=dict(train_size=0.75)
+        ),
         transforms=[
             StandardScalerTransform(in_column="target"),
             LagTransform(in_column="target", lags=list(range(5, 13)), out_column="lag")
@@ -85,7 +85,7 @@ def backtest():
 
 
     # Run backtest
-    _, _, _ = pipeline.backtest(ts, n_jobs=3, metrics=[MAE()], joblib_params=dict(backend="loky"), **backtest_params)
+    _, _, _ = pipeline.backtest(ts, n_jobs=5, metrics=[MAE()], joblib_params=dict(backend="loky"), **backtest_params)
 
 
 if __name__ == "__main__":

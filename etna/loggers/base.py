@@ -186,3 +186,12 @@ class _Logger(BaseLogger):
         self.loggers = []
         yield
         self.loggers = temp_loggers
+
+    @contextmanager
+    def capture_tslogger(self):
+        parent_loggers = tslogger.loggers
+        tslogger.loggers = self.loggers
+        yield
+        tslogger.loggers = parent_loggers
+
+tslogger = _Logger()

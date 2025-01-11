@@ -215,6 +215,10 @@ class ClearMLLogger(BaseLogger):
             self.fold_id = int(group)
         except:
             self.fold_id = group
+
+        # Maybe fix with mapping
+        self._pl_logger = None
+
         if self._task is None:
             self.init_task()
 
@@ -223,7 +227,7 @@ class ClearMLLogger(BaseLogger):
         from clearml import Task
         from clearml import TaskTypes
 
-        auto_connect_frameworks = {"tensorboard": True}
+        auto_connect_frameworks = {"tensorboard": True, "joblib": True}
         if isinstance(self.auto_connect_frameworks, Mapping):
             auto_connect_frameworks = {**auto_connect_frameworks, **self.auto_connect_frameworks}
 
@@ -238,7 +242,6 @@ class ClearMLLogger(BaseLogger):
             auto_connect_streams=self.auto_connect_streams,
             reuse_last_task_id=False,
         )
-        #self._task.launch_multi_node(total_num_nodes=3)
         if self.config is not None:
             self._task.connect(mutable=self.config)
 
@@ -252,13 +255,14 @@ class ClearMLLogger(BaseLogger):
         """Return internal task logger."""
         if self._task is None:
             raise ValueError("ClearML task is not initialized!")
-        return self._task.get_logger()
+        return self._task.current_task().get_logger()
 
     @property
     def pl_logger(self):
         """Pytorch lightning loggers."""
         if self._pl_logger is None:
             from pytorch_lightning.loggers import TensorBoardLogger
-            self._pl_logger = TensorBoardLogger("./tensorboard", name=self.task_name, version=0)
+            prefix = "" if self.fold_id is None else f"Fold-{self.fold_id}"
+            self._pl_logger = TensorBoardLogger("./tensorboard", name=self.task_name, prefix=prefix, version=str(self.fold_id))
 
         return self._pl_logger

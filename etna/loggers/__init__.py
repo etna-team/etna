@@ -16,7 +16,7 @@ Be sure that new process is started with ``fork``.
 If it's not possible you should try define all globals before ``if __name__ == "__main__"`` scope.
 """
 from etna import SETTINGS
-from etna.loggers.base import _Logger
+from etna.loggers.base import _Logger, tslogger
 from etna.loggers.console_logger import ConsoleLogger
 from etna.loggers.file_logger import LocalFileLogger
 from etna.loggers.file_logger import S3FileLogger
@@ -26,4 +26,4 @@ if SETTINGS.wandb_required:
 if SETTINGS.clearml_required:
     from etna.loggers.clearml_logger import ClearMLLogger
 
-tslogger = _Logger()
+# tslogger = _Logger()
