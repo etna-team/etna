@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import List
 from typing import Tuple
 from typing import Union
@@ -495,7 +494,7 @@ def test_general_inverse_transform_fail_test_not_right_after_train(ts_name, tran
 def test_single_inverse_transform_not_inplace(period, ts_nans):
     """Test that _SingleDifferencingTransform does nothing during inverse_transform in non-inplace mode."""
     transform = _SingleDifferencingTransform(in_column="target", period=period, inplace=False, out_column="diff")
-    check_inverse_transform_not_inplace(transform, ts_nans, deepcopy(ts_nans))
+    check_inverse_transform_not_inplace(transform, ts_nans, ts_nans)
 
 
 @pytest.mark.parametrize("period", [1, 7])
@@ -503,7 +502,7 @@ def test_single_inverse_transform_not_inplace(period, ts_nans):
 def test_full_inverse_transform_not_inplace(period, order, ts_nans):
     """Test that DifferencingTransform does nothing during inverse_transform in non-inplace mode."""
     transform = DifferencingTransform(in_column="target", period=period, order=order, inplace=False, out_column="diff")
-    check_inverse_transform_not_inplace(transform, ts_nans, deepcopy(ts_nans))
+    check_inverse_transform_not_inplace(transform, ts_nans, ts_nans)
 
 
 @pytest.mark.parametrize("period", [1, 7])
