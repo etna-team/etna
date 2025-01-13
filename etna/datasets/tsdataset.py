@@ -1250,6 +1250,13 @@ class TSDataset:
         ----------
         df_update:
             Dataframe with new values in wide ETNA format.
+
+        Raises
+        ------
+        ValueError:
+            If timestamps do not match
+        ValueError:
+            If there are columns in the update dataframe that are not presented in the dataset
         """
         df = df_update.loc[self.df.index.min() : self.df.index.max()]
 
