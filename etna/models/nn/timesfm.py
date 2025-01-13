@@ -334,7 +334,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         Returns
         -------
         :
-            List of available pretrained chronos models.
+            List of available pretrained timesfm models.
         """
         return ["google/timesfm-1.0-200m-pytorch"]
 
