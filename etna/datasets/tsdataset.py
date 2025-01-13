@@ -1223,14 +1223,14 @@ class TSDataset:
 
             # we want to make sure it makes only one copy
             train_df = self_df.loc[train_start_defined:train_end_defined]
-            if train_df._is_view:
+            if train_df._is_view or train_df._is_copy is not None:
                 train.df = train_df.copy()
             else:
                 train.df = train_df
 
             # we want to make sure it makes only one copy
             train_raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
-            if train_raw_df._is_view:
+            if train_raw_df._is_view or train_raw_df._is_copy is not None:
                 train.raw_df = train_raw_df.copy()
             else:
                 train.raw_df = train_raw_df
@@ -1238,14 +1238,14 @@ class TSDataset:
             # we want to make sure it makes only one copy
             test = deepcopy(self)
             test_df = self_df.loc[test_start_defined:test_end_defined]
-            if test_df._is_view:
+            if test_df._is_view or test_df._is_copy is not None:
                 test.df = test_df.copy()
             else:
                 test.df = test_df
 
             # we want to make sure it makes only one copy
             test_raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
-            if test_raw_df._is_view:
+            if test_raw_df._is_view or test_raw_df._is_copy is not None:
                 test.raw_df = test_raw_df.copy()
             else:
                 test.raw_df = test_raw_df
