@@ -317,7 +317,7 @@ def test_params_to_tune(voting_ensemble_pipeline):
         "model.beta": [0.1, 0.2, 0.3],
         "transforms.0.param_1": ["option_1", "option_2"],
         "transforms.0.param_2": [False, True],
-        "transforms.1.param_1": [1, 2]
+        "transforms.1.param_1": [1, 2],
     }
     pipeline_0.horizon = 1
     pipeline_1 = MagicMock()
@@ -326,7 +326,7 @@ def test_params_to_tune(voting_ensemble_pipeline):
         "model.beta": [0.1, 0.2, 0.3],
         "transforms.0.param_1": ["option_1", "option_2"],
         "transforms.0.param_2": [False, True],
-        "transforms.1.param_1": [1, 2]
+        "transforms.1.param_1": [1, 2],
     }
     pipeline_1.horizon = 1
     voiting_ensemble_pipeline = VotingEnsemble(pipelines=[pipeline_0, pipeline_1])
