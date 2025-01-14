@@ -51,6 +51,10 @@ class HierarchicalPipeline(Pipeline):
         Fit and apply given transforms to the data, then fit the model on the transformed data.
         Provided hierarchical dataset will be aggregated to the source level before fitting pipeline.
 
+        Method doesn't change the given ``ts``.
+
+        Saved ``ts`` is the link to given ``ts``.
+
         Parameters
         ----------
         ts:

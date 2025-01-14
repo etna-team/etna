@@ -1148,6 +1148,9 @@ class TSDataset:
 
         In case of inconsistencies between ``test_size`` and (``test_start``, ``test_end``), ``test_size`` is ignored
 
+        During splitting all the features are kept in train and test parts including target, regressors,
+        target components, prediction intervals.
+
         Parameters
         ----------
         train_start:
@@ -1210,33 +1213,47 @@ class TSDataset:
         if train_start_defined < self.df.index.min():
             warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
 
-        train_df = self.df.loc[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
-        train_raw_df = self.raw_df.loc[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(
-            df=train_df,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        train.raw_df = train_raw_df
-        train._regressors = deepcopy(self.regressors)
-        train._target_components_names = deepcopy(self.target_components_names)
-        train._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+        self_df = self.df
+        self_raw_df = self.raw_df
+        try:
+            # we do this to avoid redundant copying of data
+            self.df = None
+            self.raw_df = None
+            train = deepcopy(self)
 
-        test_df = self.df.loc[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
-        test_raw_df = self.raw_df.loc[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(
-            df=test_df,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        test.raw_df = test_raw_df
-        test._regressors = deepcopy(self.regressors)
-        test._target_components_names = deepcopy(self.target_components_names)
-        test._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+            # we want to make sure it makes only one copy
+            train_df = self_df.loc[train_start_defined:train_end_defined]
+            if train_df._is_view or train_df._is_copy is not None:
+                train.df = train_df.copy()
+            else:
+                train.df = train_df
+
+            # we want to make sure it makes only one copy
+            train_raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
+            if train_raw_df._is_view or train_raw_df._is_copy is not None:
+                train.raw_df = train_raw_df.copy()
+            else:
+                train.raw_df = train_raw_df
+
+            # we want to make sure it makes only one copy
+            test = deepcopy(self)
+            test_df = self_df.loc[test_start_defined:test_end_defined]
+            if test_df._is_view or test_df._is_copy is not None:
+                test.df = test_df.copy()
+            else:
+                test.df = test_df
+
+            # we want to make sure it makes only one copy
+            test_raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
+            if test_raw_df._is_view or test_raw_df._is_copy is not None:
+                test.raw_df = test_raw_df.copy()
+            else:
+                test.raw_df = test_raw_df
+
+        finally:
+            self.df = self_df
+            self.raw_df = self_raw_df
+
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
