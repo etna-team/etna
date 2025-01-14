@@ -1555,6 +1555,16 @@ def test_update_columns_from_pandas_invalid_columns_error(df_and_regressors, df_
         ts.update_columns_from_pandas(df_update=df_update)
 
 
+def test_update_columns_from_pandas_duplicate_columns_error(df_and_regressors, df_update_update_column):
+    df, _, _ = df_and_regressors
+    df_exog = df.rename(columns={"target": "new"}, level=1)
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts.df = pd.concat([ts.df, df_exog], axis=1)
+
+    with pytest.raises(ValueError, match="The dataset features set contains duplicates!"):
+        ts.update_columns_from_pandas(df_update=df_update_update_column)
+
+
 def test_update_columns_from_pandas(df_and_regressors, df_update_update_column, df_updated_update_column):
     df, _, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D")

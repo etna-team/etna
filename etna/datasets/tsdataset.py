@@ -1257,6 +1257,8 @@ class TSDataset:
             If timestamps do not match
         ValueError:
             If there are columns in the update dataframe that are not presented in the dataset
+        ValueError:
+            If there are duplicate features in the dataset (columns with the same name)
         """
         df = df_update.loc[self.df.index.min() : self.df.index.max()]
 
@@ -1266,7 +1268,11 @@ class TSDataset:
         if len(df.columns.difference(self.df.columns)) > 0:
             raise ValueError("Some columns in the dataframe for update are not presented in the dataset!")
 
-        column_idx = self.df.columns.get_indexer(df.columns)
+        try:
+            column_idx = self.df.columns.get_indexer(df.columns)
+        except pd.errors.InvalidIndexError:
+            raise ValueError("The dataset features set contains duplicates!")
+
         self.df.iloc[:, column_idx] = df
 
     def add_columns_from_pandas(
