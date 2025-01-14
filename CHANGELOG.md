@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Changed
-- Optimized dataset updates with `update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
+- Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
 - 
 - 
 - 
@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
-- Fixed possibility of silent handling of duplicate features when updating dataset ([#522](https://github.com/etna-team/etna/pull/552))
+- Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
 - 
 - 
 - 
