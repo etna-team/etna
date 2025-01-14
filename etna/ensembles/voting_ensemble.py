@@ -240,9 +240,6 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
 
         Parameters for pipelines have prefix "pipelines.idx.", e.g. "pipelines.0.model.alpha".
 
-        See :py:class:`~etna.pipeline.mixins.ModelPipelineParamsToTuneMixin` to find out more information about the
-        parameters of each pipeline.
-
         Returns
         -------
         :
