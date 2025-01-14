@@ -311,5 +311,34 @@ def test_predict_with_return_components_fails(example_tsds, voting_ensemble_naiv
 
 
 def test_params_to_tune(voting_ensemble_pipeline):
-    result = voting_ensemble_pipeline.params_to_tune()
-    assert result == {}
+    pipeline_0 = MagicMock()
+    pipeline_0.params_to_tune.return_value = {
+        "model.alpha": [0, 3, 5],
+        "model.beta": [0.1, 0.2, 0.3],
+        "transforms.0.param_1": ["option_1", "option_2"],
+        "transforms.0.param_2": [False, True],
+        "transforms.1.param_1": [1, 2]
+    }
+    pipeline_0.horizon = 1
+    pipeline_1 = MagicMock()
+    pipeline_1.params_to_tune.return_value = {
+        "model.alpha": [0, 3, 5],
+        "model.beta": [0.1, 0.2, 0.3],
+        "transforms.0.param_1": ["option_1", "option_2"],
+        "transforms.0.param_2": [False, True],
+        "transforms.1.param_1": [1, 2]
+    }
+    pipeline_1.horizon = 1
+    voiting_ensemble_pipeline = VotingEnsemble(pipelines=[pipeline_0, pipeline_1])
+    assert voiting_ensemble_pipeline.params_to_tune() == {
+        "pipelines.0.model.alpha": [0, 3, 5],
+        "pipelines.0.model.beta": [0.1, 0.2, 0.3],
+        "pipelines.0.transforms.0.param_1": ["option_1", "option_2"],
+        "pipelines.0.transforms.0.param_2": [False, True],
+        "pipelines.0.transforms.1.param_1": [1, 2],
+        "pipelines.1.model.alpha": [0, 3, 5],
+        "pipelines.1.model.beta": [0.1, 0.2, 0.3],
+        "pipelines.1.transforms.0.param_1": ["option_1", "option_2"],
+        "pipelines.1.transforms.0.param_2": [False, True],
+        "pipelines.1.transforms.1.param_1": [1, 2],
+    }
