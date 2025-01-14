@@ -1270,7 +1270,9 @@ class TSDataset:
 
         try:
             column_idx = self.df.columns.get_indexer(df.columns)
-        except pd.errors.InvalidIndexError:
+
+        # some older pandas versions <1.3 throw `ValueError`
+        except (pd.errors.InvalidIndexError, ValueError):
             raise ValueError("The dataset features set contains duplicates!")
 
         self.df.iloc[:, column_idx] = df
