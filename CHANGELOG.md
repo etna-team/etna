@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Changed
-- Implement params_to_tune properly for VotingEnsemble ([#484](https://github.com/etna-team/etna/pull/484))
+- Implement params_to_tune properly for VotingEnsemble ([#557](https://github.com/etna-team/etna/pull/557))
 - 
 - 
 - 
