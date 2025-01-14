@@ -1,5 +1,6 @@
-from copy import deepcopy
 import os
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -34,7 +35,7 @@ from etna.models import StatsForecastAutoETSModel
 from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import ChronosBoltModel
-from etna.models.nn import ChronosModel, TimesFMModel
+from etna.models.nn import ChronosModel
 from etna.models.nn import DeepARModel
 from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
@@ -46,6 +47,7 @@ from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.models.nn import TFTNativeModel
+from etna.models.nn import TimesFMModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import LagTransform
@@ -252,7 +254,9 @@ class TestForecastInSampleFullNoTarget:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -430,7 +434,9 @@ class TestForecastInSampleFull:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -529,7 +535,9 @@ class TestForecastInSampleSuffixNoTarget:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -659,7 +667,9 @@ class TestForecastInSampleSuffix:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -840,7 +850,9 @@ class TestForecastOutSample:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -948,7 +960,9 @@ class TestForecastOutSample:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -1118,7 +1132,9 @@ class TestForecastOutSamplePrefix:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -1335,7 +1351,9 @@ class TestForecastOutSampleSuffix:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -1489,7 +1507,9 @@ class TestForecastMixedInOutSample:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -1657,7 +1677,9 @@ class TestForecastSubsetSegments:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
@@ -1840,7 +1862,9 @@ class TestForecastNewSegments:
                 TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
-                marks=pytest.mark.skipif(os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."),
+                marks=pytest.mark.skipif(
+                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                ),
             ),
         ],
     )
