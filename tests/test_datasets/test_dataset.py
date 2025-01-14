@@ -1565,6 +1565,32 @@ def test_add_columns_from_pandas_update_regressors(
     assert sorted(ts.regressors) == sorted(expected_regressors)
 
 
+@pytest.mark.parametrize("update_slice", (slice(4, -4), slice(None, None, 2)))
+def test_update_columns_from_pandas_invalid_timestamps(df_and_regressors, update_slice, df_update_update_column):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    with pytest.raises(ValueError, match="Non matching timestamps detected when attempted to update the dataset!"):
+        ts.update_columns_from_pandas(df_update=df_update_update_column.iloc[update_slice])
+
+
+def test_update_columns_from_pandas_invalid_columns_error(df_and_regressors, df_update_update_column):
+    df, _, _ = df_and_regressors
+    df_update = df_update_update_column.rename({"1": "new"}, axis=1, level=0)
+    ts = TSDataset(df=df, freq="D")
+    with pytest.raises(ValueError, match="Some columns in the dataframe for update are not presented in the dataset!"):
+        ts.update_columns_from_pandas(df_update=df_update)
+
+
+def test_update_columns_from_pandas_duplicate_columns_error(df_and_regressors, df_update_update_column):
+    df, _, _ = df_and_regressors
+    df_exog = df.rename(columns={"target": "new"}, level=1)
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts.df = pd.concat([ts.df, df_exog], axis=1)
+
+    with pytest.raises(ValueError, match="The dataset features set contains duplicates!"):
+        ts.update_columns_from_pandas(df_update=df_update_update_column)
+
+
 def test_update_columns_from_pandas(df_and_regressors, df_update_update_column, df_updated_update_column):
     df, _, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D")

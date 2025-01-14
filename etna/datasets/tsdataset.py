@@ -1267,11 +1267,32 @@ class TSDataset:
         ----------
         df_update:
             Dataframe with new values in wide ETNA format.
+
+        Raises
+        ------
+        ValueError:
+            If timestamps do not match
+        ValueError:
+            If there are columns in the update dataframe that are not presented in the dataset
+        ValueError:
+            If there are duplicate features in the dataset (columns with the same name)
         """
-        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
-        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
-            : self.df.index.max(), self.idx[self.segments, columns_to_update]
-        ]
+        df = df_update.loc[self.df.index.min() : self.df.index.max()]
+
+        if not df.index.equals(self.df.index):
+            raise ValueError("Non matching timestamps detected when attempted to update the dataset!")
+
+        if len(df.columns.difference(self.df.columns)) > 0:
+            raise ValueError("Some columns in the dataframe for update are not presented in the dataset!")
+
+        try:
+            column_idx = self.df.columns.get_indexer(df.columns)
+
+        # some older pandas versions <1.3 throw `ValueError`
+        except (pd.errors.InvalidIndexError, ValueError):
+            raise ValueError("The dataset features set contains duplicates!")
+
+        self.df.iloc[:, column_idx] = df
 
     def add_columns_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
