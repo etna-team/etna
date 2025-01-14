@@ -179,11 +179,16 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
-        Currently, returns empty dict, but could have a proper implementation in the future.
+        Parameters for pipelines have prefix "pipelines.idx.", e.g. "pipelines.0.model.alpha".
 
         Returns
         -------
         :
             Grid with hyperparameters.
         """
-        return {}
+        all_params = {}
+        for ind, pipeline in enumerate(self.pipelines):
+            for key, value in pipeline.params_to_tune().items():
+                new_key = f"pipelines.{ind}.{key}"
+                all_params[new_key] = value
+        return all_params
