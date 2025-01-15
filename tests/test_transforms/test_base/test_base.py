@@ -36,6 +36,18 @@ class ReversibleTransformMock(ReversibleTransform):
         return df
 
 
+class SimpleAddColumnTransform(IrreversibleTransform):
+    def get_regressors_info(self) -> List[str]:
+        return ["regressor_test"]
+
+    def _fit(self, df: pd.DataFrame):
+        pass
+
+    def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        feat = df.rename(columns={"target": "regressor_test"}, level=1)
+        return pd.concat([df, feat], axis=1)
+
+
 @pytest.fixture
 def remove_columns_df():
     df = generate_ar_df(periods=10, n_segments=3, start_time="2000-01-01")
@@ -175,6 +187,19 @@ def test_inverse_transform_request_update_dataset(remove_columns_ts):
     expected_df_transformed = transform._inverse_transform.return_value
     transform._update_dataset.assert_called_with(
         ts=ts, columns_before=columns_before, df_transformed=expected_df_transformed
+    )
+
+
+def test_double_apply_add_columns_transform(remove_columns_df):
+    df, _ = remove_columns_df
+    ts = TSDataset(df=df, freq="D")
+
+    transform = SimpleAddColumnTransform(required_features=["target"])
+    ts_transformed = transform.fit_transform(ts=ts)
+    ts_transformed = transform.transform(ts=ts_transformed)
+    assert (
+        ts_transformed.df.columns.get_level_values("feature").tolist()
+        == ["exog_1", "regressor_test", "target", "target_0.01"] * 3
     )
 
 
