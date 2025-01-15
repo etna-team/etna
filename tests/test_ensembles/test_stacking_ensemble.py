@@ -10,6 +10,15 @@ import pandas as pd
 import pytest
 from typing_extensions import Literal
 
+from etna.transforms import DateFlagsTransform
+from etna.transforms import LagTransform
+from etna.transforms import StandardScalerTransform
+from etna.distributions import CategoricalDistribution
+from etna.distributions import FloatDistribution
+from etna.distributions import IntDistribution
+from etna.models import CatBoostPerSegmentModel
+from etna.models import NaiveModel
+from etna.models import ProphetModel
 from etna.datasets import TSDataset
 from etna.ensembles.stacking_ensemble import StackingEnsemble
 from etna.metrics import MAE
@@ -453,6 +462,93 @@ def test_ts_with_segment_named_target(
         assert isinstance(df, pd.DataFrame)
 
 
-def test_params_to_tune(stacking_ensemble_pipeline):
-    result = stacking_ensemble_pipeline.params_to_tune()
-    assert result == {}
+@pytest.mark.parametrize(
+    "pipeline_0_tune_params, pipeline_1_tune_params, expected_tune_params",
+    [
+        (
+            {
+                "model.alpha": [0, 3, 5],
+                "model.beta": [0.1, 0.2, 0.3],
+                "transforms.0.param_1": ["option_1", "option_2"],
+                "transforms.0.param_2": [False, True],
+                "transforms.1.param_1": [1, 2],
+            },
+            {
+                "model.alpha": [0, 3, 5],
+                "model.beta": [0.1, 0.2, 0.3],
+                "transforms.0.param_1": ["option_1", "option_2"],
+                "transforms.0.param_2": [False, True],
+                "transforms.1.param_1": [1, 2],
+            },
+            {
+                "pipelines.0.model.alpha": [0, 3, 5],
+                "pipelines.0.model.beta": [0.1, 0.2, 0.3],
+                "pipelines.0.transforms.0.param_1": ["option_1", "option_2"],
+                "pipelines.0.transforms.0.param_2": [False, True],
+                "pipelines.0.transforms.1.param_1": [1, 2],
+                "pipelines.1.model.alpha": [0, 3, 5],
+                "pipelines.1.model.beta": [0.1, 0.2, 0.3],
+                "pipelines.1.transforms.0.param_1": ["option_1", "option_2"],
+                "pipelines.1.transforms.0.param_2": [False, True],
+                "pipelines.1.transforms.1.param_1": [1, 2],
+            },
+        )
+    ],
+)
+def test_params_to_tune_mocked(pipeline_0_tune_params, pipeline_1_tune_params, expected_tune_params):
+    pipeline_0 = MagicMock()
+    pipeline_0.params_to_tune.return_value = pipeline_0_tune_params
+    pipeline_0.horizon = 5
+
+    pipeline_1 = MagicMock()
+    pipeline_1.params_to_tune.return_value = pipeline_1_tune_params
+    pipeline_1.horizon = 5
+
+    ensemble_pipeline = StackingEnsemble(pipelines=[pipeline_0, pipeline_1])
+
+    assert ensemble_pipeline.params_to_tune() == expected_tune_params
+
+
+@pytest.mark.parametrize(
+    "pipelines, expected_params_to_tune",
+    [
+        (
+            [
+                Pipeline(
+                    model=CatBoostPerSegmentModel(iterations=100),
+                    transforms=[DateFlagsTransform(), LagTransform(in_column="target", lags=[1, 2, 3])],
+                    horizon=5,
+                ),
+                Pipeline(model=ProphetModel(), transforms=[StandardScalerTransform()], horizon=5),
+                Pipeline(model=NaiveModel(lag=3), horizon=5),
+            ],
+            {
+                "pipelines.0.model.learning_rate": FloatDistribution(low=1e-4, high=0.5, log=True),
+                "pipelines.0.model.depth": IntDistribution(low=1, high=11, step=1),
+                "pipelines.0.model.l2_leaf_reg": FloatDistribution(low=0.1, high=200.0, log=True),
+                "pipelines.0.model.random_strength": FloatDistribution(low=1e-05, high=10.0, log=True),
+                "pipelines.0.transforms.0.day_number_in_week": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.day_number_in_month": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.day_number_in_year": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.week_number_in_month": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.week_number_in_year": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.month_number_in_year": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.season_number": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.year_number": CategoricalDistribution([False, True]),
+                "pipelines.0.transforms.0.is_weekend": CategoricalDistribution([False, True]),
+                "pipelines.1.model.seasonality_mode": CategoricalDistribution(["additive", "multiplicative"]),
+                "pipelines.1.model.seasonality_prior_scale": FloatDistribution(low=1e-2, high=10, log=True),
+                "pipelines.1.model.changepoint_prior_scale": FloatDistribution(low=1e-3, high=0.5, log=True),
+                "pipelines.1.model.changepoint_range": FloatDistribution(low=0.8, high=0.95),
+                "pipelines.1.model.holidays_prior_scale": FloatDistribution(low=1e-2, high=10, log=True),
+                "pipelines.1.transforms.0.mode": CategoricalDistribution(["per-segment", "macro"]),
+                "pipelines.1.transforms.0.with_mean": CategoricalDistribution([False, True]),
+                "pipelines.1.transforms.0.with_std": CategoricalDistribution([False, True]),
+            },
+        )
+    ],
+)
+def test_params_to_tune(pipelines, expected_params_to_tune):
+    ensemble_pipeline = StackingEnsemble(pipelines=pipelines)
+
+    assert ensemble_pipeline.params_to_tune() == expected_params_to_tune
