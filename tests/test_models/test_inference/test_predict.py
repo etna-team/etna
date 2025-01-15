@@ -198,7 +198,7 @@ class TestPredictInSampleFull:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -208,6 +208,8 @@ class TestPredictInSampleFull:
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         _test_prediction_in_sample_full(ts, model, transforms, method_name="predict")
 
@@ -337,7 +339,7 @@ class TestPredictInSampleSuffix:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -349,6 +351,8 @@ class TestPredictInSampleSuffix:
     def test_predict_in_sample_suffix_datetime_timestamp_failed_not_implemented_predict(
         self, model, transforms, dataset_name, request
     ):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         _test_prediction_in_sample_suffix(ts, model, transforms, method_name="predict", num_skip_points=50)
 
@@ -491,7 +495,7 @@ class TestPredictInSampleSuffix:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -503,6 +507,8 @@ class TestPredictInSampleSuffix:
     def test_predict_in_sample_suffix_int_timestamp_failed_not_implemented_predict(
         self, model, transforms, dataset_name, request
     ):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         _test_prediction_in_sample_suffix(
@@ -641,7 +647,7 @@ class TestPredictOutSample:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -651,6 +657,8 @@ class TestPredictOutSample:
         ],
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_out_sample(ts, model, transforms)
 
@@ -808,7 +816,7 @@ class TestPredictOutSamplePrefix:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -818,6 +826,8 @@ class TestPredictOutSamplePrefix:
         ],
     )
     def test_predict_out_sample_prefix_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_out_sample_prefix(ts, model, transforms)
 
@@ -989,7 +999,7 @@ class TestPredictOutSampleSuffix:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -999,6 +1009,8 @@ class TestPredictOutSampleSuffix:
         ],
     )
     def test_predict_out_sample_suffix_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_out_sample_suffix(ts, model, transforms)
 
@@ -1175,7 +1187,7 @@ class TestPredictMixedInOutSample:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -1185,6 +1197,8 @@ class TestPredictMixedInOutSample:
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_mixed_in_out_sample(ts, model, transforms)
 
@@ -1349,7 +1363,7 @@ class TestPredictSubsetSegments:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -1359,6 +1373,8 @@ class TestPredictSubsetSegments:
         ],
     )
     def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_subset_segments(ts, model, transforms, segments=["segment_1"])
 
@@ -1488,7 +1504,7 @@ class TestPredictNewSegments:
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
             pytest.param(
-                TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
@@ -1498,6 +1514,8 @@ class TestPredictNewSegments:
         ],
     )
     def test_predict_new_segments_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_new_segments(ts, model, transforms, train_segments=["segment_1"])
 
