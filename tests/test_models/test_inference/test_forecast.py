@@ -962,7 +962,10 @@ class TestForecastOutSample:
             model = model()
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
-        with pytest.raises(NotImplementedError, match="Data with None frequency isn't currently implemented!"):
+        with pytest.raises(
+            NotImplementedError,
+            match="Forecasting misaligned data with freq=None without exogenous features isn't currently implemented.",
+        ):
             self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
 
     @pytest.mark.parametrize(
