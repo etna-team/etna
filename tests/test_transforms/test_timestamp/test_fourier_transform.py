@@ -198,8 +198,8 @@ def test_fail_set_both():
 )
 def test_column_names(example_ts, period, order, num_columns):
     """Test that transform creates expected number of columns and they can be recreated by its name."""
-    segments = example_ts.columns.get_level_values("segment").unique()
-    initial_columns = example_ts.columns.get_level_values("feature").unique()
+    segments = example_ts.segments
+    initial_columns = example_ts.features
     transform = FourierTransform(period=period, order=order)
 
     transformed_df = transform.fit_transform(deepcopy(example_ts)).to_pandas()
@@ -222,7 +222,7 @@ def test_column_names(example_ts, period, order, num_columns):
 
 def test_column_names_out_column(example_ts):
     """Test that transform creates expected columns if `out_column` is set"""
-    initial_columns = example_ts.columns.get_level_values("feature").unique()
+    initial_columns = example_ts.features
     transform = FourierTransform(period=10, order=3, out_column="regressor_fourier")
     transformed_df = transform.fit_transform(example_ts).to_pandas()
     columns = transformed_df.columns.get_level_values("feature").unique().difference(initial_columns)

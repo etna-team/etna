@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Any
 from typing import Dict
 from typing import List
@@ -121,10 +120,9 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             raise ValueError("Invalid format of weights is passed!")
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> TSDataset:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
         """Get forecasts from backtest for given pipeline."""
         forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
-        forecasts = TSDataset(df=forecasts, freq=ts.freq)
         return forecasts
 
     def _process_weights(self, ts: TSDataset) -> List[float]:
@@ -133,12 +131,12 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             weights = [1.0 for _ in range(len(self.pipelines))]
         elif self.weights == "auto":
             forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-                delayed(self._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
+                delayed(self._backtest_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
             )
 
             x = pd.concat(
                 [
-                    forecast[:, :, "target"].rename({"target": f"target_{i}"}, axis=1)
+                    forecast.loc[:, pd.IndexSlice[:, "target"]].rename({"target": f"target_{i}"}, axis=1)
                     for i, forecast in enumerate(forecasts)
                 ],
                 axis=1,
@@ -161,6 +159,10 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def fit(self, ts: TSDataset, save_ts: bool = True) -> "VotingEnsemble":
         """Fit pipelines in ensemble.
 
+        Method doesn't change the given ``ts``.
+
+        Saved ``ts`` is the link to given ``ts``.
+
         Parameters
         ----------
         ts:
@@ -174,7 +176,7 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             Fitted ensemble
         """
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-            delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
+            delayed(self._fit_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
         self.processed_weights = self._process_weights(ts=ts)
 
@@ -236,11 +238,16 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
-        Not implemented for this class.
+        Parameters for pipelines have prefix "pipelines.idx.", e.g. "pipelines.0.model.alpha".
 
         Returns
         -------
         :
             Grid with hyperparameters.
         """
-        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")
+        all_params = {}
+        for ind, pipeline in enumerate(self.pipelines):
+            for key, value in pipeline.params_to_tune().items():
+                new_key = f"pipelines.{ind}.{key}"
+                all_params[new_key] = value
+        return all_params

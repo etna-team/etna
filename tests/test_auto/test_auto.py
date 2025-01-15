@@ -7,6 +7,7 @@ import pytest
 from typing_extensions import Literal
 
 from etna.auto import Auto
+from etna.auto.auto import PoolGenerator
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
 from etna.metrics import MAE
@@ -15,25 +16,67 @@ from etna.models import MovingAverageModel
 from etna.models import NaiveModel
 from etna.pipeline import Pipeline
 from etna.transforms import LagTransform
+from etna.transforms import TimeSeriesImputerTransform
 
 
+@pytest.fixture()
+def pool_generator():
+    pool = [
+        {
+            "_target_": "etna.pipeline.Pipeline",
+            "model": {"_target_": "etna.models.MovingAverageModel", "window": "${mult:${horizon},1}"},
+            "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
+            "horizon": "${__aux__.horizon}",
+        },
+        {
+            "_target_": "etna.pipeline.Pipeline",
+            "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
+            "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
+            "horizon": "${__aux__.horizon}",
+        },
+    ]
+    pool_generator = PoolGenerator(pool)
+    return pool_generator
+
+
+@pytest.fixture()
+def pool_list():
+    return [
+        Pipeline(MovingAverageModel(7), transforms=[TimeSeriesImputerTransform()], horizon=7),
+        Pipeline(NaiveModel(1), transforms=[TimeSeriesImputerTransform()], horizon=7),
+    ]
+
+
+@pytest.mark.parametrize(
+    "ts_name",
+    [
+        "example_tsds",
+        "ts_with_few_missing",
+        "ts_with_fold_missing_tail",
+        "ts_with_fold_missing_middle",
+        "ts_with_all_folds_missing_one_segment",
+    ],
+)
 def test_objective(
-    example_tsds,
-    target_metric=MAE(),
+    ts_name,
+    request,
+    target_metric=MAE(missing_mode="ignore"),
     metric_aggregation: Literal["mean"] = "mean",
-    metrics=[MAE()],
+    metrics=[MAE(missing_mode="ignore")],
     backtest_params={},
-    initializer=MagicMock(spec=_Initializer),
-    callback=MagicMock(spec=_Callback),
     relative_params={
         "_target_": "etna.pipeline.Pipeline",
         "horizon": 7,
         "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
+        "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
     },
 ):
+    ts = request.getfixturevalue(ts_name)
+    initializer = MagicMock(spec=_Initializer)
+    callback = MagicMock(spec=_Callback)
     trial = MagicMock(relative_params=relative_params)
     _objective = Auto.objective(
-        ts=example_tsds,
+        ts=ts,
         target_metric=target_metric,
         metric_aggregation=metric_aggregation,
         metrics=metrics,
@@ -46,6 +89,39 @@ def test_objective(
 
     initializer.assert_called_once()
     callback.assert_called_once()
+
+
+@pytest.mark.parametrize("ts_name", ["ts_with_all_folds_missing_all_segments"])
+def test_objective_fail_none(
+    ts_name,
+    request,
+    target_metric=MAE(missing_mode="ignore"),
+    metric_aggregation: Literal["mean"] = "mean",
+    metrics=[MAE(missing_mode="ignore")],
+    backtest_params={},
+    initializer=MagicMock(spec=_Initializer),
+    callback=MagicMock(spec=_Callback),
+    relative_params={
+        "_target_": "etna.pipeline.Pipeline",
+        "horizon": 7,
+        "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
+        "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
+    },
+):
+    ts = request.getfixturevalue(ts_name)
+    trial = MagicMock(relative_params=relative_params)
+    _objective = Auto.objective(
+        ts=ts,
+        target_metric=target_metric,
+        metric_aggregation=metric_aggregation,
+        metrics=metrics,
+        backtest_params=backtest_params,
+        initializer=initializer,
+        callback=callback,
+    )
+
+    with pytest.raises(ValueError, match="Metric value is None"):
+        _ = _objective(trial)
 
 
 @pytest.mark.parametrize("tune_size", [0, 2])
@@ -118,48 +194,60 @@ def test_init_optuna(
     )
 
 
-def test_fit_without_tuning(
-    example_tsds,
-    optuna_storage,
-    pool=(Pipeline(MovingAverageModel(5), horizon=7), Pipeline(NaiveModel(1), horizon=7)),
-):
+@pytest.mark.parametrize("ts_name", ["example_tsds", "ts_with_few_missing"])
+@pytest.mark.parametrize("pool", ["pool_list", "pool_generator"])
+def test_fit_without_tuning_list(ts_name, optuna_storage, pool, request):
+    ts = request.getfixturevalue(ts_name)
+    pool = request.getfixturevalue(pool)
     auto = Auto(
-        MAE(),
+        MAE(missing_mode="ignore"),
+        metrics=[MAE(missing_mode="ignore")],
         pool=pool,
         metric_aggregation="median",
         horizon=7,
         storage=optuna_storage,
     )
-    auto.fit(ts=example_tsds, n_trials=2)
+    auto.fit(ts=ts, n_trials=2)
 
     assert len(auto._pool_optuna.study.trials) == 2
     assert len(auto.summary()) == 2
     assert len(auto.top_k(k=5)) == 2
     assert len(auto.top_k(k=1)) == 1
+    if isinstance(pool, PoolGenerator):
+        pool = pool.generate(7)
     assert auto.top_k(k=1)[0].to_dict() == pool[0].to_dict()
 
 
+@pytest.mark.parametrize("ts_name", ["example_tsds", "ts_with_few_missing"])
 @pytest.mark.parametrize("tune_size", [1, 2])
 def test_fit_with_tuning(
+    ts_name,
     tune_size,
-    example_tsds,
+    request,
     optuna_storage,
     pool=(
-        Pipeline(MovingAverageModel(5), horizon=7),
-        Pipeline(NaiveModel(1), horizon=7),
+        Pipeline(MovingAverageModel(5), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=7),
+        Pipeline(NaiveModel(1), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=7),
         Pipeline(
-            LinearPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=list(range(7, 21)))], horizon=7
+            LinearPerSegmentModel(),
+            transforms=[
+                TimeSeriesImputerTransform(strategy="forward_fill"),
+                LagTransform(in_column="target", lags=list(range(7, 21))),
+            ],
+            horizon=7,
         ),
     ),
 ):
+    ts = request.getfixturevalue(ts_name)
     auto = Auto(
-        MAE(),
+        MAE(missing_mode="ignore"),
+        metrics=[MAE(missing_mode="ignore")],
         pool=pool,
         metric_aggregation="median",
         horizon=7,
         storage=optuna_storage,
     )
-    auto.fit(ts=example_tsds, n_trials=11, tune_size=tune_size)
+    auto.fit(ts=ts, n_trials=11, tune_size=tune_size)
 
     assert len(auto._pool_optuna.study.trials) == 3
     assert len(auto.summary()) == 11

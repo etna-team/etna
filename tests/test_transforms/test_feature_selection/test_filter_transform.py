@@ -43,7 +43,7 @@ def test_set_none():
         _ = FilterFeaturesTransform()
 
 
-@pytest.mark.parametrize("include", [[], ["target"], ["exog_1"], ["exog_1", "exog_2", "target"]])
+@pytest.mark.parametrize("include", [["target"], ["target", "exog_1"], ["exog_1", "exog_2", "target"]])
 def test_include_filter(ts_with_features, include):
     """Test that transform remains only features in include."""
     original_df = ts_with_features.to_pandas()
@@ -60,9 +60,15 @@ def test_include_filter(ts_with_features, include):
     "exclude, expected_columns",
     [
         ([], ["target", "exog_1", "exog_2"]),
-        (["target"], ["exog_1", "exog_2"]),
+        (["exog_1"], ["target", "exog_2"]),
         (["exog_1", "exog_2"], ["target"]),
-        (["target", "exog_1", "exog_2"], []),
+        (
+            ["exog_2"],
+            [
+                "target",
+                "exog_1",
+            ],
+        ),
     ],
 )
 def test_exclude_filter(ts_with_features, exclude, expected_columns):
@@ -95,9 +101,9 @@ def test_exclude_filter_wrong_column(ts_with_features):
     "columns, saved_columns",
     [
         ([], []),
-        (["target"], ["target"]),
+        (["exog_1"], ["exog_1"]),
         (["exog_1", "exog_2"], ["exog_1", "exog_2"]),
-        (["target", "exog_1", "exog_2"], ["target", "exog_1", "exog_2"]),
+        (["exog_2"], ["exog_2"]),
     ],
 )
 def test_transform_exclude_save_columns(ts_with_features, columns, saved_columns, return_features):
@@ -120,9 +126,9 @@ def test_transform_exclude_save_columns(ts_with_features, columns, saved_columns
 @pytest.mark.parametrize(
     "columns, saved_columns",
     [
-        ([], ["target", "exog_1", "exog_2"]),
+        (["target", "exog_1"], ["exog_2"]),
         (["target"], ["exog_1", "exog_2"]),
-        (["exog_1", "exog_2"], ["target"]),
+        (["target", "exog_2"], ["exog_1"]),
         (["target", "exog_1", "exog_2"], []),
     ],
 )
@@ -147,12 +153,19 @@ def test_transform_include_save_columns(ts_with_features, columns, saved_columns
     [
         ([], True, ["exog_1", "target", "exog_2"]),
         ([], False, ["target", "exog_1", "exog_2"]),
-        (["target"], True, ["exog_1", "target", "exog_2"]),
-        (["target"], False, ["exog_2", "exog_1"]),
+        (["exog_1"], True, ["target", "exog_2", "exog_1"]),
+        (["exog_1"], False, ["exog_2", "target"]),
         (["exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
         (["exog_1", "exog_2"], False, ["target"]),
-        (["target", "exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
-        (["target", "exog_1", "exog_2"], False, []),
+        (["exog_2"], True, ["exog_1", "target", "exog_2"]),
+        (
+            ["exog_2"],
+            False,
+            [
+                "target",
+                "exog_1",
+            ],
+        ),
     ],
 )
 def test_inverse_transform_back_excluded_columns(ts_with_features, columns, return_features, expected_columns):
@@ -169,12 +182,12 @@ def test_inverse_transform_back_excluded_columns(ts_with_features, columns, retu
 @pytest.mark.parametrize(
     "columns, return_features, expected_columns",
     [
-        ([], True, ["exog_1", "target", "exog_2"]),
-        ([], False, []),
+        (["target", "exog_1"], True, ["exog_1", "target", "exog_2"]),
+        (["target", "exog_1"], False, ["exog_1", "target"]),
         (["target"], True, ["exog_1", "target", "exog_2"]),
         (["target"], False, ["target"]),
-        (["exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
-        (["exog_1", "exog_2"], False, ["exog_1", "exog_2"]),
+        (["target", "exog_2"], True, ["exog_1", "target", "exog_2"]),
+        (["target", "exog_2"], False, ["exog_2", "target"]),
         (["target", "exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
         (["target", "exog_1", "exog_2"], False, ["exog_1", "target", "exog_2"]),
     ],

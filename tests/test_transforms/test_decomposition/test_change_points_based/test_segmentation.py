@@ -66,6 +66,8 @@ def test_transform_format_one_segment(pre_transformed_df: pd.DataFrame):
     assert transformed[OUT_COLUMN].dtype == "category"
 
 
+# issue with assert on pandas==1.2 and pandas==1.3
+@pytest.mark.filterwarnings("ignore: invalid value encountered in cast")
 def test_monotonously_result(pre_transformed_df: pd.DataFrame):
     """Check that resulting column is monotonously non-decreasing."""
     change_points_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
@@ -100,6 +102,8 @@ def test_backtest(simple_ar_ts):
     _, _, _ = pipeline.backtest(ts=simple_ar_ts, metrics=[SMAPE()], n_folds=3)
 
 
+# issue with assert on pandas==1.2 and pandas==1.3
+@pytest.mark.filterwarnings("ignore: invalid value encountered in cast")
 def test_future_and_past_filling(simple_ar_ts):
     change_points_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(
@@ -115,6 +119,8 @@ def test_future_and_past_filling(simple_ar_ts):
         assert (after.to_pandas()[seg][OUT_COLUMN].astype(int) == 5).all()
 
 
+# issue with assert on pandas==1.2 and pandas==1.3
+@pytest.mark.filterwarnings("ignore: invalid value encountered in cast")
 def test_make_future(simple_ar_ts):
     change_points_model = RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=N_BKPS)
     bs = ChangePointsSegmentationTransform(

@@ -1,13 +1,9 @@
 """Module with metrics of forecasting quality."""
 
-from sklearn.metrics import mean_absolute_error as mae
-from sklearn.metrics import mean_squared_error as mse
-from sklearn.metrics import mean_squared_log_error as msle
-from sklearn.metrics import median_absolute_error as medae
-from sklearn.metrics import r2_score
-
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+from etna.metrics.base import MetricMissingMode
+from etna.metrics.base import MetricWithMissingHandling
 from etna.metrics.functional_metrics import mae
 from etna.metrics.functional_metrics import mape
 from etna.metrics.functional_metrics import max_deviation
@@ -31,5 +27,6 @@ from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import WAPE
 from etna.metrics.metrics import MaxDeviation
 from etna.metrics.metrics import MedAE
+from etna.metrics.metrics import MissingCounter
 from etna.metrics.metrics import Sign
 from etna.metrics.utils import compute_metrics

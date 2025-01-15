@@ -26,6 +26,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.7.1
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -56,12 +57,13 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.7.1
           virtualenvs-create: true
           virtualenvs-in-project: true
 
       - name: Load cached venv
         id: cached-poetry-dependencies
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: .venv
           key: venv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
@@ -73,11 +75,13 @@ jobs:
 
       - name: PyTest with sharding
         run: |
-          poetry run pytest tests -v --shard-id=${{ matrix.shard-id }} --num-shards=3 --cov=etna --ignore=tests/test_experimental --cov-report=xml --durations=10
+          poetry run pytest tests -v --shard-id=${{ matrix.shard-id }} --num-shards=3 --cov=etna --cov-report=xml --durations=10
           poetry run pytest etna -v --doctest-modules --ignore=etna/libs --durations=10
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   test-pandas-versions:
     runs-on: ubuntu-latest
@@ -103,6 +107,7 @@ jobs:
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
+          version: 1.7.1
           virtualenvs-create: true
           virtualenvs-in-project: true
 
@@ -117,5 +122,31 @@ jobs:
           poetry run pytest tests/test_transforms -v --cov=etna --cov-report=xml --durations=10
           poetry run pytest tests/test_models/test_utils.py -v --cov=etna --cov-report=xml --durations=10
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v2
+  test-without-extras:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.7.1
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: |
+          poetry install -vv
+
+      - name: Check without extras
+        run: |
+          poetry run python scripts/check_without_extras.py

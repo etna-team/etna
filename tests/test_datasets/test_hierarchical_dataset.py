@@ -256,7 +256,7 @@ def test_init_df_same_level_df_exog(
 ):
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
-    df_columns = set(ts.columns.get_level_values("feature"))
+    df_columns = set(ts.features)
     assert df_columns == expected_columns
 
 
@@ -265,7 +265,7 @@ def test_init_df_different_level_df_exog(
 ):
     df, df_exog = product_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
-    df_columns = set(ts.columns.get_level_values("feature"))
+    df_columns = set(ts.features)
     assert df_columns == expected_columns
 
 
@@ -508,3 +508,13 @@ def test_get_level_dataset_with_target_components(
     reconciled_ts = product_level_constant_forecast_with_target_components.get_level_dataset(target_level=target_level)
     pd.testing.assert_frame_equal(reconciled_ts.get_target_components(), expected_ts.get_target_components())
     pd.testing.assert_frame_equal(reconciled_ts.to_pandas(), expected_ts.to_pandas())
+
+
+def test_train_test_split_pass_hierarchy_to_output(simple_hierarchical_ts):
+    train, test = simple_hierarchical_ts.train_test_split(test_size=1)
+    assert train.hierarchical_structure is not None
+    assert test.hierarchical_structure is not None
+    assert train.hierarchical_structure.level_structure == simple_hierarchical_ts.hierarchical_structure.level_structure
+    assert test.hierarchical_structure.level_structure == simple_hierarchical_ts.hierarchical_structure.level_structure
+    assert train.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names
+    assert test.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names

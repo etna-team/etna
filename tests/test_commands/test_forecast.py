@@ -409,3 +409,59 @@ def test_forecast_with_estimate_n_folds(
 
     assert all(x in df_output.columns for x in ["target_0.025", "target_0.975"])
     assert len(df_output) == 4 * 2  # 4 predictions for 2 segments
+
+
+def test_forecast_with_numeric_segments(
+    base_pipeline_yaml_path,
+    base_timeseries_numeric_segments_path,
+):
+    target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
+    segments = target["segment"].unique()
+
+    tmp_output = NamedTemporaryFile("w")
+    tmp_output_path = Path(tmp_output.name)
+    run(
+        [
+            "etna",
+            "forecast",
+            str(base_pipeline_yaml_path),
+            str(base_timeseries_numeric_segments_path),
+            "D",
+            str(tmp_output_path),
+        ],
+    )
+    df_output = pd.read_csv(tmp_output_path, dtype={"segment": str})
+    output_segments = df_output["segment"].unique()
+    assert set(segments) == set(output_segments)
+
+
+@pytest.mark.parametrize(
+    "pipeline_path_name",
+    ("base_pipeline_yaml_path", "base_ensemble_yaml_path"),
+)
+def test_forecast_with_numeric_segments_with_exog(
+    pipeline_path_name,
+    base_timeseries_numeric_segments_path,
+    base_timeseries_numeric_segments_exog_path,
+    request,
+):
+    target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
+    segments = target["segment"].unique()
+
+    tmp_output = NamedTemporaryFile("w")
+    tmp_output_path = Path(tmp_output.name)
+    pipeline_path = request.getfixturevalue(pipeline_path_name)
+    run(
+        [
+            "etna",
+            "forecast",
+            str(pipeline_path),
+            str(base_timeseries_numeric_segments_path),
+            "D",
+            str(tmp_output_path),
+            str(base_timeseries_numeric_segments_exog_path),
+        ],
+    )
+    df_output = pd.read_csv(tmp_output_path, dtype={"segment": str})
+    output_segments = df_output["segment"].unique()
+    assert set(segments) == set(output_segments)

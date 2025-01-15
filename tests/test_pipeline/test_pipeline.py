@@ -93,9 +93,7 @@ def test_fit(example_tsds, save_ts):
     transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
     pipeline.fit(example_tsds, save_ts=save_ts)
-    original_ts.fit_transform(transforms)
-    original_ts.inverse_transform(transforms)
-    assert np.all(original_ts.df.values == example_tsds.df.values)
+    pd.testing.assert_frame_equal(original_ts.df, example_tsds.df)
 
 
 @pytest.mark.parametrize("save_ts", [False, True])
@@ -334,6 +332,23 @@ def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, 
         ValueError, match="There aren't enough target values to evaluate prediction intervals on history"
     ):
         _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
+@pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
+@pytest.mark.parametrize("model", (MovingAverageModel(),))
+@pytest.mark.parametrize("stride", (1, 4, 6))
+def test_add_forecast_borders_overlapping_timestamps(example_tsds, model, stride):
+    example_tsds.df.loc[example_tsds.index[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+
+    pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
+    pipeline.fit(example_tsds)
+
+    forecasts = pipeline.get_historical_forecasts(ts=example_tsds, stride=stride)
+
+    with pytest.raises(ValueError, match="Historical backtest timestamps must match"):
+        pipeline._add_forecast_borders(
+            ts=example_tsds, backtest_forecasts=forecasts, quantiles=[0.025, 0.975], predictions=None
+        )
 
 
 def test_forecast_prediction_interval_correct_values(splited_piecewise_constant_ts):

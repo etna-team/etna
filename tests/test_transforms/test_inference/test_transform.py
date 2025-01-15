@@ -7,6 +7,7 @@ from ruptures import Binseg
 from sklearn.tree import DecisionTreeRegressor
 
 from etna.analysis import StatisticsRelevanceTable
+from etna.models import HoltWintersModel
 from etna.models import ProphetModel
 from etna.transforms import AddConstTransform
 from etna.transforms import BinaryOperationTransform
@@ -23,6 +24,7 @@ from etna.transforms import EmbeddingWindowTransform
 from etna.transforms import EventTransform
 from etna.transforms import ExogShiftTransform
 from etna.transforms import FilterFeaturesTransform
+from etna.transforms import FourierDecomposeTransform
 from etna.transforms import FourierTransform
 from etna.transforms import GaleShapleyFeatureSelectionTransform
 from etna.transforms import HolidayTransform
@@ -34,9 +36,11 @@ from etna.transforms import LambdaTransform
 from etna.transforms import LimitTransform
 from etna.transforms import LinearTrendTransform
 from etna.transforms import LogTransform
+from etna.transforms import MADOutlierTransform
 from etna.transforms import MADTransform
 from etna.transforms import MaxAbsScalerTransform
 from etna.transforms import MaxTransform
+from etna.transforms import MeanEncoderTransform
 from etna.transforms import MeanSegmentEncoderTransform
 from etna.transforms import MeanTransform
 from etna.transforms import MedianOutliersTransform
@@ -44,6 +48,7 @@ from etna.transforms import MedianTransform
 from etna.transforms import MinMaxDifferenceTransform
 from etna.transforms import MinMaxScalerTransform
 from etna.transforms import MinTransform
+from etna.transforms import ModelDecomposeTransform
 from etna.transforms import MRMRFeatureSelectionTransform
 from etna.transforms import OneHotEncoderTransform
 from etna.transforms import PredictionIntervalOutliersTransform
@@ -126,6 +131,16 @@ class TestTransformTrain:
                 "regular_ts",
                 {"create": {"res"}},
             ),
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
+            ),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -173,6 +188,11 @@ class TestTransformTrain:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
@@ -430,6 +450,7 @@ class TestTransformTrain:
             ),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),
@@ -542,6 +563,16 @@ class TestTransformTrain:
                 "regular_ts",
                 {"create": {"res"}},
             ),
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
+            ),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -589,6 +620,11 @@ class TestTransformTrain:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
@@ -871,6 +907,7 @@ class TestTransformTrain:
             (MedianOutliersTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers", {"change": {"target"}}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res", in_column="external_timestamp"),
@@ -1046,6 +1083,8 @@ class TestTransformTrainSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts"),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1082,6 +1121,7 @@ class TestTransformTrainSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
@@ -1195,6 +1235,7 @@ class TestTransformTrainSubsetSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (
@@ -1312,6 +1353,10 @@ class TestTransformFutureSubsetSegments:
                 ),
                 "regular_ts",
             ),
+            (FourierDecomposeTransform(in_column="target", k=2, residuals=True), "regular_ts"),
+            (FourierDecomposeTransform(in_column="positive", k=2, residuals=True), "ts_with_exog"),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="positive", residuals=True), "ts_with_exog"),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -1348,6 +1393,7 @@ class TestTransformFutureSubsetSegments:
             # encoders
             (LabelEncoderTransform(in_column="weekday"), "ts_with_exog"),
             (OneHotEncoderTransform(in_column="weekday"), "ts_with_exog"),
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # feature_selection
@@ -1489,6 +1535,7 @@ class TestTransformFutureSubsetSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (DateFlagsTransform(), "regular_ts"),
             (
@@ -1613,6 +1660,11 @@ class TestTransformTrainNewSegments:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder", mode="macro"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
@@ -1866,7 +1918,9 @@ class TestTransformTrainNewSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -1906,6 +1960,7 @@ class TestTransformTrainNewSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
             (SpecialDaysTransform(in_column="external_timestamp"), "ts_with_external_timestamp"),
@@ -1994,6 +2049,11 @@ class TestTransformFutureNewSegments:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder", mode="macro"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {"remove": {"year"}}),
@@ -2294,7 +2354,9 @@ class TestTransformFutureNewSegments:
                 ),
                 "regular_ts",
             ),
+            (ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True), "regular_ts"),
             # encoders
+            (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"), "ts_with_exog"),
             (MeanSegmentEncoderTransform(), "regular_ts"),
             (SegmentEncoderTransform(), "regular_ts"),
             # math
@@ -2341,6 +2403,7 @@ class TestTransformFutureNewSegments:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers"),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers"),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers"),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers"),
             # timestamp
             (SpecialDaysTransform(), "regular_ts"),
             (
@@ -2460,6 +2523,11 @@ class TestTransformFutureWithTarget:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
@@ -2702,6 +2770,7 @@ class TestTransformFutureWithTarget:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {}),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {}),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers", {}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),
@@ -2778,6 +2847,28 @@ class TestTransformFutureWithTarget:
         ts = request.getfixturevalue(dataset_name)
         self._test_transform_future_with_target(ts, transform, expected_changes=expected_changes)
 
+    @pytest.mark.parametrize(
+        "transform, dataset_name, expected_changes",
+        (
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
+            ),
+        ),
+    )
+    def test_transform_future_with_target_fail_require_history(
+        self, transform, dataset_name, expected_changes, request
+    ):
+        ts = request.getfixturevalue(dataset_name)
+        with pytest.raises(ValueError, match="Dataset to be transformed must contain historical observations"):
+            self._test_transform_future_with_target(ts, transform, expected_changes=expected_changes)
+
 
 class TestTransformFutureWithoutTarget:
     """Test transform on future dataset with unknown target.
@@ -2851,6 +2942,21 @@ class TestTransformFutureWithoutTarget:
                 "regular_ts",
                 {"create": {"res"}},
             ),
+            (
+                FourierDecomposeTransform(in_column="target", k=2, residuals=True),
+                "regular_ts",
+                {"create": {"target_dft_0", "target_dft_1", "target_dft_residuals"}},
+            ),
+            (
+                FourierDecomposeTransform(in_column="positive", k=2, residuals=True),
+                "ts_with_exog",
+                {"create": {"positive_dft_0", "positive_dft_1", "positive_dft_residuals"}},
+            ),
+            (
+                ModelDecomposeTransform(model=HoltWintersModel(), in_column="target", residuals=True),
+                "regular_ts",
+                {"create": {"target_level", "target_residuals"}},
+            ),
             # embeddings
             (
                 EmbeddingSegmentTransform(
@@ -2898,6 +3004,11 @@ class TestTransformFutureWithoutTarget:
                 OneHotEncoderTransform(in_column="weekday", out_column="res"),
                 "ts_with_exog",
                 {"create": {"res_0", "res_1", "res_2", "res_3", "res_4", "res_5", "res_6"}},
+            ),
+            (
+                MeanEncoderTransform(in_column="weekday", out_column="mean_encoder"),
+                "ts_with_exog",
+                {"create": {"mean_encoder"}},
             ),
             (MeanSegmentEncoderTransform(), "regular_ts", {"create": {"segment_mean"}}),
             (SegmentEncoderTransform(), "regular_ts", {"create": {"segment_code"}}),
@@ -3200,6 +3311,7 @@ class TestTransformFutureWithoutTarget:
             (PredictionIntervalOutliersTransform(in_column="target", model=ProphetModel), "ts_with_outliers", {}),
             (IForestOutlierTransform(in_column="target"), "ts_with_outliers", {}),
             (IQROutlierTransform(in_column="target"), "ts_with_outliers", {}),
+            (MADOutlierTransform(in_column="target"), "ts_with_outliers", {}),
             # timestamp
             (
                 DateFlagsTransform(out_column="res"),

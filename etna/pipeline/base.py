@@ -185,8 +185,6 @@ class FoldMask(BaseMixin):
         ValueError:
             First train timestamp should be later than minimal dataset timestamp
         ValueError:
-            Last train timestamp should be not later than the ending of the shortest segment
-        ValueError:
             Last target timestamp should be not later than horizon steps after last train timestamp
         """
         timestamps = ts.index.to_list()
@@ -200,12 +198,6 @@ class FoldMask(BaseMixin):
         if not set(self.target_timestamps).issubset(set(timestamps)):
             diff = set(self.target_timestamps).difference(set(timestamps))
             raise ValueError(f"Some target timestamps aren't present in a given dataset: {reprlib.repr(diff)}")
-
-        dataset_description = ts.describe()
-
-        dataset_min_last_timestamp = dataset_description["end_timestamp"].min()
-        if self.last_train_timestamp > dataset_min_last_timestamp:
-            raise ValueError(f"Last train timestamp should be not later than {dataset_min_last_timestamp}!")
 
         dataset_horizon_border_timestamp = timestamps[timestamps.index(self.last_train_timestamp) + horizon]
         mask_last_target_timestamp = self.target_timestamps[-1]
@@ -408,9 +400,9 @@ class _DummyMetric(Metric):
     def greater_is_better(self) -> bool:
         return False
 
-    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[float, Dict[str, float]]:
+    def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         segments = set(y_true.df.columns.get_level_values("segment"))
-        metrics_per_segment = {}
+        metrics_per_segment: Dict[str, Optional[float]] = {}
         for segment in segments:
             metrics_per_segment[segment] = 0.0
         metrics = self._aggregate_metrics(metrics_per_segment)
@@ -463,7 +455,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return predictions
 
     @staticmethod
-    def _validate_residuals_for_interval_estimation(backtest_forecasts: TSDataset, residuals: pd.DataFrame):
+    def _validate_residuals_for_interval_estimation(backtest_forecasts: pd.DataFrame, residuals: pd.DataFrame):
         len_backtest, num_segments = residuals.shape
         min_timestamp = backtest_forecasts.index.min()
         max_timestamp = backtest_forecasts.index.max()
@@ -485,11 +477,11 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, ts: TSDataset, backtest_forecasts: pd.DataFrame, quantiles: Sequence[float], predictions: TSDataset
     ) -> None:
         """Estimate prediction intervals and add to the forecasts."""
-        backtest_forecasts = TSDataset(df=backtest_forecasts, freq=ts.freq)
-        residuals = (
-            backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]]
-            - ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
-        )
+        target = ts[backtest_forecasts.index.min() : backtest_forecasts.index.max(), :, "target"]
+        if not backtest_forecasts.index.equals(target.index):
+            raise ValueError("Historical backtest timestamps must match with the original dataset timestamps!")
+
+        residuals = backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]] - target
 
         self._validate_residuals_for_interval_estimation(backtest_forecasts=backtest_forecasts, residuals=residuals)
         sigma = np.nanstd(residuals.values, axis=0)
@@ -861,7 +853,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         metrics_df.sort_values(["segment", self._fold_column], inplace=True)
 
         if aggregate_metrics:
-            metrics_df = metrics_df.groupby("segment").mean().reset_index().drop(self._fold_column, axis=1)
+            metrics_df = (
+                metrics_df.groupby("segment").mean(numeric_only=False).reset_index().drop(self._fold_column, axis=1)
+            )
 
         return metrics_df
 

@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Any
 from typing import Dict
 from typing import List
@@ -24,6 +23,13 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     Ensemble expects several pipelines during init. These pipelines are expected to have different forecasting horizons.
     For each point in the future, forecast of the ensemble is forecast of base pipeline with the shortest horizon,
     which covers this point.
+
+    See Also
+    --------
+    etna.pipeline.Pipeline:
+        Pipeline that forecasts values in one iteration using a model.
+    etna.pipeline.AutoRegressivePipeline:
+        Pipeline that forecasts values in several iterations using a model.
 
     Examples
     --------
@@ -93,6 +99,10 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def fit(self, ts: TSDataset, save_ts: bool = True) -> "DirectEnsemble":
         """Fit pipelines in ensemble.
 
+        Method doesn't change the given ``ts``.
+
+        Saved ``ts`` is the link to given ``ts``.
+
         Parameters
         ----------
         ts:
@@ -106,7 +116,7 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             Fitted ensemble
         """
         self.pipelines = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
-            delayed(self._fit_pipeline)(pipeline=pipeline, ts=deepcopy(ts)) for pipeline in self.pipelines
+            delayed(self._fit_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
 
         if save_ts:
@@ -169,11 +179,11 @@ class DirectEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def params_to_tune(self) -> Dict[str, BaseDistribution]:
         """Get hyperparameter grid to tune.
 
-        Not implemented for this class.
+        Currently, returns empty dict, but could have a proper implementation in the future.
 
         Returns
         -------
         :
             Grid with hyperparameters.
         """
-        raise NotImplementedError(f"{self.__class__.__name__} doesn't support this method!")
+        return {}

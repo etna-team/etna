@@ -19,6 +19,7 @@ from etna.metrics import smape
 from etna.metrics import wape
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
+from etna.metrics.functional_metrics import count_missing_values
 from etna.metrics.metrics import MAE
 from etna.metrics.metrics import MAPE
 from etna.metrics.metrics import MSE
@@ -29,42 +30,42 @@ from etna.metrics.metrics import SMAPE
 from etna.metrics.metrics import WAPE
 from etna.metrics.metrics import MaxDeviation
 from etna.metrics.metrics import MedAE
+from etna.metrics.metrics import MissingCounter
 from etna.metrics.metrics import Sign
 from tests.utils import DummyMetric
 from tests.utils import create_dummy_functional_metric
 
 
 @pytest.mark.parametrize(
-    "metric_class, metric_class_repr, metric_params, param_repr",
+    "metric, expected_repr",
     (
-        (MAE, "MAE", {}, ""),
-        (MSE, "MSE", {}, ""),
-        (RMSE, "RMSE", {}, ""),
-        (MedAE, "MedAE", {}, ""),
-        (MSLE, "MSLE", {}, ""),
-        (MAPE, "MAPE", {}, ""),
-        (SMAPE, "SMAPE", {}, ""),
-        (R2, "R2", {}, ""),
-        (Sign, "Sign", {}, ""),
-        (MaxDeviation, "MaxDeviation", {}, ""),
-        (DummyMetric, "DummyMetric", {"alpha": 1.0}, "alpha = 1.0, "),
-        (WAPE, "WAPE", {}, ""),
+        (MAE(), "MAE(mode = 'per-segment', missing_mode = 'error', )"),
+        (MAE(mode="macro"), "MAE(mode = 'macro', missing_mode = 'error', )"),
+        (MAE(missing_mode="ignore"), "MAE(mode = 'per-segment', missing_mode = 'ignore', )"),
+        (MAE(mode="macro", missing_mode="ignore"), "MAE(mode = 'macro', missing_mode = 'ignore', )"),
+        (MSE(), "MSE(mode = 'per-segment', missing_mode = 'error', )"),
+        (RMSE(), "RMSE(mode = 'per-segment', missing_mode = 'error', )"),
+        (MedAE(), "MedAE(mode = 'per-segment', missing_mode = 'error', )"),
+        (MSLE(), "MSLE(mode = 'per-segment', missing_mode = 'error', )"),
+        (MAPE(), "MAPE(mode = 'per-segment', missing_mode = 'error', )"),
+        (SMAPE(), "SMAPE(mode = 'per-segment', missing_mode = 'error', )"),
+        (R2(), "R2(mode = 'per-segment', missing_mode = 'error', )"),
+        (Sign(), "Sign(mode = 'per-segment', missing_mode = 'error', )"),
+        (MaxDeviation(), "MaxDeviation(mode = 'per-segment', missing_mode = 'error', )"),
+        (DummyMetric(), "DummyMetric(mode = 'per-segment', alpha = 1.0, )"),
+        (WAPE(), "WAPE(mode = 'per-segment', missing_mode = 'error', )"),
+        (MissingCounter(), "MissingCounter(mode = 'per-segment', )"),
     ),
 )
-def test_repr(metric_class, metric_class_repr, metric_params, param_repr):
+def test_repr(metric, expected_repr):
     """Check metrics __repr__ method"""
-    metric_mode = "per-segment"
-    kwargs = {**metric_params, "kwarg_1": "value_1", "kwarg_2": "value_2"}
-    kwargs_repr = param_repr + "kwarg_1 = 'value_1', kwarg_2 = 'value_2'"
-    metric = metric_class(mode=metric_mode, **kwargs)
     metric_repr = metric.__repr__()
-    true_repr = f"{metric_class_repr}(mode = '{metric_mode}', {kwargs_repr}, )"
-    assert metric_repr == true_repr
+    assert metric_repr == expected_repr
 
 
 @pytest.mark.parametrize(
     "metric_class",
-    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, WAPE),
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, WAPE, MissingCounter),
 )
 def test_name_class_name(metric_class):
     """Check metrics name property without changing its during inheritance"""
@@ -88,7 +89,9 @@ def test_name_repr(metric_class):
     assert metric_name == true_name
 
 
-@pytest.mark.parametrize("metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, WAPE))
+@pytest.mark.parametrize(
+    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, WAPE, MissingCounter)
+)
 def test_metrics_macro(metric_class, train_test_dfs):
     """Check metrics interface in 'macro' mode"""
     forecast_df, true_df = train_test_dfs
@@ -98,7 +101,8 @@ def test_metrics_macro(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric_class",
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE, MissingCounter),
 )
 def test_metrics_per_segment(metric_class, train_test_dfs):
     """Check metrics interface in 'per-segment' mode"""
@@ -111,7 +115,8 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric_class",
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE, MissingCounter),
 )
 def test_metrics_invalid_aggregation(metric_class):
     """Check metrics behavior in case of invalid aggregation multioutput"""
@@ -120,7 +125,8 @@ def test_metrics_invalid_aggregation(metric_class):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric_class",
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE, MissingCounter),
 )
 def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
     """Check metrics behavior in case of invalid segments sets"""
@@ -131,7 +137,8 @@ def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric_class",
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE, MissingCounter),
 )
 def test_invalid_target_columns(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
@@ -145,7 +152,8 @@ def test_invalid_target_columns(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric_class",
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE, MissingCounter),
 )
 def test_invalid_index(metric_class, two_dfs_with_different_timestamps):
     """Check metrics behavior in case of invalid index"""
@@ -156,7 +164,8 @@ def test_invalid_index(metric_class, two_dfs_with_different_timestamps):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric_class",
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE, MissingCounter),
 )
 def test_invalid_nans_pred(metric_class, train_test_dfs):
     """Check metrics behavior in case of nans in prediction."""
@@ -168,15 +177,140 @@ def test_invalid_nans_pred(metric_class, train_test_dfs):
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric",
+    (
+        MAE(missing_mode="error"),
+        MSE(missing_mode="error"),
+        RMSE(missing_mode="error"),
+        MedAE(missing_mode="error"),
+        MSLE(missing_mode="error"),
+        MAPE(missing_mode="error"),
+        SMAPE(missing_mode="error"),
+        R2(missing_mode="error"),
+        Sign(missing_mode="error"),
+        MaxDeviation(missing_mode="error"),
+        DummyMetric(),
+        WAPE(missing_mode="error"),
+    ),
 )
-def test_invalid_nans_true(metric_class, train_test_dfs):
+def test_invalid_nans_true(metric, train_test_dfs):
     """Check metrics behavior in case of nans in true values."""
     forecast_df, true_df = train_test_dfs
     true_df.df.iloc[0, 0] = np.NaN
-    metric = metric_class()
     with pytest.raises(ValueError, match="There are NaNs in y_true"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (
+        MSE(missing_mode="ignore"),
+        MAE(missing_mode="ignore"),
+        MAPE(missing_mode="ignore"),
+        SMAPE(missing_mode="ignore"),
+        Sign(missing_mode="ignore"),
+        WAPE(missing_mode="ignore"),
+        MaxDeviation(missing_mode="ignore"),
+        R2(missing_mode="ignore"),
+        MedAE(missing_mode="ignore"),
+        RMSE(missing_mode="ignore"),
+        MSLE(missing_mode="ignore"),
+        MissingCounter(),
+    ),
+)
+def test_invalid_single_nan_ignore(metric, train_test_dfs):
+    """Check metrics behavior in case of ignoring one nan in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[0, 0] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert isinstance(value, dict)
+    segments = set(forecast_df.df.columns.get_level_values("segment").unique().tolist())
+    assert value.keys() == segments
+    assert all(isinstance(cur_value, float) for cur_value in value.values())
+
+
+@pytest.mark.parametrize(
+    "metric, expected_type",
+    (
+        (MSE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MAE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MAPE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (SMAPE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (Sign(mode="per-segment", missing_mode="ignore"), type(None)),
+        (WAPE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MaxDeviation(mode="per-segment", missing_mode="ignore"), type(None)),
+        (R2(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MedAE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (RMSE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MSLE(mode="per-segment", missing_mode="ignore"), type(None)),
+        (MissingCounter(mode="per-segment"), float),
+    ),
+)
+def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_test_dfs):
+    """Check per-segment metrics behavior in case of ignoring segment of all nans in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[:, 0] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+
+    assert isinstance(value, dict)
+    segments = set(forecast_df.df.columns.get_level_values("segment").unique().tolist())
+    empty_segment = true_df.df.columns.get_level_values("segment").unique()[0]
+    assert value.keys() == segments
+    for cur_segment, cur_value in value.items():
+        if cur_segment == empty_segment:
+            assert isinstance(cur_value, expected_type)
+        else:
+            assert isinstance(cur_value, float)
+
+
+@pytest.mark.parametrize(
+    "metric",
+    (
+        MSE(mode="macro", missing_mode="ignore"),
+        MAE(mode="macro", missing_mode="ignore"),
+        MAPE(mode="macro", missing_mode="ignore"),
+        SMAPE(mode="macro", missing_mode="ignore"),
+        Sign(mode="macro", missing_mode="ignore"),
+        WAPE(mode="macro", missing_mode="ignore"),
+        MaxDeviation(mode="macro", missing_mode="ignore"),
+        R2(mode="macro", missing_mode="ignore"),
+        MedAE(mode="macro", missing_mode="ignore"),
+        RMSE(mode="macro", missing_mode="ignore"),
+        MSLE(mode="macro", missing_mode="ignore"),
+        MissingCounter(mode="macro"),
+    ),
+)
+def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
+    """Check macro metrics behavior in case of ignoring segment of all nans in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[:, 0] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert isinstance(value, float)
+
+
+@pytest.mark.parametrize(
+    "metric, expected_type",
+    (
+        (MSE(mode="macro", missing_mode="ignore"), type(None)),
+        (MAE(mode="macro", missing_mode="ignore"), type(None)),
+        (MAPE(mode="macro", missing_mode="ignore"), type(None)),
+        (SMAPE(mode="macro", missing_mode="ignore"), type(None)),
+        (Sign(mode="macro", missing_mode="ignore"), type(None)),
+        (WAPE(mode="macro", missing_mode="ignore"), type(None)),
+        (MaxDeviation(mode="macro", missing_mode="ignore"), type(None)),
+        (R2(mode="macro", missing_mode="ignore"), type(None)),
+        (MedAE(mode="macro", missing_mode="ignore"), type(None)),
+        (RMSE(mode="macro", missing_mode="ignore"), type(None)),
+        (MSLE(mode="macro", missing_mode="ignore"), type(None)),
+        (MissingCounter(mode="macro"), float),
+    ),
+)
+def test_invalid_all_nans_ignore_macro(metric, expected_type, train_test_dfs):
+    """Check macro metrics behavior in case of all nan values in true values."""
+    forecast_df, true_df = train_test_dfs
+    true_df.df.iloc[:, :] = np.NaN
+    value = metric(y_true=true_df, y_pred=forecast_df)
+    assert isinstance(value, expected_type)
 
 
 @pytest.mark.parametrize(
@@ -194,6 +328,7 @@ def test_invalid_nans_true(metric_class, train_test_dfs):
         (MaxDeviation, max_deviation),
         (DummyMetric, create_dummy_functional_metric()),
         (WAPE, wape),
+        (MissingCounter, count_missing_values),
     ),
 )
 def test_metrics_values(metric_class, metric_fn, train_test_dfs):
@@ -244,6 +379,7 @@ def _create_metric_class(metric_fn, metric_fn_signature, greater_is_better):
         (sign, {"multioutput": "raw_values"}, None),
         (max_deviation, {"multioutput": "raw_values"}, False),
         (wape, {"multioutput": "raw_values"}, False),
+        (count_missing_values, {"multioutput": "raw_values"}, None),
     ),
 )
 def test_metrics_equivalence_of_signatures(metric_fn, matrix_to_array_params, greater_is_better, train_test_dfs):
@@ -266,7 +402,8 @@ def test_metrics_equivalence_of_signatures(metric_fn, matrix_to_array_params, gr
 
 
 @pytest.mark.parametrize(
-    "metric_class", (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE)
+    "metric_class",
+    (MAE, MSE, RMSE, MedAE, MSLE, MAPE, SMAPE, R2, Sign, MaxDeviation, DummyMetric, WAPE, MissingCounter),
 )
 def test_metric_values_with_changed_segment_order(metric_class, train_test_dfs):
     forecast_df, true_df = train_test_dfs
@@ -300,6 +437,7 @@ def test_metric_values_with_changed_segment_order(metric_class, train_test_dfs):
         (MaxDeviation(), False),
         (DummyMetric(), False),
         (WAPE(), False),
+        (MissingCounter(), None),
     ),
 )
 def test_metrics_greater_is_better(metric, greater_is_better):

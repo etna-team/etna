@@ -1,38 +1,34 @@
 import numpy as np
-import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 
 
 @pytest.fixture
-def simple_ts() -> TSDataset:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
-    df_1["segment"] = "Moscow"
-    df_1["target"] = [1.0, 2.0, 3.0, 4.0, 5.0, np.NAN, np.NAN]
-    df_1["exog"] = [6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
-    df_2["segment"] = "Omsk"
-    df_2["target"] = [10.0, 20.0, 30.0, 40.0, 50.0, np.NAN, np.NAN]
-    df_2["exog"] = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
-    classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df, freq="D")
+def mean_segment_encoder_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=2, start_time="2001-01-01", periods=5)
+    df["target"] = [0.0, 1.0, np.NaN, 3.0, 4.0] + [np.NaN, 1.0, 2.0, 3.0, 4.0]
+
+    ts = TSDataset(df=df, freq="D")
     return ts
 
 
 @pytest.fixture
-def transformed_simple_df() -> pd.DataFrame:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-06-07", freq="D")})
-    df_1["segment"] = "Moscow"
-    df_1["target"] = [1.0, 2.0, 3.0, 4.0, 5.0, np.NAN, np.NAN]
-    df_1["exog"] = [6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
-    df_1["segment_mean"] = [1, 1.5, 2, 2.5, 3, 3, 3]
-    df_2["segment"] = "Omsk"
-    df_2["target"] = [10.0, 20.0, 30.0, 40.0, 50.0, np.NAN, np.NAN]
-    df_2["exog"] = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
-    df_2["segment_mean"] = [10.0, 15.0, 20.0, 25.0, 30, 30, 30]
-    classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    df = TSDataset.to_dataset(classic_df)
-    return df
+def expected_mean_segment_encoder_ts() -> TSDataset:
+    df = generate_ar_df(n_segments=2, start_time="2001-01-01", periods=5)
+    df["target"] = [0.0, 1.0, np.NaN, 3.0, 4.0] + [np.NaN, 1.0, 2.0, 3.0, 4.0]
+    df["segment_mean"] = [np.NaN, 0, 0.5, 0.5, 1.33] + [np.NaN, np.NaN, 1, 1.5, 2.0]
+
+    ts = TSDataset(df=df, freq="D")
+    return ts
+
+
+@pytest.fixture
+def expected_make_future_mean_segment_encoder_ts() -> TSDataset:
+    df = generate_ar_df(start_time="2001-01-06", periods=2, n_segments=2)
+    df["target"] = [np.NaN, np.NaN] + [np.NaN, np.NaN]
+    df["segment_mean"] = [2.0, 2.0] + [2.5, 2.5]
+
+    ts = TSDataset(df=df, freq="D")
+    return ts

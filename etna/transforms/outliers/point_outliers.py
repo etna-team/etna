@@ -14,6 +14,7 @@ from etna import SETTINGS
 from etna.analysis import get_anomalies_density
 from etna.analysis import get_anomalies_iqr
 from etna.analysis import get_anomalies_isolation_forest
+from etna.analysis import get_anomalies_mad
 from etna.analysis import get_anomalies_median
 from etna.analysis import get_anomalies_prediction_interval
 from etna.datasets import TSDataset
@@ -489,10 +490,102 @@ class IQROutlierTransform(OutliersTransform):
         }
 
 
+class MADOutlierTransform(OutliersTransform):
+    """Transform that uses :py:func:`~etna.analysis.outliers.rolling_statistics.get_anomalies_mad` to find anomalies in data."""
+
+    def __init__(
+        self,
+        in_column: str = "target",
+        ignore_flag_column: Optional[str] = None,
+        window_size: int = 10,
+        stride: int = 1,
+        mad_scale: float = 3,
+        trend: bool = False,
+        seasonality: bool = False,
+        period: Optional[int] = None,
+        stl_params: Optional[Dict[str, Any]] = None,
+    ):
+        """Create instance of ``MADOutlierTransform``.
+
+        Parameters
+        ----------
+        in_column:
+            Name of the column in which the anomaly is searching
+        ignore_flag_column:
+            Column name for skipping values from outlier check
+        window_size:
+            Number of points in the window
+        stride:
+            Offset between neighboring windows
+        mad_scale:
+            Scaling parameter of the estimated interval
+        trend:
+            Whether to remove trend from the series
+        seasonality:
+            Whether to remove seasonality from the series
+        period:
+            Periodicity of the sequence for STL
+        stl_params:
+            Other parameters for STL. See :py:class:`statsmodels.tsa.seasonal.STL`
+        """
+        self.window_size = window_size
+        self.stride = stride
+        self.mad_scale = mad_scale
+        self.trend = trend
+        self.seasonality = seasonality
+        self.period = period
+        self.stl_params = stl_params
+        super().__init__(in_column=in_column, ignore_flag_column=ignore_flag_column)
+
+    def detect_outliers(self, ts: TSDataset) -> Dict[str, pd.Series]:
+        """Call :py:func:`~etna.analysis.outliers.rolling_statistics.get_anomalies_mad` function with self parameters.
+
+        Parameters
+        ----------
+        ts:
+            Dataset to process
+
+        Returns
+        -------
+        :
+            Dict of outliers in format {segment: [outliers_timestamps]}
+        """
+        return get_anomalies_mad(
+            ts=ts,
+            in_column=self.in_column,
+            window_size=self.window_size,
+            stride=self.stride,
+            mad_scale=self.mad_scale,
+            trend=self.trend,
+            seasonality=self.seasonality,
+            period=self.period,
+            stl_params=self.stl_params,
+            index_only=False,
+        )
+
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get default grid for tuning hyperparameters.
+
+        This grid tunes parameters: ``mad_scale``, ``trend``, ``seasonality``.
+        Other parameters are expected to be set by the user.
+
+        Returns
+        -------
+        :
+            Grid to tune.
+        """
+        return {
+            "mad_scale": FloatDistribution(low=0.5, high=10),
+            "trend": CategoricalDistribution([True, False]),
+            "seasonality": CategoricalDistribution([True, False]),
+        }
+
+
 __all__ = [
     "MedianOutliersTransform",
     "DensityOutliersTransform",
     "PredictionIntervalOutliersTransform",
     "IForestOutlierTransform",
     "IQROutlierTransform",
+    "MADOutlierTransform",
 ]

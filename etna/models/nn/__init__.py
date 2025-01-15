@@ -12,3 +12,10 @@ if SETTINGS.torch_required:
     from etna.models.nn.tft import TFTModel
     from etna.models.nn.tft_native import TFTNativeModel
     from etna.models.nn.utils import PytorchForecastingDatasetBuilder
+
+if SETTINGS.chronos_required:
+    from etna.models.nn.chronos import ChronosBoltModel
+    from etna.models.nn.chronos import ChronosModel
+
+if SETTINGS.timesfm_required:
+    from etna.models.nn.timesfm import TimesFMModel

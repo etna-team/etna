@@ -29,6 +29,7 @@ from etna.transforms import LambdaTransform
 from etna.transforms import LogTransform
 from etna.transforms.decomposition.change_points_based import RupturesChangePointsModel
 from etna.transforms.decomposition.change_points_based import SklearnRegressionPerIntervalModel
+from tests.test_core.conftest import BaseDummy
 
 
 def ensemble_samples():
@@ -205,3 +206,8 @@ class _InvalidParsing(BaseMixin):
 def test_warnings():
     with pytest.warns(Warning, match="Some of external objects in input parameters could be not written in dict"):
         _ = _InvalidParsing(_Dummy()).to_dict()
+
+
+def test_to_dict_public_property_private_attribute():
+    dummy = BaseDummy(a=1, b=2)
+    assert dummy.to_dict() == {"a": 1, "b": 2, "_target_": "tests.test_core.conftest.BaseDummy"}

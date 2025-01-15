@@ -680,6 +680,22 @@ class TSDataset:
         return self._regressors
 
     @property
+    def features(self) -> List[str]:
+        """Get list of all features across all segments in dataset.
+
+        All features include initial exogenous data, generated features, target, target components, prediction intervals.
+        The order of features in returned list isn't specified.
+
+        If different segments have different subset of features, then the union of features is returned.
+
+        Returns
+        -------
+        :
+            List of features.
+        """
+        return self.df.columns.get_level_values("feature").unique().tolist()
+
+    @property
     def target_components_names(self) -> Tuple[str, ...]:
         """Get tuple with target components names. Components sum up to target. Return the empty tuple in case of components absence."""
         return self._target_components_names
@@ -886,7 +902,7 @@ class TSDataset:
                 if features == "all":
                     return self.df.copy()
                 raise ValueError("The only possible literal is 'all'")
-            segments = self.columns.get_level_values("segment").unique().tolist()
+            segments = self.segments
             return self.df.loc[:, self.idx[segments, features]].copy()
         return self.to_flatten(self.df, features=features)
 
@@ -1132,6 +1148,9 @@ class TSDataset:
 
         In case of inconsistencies between ``test_size`` and (``test_start``, ``test_end``), ``test_size`` is ignored
 
+        During splitting all the features are kept in train and test parts including target, regressors,
+        target components, prediction intervals.
+
         Parameters
         ----------
         train_start:
@@ -1194,33 +1213,47 @@ class TSDataset:
         if train_start_defined < self.df.index.min():
             warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
 
-        train_df = self.df.loc[train_start_defined:train_end_defined][self.raw_df.columns]  # type: ignore
-        train_raw_df = self.raw_df.loc[train_start_defined:train_end_defined]  # type: ignore
-        train = TSDataset(
-            df=train_df,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        train.raw_df = train_raw_df
-        train._regressors = deepcopy(self.regressors)
-        train._target_components_names = deepcopy(self.target_components_names)
-        train._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+        self_df = self.df
+        self_raw_df = self.raw_df
+        try:
+            # we do this to avoid redundant copying of data
+            self.df = None
+            self.raw_df = None
+            train = deepcopy(self)
 
-        test_df = self.df.loc[test_start_defined:test_end_defined][self.raw_df.columns]  # type: ignore
-        test_raw_df = self.raw_df.loc[train_start_defined:test_end_defined]  # type: ignore
-        test = TSDataset(
-            df=test_df,
-            df_exog=self.df_exog,
-            freq=self.freq,
-            known_future=self.known_future,
-            hierarchical_structure=self.hierarchical_structure,
-        )
-        test.raw_df = test_raw_df
-        test._regressors = deepcopy(self.regressors)
-        test._target_components_names = deepcopy(self.target_components_names)
-        test._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
+            # we want to make sure it makes only one copy
+            train_df = self_df.loc[train_start_defined:train_end_defined]
+            if train_df._is_view or train_df._is_copy is not None:
+                train.df = train_df.copy()
+            else:
+                train.df = train_df
+
+            # we want to make sure it makes only one copy
+            train_raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
+            if train_raw_df._is_view or train_raw_df._is_copy is not None:
+                train.raw_df = train_raw_df.copy()
+            else:
+                train.raw_df = train_raw_df
+
+            # we want to make sure it makes only one copy
+            test = deepcopy(self)
+            test_df = self_df.loc[test_start_defined:test_end_defined]
+            if test_df._is_view or test_df._is_copy is not None:
+                test.df = test_df.copy()
+            else:
+                test.df = test_df
+
+            # we want to make sure it makes only one copy
+            test_raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
+            if test_raw_df._is_view or test_raw_df._is_copy is not None:
+                test.raw_df = test_raw_df.copy()
+            else:
+                test.raw_df = test_raw_df
+
+        finally:
+            self.df = self_df
+            self.raw_df = self_raw_df
+
         return train, test
 
     def update_columns_from_pandas(self, df_update: pd.DataFrame):
@@ -1234,11 +1267,32 @@ class TSDataset:
         ----------
         df_update:
             Dataframe with new values in wide ETNA format.
+
+        Raises
+        ------
+        ValueError:
+            If timestamps do not match
+        ValueError:
+            If there are columns in the update dataframe that are not presented in the dataset
+        ValueError:
+            If there are duplicate features in the dataset (columns with the same name)
         """
-        columns_to_update = sorted(set(df_update.columns.get_level_values("feature")))
-        self.df.loc[:, self.idx[self.segments, columns_to_update]] = df_update.loc[
-            : self.df.index.max(), self.idx[self.segments, columns_to_update]
-        ]
+        df = df_update.loc[self.df.index.min() : self.df.index.max()]
+
+        if not df.index.equals(self.df.index):
+            raise ValueError("Non matching timestamps detected when attempted to update the dataset!")
+
+        if len(df.columns.difference(self.df.columns)) > 0:
+            raise ValueError("Some columns in the dataframe for update are not presented in the dataset!")
+
+        try:
+            column_idx = self.df.columns.get_indexer(df.columns)
+
+        # some older pandas versions <1.3 throw `ValueError`
+        except (pd.errors.InvalidIndexError, ValueError):
+            raise ValueError("The dataset features set contains duplicates!")
+
+        self.df.iloc[:, column_idx] = df
 
     def add_columns_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
@@ -1280,7 +1334,7 @@ class TSDataset:
         Raises
         ------
         ValueError:
-            If ``features`` list contains target components
+            If ``features`` list contains target or target components
         """
         features_set = set(features)
 
@@ -1295,6 +1349,9 @@ class TSDataset:
             raise ValueError(
                 "Prediction intervals can't be dropped from the dataset using this method! Use `drop_prediction_intervals` method!"
             )
+
+        if "target" in features_set:
+            raise ValueError(f"Target can't be dropped from the dataset!")
 
         dfs = [("df", self.df)]
         if drop_from_exog:
@@ -1590,9 +1647,15 @@ class TSDataset:
 
     def _gather_common_data(self) -> Dict[str, Any]:
         """Gather information about dataset in general."""
+        features = set(self.features)
+        exogs = (
+            features.difference({"target"})
+            .difference(self.prediction_intervals_names)
+            .difference(self.target_components_names)
+        )
         common_dict: Dict[str, Any] = {
             "num_segments": len(self.segments),
-            "num_exogs": self.df.columns.get_level_values("feature").difference(["target"]).nunique(),
+            "num_exogs": len(exogs),
             "num_regressors": len(self.regressors),
             "num_known_future": len(self.known_future),
             "freq": self.freq,

@@ -23,6 +23,7 @@ from typing_extensions import Protocol
 from etna.auto.optuna import ConfigSampler
 from etna.auto.optuna import Optuna
 from etna.auto.pool import Pool
+from etna.auto.pool import PoolGenerator
 from etna.auto.runner import AbstractRunner
 from etna.auto.runner import LocalRunner
 from etna.auto.utils import config_hash
@@ -214,7 +215,7 @@ class Auto(AutoBase):
         metric_aggregation: MetricAggregationStatistics = "mean",
         backtest_params: Optional[dict] = None,
         experiment_folder: Optional[str] = None,
-        pool: Union[Pool, List[BasePipeline]] = Pool.default,
+        pool: Union[Pool, PoolGenerator, List[BasePipeline]] = Pool.default,
         runner: Optional[AbstractRunner] = None,
         storage: Optional[BaseStorage] = None,
         metrics: Optional[List[Metric]] = None,
@@ -265,9 +266,11 @@ class Auto(AutoBase):
         self._pool_folder = f"{root_folder}pool"
 
     @staticmethod
-    def _make_pool(pool: Union[Pool, List[BasePipeline]], horizon: int) -> List[BasePipeline]:
+    def _make_pool(pool: Union[Pool, PoolGenerator, List[BasePipeline]], horizon: int) -> List[BasePipeline]:
         if isinstance(pool, Pool):
             list_pool: List[BasePipeline] = list(pool.value.generate(horizon=horizon))
+        elif isinstance(pool, PoolGenerator):
+            list_pool = list(pool.generate(horizon=horizon))
         else:
             list_pool = list(pool)
 
@@ -481,7 +484,11 @@ class Auto(AutoBase):
             for metric in aggregated_metrics:
                 trial.set_user_attr(metric, aggregated_metrics[metric])
 
-            return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+            result_value = aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+            if result_value is None:
+                raise ValueError("Metric value is None! It should be float for optimization.")
+
+            return result_value
 
         return _objective
 
@@ -806,7 +813,11 @@ class Tune(AutoBase):
                 for metric in aggregated_metrics:
                     trial.set_user_attr(metric, aggregated_metrics[metric])
 
-                return aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+                result_value = aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
+                if result_value is None:
+                    raise ValueError("Metric value is None! It should be float for optimization.")
+
+                return result_value
 
         return _objective
 

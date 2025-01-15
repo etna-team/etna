@@ -105,12 +105,11 @@ def test_deepar_make_samples(df_name, scale, weights, cat_columns, request):
     num_samples_check = 2
     df["target_shifted"] = df["target"].shift(1)
     for i in range(num_samples_check):
-        df[f"target_shifted_scaled_{i}"] = df["target_shifted"] / weights[i]
         expected_sample = {
-            "encoder_real": df[[f"target_shifted_scaled_{i}", "regressor_float", "regressor_int"]]
+            "encoder_real": df[["target_shifted", "regressor_float", "regressor_int"]]
             .iloc[1 + i : encoder_length + i]
             .values,
-            "decoder_real": df[[f"target_shifted_scaled_{i}", "regressor_float", "regressor_int"]]
+            "decoder_real": df[["target_shifted", "regressor_float", "regressor_int"]]
             .iloc[encoder_length + i : encoder_length + decoder_length + i]
             .values,
             "encoder_categorical": {
@@ -138,6 +137,12 @@ def test_deepar_make_samples(df_name, scale, weights, cat_columns, request):
         assert ts_samples[i]["segment"] == "segment_1"
         for key in expected_sample:
             np.testing.assert_equal(ts_samples[i][key], expected_sample[key])
+            if "categorical" in key:
+                for column in ts_samples[i][key]:
+                    assert ts_samples[i][key][column].base is not None
+            else:
+                if key != "weight":
+                    assert ts_samples[i][key].base is not None
 
 
 @pytest.mark.parametrize("encoder_length", [1, 2, 10])

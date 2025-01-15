@@ -38,6 +38,8 @@ Decomposition transforms and their utilities:
    STLTransform
    TheilSenTrendTransform
    TrendTransform
+   FourierDecomposeTransform
+   ModelDecomposeTransform
    decomposition.RupturesChangePointsModel
    decomposition.StatisticsPerIntervalModel
    decomposition.MeanPerIntervalModel
@@ -52,6 +54,7 @@ Categorical encoding transforms:
    :template: class.rst
 
    SegmentEncoderTransform
+   MeanEncoderTransform
    MeanSegmentEncoderTransform
    LabelEncoderTransform
    OneHotEncoderTransform
@@ -99,6 +102,7 @@ Transforms to detect outliers:
    PredictionIntervalOutliersTransform
    IForestOutlierTransform
    IQROutlierTransform
+   MADOutlierTransform
 
 Transforms to work with time-related features:
 

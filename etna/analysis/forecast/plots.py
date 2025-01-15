@@ -25,6 +25,8 @@ from sklearn.metrics import r2_score
 from statsmodels.graphics.gofplots import qqplot
 from typing_extensions import Literal
 
+from etna.analysis.forecast.utils import _check_metrics_df_empty_segments
+from etna.analysis.forecast.utils import _check_metrics_df_same_folds_for_each_segment
 from etna.analysis.forecast.utils import _prepare_forecast_results
 from etna.analysis.forecast.utils import _select_prediction_intervals_names
 from etna.analysis.forecast.utils import _validate_intersecting_segments
@@ -124,11 +126,6 @@ def plot_forecast(
     if prediction_intervals:
         prediction_intervals_names = _select_prediction_intervals_names(forecast_results, quantiles)
 
-    if train_ts is not None:
-        train_ts.df.sort_values(by="timestamp", inplace=True)
-    if test_ts is not None:
-        test_ts.df.sort_values(by="timestamp", inplace=True)
-
     for i, segment in enumerate(segments):
         if train_ts is not None:
             segment_train_df = train_ts[:, segment, :][segment]
@@ -148,20 +145,27 @@ def plot_forecast(
             plot_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
         if (train_ts is not None) and (n_train_samples != 0):
-            ax[i].plot(plot_df.index.values, plot_df.target.values, label="train")
+            marker = None if len(plot_df) > 1 else "o"
+            ax[i].plot(plot_df.index.values, plot_df.target.values, label="train", marker=marker)
         if test_ts is not None:
-            ax[i].plot(segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test")
+            marker = None if len(segment_test_df) > 1 else "o"
+            ax[i].plot(
+                segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test", marker=marker
+            )
 
         # plot forecast plot for each of given forecasts
         for forecast_name, forecast in forecast_results.items():
             legend_prefix = f"{forecast_name}: " if num_forecasts > 1 else ""
 
-            segment_forecast_df = forecast[:, segment, :][segment].sort_values(by="timestamp")
+            segment_forecast_df = forecast[:, segment, :][segment]
+            marker = None if len(segment_forecast_df) > 1 else "o"
+
             line = ax[i].plot(
                 segment_forecast_df.index.values,
                 segment_forecast_df.target.values,
                 linewidth=1,
                 label=f"{legend_prefix}forecast",
+                marker=marker,
             )
             forecast_color = line[0].get_color()
 
@@ -187,7 +191,8 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_low,
                             values_high,
-                            facecolor=forecast_color,
+                            linewidth=3,
+                            color=forecast_color,
                             alpha=alpha[interval_idx],
                             label=f"{legend_prefix}{low_border}-{high_border}",
                         )
@@ -201,7 +206,8 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_low,
                             values_next,
-                            facecolor=forecast_color,
+                            linewidth=3,
+                            color=forecast_color,
                             alpha=alpha[interval_idx],
                             label=f"{legend_prefix}{low_border}-{high_border}",
                         )
@@ -210,17 +216,19 @@ def plot_forecast(
                             segment_borders_df.index.values,
                             values_high,
                             values_prev,
-                            facecolor=forecast_color,
+                            linewidth=3,
+                            color=forecast_color,
                             alpha=alpha[interval_idx],
                         )
                 # when we can't find pair for border, we plot it separately
                 if len(prediction_intervals_names) % 2 != 0:
                     remaining_border = prediction_intervals_names[len(prediction_intervals_names) // 2]
                     values = segment_borders_df[remaining_border].values
+                    marker = "--" if len(values) > 1 else "d"
                     ax[i].plot(
                         segment_borders_df.index.values,
                         values,
-                        "--",
+                        marker,
                         color=forecast_color,
                         label=f"{legend_prefix}{remaining_border}",
                     )
@@ -681,6 +689,11 @@ def plot_metric_per_segment(
 ):
     """Plot barplot with per-segment metrics.
 
+    If for some segment all metric values are missing, it isn't plotted, and the warning is raised.
+
+    If some segments have different set of folds with non-missing metrics,
+    it can lead to incompatible values between folds. The warning is raised in such case.
+
     Parameters
     ----------
     metrics_df:
@@ -709,11 +722,21 @@ def plot_metric_per_segment(
         if ``metric_name`` isn't present in ``metrics_df``
     NotImplementedError:
         unknown ``per_fold_aggregation_mode`` is given
+
+    Warnings
+    --------
+    UserWarning:
+        There are segments with all missing metric values.
+    UserWarning:
+        Some segments have different set of folds to be aggregated on due to missing values.
     """
     if barplot_params is None:
         barplot_params = {}
 
     aggregation_mode = PerFoldAggregation(per_fold_aggregation_mode)
+
+    _check_metrics_df_empty_segments(metrics_df=metrics_df, metric_name=metric_name)
+    _check_metrics_df_same_folds_for_each_segment(metrics_df=metrics_df, metric_name=metric_name)
 
     plt.figure(figsize=figsize)
 
@@ -722,10 +745,13 @@ def plot_metric_per_segment(
 
     if "fold_number" in metrics_df.columns:
         metrics_dict = (
-            metrics_df.groupby("segment").agg({metric_name: aggregation_mode.get_function()}).to_dict()[metric_name]
+            metrics_df.groupby("segment")
+            .agg({metric_name: aggregation_mode.get_function()})
+            .dropna()
+            .to_dict()[metric_name]
         )
     else:
-        metrics_dict = metrics_df["segment", metric_name].to_dict()[metric_name]
+        metrics_dict = metrics_df[["segment", metric_name]].set_index("segment").dropna().to_dict()[metric_name]
 
     segments = np.array(list(metrics_dict.keys()))
     values = np.array(list(metrics_dict.values()))
@@ -777,7 +803,12 @@ def metric_per_segment_distribution_plot(
     seaborn_params: Optional[Dict[str, Any]] = None,
     figsize: Tuple[int, int] = (10, 5),
 ):
-    """Plot per-segment metrics distribution.
+    """Plot distribution of metric values over all segments.
+
+    If for some segment all metric values are missing, it isn't plotted, and the warning is raised.
+
+    If some segments have different set of folds with non-missing metrics,
+    it can lead to incompatible values between folds. The warning is raised in such case.
 
     Parameters
     ----------
@@ -805,6 +836,13 @@ def metric_per_segment_distribution_plot(
         if ``metric_name`` isn't present in ``metrics_df``
     NotImplementedError:
         unknown ``per_fold_aggregation_mode`` is given
+
+    Warnings
+    --------
+    UserWarning:
+        There are segments with all missing metric values.
+    UserWarning:
+        Some segments have different set of folds to be aggregated on due to missing values.
     """
     if seaborn_params is None:
         seaborn_params = {}
@@ -817,6 +855,9 @@ def metric_per_segment_distribution_plot(
 
     if metric_name not in metrics_df.columns:
         raise ValueError("Given metric_name isn't present in metrics_df")
+
+    _check_metrics_df_empty_segments(metrics_df=metrics_df, metric_name=metric_name)
+    _check_metrics_df_same_folds_for_each_segment(metrics_df=metrics_df, metric_name=metric_name)
 
     # draw plot for each fold
     if per_fold_aggregation_mode is None and "fold_number" in metrics_df.columns:
@@ -898,9 +939,9 @@ def plot_forecast_decomposition(
     components_mode = ComponentsMode(mode)
 
     if segments is None:
-        segments = list(forecast_ts.columns.get_level_values("segment").unique())
+        segments = forecast_ts.segments
 
-    column_names = set(forecast_ts.columns.get_level_values("feature"))
+    column_names = set(forecast_ts.features)
     components = list(match_target_components(column_names))
 
     if len(components) == 0:
@@ -914,9 +955,6 @@ def plot_forecast_decomposition(
 
     _, ax = _prepare_axes(num_plots=num_plots, columns_num=columns_num, figsize=figsize, set_grid=show_grid)
 
-    if test_ts is not None:
-        test_ts.df.sort_values(by="timestamp", inplace=True)
-
     alpha = 0.5 if components_mode == ComponentsMode.joint else 1.0
     ax_array = np.asarray(ax).reshape(-1, columns_num).T.ravel()
 
@@ -927,7 +965,7 @@ def plot_forecast_decomposition(
         else:
             segment_test_df = pd.DataFrame(columns=["timestamp", "target", "segment"])
 
-        segment_forecast_df = forecast_ts[:, segment, :][segment].sort_values(by="timestamp")
+        segment_forecast_df = forecast_ts[:, segment, :][segment]
 
         ax_array[i].set_title(segment)
 

@@ -15,7 +15,8 @@ models. To load them you choose dataset name and use the following code:
 
 The first time, it will take some time to download and save the dataset locally, the next times the data will be read from a file.
 In the example above, we load ``tourism`` dataset with monthly frequency. We also use ``parts="full"``, which means that we load
-the full dataset (each dataset has predefined parts to load).
+the full dataset (each dataset has predefined parts to load). For more details you can check 
+:py:func:`etna.datasets.load_dataset` API reference.
 
 List of internal datasets
 -------------------------

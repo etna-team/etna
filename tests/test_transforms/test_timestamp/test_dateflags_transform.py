@@ -191,12 +191,12 @@ def test_repr():
 def test_interface_correct_args_out_column(in_column: Optional[str], true_params: List[str], train_ts: TSDataset):
     """Test that transform generates correct column names using out_column parameter."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
-    segments = train_ts.columns.get_level_values("segment").unique()
+    segments = train_ts.segments
     out_column = "dateflags"
     for key in true_params:
         init_params[key] = True
     transform = DateFlagsTransform(**init_params, out_column=out_column, in_column=in_column)
-    initial_columns = train_ts.columns.get_level_values("feature").unique()
+    initial_columns = train_ts.features
 
     result = transform.fit_transform(train_ts).to_pandas()
 
@@ -244,14 +244,14 @@ def test_interface_correct_args_out_column(in_column: Optional[str], true_params
 def test_interface_correct_args_repr(in_column: Optional[str], true_params: List[str], train_ts: TSDataset):
     """Test that transform generates correct column names without setting out_column parameter."""
     init_params = deepcopy(INIT_PARAMS_TEMPLATE)
-    segments = train_ts.columns.get_level_values("segment").unique()
+    segments = train_ts.segments
     for key in true_params:
         if key in SPECIAL_DAYS_PARAMS:
             init_params[key] = SPECIAL_DAYS
         else:
             init_params[key] = True
     transform = DateFlagsTransform(**init_params, in_column=in_column)
-    initial_columns = train_ts.columns.get_level_values("feature").unique()
+    initial_columns = train_ts.features
 
     result = transform.fit_transform(deepcopy(train_ts)).to_pandas()
 

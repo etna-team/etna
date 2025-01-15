@@ -17,6 +17,7 @@ from etna.datasets.utils import infer_alignment
 from etna.datasets.utils import make_timestamp_df_from_alignment
 from etna.transforms import AddConstTransform
 from etna.transforms import DifferencingTransform
+from etna.transforms import LagTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -92,6 +93,38 @@ def ts_info() -> TSDataset:
     df.iloc[-3:, 1] = np.NaN
 
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=["regressor_1", "regressor_2"])
+    return ts
+
+
+@pytest.fixture
+def ts_info_with_components_and_quantiles() -> TSDataset:
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_1 = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "1"})
+    df_2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
+    df_3 = pd.DataFrame({"timestamp": timestamp, "target": 13, "segment": "3"})
+    df = pd.concat([df_1, df_2, df_3], ignore_index=True)
+    df = TSDataset.to_dataset(df)
+
+    ts = TSDataset(df=df, freq="D")
+
+    intervals_df = pd.concat(
+        [
+            df.rename({"target": "target_0.025"}, axis=1, level="feature") - 1,
+            df.rename({"target": "target_0.975"}, axis=1, level="feature") + 1,
+        ],
+        axis=1,
+    )
+    ts.add_prediction_intervals(intervals_df)
+
+    components_df = pd.concat(
+        [
+            df.rename({"target": "target_a"}, axis=1, level="feature") / 2,
+            df.rename({"target": "target_b"}, axis=1, level="feature") / 2,
+        ],
+        axis=1,
+    )
+    ts.add_target_components(components_df)
+
     return ts
 
 
@@ -324,6 +357,14 @@ def ts_with_target_components(target_components_df):
 def ts_with_prediction_intervals(ts_without_target_components, prediction_intervals_df):
     ts = deepcopy(ts_without_target_components)
     ts.add_prediction_intervals(prediction_intervals_df=prediction_intervals_df)
+    return ts
+
+
+@pytest.fixture()
+def ts_after_transform(example_tsds):
+    ts = example_tsds
+    transform = AddConstTransform(in_column="target", value=0, inplace=False, out_column="add_target")
+    ts.fit_transform(transforms=[transform])
     return ts
 
 
@@ -916,20 +957,45 @@ def test_train_test_split_pass_regressors_to_output(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     train, test = ts.train_test_split(test_size=5)
+    assert set(train.regressors).issubset(set(train.features))
+    assert set(test.regressors).issubset(set(test.features))
+    assert train.regressors == ts.regressors
+    assert test.regressors == ts.regressors
+
+
+def test_train_test_split_pass_transform_regressors_to_output(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts.fit_transform(transforms=[LagTransform(in_column="target", lags=[1, 2, 3])])
+    train, test = ts.train_test_split(test_size=5)
+    assert set(train.regressors).issubset(set(train.features))
+    assert set(test.regressors).issubset(set(test.features))
     assert train.regressors == ts.regressors
     assert test.regressors == ts.regressors
 
 
 def test_train_test_split_pass_target_components_to_output(ts_with_target_components):
     train, test = ts_with_target_components.train_test_split(test_size=5)
+    train_target_components = train.get_target_components()
+    test_target_components = test.get_target_components()
+    assert set(train.target_components_names).issubset(set(train.features))
+    assert set(test.target_components_names).issubset(set(test.features))
     assert sorted(train.target_components_names) == sorted(ts_with_target_components.target_components_names)
     assert sorted(test.target_components_names) == sorted(ts_with_target_components.target_components_names)
+    assert set(train_target_components.columns.get_level_values("feature")) == set(train.target_components_names)
+    assert set(test_target_components.columns.get_level_values("feature")) == set(test.target_components_names)
 
 
 def test_train_test_split_pass_prediction_intervals_to_output(ts_with_prediction_intervals):
     train, test = ts_with_prediction_intervals.train_test_split(test_size=5)
+    train_prediction_intervals = train.get_prediction_intervals()
+    test_prediction_intervals = test.get_prediction_intervals()
+    assert set(train.prediction_intervals_names).issubset(set(train.features))
+    assert set(test.prediction_intervals_names).issubset(set(test.features))
     assert sorted(train.prediction_intervals_names) == sorted(ts_with_prediction_intervals.prediction_intervals_names)
     assert sorted(test.prediction_intervals_names) == sorted(ts_with_prediction_intervals.prediction_intervals_names)
+    assert set(train_prediction_intervals.columns.get_level_values("feature")) == set(train.prediction_intervals_names)
+    assert set(test_prediction_intervals.columns.get_level_values("feature")) == set(test.prediction_intervals_names)
 
 
 def test_to_dataset_datetime_conversion():
@@ -1337,14 +1403,25 @@ def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
         ts_diff_endings.fit_transform([])
 
 
-def test_gather_common_data(ts_info):
+@pytest.mark.parametrize(
+    "ts_name, expected_answer",
+    [
+        ("ts_info", {"num_segments": 3, "num_exogs": 2, "num_regressors": 2, "num_known_future": 2, "freq": "D"}),
+        (
+            "ts_info_with_components_and_quantiles",
+            {"num_segments": 3, "num_exogs": 0, "num_regressors": 0, "num_known_future": 0, "freq": "D"},
+        ),
+    ],
+)
+def test_gather_common_data(ts_name, expected_answer, request):
     """Check that TSDataset._gather_common_data correctly finds common data for info/describe methods."""
-    common_data = ts_info._gather_common_data()
-    assert common_data["num_segments"] == 3
-    assert common_data["num_exogs"] == 2
-    assert common_data["num_regressors"] == 2
-    assert common_data["num_known_future"] == 2
-    assert common_data["freq"] == "D"
+    ts = request.getfixturevalue(ts_name)
+    common_data = ts._gather_common_data()
+    assert common_data["num_segments"] == expected_answer["num_segments"]
+    assert common_data["num_exogs"] == expected_answer["num_exogs"]
+    assert common_data["num_regressors"] == expected_answer["num_regressors"]
+    assert common_data["num_known_future"] == expected_answer["num_known_future"]
+    assert common_data["freq"] == expected_answer["freq"]
 
 
 def test_gather_segments_data(ts_info):
@@ -1488,6 +1565,32 @@ def test_add_columns_from_pandas_update_regressors(
     assert sorted(ts.regressors) == sorted(expected_regressors)
 
 
+@pytest.mark.parametrize("update_slice", (slice(4, -4), slice(None, None, 2)))
+def test_update_columns_from_pandas_invalid_timestamps(df_and_regressors, update_slice, df_update_update_column):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    with pytest.raises(ValueError, match="Non matching timestamps detected when attempted to update the dataset!"):
+        ts.update_columns_from_pandas(df_update=df_update_update_column.iloc[update_slice])
+
+
+def test_update_columns_from_pandas_invalid_columns_error(df_and_regressors, df_update_update_column):
+    df, _, _ = df_and_regressors
+    df_update = df_update_update_column.rename({"1": "new"}, axis=1, level=0)
+    ts = TSDataset(df=df, freq="D")
+    with pytest.raises(ValueError, match="Some columns in the dataframe for update are not presented in the dataset!"):
+        ts.update_columns_from_pandas(df_update=df_update)
+
+
+def test_update_columns_from_pandas_duplicate_columns_error(df_and_regressors, df_update_update_column):
+    df, _, _ = df_and_regressors
+    df_exog = df.rename(columns={"target": "new"}, level=1)
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts.df = pd.concat([ts.df, df_exog], axis=1)
+
+    with pytest.raises(ValueError, match="The dataset features set contains duplicates!"):
+        ts.update_columns_from_pandas(df_update=df_update_update_column)
+
+
 def test_update_columns_from_pandas(df_and_regressors, df_update_update_column, df_updated_update_column):
     df, _, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D")
@@ -1541,7 +1644,7 @@ def test_drop_features_raise_warning_on_unknown_columns(
 @pytest.mark.parametrize(
     "features, expected_regressors",
     (
-        (["target", "regressor_2"], ["regressor_1"]),
+        (["regressor_2"], ["regressor_1"]),
         (["out_of_dataset_column"], ["regressor_1", "regressor_2"]),
     ),
 )
@@ -1550,6 +1653,13 @@ def test_drop_features_update_regressors(df_and_regressors, features, expected_r
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=False)
     assert sorted(ts.regressors) == sorted(expected_regressors)
+
+
+def test_drop_features_throw_error_on_target(df_and_regressors):
+    df, df_exog, known_future = df_and_regressors
+    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    with pytest.raises(ValueError, match="Target can't be dropped from the dataset!"):
+        ts.drop_features(features=["target"], drop_from_exog=False)
 
 
 def test_drop_features_throw_error_on_target_components(ts_with_target_components):
@@ -1925,3 +2035,19 @@ def test_create_from_misaligned_fail_name_intersection(
             future_steps=future_steps,
             known_future=known_future,
         )
+
+
+@pytest.mark.parametrize(
+    "ts_name, expected_features",
+    [
+        ("example_tsds", ["target"]),
+        ("tsdf_with_exog", ["target", "exog"]),
+        ("ts_after_transform", ["target", "add_target"]),
+        ("ts_with_prediction_intervals", ["target", "target_0.1", "target_0.9"]),
+        ("ts_with_target_components", ["target", "target_component_a", "target_component_b"]),
+    ],
+)
+def test_features(ts_name, expected_features, request):
+    ts = request.getfixturevalue(ts_name)
+    features = ts.features
+    assert sorted(features) == sorted(expected_features)

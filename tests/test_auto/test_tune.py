@@ -21,22 +21,35 @@ from etna.pipeline.hierarchical_pipeline import HierarchicalPipeline
 from etna.reconciliation import BottomUpReconciliator
 from etna.transforms import AddConstTransform
 from etna.transforms import DateFlagsTransform
+from etna.transforms import TimeSeriesImputerTransform
 
 
+@pytest.mark.parametrize(
+    "ts_name",
+    [
+        "example_tsds",
+        "ts_with_few_missing",
+        "ts_with_fold_missing_tail",
+        "ts_with_fold_missing_middle",
+        "ts_with_all_folds_missing_one_segment",
+    ],
+)
 def test_objective(
-    example_tsds,
-    target_metric=MAE(),
+    ts_name,
+    request,
+    target_metric=MAE(missing_mode="ignore"),
     metric_aggregation: Literal["mean"] = "mean",
-    metrics=[MAE()],
+    metrics=[MAE(missing_mode="ignore")],
     backtest_params={},
-    initializer=MagicMock(spec=_Initializer),
-    callback=MagicMock(spec=_Callback),
-    pipeline=Pipeline(NaiveModel()),
+    pipeline=Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform()], horizon=7),
     params_to_tune={},
 ):
+    ts = request.getfixturevalue(ts_name)
+    initializer = MagicMock(spec=_Initializer)
+    callback = MagicMock(spec=_Callback)
     trial = MagicMock()
     _objective = Tune.objective(
-        ts=example_tsds,
+        ts=ts,
         pipeline=pipeline,
         params_to_tune=params_to_tune,
         target_metric=target_metric,
@@ -51,6 +64,37 @@ def test_objective(
 
     initializer.assert_called_once()
     callback.assert_called_once()
+
+
+@pytest.mark.parametrize("ts_name", ["ts_with_all_folds_missing_all_segments"])
+def test_objective_fail_none(
+    ts_name,
+    request,
+    target_metric=MAE(missing_mode="ignore"),
+    metric_aggregation: Literal["mean"] = "mean",
+    metrics=[MAE(missing_mode="ignore")],
+    backtest_params={},
+    initializer=MagicMock(spec=_Initializer),
+    callback=MagicMock(spec=_Callback),
+    pipeline=Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform()], horizon=7),
+    params_to_tune={},
+):
+    ts = request.getfixturevalue(ts_name)
+    trial = MagicMock()
+    _objective = Tune.objective(
+        ts=ts,
+        pipeline=pipeline,
+        params_to_tune=params_to_tune,
+        target_metric=target_metric,
+        metric_aggregation=metric_aggregation,
+        metrics=metrics,
+        backtest_params=backtest_params,
+        initializer=initializer,
+        callback=callback,
+    )
+
+    with pytest.raises(ValueError, match="Metric value is None"):
+        _ = _objective(trial)
 
 
 def test_fit_called_tune(
@@ -92,6 +136,7 @@ def test_init_optuna(
     )
 
 
+@pytest.mark.filterwarnings("ignore: overflow encountered in multiply")
 @pytest.mark.parametrize(
     "params, model",
     [
@@ -165,23 +210,30 @@ def test_top_k(
     assert [pipeline.model.lag for pipeline in top_k] == [i for i in range(expected_k)]  # noqa C416
 
 
+@pytest.mark.parametrize("ts_name", ["example_tsds", "ts_with_few_missing"])
 @pytest.mark.parametrize(
     "pipeline",
     [
-        (Pipeline(NaiveModel(1), horizon=7)),
-        (AutoRegressivePipeline(model=NaiveModel(1), horizon=7, transforms=[])),
-        (AutoRegressivePipeline(model=NaiveModel(1), horizon=7, transforms=[DateFlagsTransform()])),
+        (Pipeline(NaiveModel(1), transforms=[TimeSeriesImputerTransform()], horizon=7)),
+        (AutoRegressivePipeline(model=NaiveModel(1), transforms=[TimeSeriesImputerTransform()], horizon=7)),
+        (
+            AutoRegressivePipeline(
+                model=NaiveModel(1), transforms=[DateFlagsTransform(), TimeSeriesImputerTransform()], horizon=7
+            )
+        ),
     ],
 )
-def test_tune_run(example_tsds, optuna_storage, pipeline):
+def test_tune_run(ts_name, optuna_storage, pipeline, request):
+    ts = request.getfixturevalue(ts_name)
     tune = Tune(
         pipeline=pipeline,
-        target_metric=MAE(),
+        target_metric=MAE(missing_mode="ignore"),
+        metrics=[MAE(missing_mode="ignore")],
         metric_aggregation="median",
         horizon=7,
         storage=optuna_storage,
     )
-    tune.fit(ts=example_tsds, n_trials=2)
+    tune.fit(ts=ts, n_trials=2)
 
     assert len(tune._optuna.study.trials) == 2
     assert len(tune.summary()) == 2

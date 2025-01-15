@@ -23,7 +23,9 @@ Available user extensions are the following:
 - ``wandb``: adds wandb logger,
 - ``auto``: adds AutoML functionality,
 - ``statsforecast``: adds models from `statsforecast <https://nixtla.github.io/statsforecast/>`_,
-- ``classiciation``: adds time series classification functionality.
+- ``classiciation``: adds time series classification functionality,
+- ``chronos``: adds Chronos-like pretrained models,
+- ``timesfm``: adds TimesFM pretrained models.
 
 Install extension:
 

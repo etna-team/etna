@@ -38,7 +38,7 @@ to SOTA neural networks, models combination methods and smart backtesting.
 ETNA is designed to make working with time series simple, productive, and fun. 
 
 ETNA is the first python open source framework of 
-[Tinkoff.ru](https://www.tinkoff.ru/eng/)
+[T-Bank.ru](https://www.tbank.ru)
 Artificial Intelligence Center. 
 The library started as an internal product in our company - 
 we use it in over 10+ projects now, so we often release updates. 
@@ -147,8 +147,10 @@ Available user extensions are the following:
 * `torch`: adds models based on neural nets,
 * `wandb`: adds wandb logger,
 * `auto`: adds AutoML functionality,
-* `statsforecast`: adds models from [statsforecast](https://nixtla.github.io/statsforecast/)
-* `classiciation`: adds time series classification functionality.
+* `statsforecast`: adds models from [statsforecast](https://nixtla.github.io/statsforecast/),
+* `classiciation`: adds time series classification functionality,
+* `chronos`: adds Chronos-like pretrained models,
+* `timesfm`: adds TimesFM pretrained models.
 
 Install extension:
 ```bash
@@ -204,7 +206,16 @@ ETNA documentation is available [here](https://docs.etna.ai/stable/).
 
 ## Community
 
-To ask the questions or discuss the library you can join our [telegram chat](https://t.me/etna_support). 
+Questions and feedback are welcome! Our channels for communication:
+- [Discussions](https://github.com/etna-team/etna/discussions)
+  - Suggestions with ideas and drawbacks
+  - Q&A, e.g. usage questions
+  - General discussions
+- [Issue tracker](https://github.com/etna-team/etna/issues)
+  - Bug reports
+  - Tasks
+- [Telegram chat](https://t.me/etna_support)
+  - Useful for any other form of communication
 
 ## Resources
 
@@ -245,37 +256,44 @@ Current team members:
 [Aleksandr Chikov](https://github.com/alex-hse-repository),
 [Vladislav Denisov](https://github.com/v-v-denisov),
 [Martin Gabdushev](https://github.com/martins0n),
-[Sergey Kolesnikov](https://github.com/Scitator),
 [Artem Makhin](https://github.com/Ama16),
 [Ivan Mitskovets](https://github.com/imitskovets),
 [Albina Munirova](https://github.com/albinamunirova),
 [Ivan Nedosekov](https://github.com/GrozniyToaster),
-[Rodion Petrov](https://github.com/Noidor1)
-[Maxim Zherelo](https://github.com/brsnw250)
-[Yakov Malyshev](https://github.com/ostreech1997)
-[Egor Baturin](https://github.com/egoriyaa)
-[Alexandr Kuznetsov](https://github.com/Alexander76Kuznetsov),
+[Rodion Petrov](https://github.com/Noidor1),
+[Maxim Zherelo](https://github.com/brsnw250),
+[Yakov Malyshev](https://github.com/ostreech1997),
+[Egor Baturin](https://github.com/egoriyaa),
+[Mikhail Bolev](https://github.com/kenshi777),
+[Danil Smorchkov](https://github.com/DanilSmorchkov),
 
 Former team members:
 [Andrey Alekseev](https://github.com/iKintosh),
 [Nikita Barinov](https://github.com/diadorer),
 [Julia Shenshina](https://github.com/julia-shenshina),
+[Sergey Kolesnikov](https://github.com/Scitator),
 [Yuriy Tarasyuk](https://github.com/DBcreator),
 [Konstantin Vedernikov](https://github.com/scanhex12),
 [Nikolai Romantsov](https://github.com/WinstonDovlatov),
 [Sergei Zhuravlev](https://github.com/malodetz),
+[Alexandr Kuznetsov](https://github.com/Alexander76Kuznetsov),
+[Grigory Zlotin](https://github.com/yellowssnake),
+[Dmitriy Sablin](https://github.com/Polzovat123),
 [Artem Levashov](https://github.com/soft1q),
 [Aleksey Podkidyshev](https://github.com/alekseyen)
 
 ### ETNA.Contributors
 
 [GooseIt](https://github.com/GooseIt),
-[smetam](https://github.com/smetam),
-[aleksander43smith](https://github.com/aleksander43smith),
-[looopka](https://github.com/looopka),
 [mvakhmenin](https://github.com/mvakhmenin),
+[looopka](https://github.com/looopka),
+[aleksander43smith](https://github.com/aleksander43smith),
+[smetam](https://github.com/smetam),
+[Wapwolf](https://github.com/Wapwolf),
+[ArtemLiA](https://github.com/ArtemLiA),
 [Carlosbogo](https://github.com/Carlosbogo),
 [GoshaLetov](https://github.com/GoshaLetov),
+[LeorFinkelberg](https://github.com/LeorFinkelberg),
 [Pacman1984](https://github.com/Pacman1984),
 
 ## License

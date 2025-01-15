@@ -180,3 +180,57 @@ def test_backtest_estimate_n_folds(
     )
     forecast_df = pd.read_csv(tmp_output_path / "forecast.csv")
     assert forecast_df["fold_number"].nunique() == expected
+
+
+def test_backtest_with_numeric_segments(
+    base_pipeline_yaml_path,
+    base_backtest_yaml_path,
+    base_timeseries_numeric_segments_path,
+):
+    target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
+    segments = target["segment"].unique()
+
+    tmp_output = TemporaryDirectory()
+    tmp_output_path = Path(tmp_output.name)
+    run(
+        [
+            "etna",
+            "backtest",
+            str(base_pipeline_yaml_path),
+            str(base_backtest_yaml_path),
+            str(base_timeseries_numeric_segments_path),
+            "D",
+            str(tmp_output_path),
+        ]
+    )
+    df_forecast = pd.read_csv(tmp_output_path / "forecast.csv", dtype={"segment": str})
+    output_segments = df_forecast["segment"].unique()
+    assert set(segments) == set(output_segments)
+
+
+def test_backtest_with_numeric_segments_with_exog(
+    base_pipeline_yaml_path,
+    base_backtest_yaml_path,
+    base_timeseries_numeric_segments_path,
+    base_timeseries_numeric_segments_exog_path,
+):
+    target = pd.read_csv(base_timeseries_numeric_segments_path, dtype={"segment": str})
+    segments = target["segment"].unique()
+
+    tmp_output = TemporaryDirectory()
+    tmp_output_path = Path(tmp_output.name)
+    run(
+        [
+            "etna",
+            "backtest",
+            str(base_pipeline_yaml_path),
+            str(base_backtest_yaml_path),
+            str(base_timeseries_numeric_segments_path),
+            "D",
+            str(tmp_output_path),
+            str(base_timeseries_numeric_segments_exog_path),
+        ]
+    )
+    df_forecast = pd.read_csv(tmp_output_path / "forecast.csv", dtype={"segment": str})
+    output_segments = df_forecast["segment"].unique()
+    assert set(segments) == set(output_segments)

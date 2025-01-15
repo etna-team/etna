@@ -38,6 +38,35 @@ def _is_torch_available():
         return False
 
 
+def _is_chronos_available():
+    true_case = (
+        _module_available("torch")
+        & _module_available("transformers")
+        & _module_available("accelerate")
+        & _module_available("huggingface_hub")
+    )
+    if true_case:
+        return True
+    else:
+        warnings.warn("etna[chronos] is not available, to install it, run `pip install etna[chronos]`")
+        return False
+
+
+def _is_timesfm_available():
+    true_case = (
+        _module_available("torch")
+        & _module_available("jax")
+        & _module_available("jaxlib")
+        & _module_available("huggingface_hub")
+        & _module_available("utilsforecast")
+    )
+    if true_case:
+        return True
+    else:
+        warnings.warn("etna[timesfm] is not available, to install it, run `pip install etna[timesfm]`")
+        return False
+
+
 def _is_wandb_available():
     if _module_available("wandb"):
         return True
@@ -105,6 +134,8 @@ class Settings:
     def __init__(  # noqa: D107
         self,
         torch_required: Optional[bool] = None,
+        chronos_required: Optional[bool] = None,
+        timesfm_required: Optional[bool] = None,
         prophet_required: Optional[bool] = None,
         wandb_required: Optional[bool] = None,
         classification_required: Optional[bool] = None,
@@ -119,6 +150,16 @@ class Settings:
             torch_required,
             _is_torch_available,
             "etna[torch] is not available, to install it, run `pip install etna[torch]`.",
+        )
+        self.chronos_required: bool = _get_optional_value(
+            chronos_required,
+            _is_chronos_available,
+            "etna[chronos] is not available, to install it, run `pip install etna[chronos]`.",
+        )
+        self.timesfm_required: bool = _get_optional_value(
+            timesfm_required,
+            _is_timesfm_available,
+            "etna[timesfm] is not available, to install it, run `pip install etna[timesfm]`.",
         )
         self.wandb_required: bool = _get_optional_value(
             wandb_required, _is_wandb_available, "wandb is not available, to install it, " "run `pip install wandb`."

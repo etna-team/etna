@@ -12,8 +12,10 @@ from etna.transforms.decomposition import ChangePointsLevelTransform
 from etna.transforms.decomposition import ChangePointsSegmentationTransform
 from etna.transforms.decomposition import ChangePointsTrendTransform
 from etna.transforms.decomposition import DeseasonalityTransform
+from etna.transforms.decomposition import FourierDecomposeTransform
 from etna.transforms.decomposition import IrreversibleChangePointsTransform
 from etna.transforms.decomposition import LinearTrendTransform
+from etna.transforms.decomposition import ModelDecomposeTransform
 from etna.transforms.decomposition import ReversibleChangePointsTransform
 from etna.transforms.decomposition import STLTransform
 from etna.transforms.decomposition import TheilSenTrendTransform
@@ -21,6 +23,7 @@ from etna.transforms.decomposition import TrendTransform
 from etna.transforms.embeddings import EmbeddingSegmentTransform
 from etna.transforms.embeddings import EmbeddingWindowTransform
 from etna.transforms.encoders import LabelEncoderTransform
+from etna.transforms.encoders import MeanEncoderTransform
 from etna.transforms.encoders import MeanSegmentEncoderTransform
 from etna.transforms.encoders import OneHotEncoderTransform
 from etna.transforms.encoders import SegmentEncoderTransform
@@ -57,6 +60,7 @@ from etna.transforms.missing_values import TimeSeriesImputerTransform
 from etna.transforms.outliers import DensityOutliersTransform
 from etna.transforms.outliers import IForestOutlierTransform
 from etna.transforms.outliers import IQROutlierTransform
+from etna.transforms.outliers import MADOutlierTransform
 from etna.transforms.outliers import MedianOutliersTransform
 from etna.transforms.outliers import PredictionIntervalOutliersTransform
 from etna.transforms.timestamp import DateFlagsTransform

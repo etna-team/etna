@@ -1,4 +1,5 @@
 import warnings
+from copy import deepcopy
 from typing import Sequence
 from typing import cast
 
@@ -20,7 +21,18 @@ from etna.transforms import Transform
 class AutoRegressivePipeline(
     ModelPipelinePredictMixin, ModelPipelineParamsToTuneMixin, SaveModelPipelineMixin, BasePipeline
 ):
-    """Pipeline that make regressive models autoregressive.
+    """
+    Pipeline that make regressive models autoregressive.
+
+    Makes forecast in several iterations, on each of them applies transforms and
+    predict ``step`` values by using forecast method of model.
+
+    See Also
+    --------
+    etna.pipeline.Pipeline:
+        Makes forecast in one iteration.
+    etna.ensembles.DirectEnsemble:
+        Makes forecast by merging the forecasts of base pipelines.
 
     Examples
     --------
@@ -83,6 +95,10 @@ class AutoRegressivePipeline(
 
         Fit and apply given transforms to the data, then fit the model on the transformed data.
 
+        Method doesn't change the given ``ts``.
+
+        Saved ``ts`` is the link to given ``ts``.
+
         Parameters
         ----------
         ts:
@@ -95,9 +111,9 @@ class AutoRegressivePipeline(
         :
             Fitted Pipeline instance
         """
-        ts.fit_transform(self.transforms)
-        self.model.fit(ts)
-        ts.inverse_transform(self.transforms)
+        cur_ts = deepcopy(ts)
+        cur_ts.fit_transform(self.transforms)
+        self.model.fit(cur_ts)
 
         if save_ts:
             self.ts = ts
@@ -128,6 +144,7 @@ class AutoRegressivePipeline(
                 freq=ts.freq,
                 df_exog=ts.df_exog,
                 known_future=ts.known_future,
+                hierarchical_structure=ts.hierarchical_structure,
             )
             with warnings.catch_warnings():
                 warnings.filterwarnings(
@@ -160,7 +177,13 @@ class AutoRegressivePipeline(
             prediction_df = prediction_df.combine_first(current_ts_future.to_pandas()[prediction_df.columns])
 
         # construct dataset and add all features
-        prediction_ts = TSDataset(df=prediction_df, freq=ts.freq, df_exog=ts.df_exog, known_future=ts.known_future)
+        prediction_ts = TSDataset(
+            df=prediction_df,
+            freq=ts.freq,
+            df_exog=ts.df_exog,
+            known_future=ts.known_future,
+            hierarchical_structure=ts.hierarchical_structure,
+        )
         prediction_ts.transform(self.transforms)
         prediction_ts.inverse_transform(self.transforms)
 

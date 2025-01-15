@@ -301,9 +301,9 @@ def test_backtest_w_transforms(market_level_constant_hierarchical_ts, reconcilia
     ts = market_level_constant_hierarchical_ts
     model = LinearPerSegmentModel()
     transforms = [
-        MeanTransform(in_column="target", window=2),
+        LagTransform(in_column="target", lags=[1], out_column="lag"),
+        MeanTransform(in_column="lag_1", window=2),
         LinearTrendTransform(in_column="target"),
-        LagTransform(in_column="target", lags=[1]),
     ]
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=1)
     metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)

@@ -7,16 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Add `get_anomalies_iqr` function for anomaly detection ([#374](https://github.com/etna-team/etna/pull/374))
-- Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
-- Add `IForestOutlierTransform` ([#381](https://github.com/etna-team/etna/pull/381))
-- Add `IQROutlierTransform` ([#387](https://github.com/etna-team/etna/pull/387))
+- 
+- 
+- 
+- 
+- 
+- 
+- 
 - 
 - 
 - 
 
 ### Changed
+- Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
 - 
+- Implement non-empty `params_to_tune` for `VotingEnsemble` ([#557](https://github.com/etna-team/etna/pull/557))
 - 
 - 
 - 
@@ -28,16 +33,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Fixed
+- Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
+- 
+- 
+- 
+- 
+- 
+- 
+- Fix `TSDataset.train_test_split` to pass all features to train and test parts ([#545](https://github.com/etna-team/etna/pull/545))
+- 
+
+## [2.10.0] - 2025-01-09
+### Added
+- Add `load_dataset` to public API ([#484](https://github.com/etna-team/etna/pull/484))
+- Add example of using custom pipeline pools in `Auto` ([#504](https://github.com/etna-team/etna/pull/504))
+- Add `MetricWithMissingHandling` base class, change signature of `etna.metrics.Metric` to return `None` values ([#514](https://github.com/etna-team/etna/pull/514))
+- Add `ChronosModel` ([#511](https://github.com/etna-team/etna/pull/511))
+- Add `ChronosBoltModel` ([#511](https://github.com/etna-team/etna/pull/511))
+- Add usage example of `ChronosModel` and `ChronosBoltModel` in `202-NN_examples` notebook ([#511](https://github.com/etna-team/etna/pull/511))
+- Add `TimesFMModel` ([#544](https://github.com/etna-team/etna/pull/544))
+- Add usage example of `TimesFMModel` in `202-NN_examples` notebook ([#544](https://github.com/etna-team/etna/pull/544))
+- Add `MissingCounter` metric ([#520](https://github.com/etna-team/etna/pull/520))
+
+### Changed
+- Add docstring warning about handling non-regressors (including target) to children of `WindowStatisticsTransform` ([#474](https://github.com/etna-team/etna/pull/474))
+- Add parameter `missing_mode` into `MSE` metric ([#515](https://github.com/etna-team/etna/pull/515))
+- Add parameter `missing_mode` into `MAE` metric ([#523](https://github.com/etna-team/etna/pull/523))
+- Add parameter `missing_mode` into `MAPE` and `SMAPE` metrics ([#524](https://github.com/etna-team/etna/pull/524))
+- Add parameter `missing_mode` into `Sign`, `WAPE` and `MaxDeviation` metrics ([#530](https://github.com/etna-team/etna/pull/530))
+- Add parameter `missing_mode` into `Coverage` and `Width` metrics ([#541](https://github.com/etna-team/etna/pull/541))
+- Update `aggregate_metrics_df` to work with `None` values ([#522](https://github.com/etna-team/etna/pull/522))
+- Rework validation of `FoldMask` to not fail on tail nans ([#536](https://github.com/etna-team/etna/pull/536))
+- Add parameter `missing_mode` into `R2` and `MedAE` metrics ([#537](https://github.com/etna-team/etna/pull/537))
+- Update `analysis.forecast.plots.plot_metric_per_segment` to handle `None` from metrics ([#540](https://github.com/etna-team/etna/pull/540))
+- Add parameter `missing_mode` into `RMSE` and `MSLE` metrics ([#542](https://github.com/etna-team/etna/pull/542))
+- Update `analysis.forecast.plots.metric_per_segment_distribution_plot` to handle `None` from metrics ([#543](https://github.com/etna-team/etna/pull/543))
+- Add example on using custom `params_to_tune` in `Tune` ([#547](https://github.com/etna-team/etna/pull/547))
+
+### Fixed
+- Fix working with `embedding_sizes` in `202-NN_examples` notebook ([#489](https://github.com/etna-team/etna/pull/489))
+- Disallow dropping target in `TSDataset.drop_features` ([#491](https://github.com/etna-team/etna/pull/491))
+- Optimize memory usage in `TFTNativeModel` by eliminating copying during making samples ([#494](https://github.com/etna-team/etna/pull/494))
+- Optimize memory usage in `DeepStateModel` and `DeepARNativeModel` by eliminating copying during making samples ([#499](https://github.com/etna-team/etna/pull/499))
+- Fix working with NaN target in `MeanEncoderTransform` ([#492](https://github.com/etna-team/etna/pull/492))
+- Fix `target` leakage in `MeanSegmentEncoderTransform` ([#503](https://github.com/etna-team/etna/pull/503))
+- Add handling scikit-learn version >= 1.4 in `OneHotEncoderTransform` and `HierarchicalClustering` ([#529](https://github.com/etna-team/etna/pull/529))
+
+## [2.9.0] - 2024-09-06
+### Added
+- Add `**kwargs` argument description for models based on `LinearRegression`, `ElasticNet` and `CatBoostRegressor` ([#454](https://github.com/etna-team/etna/pull/454))  
+- Add possibility to load pretrained embedding models ([#461](https://github.com/etna-team/etna/pull/461))
+- Add `is_freezed` parameter to `TS2VecEmbeddingModel` and `TSTCCEmbeddingModel` ([#461](https://github.com/etna-team/etna/pull/461))
+- Add test on working without extras ([#463](https://github.com/etna-team/etna/pull/463))
+
+### Changed
+- Add support of property attributes in `__repr__` and `to_dict` of `BaseMixin` ([#469](https://github.com/etna-team/etna/pull/469))
+
+### Fixed
+- Fix `IForestOutlierTransform` failed with ignored `target` column ([#460](https://github.com/etna-team/etna/pull/460))
+- Add lower limit for `typing_extension` versions ([#458](https://github.com/etna-team/etna/pull/458))
+- Fix `ModelDecomposeTransform` import without `prophet` module ([#459](https://github.com/etna-team/etna/pull/459))
+- Convert `segment` to string during reading csv in `backtest` and `forecast` commands ([#470](https://github.com/etna-team/etna/pull/470))
+- Fix holidays during loading datasets `traffic_2008_10T` and `traffic_2008_hourly` ([#462](https://github.com/etna-team/etna/pull/462))
+
+## [2.8.0] - 2024-08-13
+### Added
+- Add `get_anomalies_iqr` function for anomaly detection ([#374](https://github.com/etna-team/etna/pull/374))
+- Add `get_anomalies_isolation_forest` method for anomaly detection ([#375](https://github.com/etna-team/etna/pull/375))
+- Add `IForestOutlierTransform` ([#381](https://github.com/etna-team/etna/pull/381))
+- Add `IQROutlierTransform` ([#387](https://github.com/etna-team/etna/pull/387))
+- Add `num_workers` parameter to `TS2VecEmbeddingModel` ([#396](https://github.com/etna-team/etna/pull/396)) 
+- Add `get_anomalies_mad` function for anomaly detection ([#398](https://github.com/etna-team/etna/pull/398))
+- Add `TSDataset.features` property to get list of all features in a dataset ([#405](https://github.com/etna-team/etna/pull/405))
+- Add `MADOutlierTransform` class for anomaly detection ([#415](https://github.com/etna-team/etna/pull/415))
+- Add `MeanEncoderTransform` ([#413](https://github.com/etna-team/etna/pull/413))
+- Add `FourierDecomposeTransform` transform for series decomposition using DFT ([#430](https://github.com/etna-team/etna/pull/430))
+- Add `ModelDecomposeTransform` transform for series decomposition using ETNA models ([#427](https://github.com/etna-team/etna/pull/427))
+
+### Changed
+- Allow to change `device`, `batch_size` and `num_workers` of embedding models ([#396](https://github.com/etna-team/etna/pull/396))
+- Update pipelines documentation ([#408](https://github.com/etna-team/etna/pull/408))
+- Update formulas for metrics in documentation ([#406](https://github.com/etna-team/etna/pull/406))
+- Update documentation to explain how to contribute and work with discussions, update templates for issues ([#395](https://github.com/etna-team/etna/pull/395))
+- Remove "Other issue" template, update links to discussions in issue creation menu ([#401](https://github.com/etna-team/etna/pull/401))
+
+### Fixed
 - Fix rendering in 210 tutorial ([#386](https://github.com/etna-team/etna/pull/386))
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
-- 
+- Fix typo in 103 tutorial ([#408](https://github.com/etna-team/etna/pull/408))
+- Remove sorting of `ts.df` by timestamps in `plot_forecast` and `plot_forecast_decomposition` ([#410](https://github.com/etna-team/etna/pull/410))
+- Fix forecast visualization with `horizon=1` ([#426](https://github.com/etna-team/etna/pull/426))
+- Set upper bound `<2` on numpy version ([#431](https://github.com/etna-team/etna/pull/431))
+- Fix `VotingEnsemble`, `StackingEnsemble`, `DirectEnsemble` have a valid `params_to_tune` that returns empty dict ([#432](https://github.com/etna-team/etna/pull/432))
+- Fix passing custom model to `STLTransform` ([#412](https://github.com/etna-team/etna/pull/412))
+- Update `TSDataset.describe`, `TSDataset.info` to exclude target intervals and target components in `num_exogs` ([#405](https://github.com/etna-team/etna/pull/405))
 
 ## [2.7.1] - 2024-06-05
 ### Fixed

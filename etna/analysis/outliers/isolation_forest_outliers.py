@@ -15,7 +15,7 @@ from etna.datasets import TSDataset
 def _select_features(
     ts: TSDataset, in_column: str, features_to_use: Optional[Sequence[str]], features_to_ignore: Optional[Sequence[str]]
 ) -> pd.DataFrame:
-    features = ts.columns.get_level_values("feature")
+    features = ts.features
     if in_column not in features:
         raise ValueError(f"Feature {in_column} is not present in the dataset.")
 
@@ -35,7 +35,9 @@ def _select_features(
             "Changing the defaults there should be exactly one option set: features_to_use or features_to_ignore"
         )
     features_to_ignore = list(set(features_to_ignore) - {in_column})
-    df = df.drop(columns=features_to_ignore, level="feature")
+    if len(features_to_ignore) > 0:
+        df = df.drop(columns=features_to_ignore, level="feature")
+
     return df
 
 
