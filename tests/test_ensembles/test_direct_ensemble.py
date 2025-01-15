@@ -257,9 +257,9 @@ def test_params_to_tune_mocked(pipeline_0_tune_params, pipeline_1_tune_params, e
     pipeline_1.params_to_tune.return_value = pipeline_1_tune_params
     pipeline_1.horizon = 7
 
-    voting_ensemble_pipeline = DirectEnsemble(pipelines=[pipeline_0, pipeline_1])
+    ensemble_pipeline = DirectEnsemble(pipelines=[pipeline_0, pipeline_1])
 
-    assert voting_ensemble_pipeline.params_to_tune() == expected_tune_params
+    assert ensemble_pipeline.params_to_tune() == expected_tune_params
 
 
 @pytest.mark.parametrize(
@@ -302,9 +302,9 @@ def test_params_to_tune_mocked(pipeline_0_tune_params, pipeline_1_tune_params, e
     ],
 )
 def test_params_to_tune(pipelines, expected_params_to_tune):
-    voting_ensemble_pipeline = DirectEnsemble(pipelines=pipelines)
+    ensemble_pipeline = DirectEnsemble(pipelines=pipelines)
 
-    assert voting_ensemble_pipeline.params_to_tune() == expected_params_to_tune
+    assert ensemble_pipeline.params_to_tune() == expected_params_to_tune
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
