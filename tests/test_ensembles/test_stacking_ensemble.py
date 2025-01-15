@@ -10,19 +10,19 @@ import pandas as pd
 import pytest
 from typing_extensions import Literal
 
-from etna.transforms import DateFlagsTransform
-from etna.transforms import LagTransform
-from etna.transforms import StandardScalerTransform
+from etna.datasets import TSDataset
 from etna.distributions import CategoricalDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
+from etna.ensembles.stacking_ensemble import StackingEnsemble
+from etna.metrics import MAE
 from etna.models import CatBoostPerSegmentModel
 from etna.models import NaiveModel
 from etna.models import ProphetModel
-from etna.datasets import TSDataset
-from etna.ensembles.stacking_ensemble import StackingEnsemble
-from etna.metrics import MAE
 from etna.pipeline import Pipeline
+from etna.transforms import DateFlagsTransform
+from etna.transforms import LagTransform
+from etna.transforms import StandardScalerTransform
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
