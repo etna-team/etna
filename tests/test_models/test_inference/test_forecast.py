@@ -255,7 +255,7 @@ class TestForecastInSampleFullNoTarget:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -437,7 +437,7 @@ class TestForecastInSampleFull:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -540,7 +540,7 @@ class TestForecastInSampleSuffixNoTarget:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -674,7 +674,7 @@ class TestForecastInSampleSuffix:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -859,7 +859,7 @@ class TestForecastOutSample:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -971,7 +971,7 @@ class TestForecastOutSample:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1145,7 +1145,7 @@ class TestForecastOutSamplePrefix:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1366,7 +1366,7 @@ class TestForecastOutSampleSuffix:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1524,7 +1524,7 @@ class TestForecastMixedInOutSample:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1696,7 +1696,7 @@ class TestForecastSubsetSegments:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1883,7 +1883,7 @@ class TestForecastNewSegments:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],

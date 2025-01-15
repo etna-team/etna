@@ -89,7 +89,7 @@ def test_not_present_part():
             pd.to_datetime("2015-01-01 00:00:00"),
             ("train", "test"),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         (
@@ -106,7 +106,7 @@ def test_not_present_part():
             9932,
             ("train", "test"),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         (
@@ -123,7 +123,7 @@ def test_not_present_part():
             2811,
             ("train", "test"),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         (
@@ -147,7 +147,7 @@ def test_not_present_part():
             pd.to_datetime("2009-03-30 23:50:00"),
             ("train", "test"),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         pytest.param(
@@ -157,7 +157,7 @@ def test_not_present_part():
             pd.to_datetime("2009-03-30 23:00:00"),
             ("train", "test"),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         pytest.param(
@@ -167,7 +167,7 @@ def test_not_present_part():
             pd.to_datetime("2016-12-31 23:00:00"),
             ("train", "test"),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         (
@@ -226,7 +226,7 @@ def test_not_present_part():
             pd.to_datetime("2021-01-01 00:00:00"),
             ("train", "test"),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         (
@@ -264,7 +264,7 @@ def test_not_present_part():
             pd.to_datetime("2010-11-26 21:02:00"),
             tuple(),
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         (
@@ -382,21 +382,21 @@ def test_list_datasets():
         pytest.param(
             "electricity_15T",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         "m4_hourly",
         pytest.param(
             "m4_daily",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         "m4_weekly",
         pytest.param(
             "m4_monthly",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         "m4_quarterly",
@@ -404,19 +404,19 @@ def test_list_datasets():
         pytest.param(
             "traffic_2008_10T",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         pytest.param(
             "traffic_2008_hourly",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         pytest.param(
             "traffic_2015_hourly",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         "m3_monthly",
@@ -429,7 +429,7 @@ def test_list_datasets():
         pytest.param(
             "weather_10T",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         "ETTm1",
@@ -439,7 +439,7 @@ def test_list_datasets():
         pytest.param(
             "IHEPC_T",
             marks=pytest.mark.skipif(
-                os.getenv("skip_large_tests") is not None, reason="Dataset is too large for testing in GitHub."
+                os.getenv("skip_large_tests", False), reason="Dataset is too large for testing in GitHub."
             ),
         ),
         "australian_wine_sales_monthly",

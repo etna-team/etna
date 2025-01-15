@@ -202,7 +202,7 @@ class TestPredictInSampleFull:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -343,7 +343,7 @@ class TestPredictInSampleSuffix:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -499,7 +499,7 @@ class TestPredictInSampleSuffix:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -651,7 +651,7 @@ class TestPredictOutSample:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -820,7 +820,7 @@ class TestPredictOutSamplePrefix:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1003,7 +1003,7 @@ class TestPredictOutSampleSuffix:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1191,7 +1191,7 @@ class TestPredictMixedInOutSample:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1367,7 +1367,7 @@ class TestPredictSubsetSegments:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
@@ -1508,7 +1508,7 @@ class TestPredictNewSegments:
                 [],
                 "example_tsds",
                 marks=pytest.mark.skipif(
-                    os.getenv("skip_large_tests") is not None, reason="Model causes OOM in GitHub Actions."
+                    os.getenv("skip_large_tests", False), reason="Model causes OOM in GitHub Actions."
                 ),
             ),
         ],
