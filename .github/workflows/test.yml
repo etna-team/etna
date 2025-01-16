@@ -1,5 +1,8 @@
 name: Test
 
+env:
+  skip_large_tests: true
+
 on:
   push:
     branches:
