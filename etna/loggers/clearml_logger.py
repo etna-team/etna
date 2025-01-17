@@ -1,4 +1,5 @@
 import base64
+import logging
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
@@ -10,16 +11,12 @@ from uuid import uuid4
 
 import pandas as pd
 
-import logging
-
-from etna import SETTINGS
 from etna.loggers.base import BaseLogger
 
 if TYPE_CHECKING:
-    from etna.datasets import TSDataset
-
     from clearml.task import Task
-    from clearml import TaskTypes
+
+    from etna.datasets import TSDataset
 
 
 class ClearMLLogger(BaseLogger):
@@ -45,9 +42,9 @@ class ClearMLLogger(BaseLogger):
         plot: bool = True,
         table: bool = True,
         config: Optional[Dict[str, Any]] = None,
+        save_dir: Optional[str] = None,
     ):
-        """
-        Create instance of ClearMLLogger.
+        """Create instance of ``ClearMLLogger``.
 
         Parameters
         ----------
@@ -76,6 +73,9 @@ class ClearMLLogger(BaseLogger):
         config:
             A dictionary-like object for saving inputs to your job,
             like hyperparameters for a model or settings for a data preprocessing job.
+        save_dir:
+            Path to the directory for saving intermediate data. Used only when logging DL models.
+            Defaults to ``./tb_save``
 
         Notes
         -----
@@ -99,17 +99,19 @@ class ClearMLLogger(BaseLogger):
         self.plot = plot
         self.table = table
         self.config = config
+        self.save_dir = "./tb_save" if save_dir is None else save_dir
 
         self._pl_logger = None
+        self._job_type: Optional[str] = None
+        self._fold_id: Optional[Union[str, int]] = None
 
         self._task: Optional["Task"] = None
         self.init_task()
 
     def log(self, msg: Union[str, Dict[str, Any]], **kwargs):
-        """
-        Log any event.
+        """Log any event.
 
-        This class does nothing with it, use other loggers to do it.
+        This class logs string representation of a message.
 
         Parameters
         ----------
@@ -121,16 +123,13 @@ class ClearMLLogger(BaseLogger):
         level = kwargs.get("level", logging.INFO)
         print_console = kwargs.get("print_console", True)
         self._get_logger().report_text(
-            msg=str(msg) if not isinstance(msg, str) else msg,
-            level=level,
-            print_console=print_console
+            msg=str(msg) if not isinstance(msg, str) else msg, level=level, print_console=print_console
         )
 
     def log_backtest_metrics(
         self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
     ):
-        """
-        Write metrics to logger.
+        """Write metrics to logger.
 
         Parameters
         ----------
@@ -143,31 +142,24 @@ class ClearMLLogger(BaseLogger):
         fold_info_df:
             Fold information from backtest
         """
-
         from etna.analysis import plot_backtest_interactive
-        from etna.datasets import TSDataset
         from etna.metrics.utils import aggregate_metrics_df
 
         logger = self._get_logger()
 
         if self.table:
-            logger.report_table(title="Metrics", series=self.job_type, table_plot=metrics_df)
-            logger.report_table(
-                title="Forecast", series=self.job_type, table_plot=TSDataset.to_flatten(forecast_df)
-            )
-            logger.report_table(title="Fold info", series=self.job_type, table_plot=fold_info_df)
+            logger.report_table(title="Fold info", series=self._job_type, table_plot=fold_info_df)
 
         if self.plot:
             fig = plot_backtest_interactive(forecast_df, ts, history_len=100)
-            logger.report_plotly(title="Backtest forecast", series=self.job_type, figure=fig)
+            logger.report_plotly(title="Backtest forecast", series=self._job_type, figure=fig)
 
         metrics_dict = aggregate_metrics_df(metrics_df)
         for metric, value in metrics_dict.items():
             logger.report_single_value(name=metric, value=value)
 
     def log_backtest_run(self, metrics: pd.DataFrame, forecast: pd.DataFrame, test: pd.DataFrame):
-        """
-        Backtest metrics from one fold to logger.
+        """Backtest metrics from one fold to logger.
 
         Parameters
         ----------
@@ -187,18 +179,32 @@ class ClearMLLogger(BaseLogger):
 
         logger = self._get_logger()
         if self.table:
-            logger.report_table(title="Metrics per fold", series=f"{self.job_type} Fold - {self.fold_id}", iteration=None, table_plot=metrics)
             logger.report_table(
-                title="Forecasts per fold", series=f"{self.job_type} Fold - {self.fold_id}", iteration=None, table_plot=TSDataset.to_flatten(forecast)
+                title="Metrics per fold", series=f"{self._job_type} Fold - {self._fold_id}", table_plot=metrics
             )
-            logger.report_table(title="Test folds", series=f"{self.job_type} Fold - {self.fold_id}", iteration=None, table_plot=TSDataset.to_flatten(test))
+            logger.report_table(
+                title="Forecasts per fold",
+                series=f"{self._job_type} Fold - {self._fold_id}",
+                table_plot=TSDataset.to_flatten(forecast),
+            )
+            logger.report_table(
+                title="Test folds",
+                series=f"{self._job_type} Fold - {self._fold_id}",
+                table_plot=TSDataset.to_flatten(test),
+            )
 
-        metrics_dict = aggregate_metrics_df(metrics)
-        for metric, value in metrics_dict.items():
-            logger.report_scalar(title=metric, series=self.job_type, iteration=self.fold_id, value=value)
+        if isinstance(self._fold_id, int):
+            metrics_dict = aggregate_metrics_df(metrics)
+            for metric, value in metrics_dict.items():
+                logger.report_scalar(title=metric, series=self._job_type, iteration=self._fold_id, value=value)
+        else:
+            self.log(
+                msg="Logging of scalars requires integer fold ids! Aggregated metrics logging would be skipped!",
+                level=logging.WARNING,
+            )
 
     def start_experiment(self, job_type: Optional[str] = None, group: Optional[str] = None, *args, **kwargs):
-        """Start Task.
+        """Start ``Task``.
 
         Complete logger initialization or reinitialize it before the next experiment with the same name.
 
@@ -210,24 +216,29 @@ class ClearMLLogger(BaseLogger):
         group:
             Specify a group to organize individual tasks into a larger experiment.
         """
-        self.job_type = job_type
-        try:
-            self.fold_id = int(group)
-        except:
-            self.fold_id = group
+        self._job_type = job_type
 
-        # Maybe fix with mapping
+        if group is not None:
+            try:
+                self._fold_id = int(group)
+            except ValueError:
+                self._fold_id = group
+
+        # Overwrites current pl_logger if any
         self._pl_logger = None
 
         if self._task is None:
             self.init_task()
 
     def init_task(self):
-        """Reinit Task."""
+        """Reinit ``Task``."""
         from clearml import Task
         from clearml import TaskTypes
 
-        auto_connect_frameworks = {"tensorboard": True, "joblib": True}
+        auto_connect_frameworks = {
+            "tensorboard": True,  # for DL models, that use pytorch lightning
+            "joblib": True,  # for backtest with multiple jobs
+        }
         if isinstance(self.auto_connect_frameworks, Mapping):
             auto_connect_frameworks = {**auto_connect_frameworks, **self.auto_connect_frameworks}
 
@@ -246,7 +257,7 @@ class ClearMLLogger(BaseLogger):
             self._task.connect(mutable=self.config)
 
     def finish_experiment(self, *args, **kwargs):
-        """Finish Task."""
+        """Finish ``Task``."""
         # flush all data for additionally spawned tasks
         if (self._task is not None) and (not self._task.is_main_task()):
             self._task.flush(wait_for_uploads=True)
@@ -262,7 +273,10 @@ class ClearMLLogger(BaseLogger):
         """Pytorch lightning loggers."""
         if self._pl_logger is None:
             from pytorch_lightning.loggers import TensorBoardLogger
-            prefix = "" if self.fold_id is None else f"Fold-{self.fold_id}"
-            self._pl_logger = TensorBoardLogger("./tensorboard", name=self.task_name, prefix=prefix, version=str(self.fold_id))
+
+            prefix = "" if self._fold_id is None else f"Fold-{self._fold_id}"
+            self._pl_logger = TensorBoardLogger(
+                save_dir=self.save_dir, name=self.task_name, prefix=prefix, version=str(self._fold_id)
+            )
 
         return self._pl_logger

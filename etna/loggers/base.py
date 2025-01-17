@@ -189,9 +189,11 @@ class _Logger(BaseLogger):
 
     @contextmanager
     def capture_tslogger(self):
+        """Context manager to capture global logger."""
         parent_loggers = tslogger.loggers
         tslogger.loggers = self.loggers
         yield
         tslogger.loggers = parent_loggers
+
 
 tslogger = _Logger()

@@ -28,7 +28,8 @@ from etna.datasets import TSDataset
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import timestamp_range
 from etna.distributions import BaseDistribution
-from etna.loggers import tslogger, _Logger
+from etna.loggers import _Logger
+from etna.loggers import tslogger
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics.functional_metrics import ArrayLike
@@ -783,12 +784,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             metrics_values[metric.name] = metric(y_true=y_true, y_pred=y_pred)  # type: ignore
         return metrics_values
 
-    def _fit_backtest_pipeline(
-        self,
-        ts: TSDataset,
-        fold_number: int,
-        logger: _Logger
-    ) -> "BasePipeline":
+    def _fit_backtest_pipeline(self, ts: TSDataset, fold_number: int, logger: _Logger) -> "BasePipeline":
         """Fit pipeline for a given data in backtest."""
         with logger.capture_tslogger():
             logger.start_experiment(job_type="training", group=str(fold_number))
@@ -798,7 +794,12 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         return pipeline
 
     def _forecast_backtest_pipeline(
-        self, pipeline: "BasePipeline", ts: TSDataset, fold_number: int, forecast_params: Dict[str, Any], logger: _Logger
+        self,
+        pipeline: "BasePipeline",
+        ts: TSDataset,
+        fold_number: int,
+        forecast_params: Dict[str, Any],
+        logger: _Logger,
     ) -> TSDataset:
         """Make a forecast with a given pipeline in backtest."""
         with logger.capture_tslogger():
@@ -952,7 +953,9 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 train for train, _ in self._generate_folds_datasets(ts=ts, masks=fit_masks, horizon=self.horizon)
             )
             pipelines = parallel(
-                delayed(self._fit_backtest_pipeline)(ts=fit_ts, fold_number=fold_groups[group_idx]["train_fold_number"], logger=tslogger)
+                delayed(self._fit_backtest_pipeline)(
+                    ts=fit_ts, fold_number=fold_groups[group_idx]["train_fold_number"], logger=tslogger
+                )
                 for group_idx, fit_ts in enumerate(fit_datasets)
             )
 
@@ -973,7 +976,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     pipeline=pipelines[group_idx],
                     fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
                     forecast_params=forecast_params,
-                    logger=tslogger
+                    logger=tslogger,
                 )
                 for group_idx, group_forecast_datasets in enumerate(forecast_datasets)
                 for idx, forecast_ts in enumerate(group_forecast_datasets)
@@ -1001,7 +1004,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                     fold_number=fold_groups[group_idx]["forecast_fold_numbers"][idx],
                     mask=fold_groups[group_idx]["forecast_masks"][idx],
                     metrics=metrics,
-                    logger=tslogger
+                    logger=tslogger,
                 )
                 for group_idx, (train, group_fold_process_test_datasets) in enumerate(
                     zip(fold_process_train_datasets, fold_process_test_datasets)
