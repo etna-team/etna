@@ -353,7 +353,7 @@ def test_transform_binary_minute(iso_code: str, answer: np.array, two_segments_s
 @pytest.mark.parametrize(
     "iso_code,answer",
     (
-        ("RUS", np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+        ("RUS", np.array([0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1])),
         ("US", np.array([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
     ),
 )
@@ -361,7 +361,7 @@ def test_transform_binary_w_mon(iso_code: str, answer: np.array, two_segments_w_
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="binary", out_column="holiday")
     df = holidays_finder.fit_transform(two_segments_w_mon).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
-        assert np.array_equal(df[segment]["holiday"].values, answer)
+        assert np.array_equal(df[segment]["holiday"].to_numpy(), answer)
         assert df[segment]["holiday"].dtype == "category"
 
 
@@ -404,7 +404,15 @@ def test_transform_category_day(in_column, ts_name, iso_code, answer, request):
 @pytest.mark.parametrize(
     "iso_code,answer",
     (
-        ("RUS", np.array(["NO_HOLIDAY"] * 18)),
+        (
+            "RUS",
+            np.array(
+                ["NO_HOLIDAY"] * 6
+                + ["Day off (substituted from 02/23/2020)", "NO_HOLIDAY", "Day off (substituted from 03/08/2020)"]
+                + ["NO_HOLIDAY"] * 7
+                + ["Day off (substituted from 01/04/2020)", "Day off (substituted from 05/09/2020)"]
+            ),
+        ),
         (
             "US",
             np.array(
@@ -420,7 +428,7 @@ def test_transform_category_w_mon(iso_code: str, answer: np.array, two_segments_
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="category", out_column="holiday")
     df = holidays_finder.fit_transform(two_segments_w_mon).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
-        assert np.array_equal(df[segment]["holiday"].values, answer)
+        assert np.array_equal(df[segment]["holiday"].to_numpy(), answer)
         assert df[segment]["holiday"].dtype == "category"
 
 
