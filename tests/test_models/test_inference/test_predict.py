@@ -44,6 +44,7 @@ from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.models.nn import TFTNativeModel
+from etna.models.nn import TimesFMModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.transforms import LagTransform
@@ -195,15 +196,16 @@ class TestPredictInSampleFull:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_in_sample_full_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         _test_prediction_in_sample_full(ts, model, transforms, method_name="predict")
 
@@ -332,17 +334,18 @@ class TestPredictInSampleSuffix:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_in_sample_suffix_datetime_timestamp_failed_not_implemented_predict(
         self, model, transforms, dataset_name, request
     ):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         _test_prediction_in_sample_suffix(ts, model, transforms, method_name="predict", num_skip_points=50)
 
@@ -484,17 +487,18 @@ class TestPredictInSampleSuffix:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_in_sample_suffix_int_timestamp_failed_not_implemented_predict(
         self, model, transforms, dataset_name, request
     ):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
         _test_prediction_in_sample_suffix(
@@ -632,15 +636,16 @@ class TestPredictOutSample:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_out_sample_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_out_sample(ts, model, transforms)
 
@@ -797,15 +802,16 @@ class TestPredictOutSamplePrefix:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_out_sample_prefix_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_out_sample_prefix(ts, model, transforms)
 
@@ -976,15 +982,16 @@ class TestPredictOutSampleSuffix:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_out_sample_suffix_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_out_sample_suffix(ts, model, transforms)
 
@@ -1160,15 +1167,16 @@ class TestPredictMixedInOutSample:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_mixed_in_out_sample_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_mixed_in_out_sample(ts, model, transforms)
 
@@ -1332,15 +1340,16 @@ class TestPredictSubsetSegments:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_subset_segments_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_subset_segments(ts, model, transforms, segments=["segment_1"])
 
@@ -1469,15 +1478,16 @@ class TestPredictNewSegments:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-            # pytest.param(
-            #     TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
-            #     [],
-            #     "example_tsds",
-            #     marks=pytest.mark.skip(reason="Model causes OOM in GitHub Actions."),
-            # ),
+            (
+                lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
+                [],
+                "example_tsds",
+            ),
         ],
     )
     def test_predict_new_segments_failed_not_implemented_predict(self, model, transforms, dataset_name, request):
+        if callable(model):
+            model = model()
         ts = request.getfixturevalue(dataset_name)
         self._test_predict_new_segments(ts, model, transforms, train_segments=["segment_1"])
 
