@@ -72,7 +72,6 @@ def test_default_pipeline(init_task, tslogger, example_tsds):
 
 
 @pytest.mark.filterwarnings("ignore:The frame.append method is deprecated")
-@pytest.mark.filterwarnings("ignore:This property will be removed in 2.0.0.")
 @patch("etna.loggers.clearml_logger.ClearMLLogger.init_task")
 def test_dl_pytorch_lightning_pipeline(init_task, tslogger, example_tsds):
     cml_logger = ClearMLLogger()

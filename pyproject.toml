@@ -247,9 +247,10 @@ filterwarnings = [
     "ignore:(.|\n)*A value is trying to be set on a copy of a slice from a DataFrame", # SettingWithCopyWarning
     "ignore: New behaviour in v1.1.5.* a small bias is added", # ruptures: normal cost
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
-    "ignore: `ModuleAvailableCache` is a special case of `RequirementCache`.",
+    "ignore: `ModuleAvailableCache` is a special case of `RequirementCache`.", # lightning_utilities
     "ignore: `sentry_sdk.Hub` is deprecated and will be removed in a future major release.",
     "ignore::DeprecationWarning:holidays",
+    "ignore:This property will be removed in 2.0.0.", # torchmetrics
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
     "ignore: Jupyter is migrating its paths to use standard platformdirs",
