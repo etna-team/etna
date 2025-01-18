@@ -247,7 +247,7 @@ def test_fit_transform_with_nans_in_timestamp(ts_with_specials_and_nans_in_times
     result = transform.fit_transform(ts)
     columns = ["anomaly_weekdays", "anomaly_monthdays"]
     for segment in ts.segments:
-        result_df = result.loc[:, pd.IndexSlice[segment, columns]]
+        result_df = result.df.loc[:, pd.IndexSlice[segment, columns]]
         assert np.all(result_df.isna().sum() == 3)
 
 

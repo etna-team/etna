@@ -153,8 +153,8 @@ def test_prediction_interval_run_infuture_warning_loss(example_tsds):
     assert len(forecast.prediction_intervals_names) == 0
     for segment in forecast.segments:
         segment_slice = forecast[:, segment, :][segment]
-        assert {"target"}.issubset(segment_slice.columns)
-        assert {"target_0.02", "target_0.98"}.isdisjoint(segment_slice.columns)
+        assert {"target"}.issubset(segment_slice.df.columns)
+        assert {"target_0.02", "target_0.98"}.isdisjoint(segment_slice.df.columns)
 
 
 def test_forecast_model_equals_pipeline(example_tsds):

@@ -18,12 +18,12 @@ def ts_nans_beginning(example_reg_tsds):
     ts = deepcopy(example_reg_tsds)
 
     # nans at the beginning (shouldn't be filled)
-    ts.loc[ts.index[:5], pd.IndexSlice["segment_1", "target"]] = np.NaN
+    ts.df.loc[ts.index[:5], pd.IndexSlice["segment_1", "target"]] = np.NaN
 
     # nans in the middle (should be filled)
-    ts.loc[ts.index[8], pd.IndexSlice["segment_1", "target"]] = np.NaN
-    ts.loc[ts.index[10], pd.IndexSlice["segment_2", "target"]] = np.NaN
-    ts.loc[ts.index[40], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    ts.df.loc[ts.index[8], pd.IndexSlice["segment_1", "target"]] = np.NaN
+    ts.df.loc[ts.index[10], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    ts.df.loc[ts.index[40], pd.IndexSlice["segment_2", "target"]] = np.NaN
     return ts
 
 

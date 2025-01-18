@@ -510,7 +510,7 @@ def test_create_segment_conversion_during_init(df_segments_int):
     with pytest.warns(UserWarning, match="Segment values doesn't have string type"):
         ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
 
-    assert np.all(ts.columns.get_level_values("segment") == ["1", "1", "2", "2"])
+    assert np.all(ts.df.columns.get_level_values("segment") == ["1", "1", "2", "2"])
 
 
 def test_create_from_long_format_with_exog():
@@ -1093,7 +1093,7 @@ def test_make_future_datetime_timestamp():
     ts = TSDataset(TSDataset.to_dataset(df), freq="D")
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
+    assert set(ts_future.df.columns.get_level_values("feature")) == {"target"}
 
 
 def test_make_future_int_timestamp():
@@ -1102,21 +1102,21 @@ def test_make_future_int_timestamp():
     ts = TSDataset(TSDataset.to_dataset(df), freq=freq)
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == np.arange(ts.index.max() + 1, ts.index.max() + 10 + 1))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
+    assert set(ts_future.df.columns.get_level_values("feature")) == {"target"}
 
 
 def test_make_future_with_exog_datetime_timestamp(tsdf_with_exog):
     ts = tsdf_with_exog
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+    assert set(ts_future.df.columns.get_level_values("feature")) == {"target", "exog"}
 
 
 def test_make_future_with_exog_int_timestamp(tsdf_int_with_exog):
     ts = tsdf_int_with_exog
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == np.arange(ts.index.max() + 1, ts.index.max() + 10 + 1))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+    assert set(ts_future.df.columns.get_level_values("feature")) == {"target", "exog"}
 
 
 def test_make_future_small_horizon():
@@ -1138,7 +1138,7 @@ def test_make_future_with_regressors(df_and_regressors):
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts_future = ts.make_future(10)
     assert np.all(ts_future.index == pd.date_range(ts.index.max() + pd.Timedelta("1D"), periods=10, freq="D"))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
+    assert set(ts_future.df.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
 
 
 @pytest.mark.parametrize("tail_steps", [11, 0])

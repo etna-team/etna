@@ -87,7 +87,7 @@ def plot_correlation_matrix(
     if mode == "macro":
         fig, ax = plt.subplots(figsize=figsize)
         correlation_matrix = get_correlation_matrix(ts, columns, segments, method)
-        labels = list(ts[:, segments, columns].columns.values)
+        labels = list(ts[:, segments, columns].df.columns.values)
         ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
         ax.set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
         ax.set_yticks(np.arange(len(labels)) + 0.5, labels=labels)
@@ -100,7 +100,7 @@ def plot_correlation_matrix(
 
         for i, segment in enumerate(segments):
             correlation_matrix = get_correlation_matrix(ts, columns, [segment], method)
-            labels = list(ts[:, segment, columns].columns.values)
+            labels = list(ts[:, segment, columns].df.columns.values)
             ax[i] = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax[i], **heatmap_kwargs)
             ax[i].set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
             ax[i].set_yticks(np.arange(len(labels)) + 0.5, labels=labels)

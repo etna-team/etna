@@ -248,7 +248,7 @@ def test_pipeline_models(ts_name, in_column, decompose_model, forecast_model, re
     forecast = pipeline.forecast()
 
     assert forecast.size()[0] == 3
-    assert np.sum(forecast.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
+    assert np.sum(forecast.df.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
 
 
 @pytest.mark.parametrize(
@@ -277,7 +277,7 @@ def test_decompose_models(ts_with_exogs, decompose_model):
     forecast = pipeline.forecast()
 
     assert forecast.size()[0] == 3
-    assert np.sum(forecast.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
+    assert np.sum(forecast.df.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
 
 
 @pytest.mark.parametrize("answer", ({"1": ["2021-01-11"], "2": ["2021-01-27"]},))

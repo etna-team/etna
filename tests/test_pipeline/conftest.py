@@ -259,11 +259,11 @@ class DummyModelBase:
         return 0
 
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
-        ts.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 100
+        ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 100
         return ts
 
     def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
-        ts.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 200
+        ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 200
         return ts
 
     def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:

@@ -144,7 +144,7 @@ def test_forecast_columns(example_reg_tsds):
     # generate all columns
     original_ts.fit_transform(transforms)
 
-    assert set(forecast_pipeline.columns) == set(original_ts.columns)
+    assert set(forecast_pipeline.df.columns) == set(original_ts.df.columns)
 
     # make sure that all values are filled
     assert forecast_pipeline.to_pandas().isna().sum().sum() == 0

@@ -30,7 +30,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     --------
     >>> from etna.datasets import generate_ar_df
     >>> from etna.datasets import TSDataset
-    >>> from etna.ensembles import VotingEnsemble
+    >>> from etna.ensembles import StackingEnsemble
     >>> from etna.models import NaiveModel
     >>> from etna.models import MovingAverageModel
     >>> from etna.pipeline import Pipeline
@@ -222,10 +222,11 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             return x, None
 
-    def _process_forecasts(self, ts: TSDataset, forecasts: List[pd.DataFrame]) -> TSDataset:
-        ts = self._make_same_level(ts=ts, forecasts=forecasts)
+    def _process_forecasts(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
+        forecasts_df = [forecast.df for forecast in forecasts]
+        ts = self._make_same_level(ts=ts, forecasts=forecasts_df)
 
-        x, _ = self._make_features(ts=ts, forecasts=forecasts, train=False)
+        x, _ = self._make_features(ts=ts, forecasts=forecasts_df, train=False)
         y = self.final_model.predict(x)
         num_segments = len(forecasts[0].segments)
         y = y.reshape(num_segments, -1).T
@@ -241,7 +242,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = np.NAN
 
         result = TSDataset(df=df, freq=ts.freq, df_exog=df_exog, hierarchical_structure=ts.hierarchical_structure)
-        result.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
+        result.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = y
         return result
 
     def _forecast(self, ts: TSDataset, return_components: bool) -> TSDataset:

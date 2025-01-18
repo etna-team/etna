@@ -70,8 +70,8 @@ def test_save_transform(ts_non_negative, transform_original, transform_function,
     ts.fit_transform(
         [LambdaTransform(in_column="target", out_column=out_column, transform_func=transform_function, inplace=False)]
     )
-    assert set(ts_copy.columns) == set(ts.columns)
-    for column in ts.columns:
+    assert set(ts_copy.df.columns) == set(ts.df.columns)
+    for column in ts.df.columns:
         np.testing.assert_allclose(ts_copy[:, :, column], ts[:, :, column], rtol=1e-9)
 
 
@@ -85,19 +85,19 @@ def test_interface_inplace(ts_non_negative):
     transform = LambdaTransform(
         in_column="target", inplace=True, transform_func=lambda x: x, inverse_transform_func=lambda x: x
     )
-    original_columns = set(ts_non_negative.columns)
+    original_columns = set(ts_non_negative.df.columns)
     transform.fit_transform(ts_non_negative)
-    assert set(ts_non_negative.columns) == original_columns
+    assert set(ts_non_negative.df.columns) == original_columns
     transform.inverse_transform(ts_non_negative)
-    assert set(ts_non_negative.columns) == original_columns
+    assert set(ts_non_negative.df.columns) == original_columns
 
 
 def test_interface_not_inplace(ts_non_negative):
     add_column = "target_transformed"
     transform = LambdaTransform(in_column="target", out_column=add_column, transform_func=lambda x: x, inplace=False)
-    original_columns = set(ts_non_negative.columns)
+    original_columns = set(ts_non_negative.df.columns)
     transform.fit_transform(ts_non_negative)
-    assert set(ts_non_negative.columns) == original_columns.union(
+    assert set(ts_non_negative.df.columns) == original_columns.union(
         {(segment, add_column) for segment in ts_non_negative.segments}
     )
 
