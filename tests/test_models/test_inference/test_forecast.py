@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-from pytorch_forecasting.data import GroupNormalizer
-from pytorch_forecasting.data import NaNLabelEncoder
 from typing_extensions import get_args
 
 from etna.datasets import TSDataset
@@ -35,16 +33,13 @@ from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import ChronosBoltModel
 from etna.models.nn import ChronosModel
-from etna.models.nn import DeepARModel
 from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PatchTSModel
-from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
-from etna.models.nn import TFTModel
 from etna.models.nn import TFTNativeModel
 from etna.models.nn import TimesFMModel
 from etna.models.nn.deepstate import CompositeSSM
@@ -194,38 +189,6 @@ class TestForecastInSampleFullNoTarget:
             (StatsForecastAutoCESModel(), [], "example_tsds"),
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
         ],
     )
     def test_forecast_in_sample_full_no_target_failed_not_implemented_in_sample(
@@ -375,38 +338,6 @@ class TestForecastInSampleFull:
             (StatsForecastAutoCESModel(), [], "example_tsds"),
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
         ],
     )
     def test_forecast_in_sample_full_not_implemented(self, model, transforms, dataset_name, request):
@@ -552,38 +483,6 @@ class TestForecastInSampleSuffixNoTarget:
             (StatsForecastAutoCESModel(), [], "example_tsds"),
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
         ],
     )
     def test_forecast_in_sample_suffix_no_target_failed_not_implemented_in_sample(
@@ -683,38 +582,6 @@ class TestForecastInSampleSuffix:
             (StatsForecastAutoCESModel(), [], "example_tsds"),
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
         ],
     )
     def test_forecast_in_sample_suffix_failed_not_implemented_in_sample(self, model, transforms, dataset_name, request):
@@ -788,38 +655,6 @@ class TestForecastOutSample:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-                "example_tsds",
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
                 "example_tsds",
             ),
             (
@@ -898,38 +733,6 @@ class TestForecastOutSample:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-                "example_tsds",
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
                 "example_tsds",
             ),
             (
@@ -1082,38 +885,6 @@ class TestForecastOutSamplePrefix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-                "example_tsds",
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
                 "example_tsds",
             ),
             (
@@ -1369,38 +1140,6 @@ class TestForecastOutSampleSuffix:
             (StatsForecastAutoCESModel(), [], "example_tsds"),
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
         ],
     )
     def test_forecast_out_sample_suffix_failed_not_implemented(self, model, transforms, dataset_name, request):
@@ -1521,38 +1260,6 @@ class TestForecastMixedInOutSample:
             (StatsForecastAutoCESModel(), [], "example_tsds"),
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
         ],
     )
     def test_forecast_mixed_in_out_sample_failed_not_implemented_in_sample(
@@ -1621,23 +1328,6 @@ class TestForecastSubsetSegments:
             (StatsForecastAutoCESModel(), [], "example_tsds"),
             (StatsForecastAutoETSModel(), [], "example_tsds"),
             (StatsForecastAutoThetaModel(), [], "example_tsds"),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
             (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
@@ -1712,32 +1402,6 @@ class TestForecastSubsetSegments:
         with pytest.raises(AssertionError):
             self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])
 
-    @to_be_fixed(raises=AssertionError)
-    # issue with explanation: https://github.com/tinkoff-ai/etna/issues/1089
-    @pytest.mark.parametrize(
-        "model, transforms, dataset_name",
-        [
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-        ],
-    )
-    def test_forecast_subset_segments_failed_assertion_error(self, model, transforms, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])
-
 
 class TestForecastNewSegments:
     """Test forecast on new segments.
@@ -1795,40 +1459,6 @@ class TestForecastNewSegments:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
-                "example_tsds",
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
                 "example_tsds",
             ),
             (
