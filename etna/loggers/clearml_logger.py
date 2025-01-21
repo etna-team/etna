@@ -145,6 +145,11 @@ class ClearMLLogger(BaseLogger):
         from etna.analysis import plot_backtest_interactive
         from etna.metrics.utils import aggregate_metrics_df
 
+        if self._job_type is None:
+            raise ValueError(
+                "Experiment is not properly initialized! Ensure that ``start_experiment`` is called before logging backtest results."
+            )
+
         logger = self._get_logger()
 
         if self.table:
@@ -172,6 +177,11 @@ class ClearMLLogger(BaseLogger):
         """
         from etna.datasets import TSDataset
         from etna.metrics.utils import aggregate_metrics_df
+
+        if self._job_type is None or self._fold_id is None:
+            raise ValueError(
+                "Experiment is not properly initialized! Ensure that ``start_experiment`` is called before logging backtest run."
+            )
 
         columns_name = list(metrics.columns)
         metrics = metrics.reset_index()
@@ -262,6 +272,10 @@ class ClearMLLogger(BaseLogger):
         if (self._task is not None) and (not self._task.is_main_task()):
             self._task.flush(wait_for_uploads=True)
 
+        self._job_type = None
+        self._fold_id = None
+        self._pl_logger = None
+
     def _get_logger(self):
         """Return internal task logger."""
         if self._task is None:
@@ -276,7 +290,7 @@ class ClearMLLogger(BaseLogger):
 
             prefix = "" if self._fold_id is None else f"Fold-{self._fold_id}"
             self._pl_logger = TensorBoardLogger(
-                save_dir=self.save_dir, name=self.task_name, prefix=prefix, version=str(self._fold_id)
+                save_dir=self.save_dir, name=self.task_name, prefix=prefix, version=prefix
             )
 
         return self._pl_logger

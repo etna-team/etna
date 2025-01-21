@@ -110,7 +110,8 @@ def _is_statsforecast_available():
 
 
 def _is_clearml_available():
-    if _module_available("clearml"):
+    true_case = _module_available("clearml") & _module_available("tensorboard")
+    if true_case:
         return True
     else:
         warnings.warn("etna[clearml] is not available, to install it, run `pip install etna[clearml]`")
