@@ -22,9 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
 - 
 - Implement non-empty `params_to_tune` for `VotingEnsemble` ([#557](https://github.com/etna-team/etna/pull/557))
-- Implement non-empty `params_to_tune` for `DirectEnsemble` ([#559](https://github.com/etna-team/etna/pull/559))
-- Implement non-empty `params_to_tune` for `StackingEnsemble` ([#561](https://github.com/etna-team/etna/pull/561))
 - 
+- Implement non-empty `params_to_tune` for `DirectEnsemble` ([#559](https://github.com/etna-team/etna/pull/559))
+- 
+- Implement non-empty `params_to_tune` for `StackingEnsemble` ([#561](https://github.com/etna-team/etna/pull/561))
 - 
 - 
 - 
@@ -42,6 +43,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Fix `TSDataset.train_test_split` to pass all features to train and test parts ([#545](https://github.com/etna-team/etna/pull/545))
 - 
+
+### Removed
+- **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
+-
+-
+-
+-
+-
+-
 
 ## [2.10.0] - 2025-01-09
 ### Added
