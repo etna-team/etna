@@ -3,11 +3,9 @@ from abc import abstractmethod
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Union
 
 import numpy as np
 import pandas as pd
-from deprecated import deprecated
 
 from etna.datasets import TSDataset
 from etna.transforms.base import ReversibleTransform
@@ -39,28 +37,6 @@ class OutliersTransform(ReversibleTransform, ABC):
         self.segment_outliers: Optional[Dict[str, pd.Series]] = None
 
         self._fit_segments: Optional[List[str]] = None
-
-    @property
-    @deprecated(
-        reason="Attribute `outliers_timestamps` is deprecated and will be removed! Use `segment_outliers` instead.",
-        version="3.0",
-    )
-    def outliers_timestamps(self) -> Union[Dict[str, List[pd.Timestamp]], Dict[str, List[int]], None]:
-        """Backward compatibility property."""
-        if self.segment_outliers is not None:
-            return {segment: outliers.index.to_list() for segment, outliers in self.segment_outliers.items()}
-        return None
-
-    @property
-    @deprecated(
-        reason="Attribute `original_values` is deprecated and will be removed! Use `segment_outliers` instead.",
-        version="3.0",
-    )
-    def original_values(self) -> Optional[Dict[str, pd.Series]]:
-        """Backward compatibility property."""
-        if self.segment_outliers is not None:
-            return self.segment_outliers.copy()
-        return None
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform.
