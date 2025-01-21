@@ -30,6 +30,36 @@ def test_task_not_init_error(init_task):
 
 
 @patch("etna.loggers.clearml_logger.ClearMLLogger.init_task")
+def test_log_backtest_metrics_not_init_error(init_task):
+    cml_logger = ClearMLLogger()
+    with pytest.raises(ValueError, match="Experiment is not properly initialized!"):
+        cml_logger.log_backtest_metrics(ts=None, metrics_df=None, forecast_df=None, fold_info_df=None)
+
+
+@patch("etna.loggers.clearml_logger.ClearMLLogger.init_task")
+def test_log_backtest_run_not_init_error(init_task):
+    cml_logger = ClearMLLogger()
+    with pytest.raises(ValueError, match="Experiment is not properly initialized!"):
+        cml_logger.log_backtest_run(metrics=None, forecast=None, test=None)
+
+
+@patch("etna.loggers.clearml_logger.ClearMLLogger.init_task")
+def test_correct_experiment_start_finish(init_task):
+    cml_logger = ClearMLLogger()
+
+    assert cml_logger._job_type is None
+    assert cml_logger._fold_id is None
+    assert cml_logger._pl_logger is None
+
+    cml_logger.start_experiment(job_type="test", group="1")
+    cml_logger.finish_experiment()
+
+    assert cml_logger._job_type is None
+    assert cml_logger._fold_id is None
+    assert cml_logger._pl_logger is None
+
+
+@patch("etna.loggers.clearml_logger.ClearMLLogger.init_task")
 def test_clearml_logger_log(init_task, tslogger):
     cml_logger = ClearMLLogger()
     cml_logger._task = MagicMock()
