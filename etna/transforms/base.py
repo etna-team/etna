@@ -8,18 +8,12 @@ from typing import Set
 from typing import Union
 
 import pandas as pd
-from deprecated import deprecated
 from typing_extensions import Literal
 
 from etna.core import BaseMixin
 from etna.core import SaveMixin
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
-
-
-@deprecated(version="3.0", reason="FutureMixin class is deprecated")
-class FutureMixin:
-    """Mixin for transforms that can convert non-regressor column to a regressor one."""
 
 
 class Transform(SaveMixin, BaseMixin):
