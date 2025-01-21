@@ -2,7 +2,6 @@ from copy import deepcopy
 from typing import Dict
 from typing import Tuple
 
-
 from etna import SETTINGS
 
 if SETTINGS.torch_required:
