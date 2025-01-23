@@ -3,8 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from transforms import LagTransform
-from transforms import StandardScalerTransform
 
 from etna.datasets import TSDataset
 from etna.loggers import ClearMLLogger
@@ -12,6 +10,8 @@ from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.models.nn import MLPModel
 from etna.pipeline import Pipeline
+from etna.transforms import LagTransform
+from etna.transforms import StandardScalerTransform
 
 FILE_PATH = Path(__file__)
 

@@ -26,6 +26,11 @@ class ClearMLLogger(BaseLogger):
     ----
     This logger requires ``clearml`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
+
+    Warning
+    -------
+    There is a possibility, that aggregated metrics charts may log incorrectly.
+    For more details see `issue <https://github.com/etna-team/etna/issues/579>`_.
     """
 
     def __init__(
@@ -79,7 +84,7 @@ class ClearMLLogger(BaseLogger):
 
         Notes
         -----
-        For more details see <https://clear.ml/docs/latest/docs/references/sdk/task/#taskinit>
+        For more details see `documentation <https://clear.ml/docs/latest/docs/references/sdk/task/#taskinit>`_
 
         """
         super().__init__()
