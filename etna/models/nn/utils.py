@@ -310,7 +310,7 @@ class PytorchForecastingMixin:
         predicts = self.model.predict(prediction_dataloader).numpy()
 
         ts.df = ts.df.iloc[-horizon:]
-        ts.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
+        ts.df.loc[:, pd.IndexSlice[:, "target"]] = predicts.T[:horizon]
         return ts, prediction_dataloader
 
 

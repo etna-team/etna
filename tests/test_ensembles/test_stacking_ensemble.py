@@ -211,7 +211,7 @@ def test_forecast_interface(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     ).fit(example_tsds)
     forecast = ensemble.forecast()
-    features = set(forecast.columns.get_level_values("feature")) - {"target"}
+    features = set(forecast.df.columns.get_level_values("feature")) - {"target"}
     assert isinstance(forecast, TSDataset)
     assert len(forecast.df) == HORIZON
     assert features == expected_features
@@ -260,7 +260,7 @@ def test_predict_interface(
     prediction = ensemble.predict(
         ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
     )
-    features = set(prediction.columns.get_level_values("feature")) - {"target"}
+    features = set(prediction.df.columns.get_level_values("feature")) - {"target"}
     assert isinstance(prediction, TSDataset)
     assert len(prediction.df) == end_idx - start_idx + 1
     assert features == expected_features

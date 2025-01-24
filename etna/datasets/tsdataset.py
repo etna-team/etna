@@ -1564,28 +1564,6 @@ class TSDataset:
             self.df.drop(columns=list(self.prediction_intervals_names), level="feature", inplace=True)
             self._prediction_intervals_names = tuple()
 
-    @property
-    def columns(self) -> pd.core.indexes.multi.MultiIndex:
-        """Return columns of ``self.df``.
-
-        Returns
-        -------
-        pd.core.indexes.multi.MultiIndex
-            multiindex of dataframe with target and features.
-        """
-        return self.df.columns
-
-    @property
-    def loc(self) -> pd.core.indexing._LocIndexer:
-        """Return self.df.loc method.
-
-        Returns
-        -------
-        pd.core.indexing._LocIndexer
-            dataframe with self.df.loc[...]
-        """
-        return self.df.loc
-
     def isnull(self) -> pd.DataFrame:
         """Return dataframe with flag that means if the correspondent object in ``self.df`` is null.
 
