@@ -13,6 +13,7 @@ from etna.datasets import generate_ar_df
 from etna.distributions import CategoricalDistribution
 from etna.distributions import FloatDistribution
 from etna.distributions import IntDistribution
+from etna.loggers import _Logger
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
@@ -1550,7 +1551,14 @@ def test_process_fold_forecast(ts_process_fold_forecast, mask: FoldMask, expecte
     pipeline = pipeline.fit(ts=train)
     forecast = pipeline.forecast()
     fold = pipeline._process_fold_forecast(
-        forecast=forecast, train=train, test=test, pipeline=pipeline, fold_number=1, mask=mask, metrics=[MAE()]
+        forecast=forecast,
+        train=train,
+        test=test,
+        pipeline=pipeline,
+        fold_number=1,
+        mask=mask,
+        metrics=[MAE()],
+        logger=_Logger(),
     )
     for seg in fold["metrics"]["MAE"].keys():
         assert fold["metrics"]["MAE"][seg] == expected[seg]

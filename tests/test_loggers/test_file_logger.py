@@ -270,7 +270,7 @@ def test_local_file_logger_with_stacking_ensemble(example_df):
 
 
 def test_local_file_logger_with_empirical_prediction_interval(example_df):
-    """Test that LocalFileLogger correctly works in with empirical predicition intervals via backtest."""
+    """Test that LocalFileLogger correctly works in with empirical prediction intervals via backtest."""
     with tempfile.TemporaryDirectory() as dirname:
         cur_dir = pathlib.Path(dirname)
         logger = LocalFileLogger(experiments_folder=dirname, gzip=False)

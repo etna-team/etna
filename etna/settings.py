@@ -107,6 +107,15 @@ def _is_statsforecast_available():
         return False
 
 
+def _is_clearml_available():
+    true_case = _module_available("clearml") & _module_available("tensorboard")
+    if true_case:
+        return True
+    else:
+        warnings.warn("etna[clearml] is not available, to install it, run `pip install etna[clearml]`")
+        return False
+
+
 def _get_optional_value(is_required: Optional[bool], is_available_fn: Callable, assert_msg: str) -> bool:
     if is_required is None:
         return is_available_fn()
@@ -131,6 +140,7 @@ class Settings:
         classification_required: Optional[bool] = None,
         auto_required: Optional[bool] = None,
         statsforecast_required: Optional[bool] = None,
+        clearml_required: Optional[bool] = None,
     ):
         # True – use the package
         # None – use the package if available
@@ -172,6 +182,11 @@ class Settings:
             statsforecast_required,
             _is_statsforecast_available,
             "etna[statsforecast] is not available, to install it, run `pip install etna[statsforecast]`.",
+        )
+        self.clearml_required: bool = _get_optional_value(
+            clearml_required,
+            _is_clearml_available,
+            "etna[clearml] is not available, to install it, run `pip install etna[clearml]`.",
         )
 
     @staticmethod

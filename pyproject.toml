@@ -79,6 +79,8 @@ pytorch-lightning = {version = "*", optional = true}
 einops = {version = "*", optional = true}
 
 wandb = {version = "^0.12.2", optional = true}
+clearml = {version = "^1.15", optional = true}
+tensorboard = {version = "^2.12.0", optional = true}
 
 optuna = {version = ">=2.5.0,<3.0.0", optional = true}
 sqlalchemy = {version = "^1.1.0", optional = true}
@@ -132,6 +134,7 @@ types-setuptools = {version = "^65.7.0", optional = true}
 prophet = ["prophet"]
 torch = ["torch", "pytorch-forecasting", "pytorch-lightning", "einops"]
 wandb = ["wandb"]
+clearml = ["clearml", "tensorboard"]
 auto = ["optuna", "sqlalchemy"]
 classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
@@ -148,7 +151,7 @@ style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
 all = [
     "prophet",
     "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
-    "wandb",
+    "wandb", "clearml", "tensorboard",
     "optuna", "sqlalchemy",
     "pyts", "tsfresh",
     "statsforecast",
@@ -159,7 +162,7 @@ all = [
 all-dev = [
     "prophet",
     "torch", "pytorch-forecasting", "pytorch-lightning", "einops",
-    "wandb",
+    "wandb", "clearml", "tensorboard",
     "optuna", "sqlalchemy",
     "click", "semver",
     "Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design",
@@ -244,6 +247,10 @@ filterwarnings = [
     "ignore:(.|\n)*A value is trying to be set on a copy of a slice from a DataFrame", # SettingWithCopyWarning
     "ignore: New behaviour in v1.1.5.* a small bias is added", # ruptures: normal cost
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
+    "ignore: `ModuleAvailableCache` is a special case of `RequirementCache`.", # lightning_utilities
+    "ignore: `sentry_sdk.Hub` is deprecated and will be removed in a future major release.",
+    "ignore::DeprecationWarning:holidays",
+    "ignore:This property will be removed in 2.0.0.", # torchmetrics
     "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
     "ignore: Jupyter is migrating its paths to use standard platformdirs",

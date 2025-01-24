@@ -786,7 +786,7 @@ class TSDataset:
         features:
             List of features to return.
             If "all", return all the features in the dataset.
-            Always return columns with timestamp and segemnt.
+            Always return columns with timestamp and segment.
         Returns
         -------
         pd.DataFrame:
