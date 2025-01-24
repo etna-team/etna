@@ -8,12 +8,6 @@ if SETTINGS.torch_required:
     import torch
     from torch import nn
 
-else:
-    TimeSeriesDataSet = None  # type: ignore
-    EncoderNormalizer = None  # type: ignore
-    NaNLabelEncoder = None  # type: ignore
-    TorchNormalizer = None  # type: ignore
-
 
 class _DeepCopyMixin:
     """Mixin for ``__deepcopy__`` behaviour overriding."""
