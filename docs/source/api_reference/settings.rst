@@ -19,9 +19,12 @@ All available installation options:
         pip install "etna[prophet]"
         pip install "etna[torch]"
         pip install "etna[wandb]"
+        pip install "etna[clearml]"
         pip install "etna[auto]"
         pip install "etna[classification]"
         pip install "etna[statsforecast]"
+        pip install "etna[chronos]"
+        pip install "etna[timesfm]"
         pip install "etna[all]"
 
 .. note::

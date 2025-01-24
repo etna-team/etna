@@ -1,4 +1,5 @@
 import random
+from pathlib import Path
 from typing import Optional
 
 import hydra
@@ -7,8 +8,6 @@ import numpy as np
 import pandas as pd
 from omegaconf import DictConfig
 from omegaconf import OmegaConf
-
-from pathlib import Path
 
 from etna.datasets import TSDataset
 from etna.loggers import WandbLogger
@@ -20,6 +19,7 @@ OmegaConf.register_new_resolver("sum", lambda x, y: x + y)
 
 
 FILE_PATH = Path(__file__)
+
 
 def set_seed(seed: int = 42):
     random.seed(seed)
@@ -42,7 +42,7 @@ def dataloader(file_path: Path, freq: str) -> TSDataset:
 @hydra.main(config_name="config.yaml")
 def objective(cfg: DictConfig):
     config = OmegaConf.to_container(cfg, resolve=True)
-    
+
     # Set seed for reproducibility
     set_seed(cfg.seed)
 
@@ -51,7 +51,7 @@ def objective(cfg: DictConfig):
 
     # Init pipeline
     pipeline: Pipeline = hydra_slayer.get_from_params(**config["pipeline"])
-    
+
     # Init backtest parameters like metrics and e.t.c.
     backtest_params = hydra_slayer.get_from_params(**config["backtest"])
 

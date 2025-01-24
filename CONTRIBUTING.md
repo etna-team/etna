@@ -116,7 +116,7 @@ Useful links:
 1. [ReST Quickref](https://docutils.sourceforge.io/docs/user/rst/quickref.html)
 2. [ReST Roles](https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html)
 3. [ReST Cross-referencing Python objects](https://www.sphinx-doc.org/en/master/usage/restructuredtext/domains.html#cross-referencing-python-objects)
-4. [Matplotlib Cheetsheet](https://matplotlib.org/sampledoc/cheatsheet.html)
+4. [Matplotlib Cheatsheet](https://matplotlib.org/sampledoc/cheatsheet.html)
 5. [Sklearn example](https://github.com/scikit-learn/scikit-learn/blob/37ac6788c/sklearn/linear_model/_ridge.py#L321)
 
 The simplest way to check how documentation is rendered is to make a pull request. 

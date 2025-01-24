@@ -26,6 +26,7 @@ Available user extensions are the following:
 - ``classiciation``: adds time series classification functionality,
 - ``chronos``: adds Chronos-like pretrained models,
 - ``timesfm``: adds TimesFM pretrained models.
+- ``clearml``: adds ClearML logger with tensorboard support
 
 Install extension:
 

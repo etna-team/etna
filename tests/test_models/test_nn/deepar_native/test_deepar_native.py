@@ -24,7 +24,7 @@ from tests.test_models.utils import assert_sampling_is_valid
         (13, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 1e-3, 0.05),
         (15, GaussianLoss(), [StandardScalerTransform(in_column="target")], 100, 1e-3, 0.05),
         (8, NegativeBinomialLoss(), [], 300, 1e-2, 0.05),
-        (13, NegativeBinomialLoss(), [], 300, 1e-2, 0.06),
+        (13, NegativeBinomialLoss(), [], 700, 1e-2, 0.06),
         (15, NegativeBinomialLoss(), [], 300, 1e-2, 0.05),
     ],
 )
