@@ -98,23 +98,6 @@ Utilities for :py:class:`~etna.models.nn.deepstate.deepstate.DeepStateModel`
    nn.deepstate.SeasonalitySSM
    nn.deepstate.YearlySeasonalitySSM
 
-Neural network models based on ``pytorch_forecasting``:
-
-.. autosummary::
-   :toctree: api/
-   :template: class.rst
-
-   nn.DeepARModel
-   nn.TFTModel
-
-Utilities for neural network models based on ``pytorch_forecasting``:
-
-.. autosummary::
-   :toctree: api/
-   :template: class.rst
-
-   nn.PytorchForecastingDatasetBuilder
-
 Pretrained neural network models:
 
 .. autosummary::

@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
 -
--
+- **Breaking:** Remove `pytorch-forecasting` models and utilities (`DeepARModel`, `TFTModel` and `PytorchForecastingDatasetBuilder`) ([#578](https://github.com/etna-team/etna/pull/578))
 -
 -
 -
