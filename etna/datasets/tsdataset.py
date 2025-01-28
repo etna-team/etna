@@ -1279,8 +1279,6 @@ class TSDataset:
         ValueError:
             If there are duplicate features in the dataset (columns with the same name)
         """
-        _check_features_in_segments(columns=df_update.columns, segments=self.segments)
-
         df = df_update.loc[self.df.index.min() : self.df.index.max()]
 
         if not df.index.equals(self.df.index):
@@ -1288,6 +1286,8 @@ class TSDataset:
 
         if len(df.columns.difference(self.df.columns)) > 0:
             raise ValueError("Some columns in the dataframe for update are not presented in the dataset!")
+
+        _check_features_in_segments(columns=df.columns, segments=self.segments)
 
         try:
             column_idx = self.df.columns.get_indexer(df.columns)

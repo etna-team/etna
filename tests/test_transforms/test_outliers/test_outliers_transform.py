@@ -33,20 +33,6 @@ from tests.test_transforms.utils import find_columns_diff
 from tests.utils import select_segments_subset
 
 
-def insert_column(ts, info_col, timestamp, segment):
-    return ts.add_columns_from_pandas(
-        TSDataset.to_dataset(
-            pd.DataFrame(
-                {
-                    "is_holiday": info_col,
-                    "timestamp": timestamp,
-                    "segment": segment,
-                }
-            )
-        )
-    )
-
-
 def made_specific_ds(ts, add_error=True):
     timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")
     info_col1 = [1 if np.sin(i) > 0.5 else 0 for i in range(len(timestamp))]
@@ -56,8 +42,15 @@ def made_specific_ds(ts, add_error=True):
         info_col1[9] = 4
         info_col2[10] = 14
 
-    insert_column(ts, info_col1, timestamp, "1")
-    insert_column(ts, info_col2, timestamp, "2")
+    df = pd.DataFrame(
+        {
+            "is_holiday": info_col1 + info_col2,
+            "timestamp": timestamp.tolist() * 2,
+            "segment": ["1"] * len(info_col1) + ["2"] * len(info_col2),
+        }
+    )
+
+    ts.add_columns_from_pandas(df_update=TSDataset.to_dataset(df=df))
 
     return ts
 

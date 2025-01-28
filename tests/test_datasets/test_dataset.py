@@ -444,7 +444,7 @@ def test_create_ts_with_exog_error(df, df_exog):
         _ = TSDataset(df=df, df_exog=df_exog, freq="D")
 
 
-def test_create_ts_different_feat_sets_df_exog():
+def test_create_ts_different_feat_sets_df_exog_error():
     df = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
 
     df_exog = pd.merge(
@@ -1065,35 +1065,6 @@ def test_to_dataset_on_integer_timestamp():
     assert pd.api.types.is_integer_dtype(df.index.dtype)
 
 
-def test_size_with_diff_number_of_features():
-    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
-    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D")
-    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
-    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
-    assert ts_temp.size()[0] == len(df_exog_temp)
-    assert ts_temp.size()[1] == 2
-    assert ts_temp.size()[2] is None
-
-
-def test_size_target_only():
-    df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq="D")
-    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq="D")
-    assert ts_temp.size()[0] == len(df_temp) / 3
-    assert ts_temp.size()[1] == 3
-    assert ts_temp.size()[2] == 1
-
-
-def simple_test_size_():
-    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
-    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
-    df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
-    df_exog_temp["other_feature"] = 1
-    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
-    assert ts_temp.size()[0] == len(df_exog_temp) / 2
-    assert ts_temp.size()[1] == 2
-    assert ts_temp.size()[2] == 3
-
-
 def test_size_target_only():
     df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq="D")
     ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq="D")
@@ -1630,7 +1601,7 @@ def test_update_columns_from_pandas_different_segment_sets_error_single(df_and_r
 def test_update_columns_from_pandas_different_segment_sets_error_multiple(df_and_regressors, df_update_update_column):
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
-    df_update_update_column[("2", "new_column_1")] = 2
+    df_update_update_column[("2", "regressor_1")] = 2
     with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
         ts.update_columns_from_pandas(df_update=df_update_update_column)
 
