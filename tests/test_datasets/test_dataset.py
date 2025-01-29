@@ -440,7 +440,7 @@ def test_create_ts_with_exog_int_timestamp():
 )
 @pytest.mark.parametrize("df", (generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D"),))
 def test_create_ts_with_exog_error(df, df_exog):
-    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
+    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
         _ = TSDataset(df=df, df_exog=df_exog, freq="D")
 
 
@@ -1578,7 +1578,7 @@ def test_add_columns_from_pandas_different_segment_sets_error_single(df_and_regr
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
 
-    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
+    with pytest.raises(ValueError, match="There is a mismatch in segments between provided and expected sets"):
         ts.add_columns_from_pandas(df_update=df_update_add_column.drop(columns=[("2", "new_column")]))
 
 
@@ -1586,7 +1586,7 @@ def test_add_columns_from_pandas_different_segment_sets_error_multiple(df_and_re
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
     df_update_add_column[("2", "new_column_1")] = 2
-    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
+    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
         ts.add_columns_from_pandas(df_update=df_update_add_column)
 
 
@@ -1594,7 +1594,7 @@ def test_update_columns_from_pandas_different_segment_sets_error_single(df_and_r
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
 
-    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
+    with pytest.raises(ValueError, match="There is a mismatch in segments between provided and expected sets"):
         ts.update_columns_from_pandas(df_update=df_update_update_column.drop(columns=[("2", "target")]))
 
 
@@ -1602,7 +1602,7 @@ def test_update_columns_from_pandas_different_segment_sets_error_multiple(df_and
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
     df_update_update_column[("2", "regressor_1")] = 2
-    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
+    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
         ts.update_columns_from_pandas(df_update=df_update_update_column)
 
 

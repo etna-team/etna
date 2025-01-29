@@ -971,7 +971,7 @@ def test_determine_format_fail(df_name, error_match, request):
     ),
 )
 def test_check_features_in_segments_error(columns):
-    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
+    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
         _check_features_in_segments(columns=columns)
 
 
@@ -984,7 +984,7 @@ def test_check_features_in_segments_error(columns):
 )
 @pytest.mark.parametrize("segments", ([1], [1, 2, 3], [3, 4]))
 def test_check_features_in_segments_segments_missmatch_error(columns, segments):
-    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments!"):
+    with pytest.raises(ValueError, match="There is a mismatch in segments between provided and expected sets"):
         _check_features_in_segments(columns=columns, segments=segments)
 
 
@@ -1001,3 +1001,15 @@ def test_check_features_in_segments_segments_missmatch_error(columns, segments):
 )
 def test_check_features_in_segments_ok(columns):
     _check_features_in_segments(columns=columns)
+
+
+@pytest.mark.parametrize(
+    "columns",
+    (
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "a", "a", "a"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "b", "a", "b"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["b", "a", "a", "b"]], names=["segment", "feature"]),
+    ),
+)
+def test_check_features_in_segments_ok_with_expected_segments(columns):
+    _check_features_in_segments(columns=columns, segments=[1, 2])
