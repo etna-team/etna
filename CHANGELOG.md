@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Add `ClearMLLogger` ([#568](https://github.com/etna-team/etna/pull/568))
-- **Breaking:** Add restriction equal feature sets across segments in the dataset ([#581](https://github.com/etna-team/etna/pull/581))
+- **Breaking:** Add a restriction on equal feature sets across segments in the dataset ([#581](https://github.com/etna-team/etna/pull/581))
 - 
 - 
 - 
