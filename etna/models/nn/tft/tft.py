@@ -21,13 +21,13 @@ if SETTINGS.torch_required:
 
     from etna.models.base import DeepBaseModel
     from etna.models.base import DeepBaseNet
-    from etna.models.nn.tft_native.layers import GateAddNorm
-    from etna.models.nn.tft_native.layers import StaticCovariateEncoder
-    from etna.models.nn.tft_native.layers import TemporalFusionDecoder
-    from etna.models.nn.tft_native.layers import VariableSelectionNetwork
+    from etna.models.nn.tft.layers import GateAddNorm
+    from etna.models.nn.tft.layers import StaticCovariateEncoder
+    from etna.models.nn.tft.layers import TemporalFusionDecoder
+    from etna.models.nn.tft.layers import VariableSelectionNetwork
 
 
-class TFTNativeBatch(TypedDict):
+class TFTBatch(TypedDict):
     """Batch specification for TFT."""
 
     segment: str
@@ -40,7 +40,7 @@ class TFTNativeBatch(TypedDict):
     time_varying_reals_decoder: Dict[str, "torch.Tensor"]
 
 
-class TFTNativeNet(DeepBaseNet):
+class TFTNet(DeepBaseNet):
     """TFT based Lightning module."""
 
     def __init__(
@@ -226,7 +226,7 @@ class TFTNativeNet(DeepBaseNet):
         """
         return len(self.time_varying_reals_decoder + self.time_varying_categoricals_decoder)
 
-    def _transform_features(self, x: TFTNativeBatch) -> TFTNativeBatch:
+    def _transform_features(self, x: TFTBatch) -> TFTBatch:
         """Apply embedding layer to categorical input features and linear transformation to continuous features.
 
         Parameters
@@ -269,7 +269,7 @@ class TFTNativeNet(DeepBaseNet):
             )  # (batch_size, decoder_length, hidden_size)
         return x
 
-    def forward(self, x: TFTNativeBatch, *args, **kwargs) -> torch.Tensor:
+    def forward(self, x: TFTBatch, *args, **kwargs) -> torch.Tensor:
         """Forward pass.
 
         Parameters
@@ -358,7 +358,7 @@ class TFTNativeNet(DeepBaseNet):
 
         return target_pred
 
-    def step(self, batch: TFTNativeBatch, *args, **kwargs) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:  # type: ignore
+    def step(self, batch: TFTBatch, *args, **kwargs) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:  # type: ignore
         """Step for loss computation for training or validation.
 
         Parameters
@@ -484,7 +484,7 @@ class TFTNativeNet(DeepBaseNet):
         return optimizer
 
 
-class TFTNativeModel(DeepBaseModel):
+class TFTModel(DeepBaseModel):
     """TFT model. For more details read the `paper <https://arxiv.org/abs/1912.09363>`_.
 
     Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
@@ -496,6 +496,8 @@ class TFTNativeModel(DeepBaseModel):
     ----
     This model requires ``torch`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
+
+    This model was previously named ``TFTNativeModel``. The original ``TFTModel`` is removed.
     """
 
     def __init__(
@@ -605,7 +607,7 @@ class TFTNativeModel(DeepBaseModel):
         self.optimizer_params = optimizer_params
         self.loss = nn.MSELoss() if loss is None else loss
         super().__init__(
-            net=TFTNativeNet(
+            net=TFTNet(
                 encoder_length=self.encoder_length,
                 decoder_length=self.decoder_length,
                 n_heads=self.n_heads,
