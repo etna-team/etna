@@ -8,6 +8,7 @@ from etna.datasets import TSDataset
 from etna.datasets import duplicate_data
 from etna.datasets import generate_ar_df
 from etna.datasets.utils import DataFrameFormat
+from etna.datasets.utils import _check_features_in_segments
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import determine_freq
@@ -957,3 +958,58 @@ def test_determine_format_fail(df_name, error_match, request):
     df = request.getfixturevalue(df_name)
     with pytest.raises(ValueError, match=error_match):
         _ = DataFrameFormat.determine(df=df)
+
+
+@pytest.mark.parametrize(
+    "columns",
+    (
+        pd.MultiIndex.from_arrays([[1, 1, 1, 2], ["a", "aa", "aaa", "b"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 1, 2], ["a", "aa", "aaa", "a"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "aa", "aaa", "a"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "a", "a", "aa"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "a", "aa", "aa"]], names=["segment", "feature"]),
+    ),
+)
+def test_check_features_in_segments_error(columns):
+    with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
+        _check_features_in_segments(columns=columns)
+
+
+@pytest.mark.parametrize(
+    "columns",
+    (
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "a", "a", "a"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "b", "a", "b"]], names=["segment", "feature"]),
+    ),
+)
+@pytest.mark.parametrize("segments", ([1], [1, 2, 3], [3, 4]))
+def test_check_features_in_segments_segments_missmatch_error(columns, segments):
+    with pytest.raises(ValueError, match="There is a mismatch in segments between provided and expected sets"):
+        _check_features_in_segments(columns=columns, segments=segments)
+
+
+@pytest.mark.parametrize(
+    "columns",
+    (
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "a", "a", "a"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "b", "a", "b"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["b", "a", "a", "b"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1], ["a", "b"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1], ["a", "a"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1], ["a"]], names=["segment", "feature"]),
+    ),
+)
+def test_check_features_in_segments_ok(columns):
+    _check_features_in_segments(columns=columns)
+
+
+@pytest.mark.parametrize(
+    "columns",
+    (
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "a", "a", "a"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["a", "b", "a", "b"]], names=["segment", "feature"]),
+        pd.MultiIndex.from_arrays([[1, 1, 2, 2], ["b", "a", "a", "b"]], names=["segment", "feature"]),
+    ),
+)
+def test_check_features_in_segments_ok_with_expected_segments(columns):
+    _check_features_in_segments(columns=columns, segments=[1, 2])

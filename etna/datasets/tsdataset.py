@@ -23,6 +23,7 @@ from typing_extensions import Literal
 from etna import SETTINGS
 from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import DataFrameFormat
+from etna.datasets.utils import _check_features_in_segments
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import apply_alignment
@@ -585,6 +586,9 @@ class TSDataset:
         self._check_regressors(df=df, df_regressors=df_regressors)
 
         df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
+
+        _check_features_in_segments(columns=df.columns)
+
         return df
 
     def _check_endings(self, warning=False):
@@ -686,14 +690,12 @@ class TSDataset:
         All features include initial exogenous data, generated features, target, target components, prediction intervals.
         The order of features in returned list isn't specified.
 
-        If different segments have different subset of features, then the union of features is returned.
-
         Returns
         -------
         :
             List of features.
         """
-        return self.df.columns.get_level_values("feature").unique().tolist()
+        return self.df.xs(self.segments[0], axis=1).columns.tolist()
 
     @property
     def target_components_names(self) -> Tuple[str, ...]:
@@ -1285,6 +1287,8 @@ class TSDataset:
         if len(df.columns.difference(self.df.columns)) > 0:
             raise ValueError("Some columns in the dataframe for update are not presented in the dataset!")
 
+        _check_features_in_segments(columns=df.columns, segments=self.segments)
+
         try:
             column_idx = self.df.columns.get_indexer(df.columns)
 
@@ -1311,6 +1315,8 @@ class TSDataset:
         regressors:
             List of regressors in the passed dataframe.
         """
+        _check_features_in_segments(columns=df_update.columns, segments=self.segments)
+
         self.df = pd.concat((self.df, df_update.loc[: self.df.index.max()]), axis=1).sort_index(axis=1)
         if update_exog:
             if self.df_exog is None:
@@ -1474,19 +1480,19 @@ class TSDataset:
         if len(self.target_components_names) > 0:
             raise ValueError("Dataset already contains target components!")
 
-        components_names = sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
-        for segment in self.segments:
-            components_names_segment = sorted(target_components_df[segment].columns.get_level_values("feature"))
-            if components_names != components_names_segment:
-                raise ValueError(
-                    f"Set of target components differs between segments '{self.segments[0]}' and '{segment}'!"
-                )
+        try:
+            _check_features_in_segments(columns=target_components_df.columns, segments=self.segments)
+
+        except ValueError:
+            raise ValueError(f"Set of target components differs between segments!")
 
         components_sum = target_components_df.groupby(axis=1, level="segment").sum()
         if not np.allclose(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
-        self._target_components_names = tuple(components_names)
+        self._target_components_names = tuple(
+            sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
+        )
         self.df = (
             pd.concat((self.df, target_components_df), axis=1)
             .loc[self.df.index]
@@ -1529,16 +1535,15 @@ class TSDataset:
         if len(self.prediction_intervals_names) > 0:
             raise ValueError("Dataset already contains prediction intervals!")
 
-        intervals_names = sorted(prediction_intervals_df[self.segments[0]].columns.get_level_values("feature"))
-        for segment in self.segments:
-            segment_intervals_names = sorted(prediction_intervals_df[segment].columns.get_level_values("feature"))
+        try:
+            _check_features_in_segments(columns=prediction_intervals_df.columns, segments=self.segments)
 
-            if intervals_names != segment_intervals_names:
-                raise ValueError(
-                    f"Set of prediction intervals differs between segments '{self.segments[0]}' and '{segment}'!"
-                )
+        except ValueError:
+            raise ValueError(f"Set of prediction intervals differs between segments!")
 
-        self._prediction_intervals_names = tuple(intervals_names)
+        self._prediction_intervals_names = tuple(
+            sorted(prediction_intervals_df[self.segments[0]].columns.get_level_values("feature"))
+        )
         self.df = (
             pd.concat((self.df, prediction_intervals_df), axis=1)
             .loc[self.df.index]
@@ -1899,18 +1904,11 @@ class TSDataset:
     def size(self) -> Tuple[int, int, Optional[int]]:
         """Return size of TSDataset.
 
-        The order of sizes is (number of time series, number of segments,
-        and number of features (if their amounts are equal in each segment; otherwise, returns None)).
+        The order of sizes is (number of time series, number of segments, number of features).
 
         Returns
         -------
         :
             Tuple of TSDataset sizes
         """
-        current_number_of_features = 0
-        for segment in self.segments:
-            cur_seg_features = self.df[segment].columns.get_level_values("feature").unique()
-            if current_number_of_features != 0 and current_number_of_features != len(cur_seg_features):
-                return len(self.index), len(self.segments), None
-            current_number_of_features = len(cur_seg_features)
-        return len(self.index), len(self.segments), current_number_of_features
+        return len(self.index), len(self.segments), len(self.features)
