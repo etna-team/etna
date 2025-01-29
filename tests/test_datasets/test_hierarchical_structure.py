@@ -256,6 +256,19 @@ def test_level_names_immutable(structure: Dict[str, List[str]], names: List[str]
 
 
 @pytest.mark.parametrize(
+    "structure,names",
+    (
+        ({"total": ["segment_0", "segment_1"]}, ["total", "bottom"]),
+        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"]),
+    ),
+)
+def test_level_names_immutable_error(structure: Dict[str, List[str]], names: List[str]):
+    h = HierarchicalStructure(level_structure=structure, level_names=names)
+    with pytest.raises(AttributeError, match="can't set attribute"):
+        h.level_names = ["l1", "l2"]
+
+
+@pytest.mark.parametrize(
     "level,answer",
     (
         ("l1", ["total"]),
