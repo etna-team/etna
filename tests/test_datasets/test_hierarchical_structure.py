@@ -245,8 +245,8 @@ def test_level_names_length_error(structure: Dict[str, List[str]], names: List[s
     "structure,names",
     (
         ({"total": ["segment_0", "segment_1"]}, ["total", "bottom"]),
-        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"])
-    )
+        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"]),
+    ),
 )
 def test_level_names_immutable(structure: Dict[str, List[str]], names: List[str]):
     h = HierarchicalStructure(level_structure=structure, level_names=names)
