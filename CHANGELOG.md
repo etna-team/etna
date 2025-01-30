@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - Implement non-empty `params_to_tune` for `StackingEnsemble` ([#561](https://github.com/etna-team/etna/pull/561))
 - 
-- 
+- **Breaking:** Make `level_names` property of `HierarchicalStructure` read-only ([#582](https://github.com/etna-team/etna/pull/582))
 - 
 - 
 - 

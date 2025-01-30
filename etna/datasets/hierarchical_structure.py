@@ -33,11 +33,11 @@ class HierarchicalStructure(BaseMixin):
         hierarchy_levels = self._find_hierarchy_levels()
         tree_depth = len(hierarchy_levels)
 
-        self.level_names = self._get_level_names(level_names, tree_depth)
+        self._level_names = self._get_level_names(level_names, tree_depth)
         self._level_series: Dict[str, Tuple[str, ...]] = {
-            self.level_names[i]: tuple(hierarchy_levels[i]) for i in range(tree_depth)
+            self._level_names[i]: tuple(hierarchy_levels[i]) for i in range(tree_depth)
         }
-        self._level_to_index: Dict[str, int] = {self.level_names[i]: i for i in range(tree_depth)}
+        self._level_to_index: Dict[str, int] = {self._level_names[i]: i for i in range(tree_depth)}
 
         self._segment_num_reachable_leafs: Dict[str, int] = self._get_num_reachable_leafs(hierarchy_levels)
 
@@ -190,3 +190,8 @@ class HierarchicalStructure(BaseMixin):
             return self._level_to_index[level_name]
         except KeyError:
             raise ValueError(f"Invalid level name: {level_name}")
+
+    @property
+    def level_names(self) -> List[str]:
+        """Get list of level names."""
+        return self._level_names.copy()
