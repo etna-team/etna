@@ -19,12 +19,12 @@ if SETTINGS.torch_required:
 
     from etna.models.base import DeepBaseModel
     from etna.models.base import DeepBaseNet
-    from etna.models.nn.deepar_native.loss import DeepARLoss
-    from etna.models.nn.deepar_native.loss import GaussianLoss
+    from etna.models.nn.deepar.loss import DeepARLoss
+    from etna.models.nn.deepar.loss import GaussianLoss
     from etna.models.nn.utils import MultiEmbedding
 
 
-class DeepARNativeBatch(TypedDict):
+class DeepARBatch(TypedDict):
     """Batch specification for DeepAR."""
 
     encoder_real: "torch.Tensor"
@@ -37,7 +37,7 @@ class DeepARNativeBatch(TypedDict):
     weight: "torch.Tensor"
 
 
-class DeepARNativeNet(DeepBaseNet):
+class DeepARNet(DeepBaseNet):
     """DeepAR based Lightning module with LSTM cell."""
 
     def __init__(
@@ -113,7 +113,7 @@ class DeepARNativeNet(DeepBaseNet):
             layers_loc.append(nn.Softplus())
         return nn.ModuleDict({"loc": nn.Sequential(*layers_loc), "scale": nn.Sequential(*layers_scale)})
 
-    def forward(self, x: DeepARNativeBatch, *args, **kwargs):  # type: ignore
+    def forward(self, x: DeepARBatch, *args, **kwargs):  # type: ignore
         """Forward pass.
 
         Parameters
@@ -177,7 +177,7 @@ class DeepARNativeNet(DeepBaseNet):
         scale = self.projection["scale"](output)
         return loc, scale
 
-    def step(self, batch: DeepARNativeBatch, *args, **kwargs):  # type: ignore
+    def step(self, batch: DeepARBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
 
         Parameters
@@ -309,8 +309,8 @@ class DeepARNativeNet(DeepBaseNet):
         return optimizer
 
 
-class DeepARNativeModel(DeepBaseModel):
-    """DeepAR based model on LSTM cell.
+class DeepARModel(DeepBaseModel):
+    """DeepAR based model on LSTM cell. For more details read the `paper <https://arxiv.org/pdf/1704.04110>`_.
 
     Model needs label encoded inputs for categorical features, for that purposes use :py:class:`~etna.transforms.LabelEncoderTransform`.
     Feature values that weren't seen during ``fit`` should be set to NaN, to get this behaviour use encoder with *strategy="none"*.
@@ -321,6 +321,10 @@ class DeepARNativeModel(DeepBaseModel):
     ----
     This model requires ``torch`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
+
+    Note
+    ----
+    This model was previously named ``DeepARNativeModel``. The original ``DeepARModel`` based on ``pytorch_forecasting`` was removed.
     """
 
     def __init__(
@@ -371,9 +375,9 @@ class DeepARNativeModel(DeepBaseModel):
             if 1, return theoretical mean of distribution as a predicted value. if greater than 1, return mean of `n_samples` generated from Monte Carlo sampling
         loss:
             loss function
-                * :py:class:`etna.models.nn.deepar_native.loss.GaussianLoss`: use Gaussian distribution for counting loss
+                * :py:class:`etna.models.nn.deepar.loss.GaussianLoss`: use Gaussian distribution for counting loss
 
-                * :py:class:`etna.models.nn.deepar_native.loss.NegativeBinomialLoss`: use NegativeBinomial distribution for counting loss. Can be used only for positive data
+                * :py:class:`etna.models.nn.deepar.loss.NegativeBinomialLoss`: use NegativeBinomial distribution for counting loss. Can be used only for positive data
         train_batch_size:
             batch size for training
         test_batch_size:
@@ -407,7 +411,7 @@ class DeepARNativeModel(DeepBaseModel):
         self.optimizer_params = optimizer_params
         self.loss = loss
         super().__init__(
-            net=DeepARNativeNet(
+            net=DeepARNet(
                 input_size=input_size,
                 num_layers=num_layers,
                 dropout=dropout,

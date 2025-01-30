@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
-- 
+- **Breaking:** Rename `DeepARNativeModel` -> `DeepARModel`, `TFTNativeModel` -> `TFTModel` ([#585](https://github.com/etna-team/etna/pull/585))
 - Implement non-empty `params_to_tune` for `VotingEnsemble` ([#557](https://github.com/etna-team/etna/pull/557))
 - 
 - Implement non-empty `params_to_tune` for `DirectEnsemble` ([#559](https://github.com/etna-team/etna/pull/559))

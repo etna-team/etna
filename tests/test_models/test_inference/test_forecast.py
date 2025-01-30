@@ -33,14 +33,14 @@ from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import ChronosBoltModel
 from etna.models.nn import ChronosModel
-from etna.models.nn import DeepARNativeModel
+from etna.models.nn import DeepARModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PatchTSModel
 from etna.models.nn import RNNModel
-from etna.models.nn import TFTNativeModel
+from etna.models.nn import TFTModel
 from etna.models.nn import TimesFMModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
@@ -127,12 +127,12 @@ class TestForecastInSampleFullNoTarget:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -293,12 +293,12 @@ class TestForecastInSampleFull:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -425,12 +425,12 @@ class TestForecastInSampleSuffixNoTarget:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -524,12 +524,12 @@ class TestForecastInSampleSuffix:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -642,12 +642,12 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -720,12 +720,12 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -872,12 +872,12 @@ class TestForecastOutSamplePrefix:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1030,7 +1030,7 @@ class TestForecastOutSampleSuffix:
         "model, transforms, dataset_name",
         [
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1046,7 +1046,7 @@ class TestForecastOutSampleSuffix:
         "model, transforms, dataset_name",
         [
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1202,12 +1202,12 @@ class TestForecastMixedInOutSample:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1334,12 +1334,12 @@ class TestForecastSubsetSegments:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1446,12 +1446,12 @@ class TestForecastNewSegments:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
