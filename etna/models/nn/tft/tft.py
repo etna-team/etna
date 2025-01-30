@@ -499,7 +499,7 @@ class TFTModel(DeepBaseModel):
 
     Note
     ----
-    This model was previously named ``TFTNativeModel``. The original ``TFTModel`` based on `pytorch_forecasting` was removed.
+    This model was previously named ``TFTNativeModel``. The original ``TFTModel`` based on ``pytorch_forecasting`` was removed.
     """
 
     def __init__(

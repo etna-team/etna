@@ -324,7 +324,7 @@ class DeepARModel(DeepBaseModel):
 
     Note
     ----
-    This model was previously named ``DeepARNativeModel``. The original ``DeepARModel`` based on `pytorch_forecasting` was removed.
+    This model was previously named ``DeepARNativeModel``. The original ``DeepARModel`` based on ``pytorch_forecasting`` was removed.
     """
 
     def __init__(
