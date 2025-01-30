@@ -497,7 +497,9 @@ class TFTModel(DeepBaseModel):
     This model requires ``torch`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
 
-    This model was previously named ``TFTNativeModel``. The original ``TFTModel`` is removed.
+    Note
+    ----
+    This model was previously named ``TFTNativeModel``. The original ``TFTModel`` based on `pytorch_forecasting` was removed.
     """
 
     def __init__(
