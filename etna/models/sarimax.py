@@ -27,7 +27,6 @@ from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import select_observations
 
-
 _DEFAULT_FREQ = object()
 
 
