@@ -1,6 +1,5 @@
 import warnings
 from abc import abstractmethod
-from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
@@ -10,7 +9,6 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
-from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
