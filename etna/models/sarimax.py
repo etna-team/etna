@@ -9,6 +9,7 @@ from typing import Tuple
 
 import numpy as np
 import pandas as pd
+from statsmodels.tools.sm_exceptions import ValueWarning
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 from statsmodels.tsa.statespace.sarimax import SARIMAXResultsWrapper
 from statsmodels.tsa.statespace.simulation_smoother import SimulationSmoother
@@ -24,6 +25,13 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.utils import select_observations
+
+warnings.filterwarnings(
+    message="No frequency information was provided, so inferred frequency .* will be used",
+    action="ignore",
+    category=ValueWarning,
+    module="statsmodels.tsa.base.tsa_model",
+)
 
 _DEFAULT_FREQ = object()
 
