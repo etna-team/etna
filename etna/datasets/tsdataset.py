@@ -451,7 +451,7 @@ class TSDataset:
             # check if we have enough values in regressors
             # TODO: check performance
             if self.regressors:
-                future_index = df.index.difference(self.index)
+                future_index = df.index.difference(self.timestamps)
                 for segment in self.segments:
                     regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.regressors]].index
                     if not np.all(future_index.isin(regressors_index)):
@@ -1368,7 +1368,7 @@ class TSDataset:
         self._regressors = list(set(self._regressors) - features_set)
 
     @property
-    def index(self) -> pd.Index:
+    def timestamps(self) -> pd.Index:
         """Return TSDataset timestamp index.
 
         Returns
@@ -1376,7 +1376,7 @@ class TSDataset:
         :
             timestamp index of TSDataset
         """
-        return self.df.index
+        return self.df.index.copy()
 
     def level_names(self) -> Optional[List[str]]:
         """Return names of the levels in the hierarchical structure."""
@@ -1911,6 +1911,6 @@ class TSDataset:
         for segment in self.segments:
             cur_seg_features = self.df[segment].columns.get_level_values("feature").unique()
             if current_number_of_features != 0 and current_number_of_features != len(cur_seg_features):
-                return len(self.index), len(self.segments), None
+                return len(self.timestamps), len(self.segments), None
             current_number_of_features = len(cur_seg_features)
-        return len(self.index), len(self.segments), current_number_of_features
+        return len(self.timestamps), len(self.segments), current_number_of_features

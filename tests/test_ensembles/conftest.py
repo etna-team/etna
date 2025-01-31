@@ -212,7 +212,7 @@ def forecasts_ts(
 def targets(example_tsds: "TSDataset", forecasts_ts: List["TSDataset"]) -> pd.Series:
     y = pd.concat(
         [
-            example_tsds[forecasts_ts[0].index.min() : forecasts_ts[0].index.max(), segment, "target"]
+            example_tsds[forecasts_ts[0].timestamps.min() : forecasts_ts[0].timestamps.max(), segment, "target"]
             for segment in example_tsds.segments
         ],
         axis=0,

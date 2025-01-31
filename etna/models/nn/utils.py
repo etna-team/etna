@@ -135,7 +135,7 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         df_flat = ts.to_pandas(flatten=True)
         df_flat = df_flat.dropna()
 
-        mapping_time_idx = {x: i for i, x in enumerate(ts.index)}
+        mapping_time_idx = {x: i for i, x in enumerate(ts.timestamps)}
         df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
 
         self.min_timestamp = df_flat["timestamp"].min()
@@ -204,7 +204,7 @@ class PytorchForecastingDatasetBuilder(BaseMixin):
         time_idx_shift = determine_num_steps(
             start_timestamp=self.min_timestamp, end_timestamp=inference_min_timestamp, freq=ts.freq
         )
-        mapping_time_idx = {x: i + time_idx_shift for i, x in enumerate(ts.index)}
+        mapping_time_idx = {x: i + time_idx_shift for i, x in enumerate(ts.timestamps)}
         df_flat["time_idx"] = df_flat["timestamp"].map(mapping_time_idx)
 
         if self.time_varying_known_categoricals:
@@ -270,7 +270,7 @@ class PytorchForecastingMixin:
         return self
 
     def _get_first_prediction_timestamp(self, ts: TSDataset, horizon: int) -> Union[pd.Timestamp, int]:
-        return ts.index[-horizon]
+        return ts.timestamps[-horizon]
 
     def _is_in_sample_prediction(self, ts: TSDataset, horizon: int) -> bool:
         first_prediction_timestamp = self._get_first_prediction_timestamp(ts=ts, horizon=horizon)

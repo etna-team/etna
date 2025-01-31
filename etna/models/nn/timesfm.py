@@ -226,7 +226,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         if return_components:
             raise NotImplementedError("This mode isn't currently implemented!")
 
-        max_context_size = len(ts.index) - prediction_size
+        max_context_size = len(ts.timestamps) - prediction_size
         if max_context_size <= 0:
             raise ValueError("Dataset doesn't have any context timestamps.")
 
@@ -235,7 +235,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
         self.tfm._set_horizon(prediction_size)
 
-        end_idx = len(ts.index)
+        end_idx = len(ts.timestamps)
 
         all_exog = self._exog_columns()
         df_slice = ts.df.loc[:, pd.IndexSlice[:, all_exog + ["target"]]]
@@ -243,7 +243,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             df_slice.isna().any(axis=1).idxmin()
         )  # If all timestamps contains NaNs, idxmin() returns the first timestamp
 
-        target_df = df_slice.loc[first_valid_index : ts.index[-prediction_size - 1], pd.IndexSlice[:, "target"]]
+        target_df = df_slice.loc[first_valid_index : ts.timestamps[-prediction_size - 1], pd.IndexSlice[:, "target"]]
 
         nan_segment_mask = target_df.isna().any()
         if nan_segment_mask.any():

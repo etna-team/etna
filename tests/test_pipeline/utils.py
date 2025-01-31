@@ -71,9 +71,9 @@ def assert_pipeline_forecasts_without_self_ts(
         expected_segments = ts.segments
     assert forecast_ts.segments == expected_segments
 
-    expected_index = timestamp_range(start=ts.index[-1], periods=horizon + 1, freq=ts.freq)[1:]
+    expected_index = timestamp_range(start=ts.timestamps[-1], periods=horizon + 1, freq=ts.freq)[1:]
     expected_index.name = "timestamp"
-    pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+    pd.testing.assert_index_equal(forecast_ts.timestamps, expected_index)
     assert not forecast_df["target"].isna().any()
 
     return pipeline
@@ -94,9 +94,9 @@ def assert_pipeline_forecasts_given_ts(pipeline: AbstractPipeline, ts: TSDataset
         expected_segments = to_forecast_ts.segments
     assert forecast_ts.segments == expected_segments
 
-    expected_index = timestamp_range(start=to_forecast_ts.index[-1], periods=horizon + 1, freq=ts.freq)[1:]
+    expected_index = timestamp_range(start=to_forecast_ts.timestamps[-1], periods=horizon + 1, freq=ts.freq)[1:]
     expected_index.name = "timestamp"
-    pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+    pd.testing.assert_index_equal(forecast_ts.timestamps, expected_index)
     assert not forecast_df["target"].isna().any()
 
     return pipeline
@@ -121,9 +121,9 @@ def assert_pipeline_forecasts_given_ts_with_prediction_intervals(
         expected_segments = to_forecast_ts.segments
     assert forecast_ts.segments == expected_segments
 
-    expected_index = timestamp_range(start=to_forecast_ts.index[-1], periods=horizon + 1, freq=ts.freq)[1:]
+    expected_index = timestamp_range(start=to_forecast_ts.timestamps[-1], periods=horizon + 1, freq=ts.freq)[1:]
     expected_index.name = "timestamp"
-    pd.testing.assert_index_equal(forecast_ts.index, expected_index)
+    pd.testing.assert_index_equal(forecast_ts.timestamps, expected_index)
 
     assert not forecast_df["target"].isna().any()
     assert not forecast_df["target_0.025"].isna().any()
@@ -138,8 +138,8 @@ def assert_pipeline_predicts(
     predict_ts = deepcopy(ts)
     pipeline.fit(ts)
 
-    start_timestamp = ts.index[start_idx]
-    end_timestamp = ts.index[end_idx]
+    start_timestamp = ts.timestamps[start_idx]
+    end_timestamp = ts.timestamps[end_idx]
     num_points = end_idx - start_idx + 1
 
     predict_ts = pipeline.predict(ts=predict_ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
@@ -153,7 +153,7 @@ def assert_pipeline_predicts(
 
     expected_index = timestamp_range(start=start_timestamp, periods=num_points, freq=ts.freq)
     expected_index.name = "timestamp"
-    pd.testing.assert_index_equal(predict_ts.index, expected_index)
+    pd.testing.assert_index_equal(predict_ts.timestamps, expected_index)
 
     assert not np.any(predict_df["target"].isna())
 

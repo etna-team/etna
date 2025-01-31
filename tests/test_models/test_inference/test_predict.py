@@ -1034,7 +1034,7 @@ class TestPredictMixedInOutSample:
         forecast_full_ts = TSDataset(df=df_full, df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
         forecast_full_ts.transform(transforms)
         forecast_full_ts.df = forecast_full_ts.df.iloc[(num_skip_points - model.context_size) :]
-        full_prediction_size = len(forecast_full_ts.index) - model.context_size
+        full_prediction_size = len(forecast_full_ts.timestamps) - model.context_size
         forecast_full_ts = make_predict(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
 
         # predicting only in sample
@@ -1044,7 +1044,7 @@ class TestPredictMixedInOutSample:
         forecast_in_sample_ts.transform(transforms)
         to_skip = num_skip_points - model.context_size
         forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[to_skip:]
-        in_sample_prediction_size = len(forecast_in_sample_ts.index) - model.context_size
+        in_sample_prediction_size = len(forecast_in_sample_ts.timestamps) - model.context_size
         forecast_in_sample_ts = make_predict(
             model=model, ts=forecast_in_sample_ts, prediction_size=in_sample_prediction_size
         )
@@ -1207,7 +1207,7 @@ class TestPredictSubsetSegments:
     """
 
     def _test_predict_subset_segments(self, ts, model, transforms, segments, num_skip_points=50):
-        prediction_size = len(ts.index) - num_skip_points
+        prediction_size = len(ts.timestamps) - num_skip_points
 
         # select subset of tsdataset
         segments = list(set(segments))
@@ -1375,7 +1375,7 @@ class TestPredictNewSegments:
 
         # forecasting
         test_ts.df = test_ts.df.iloc[(num_skip_points - model.context_size) :]
-        prediction_size = len(ts.index) - num_skip_points
+        prediction_size = len(ts.timestamps) - num_skip_points
         forecast_ts = make_predict(model=model, ts=test_ts, prediction_size=prediction_size)
 
         # checking

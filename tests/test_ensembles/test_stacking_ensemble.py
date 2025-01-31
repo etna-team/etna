@@ -258,7 +258,9 @@ def test_predict_interface(
     start_idx = 20
     end_idx = 30
     prediction = ensemble.predict(
-        ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
+        ts=example_tsds,
+        start_timestamp=example_tsds.timestamps[start_idx],
+        end_timestamp=example_tsds.timestamps[end_idx],
     )
     features = set(prediction.columns.get_level_values("feature")) - {"target"}
     assert isinstance(prediction, TSDataset)
@@ -292,8 +294,8 @@ def test_predict_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble
 
     result = naive_ensemble._predict(
         ts=example_tsds,
-        start_timestamp=example_tsds.index[20],
-        end_timestamp=example_tsds.index[30],
+        start_timestamp=example_tsds.timestamps[20],
+        end_timestamp=example_tsds.timestamps[30],
         prediction_interval=False,
         quantiles=(),
         return_components=False,

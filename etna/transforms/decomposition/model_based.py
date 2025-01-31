@@ -125,8 +125,8 @@ class ModelDecomposeTransform(IrreversibleTransform):
         :
             the fitted transform instance.
         """
-        self._first_timestamp = ts.index.min()
-        self._last_timestamp = ts.index.max()
+        self._first_timestamp = ts.timestamps.min()
+        self._last_timestamp = ts.timestamps.max()
 
         ts = self._prepare_ts(ts=ts)
 
@@ -149,12 +149,12 @@ class ModelDecomposeTransform(IrreversibleTransform):
         if self._first_timestamp is None:
             raise ValueError("Transform is not fitted!")
 
-        if ts.index.min() < self._first_timestamp:
+        if ts.timestamps.min() < self._first_timestamp:
             raise ValueError(
                 f"First index of the dataset to be transformed must be larger or equal than {self._first_timestamp}!"
             )
 
-        if ts.index.min() > self._last_timestamp:
+        if ts.timestamps.min() > self._last_timestamp:
             raise ValueError(
                 f"Dataset to be transformed must contain historical observations in range {self._first_timestamp} - {self._last_timestamp}"
             )
@@ -162,7 +162,7 @@ class ModelDecomposeTransform(IrreversibleTransform):
         decompose_ts = self._prepare_ts(ts=ts)
 
         future_steps = 0
-        ts_max_timestamp = decompose_ts.index.max()
+        ts_max_timestamp = decompose_ts.timestamps.max()
         if ts_max_timestamp > self._last_timestamp:
             future_steps = determine_num_steps(self._last_timestamp, ts_max_timestamp, freq=decompose_ts.freq)
             decompose_ts.df = decompose_ts.df.loc[: self._last_timestamp]
