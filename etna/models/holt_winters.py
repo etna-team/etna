@@ -1,5 +1,4 @@
 import warnings
-from datetime import datetime
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -47,8 +46,6 @@ class _HoltWintersAdapter(BaseAdapter):
         initial_seasonal: Optional[Sequence[float]] = None,
         use_boxcox: Union[bool, str, float] = False,
         bounds: Optional[Dict[str, Tuple[float, float]]] = None,
-        dates: Optional[Sequence[datetime]] = None,
-        freq: Optional[str] = None,
         missing: str = "none",
         smoothing_level: Optional[float] = None,
         smoothing_trend: Optional[float] = None,
@@ -152,12 +149,6 @@ class _HoltWintersAdapter(BaseAdapter):
             for j=0,...,m-1 where m is the number of period in a full season.
             Use None to indicate a non-binding constraint, e.g., (0, None)
             constrains a parameter to be non-negative.
-        dates:
-            An array-like object of datetime objects. If a Pandas object is given
-            for endog, it is assumed to have a DateIndex.
-        freq:
-            The frequency of the time-series. A Pandas offset or 'B', 'D', 'W',
-            'M', 'A', or 'Q'. This is optional if dates are given.
         missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
@@ -187,8 +178,6 @@ class _HoltWintersAdapter(BaseAdapter):
         self.initial_seasonal = initial_seasonal
         self.use_boxcox = use_boxcox
         self.bounds = bounds
-        self.dates = dates
-        self.freq = freq
         self.missing = missing
         self.smoothing_level = smoothing_level
         self.smoothing_trend = smoothing_trend
@@ -251,8 +240,6 @@ class _HoltWintersAdapter(BaseAdapter):
             initial_seasonal=self.initial_seasonal,
             use_boxcox=self.use_boxcox,
             bounds=self.bounds,
-            dates=self.dates,
-            freq=self.freq,
             missing=self.missing,
         )
         self._result = self._model.fit(
@@ -495,8 +482,6 @@ class HoltWintersModel(
         initial_seasonal: Optional[Sequence[float]] = None,
         use_boxcox: Union[bool, str, float] = False,
         bounds: Optional[Dict[str, Tuple[float, float]]] = None,
-        dates: Optional[Sequence[datetime]] = None,
-        freq: Optional[str] = None,
         missing: str = "none",
         smoothing_level: Optional[float] = None,
         smoothing_trend: Optional[float] = None,
@@ -600,12 +585,6 @@ class HoltWintersModel(
             for j=0,...,m-1 where m is the number of period in a full season.
             Use None to indicate a non-binding constraint, e.g., (0, None)
             constrains a parameter to be non-negative.
-        dates:
-            An array-like object of datetime objects. If a Pandas object is given
-            for endog, it is assumed to have a DateIndex.
-        freq:
-            The frequency of the time-series. A Pandas offset or 'B', 'D', 'W',
-            'M', 'A', or 'Q'. This is optional if dates are given.
         missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
@@ -635,8 +614,6 @@ class HoltWintersModel(
         self.initial_seasonal = initial_seasonal
         self.use_boxcox = use_boxcox
         self.bounds = bounds
-        self.dates = dates
-        self.freq = freq
         self.missing = missing
         self.smoothing_level = smoothing_level
         self.smoothing_trend = smoothing_trend
@@ -655,8 +632,6 @@ class HoltWintersModel(
                 initial_seasonal=self.initial_seasonal,
                 use_boxcox=self.use_boxcox,
                 bounds=self.bounds,
-                dates=self.dates,
-                freq=self.freq,
                 missing=self.missing,
                 smoothing_level=self.smoothing_level,
                 smoothing_trend=self.smoothing_trend,
