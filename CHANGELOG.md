@@ -35,9 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
-- 
-- 
-- 
+- Rename `TSDataset.index` to `TSDataset.timestamps` ([#593](https://github.com/etna-team/etna/pull/593))
+- Rename `TSDataset.add_columns_from_pandas` to `TSDataset.add_features_from_pandas` ([#593](https://github.com/etna-team/etna/pull/593))
+- Rename `TSDataset.update_columns_from_pandas` to `TSDataset.update_features_from_pandas` ([#593](https://github.com/etna-team/etna/pull/593))
 - 
 - 
 - 
