@@ -108,15 +108,15 @@ def test_update_dataset_update_columns(remove_columns_df):
     ts.update_columns_from_pandas.assert_called()
 
 
-def test_update_dataset_add_columns(remove_columns_df):
+def test_update_dataset_add_features(remove_columns_df):
     df_transformed, df = remove_columns_df
     columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
-    ts.add_columns_from_pandas = Mock()
+    ts.add_features_from_pandas = Mock()
     transform = TransformMock(required_features=["target"])
 
     transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
-    ts.add_columns_from_pandas.assert_called()
+    ts.add_features_from_pandas.assert_called()
 
 
 @pytest.mark.parametrize(

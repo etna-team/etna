@@ -192,7 +192,7 @@ class FourierDecomposeTransform(IrreversibleTransform):
 
         segment_components = pd.concat(segment_components, axis=1)
 
-        ts.add_columns_from_pandas(segment_components)
+        ts.add_features_from_pandas(segment_components)
 
         return ts
 

@@ -1294,7 +1294,7 @@ class TSDataset:
 
         self.df.iloc[:, column_idx] = df
 
-    def add_columns_from_pandas(
+    def add_features_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
     ):
         """Update the dataset with the new columns from pandas dataframe.

@@ -1535,17 +1535,17 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     )
 
 
-def test_add_columns_from_pandas_update_df(df_and_regressors, df_update_add_column, df_updated_add_column):
+def test_add_features_from_pandas_update_df(df_and_regressors, df_update_add_column, df_updated_add_column):
     df, _, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D")
-    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=False)
+    ts.add_features_from_pandas(df_update=df_update_add_column, update_exog=False)
     pd.testing.assert_frame_equal(ts.df, df_updated_add_column)
 
 
-def test_add_columns_from_pandas_update_df_exog(df_and_regressors, df_update_add_column, df_exog_updated_add_column):
+def test_add_features_from_pandas_update_df_exog(df_and_regressors, df_update_add_column, df_exog_updated_add_column):
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
-    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=True)
+    ts.add_features_from_pandas(df_update=df_update_add_column, update_exog=True)
     pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated_add_column)
 
 
@@ -1556,12 +1556,12 @@ def test_add_columns_from_pandas_update_df_exog(df_and_regressors, df_update_add
         (["regressor_1"], ["regressor_1", "regressor_2"], ["regressor_1", "regressor_2"]),
     ),
 )
-def test_add_columns_from_pandas_update_regressors(
+def test_add_features_from_pandas_update_regressors(
     df_and_regressors, df_update_add_column, known_future, regressors, expected_regressors
 ):
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
-    ts.add_columns_from_pandas(df_update=df_update_add_column, update_exog=True, regressors=regressors)
+    ts.add_features_from_pandas(df_update=df_update_add_column, update_exog=True, regressors=regressors)
     assert sorted(ts.regressors) == sorted(expected_regressors)
 
 

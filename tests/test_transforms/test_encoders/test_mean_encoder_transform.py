@@ -155,7 +155,7 @@ def mean_segment_encoder_ts(mean_segment_encoder_ts) -> TSDataset:
     df = df.drop(columns=["target"])
     df["segment_feature"] = ["segment_0"] * 7 + ["segment_1"] * 7
     df_wide = TSDataset.to_dataset(df)
-    mean_segment_encoder_ts.add_columns_from_pandas(df_wide, update_exog=True, regressors=["segment_feature"])
+    mean_segment_encoder_ts.add_features_from_pandas(df_wide, update_exog=True, regressors=["segment_feature"])
 
     return mean_segment_encoder_ts
 
