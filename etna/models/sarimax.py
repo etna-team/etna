@@ -1,6 +1,5 @@
 import warnings
 from abc import abstractmethod
-from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
@@ -456,8 +455,6 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         concentrate_scale: bool = False,
         trend_offset: float = 1,
         use_exact_diffuse: bool = False,
-        dates: Optional[List[datetime]] = None,
-        freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
         fit_params: Optional[Dict[str, Any]] = None,
@@ -537,12 +534,6 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             Whether or not to use exact diffuse initialization for non-stationary
             states. Default is False (in which case approximate diffuse
             initialization is used).
-        dates:
-            If no index is given by `endog` or `exog`, an array-like object of
-            datetime objects can be provided.
-        freq:
-            If no index is given by `endog` or `exog`, the frequency of the
-            time-series may be specified here as a Pandas offset or offset string.
         missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
@@ -568,8 +559,6 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
         self.concentrate_scale = concentrate_scale
         self.trend_offset = trend_offset
         self.use_exact_diffuse = use_exact_diffuse
-        self.dates = dates
-        self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
         self.fit_params = fit_params if fit_params else {}
@@ -595,8 +584,6 @@ class _SARIMAXAdapter(_SARIMAXBaseAdapter):
             concentrate_scale=self.concentrate_scale,
             trend_offset=self.trend_offset,
             use_exact_diffuse=self.use_exact_diffuse,
-            dates=self.dates,
-            freq=self.freq,
             missing=self.missing,
             validate_specification=self.validate_specification,
             **self.kwargs,
@@ -641,8 +628,6 @@ class SARIMAXModel(
         concentrate_scale: bool = False,
         trend_offset: float = 1,
         use_exact_diffuse: bool = False,
-        dates: Optional[List[datetime]] = None,
-        freq: Optional[str] = None,
         missing: str = "none",
         validate_specification: bool = True,
         fit_params: Optional[Dict[str, Any]] = None,
@@ -722,12 +707,6 @@ class SARIMAXModel(
             Whether or not to use exact diffuse initialization for non-stationary
             states. Default is False (in which case approximate diffuse
             initialization is used).
-        dates:
-            If no index is given by `endog` or `exog`, an array-like object of
-            datetime objects can be provided.
-        freq:
-            If no index is given by `endog` or `exog`, the frequency of the
-            time-series may be specified here as a Pandas offset or offset string.
         missing:
             Available options are 'none', 'drop', and 'raise'. If 'none', no nan
             checking is done. If 'drop', any observations with nans are dropped.
@@ -753,8 +732,6 @@ class SARIMAXModel(
         self.concentrate_scale = concentrate_scale
         self.trend_offset = trend_offset
         self.use_exact_diffuse = use_exact_diffuse
-        self.dates = dates
-        self.freq = freq
         self.missing = missing
         self.validate_specification = validate_specification
         self.fit_params = fit_params if fit_params else {}
@@ -774,8 +751,6 @@ class SARIMAXModel(
                 concentrate_scale=self.concentrate_scale,
                 trend_offset=self.trend_offset,
                 use_exact_diffuse=self.use_exact_diffuse,
-                dates=self.dates,
-                freq=self.freq,
                 missing=self.missing,
                 validate_specification=self.validate_specification,
                 fit_params=self.fit_params,
