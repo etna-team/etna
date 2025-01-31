@@ -171,7 +171,7 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         relevance_table: RelevanceTable,
         top_k: int,
         features_to_use: Union[List[str], Literal["all"]] = "all",
-        fast_redundancy: bool = False,
+        fast_redundancy: bool = True,
         drop_zero: bool = False,
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,

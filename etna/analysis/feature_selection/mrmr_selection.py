@@ -1,4 +1,3 @@
-import warnings
 from enum import Enum
 from typing import List
 
@@ -76,11 +75,6 @@ def mrmr(
     selected_features: List[str]
         list of ``top_k`` selected regressors, sorted by their importance
     """
-    if not fast_redundancy:
-        warnings.warn(
-            "Option `fast_redundancy=False` was added for backward compatibility and will be removed in etna 3.0.0.",
-            DeprecationWarning,
-        )
     relevance_aggregation_fn = AGGREGATION_FN[AggregationMode(relevance_aggregation_mode)]
     redundancy_aggregation_fn = AGGREGATION_FN[AggregationMode(redundancy_aggregation_mode)]
 
