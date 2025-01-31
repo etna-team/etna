@@ -1256,7 +1256,7 @@ class TSDataset:
 
         return train, test
 
-    def update_columns_from_pandas(self, df_update: pd.DataFrame):
+    def update_features_from_pandas(self, df_update: pd.DataFrame):
         """Update the existing columns in the dataset with the new values from pandas dataframe.
 
         Before updating columns in ``df``, columns of ``df_update`` will be cropped by the last timestamp in ``df``.

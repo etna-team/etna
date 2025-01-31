@@ -50,7 +50,7 @@ class Transform(SaveMixin, BaseMixin):
                 regressors=new_regressors,
             )
         if len(columns_to_update) != 0:
-            ts.update_columns_from_pandas(
+            ts.update_features_from_pandas(
                 df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[:, columns_to_update]]
             )
         return ts

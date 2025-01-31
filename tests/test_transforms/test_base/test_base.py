@@ -49,7 +49,7 @@ class SimpleAddColumnTransform(IrreversibleTransform):
 
 
 @pytest.fixture
-def remove_columns_df():
+def remove_features_df():
     df = generate_ar_df(periods=10, n_segments=3, start_time="2000-01-01")
     df["exog_1"] = 1
     df["target_0.01"] = 2
@@ -61,8 +61,8 @@ def remove_columns_df():
 
 
 @pytest.fixture()
-def remove_columns_ts(remove_columns_df):
-    df, df_transformed = remove_columns_df
+def remove_columns_ts(remove_features_df):
+    df, df_transformed = remove_features_df
 
     df_exog = df.loc[:, pd.IndexSlice[:, "exog_1"]]
     intervals = df.loc[:, pd.IndexSlice[:, "target_0.01"]]
@@ -83,8 +83,8 @@ def test_required_features(required_features, expected_features):
     assert transform.required_features == expected_features
 
 
-def test_update_dataset_remove_columns(remove_columns_df):
-    df, df_transformed = remove_columns_df
+def test_update_dataset_remove_features(remove_features_df):
+    df, df_transformed = remove_features_df
     columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.drop_features = Mock()
@@ -97,19 +97,19 @@ def test_update_dataset_remove_columns(remove_columns_df):
     ts.drop_features.assert_called_with(features=expected_features_to_remove, drop_from_exog=False)
 
 
-def test_update_dataset_update_columns(remove_columns_df):
-    df, df_transformed = remove_columns_df
+def test_update_dataset_update_features(remove_features_df):
+    df, df_transformed = remove_features_df
     columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
-    ts.update_columns_from_pandas = Mock()
+    ts.update_features_from_pandas = Mock()
     transform = TransformMock(required_features=["target"])
 
     transform._update_dataset(ts=ts, columns_before=columns_before, df_transformed=df_transformed)
-    ts.update_columns_from_pandas.assert_called()
+    ts.update_features_from_pandas.assert_called()
 
 
-def test_update_dataset_add_features(remove_columns_df):
-    df_transformed, df = remove_columns_df
+def test_update_dataset_add_features(remove_features_df):
+    df_transformed, df = remove_features_df
     columns_before = set(df.columns.get_level_values("feature"))
     ts = TSDataset(df=df, freq="D")
     ts.add_features_from_pandas = Mock()
@@ -190,8 +190,8 @@ def test_inverse_transform_request_update_dataset(remove_columns_ts):
     )
 
 
-def test_double_apply_add_columns_transform(remove_columns_df):
-    df, _ = remove_columns_df
+def test_double_apply_add_columns_transform(remove_features_df):
+    df, _ = remove_features_df
     ts = TSDataset(df=df, freq="D")
 
     transform = SimpleAddColumnTransform(required_features=["target"])
