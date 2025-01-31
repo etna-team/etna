@@ -226,7 +226,7 @@ def test_invalid_tree_structure_initialization_fails(structure: Dict[str, List[s
 )
 def test_level_names(structure: Dict[str, List[str]], names: List[str], answer: List[str]):
     h = HierarchicalStructure(level_structure=structure, level_names=names)
-    assert h.level_names == answer
+    assert h._level_names == answer
 
 
 @pytest.mark.parametrize(
@@ -239,6 +239,33 @@ def test_level_names(structure: Dict[str, List[str]], names: List[str], answer: 
 def test_level_names_length_error(structure: Dict[str, List[str]], names: List[str]):
     with pytest.raises(ValueError, match="Length of `level_names` must be equal to hierarchy tree depth!"):
         HierarchicalStructure(level_structure=structure, level_names=names)
+
+
+@pytest.mark.parametrize(
+    "structure,names",
+    (
+        ({"total": ["segment_0", "segment_1"]}, ["total", "bottom"]),
+        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"]),
+    ),
+)
+def test_level_names_immutable(structure: Dict[str, List[str]], names: List[str]):
+    h = HierarchicalStructure(level_structure=structure, level_names=names)
+    level_names = h.level_names
+    level_names.pop()
+    assert h._level_names == names
+
+
+@pytest.mark.parametrize(
+    "structure,names",
+    (
+        ({"total": ["segment_0", "segment_1"]}, ["total", "bottom"]),
+        ({"total": ["X", "Y"], "X": ["a", "b"], "Y": ["c", "d"]}, ["l1", "l2", "l3"]),
+    ),
+)
+def test_level_names_immutable_error(structure: Dict[str, List[str]], names: List[str]):
+    h = HierarchicalStructure(level_structure=structure, level_names=names)
+    with pytest.raises(AttributeError, match="can't set attribute"):
+        h.level_names = ["l1", "l2"]
 
 
 @pytest.mark.parametrize(

@@ -4,8 +4,6 @@ import numpy as np
 import pandas as pd
 import pytest
 from pandas.testing import assert_frame_equal
-from pytorch_forecasting.data import GroupNormalizer
-from pytorch_forecasting.data import NaNLabelEncoder
 
 from etna.datasets import TSDataset
 from etna.models import AutoARIMAModel
@@ -34,16 +32,13 @@ from etna.models import TBATSModel
 from etna.models.nn import ChronosBoltModel
 from etna.models.nn import ChronosModel
 from etna.models.nn import DeepARModel
-from etna.models.nn import DeepARNativeModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
 from etna.models.nn import PatchTSModel
-from etna.models.nn import PytorchForecastingDatasetBuilder
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
-from etna.models.nn import TFTNativeModel
 from etna.models.nn import TimesFMModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
@@ -125,49 +120,17 @@ class TestPredictInSampleFull:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -263,49 +226,17 @@ class TestPredictInSampleSuffix:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -432,12 +363,12 @@ class TestPredictInSampleSuffix:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -445,38 +376,6 @@ class TestPredictInSampleSuffix:
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
-                "example_tsds",
-            ),
-            (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=1,
-                        max_prediction_length=1,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
                 "example_tsds",
             ),
             (
@@ -565,49 +464,17 @@ class TestPredictOutSample:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -731,49 +598,17 @@ class TestPredictOutSamplePrefix:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -900,49 +735,17 @@ class TestPredictOutSampleSuffix:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1096,49 +899,17 @@ class TestPredictMixedInOutSample:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1269,49 +1040,17 @@ class TestPredictSubsetSegments:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1405,51 +1144,17 @@ class TestPredictNewSegments:
         "model, transforms, dataset_name",
         [
             (
-                DeepARModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=5,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                        target_normalizer=GroupNormalizer(groups=["segment"]),
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
-                TFTModel(
-                    dataset_builder=PytorchForecastingDatasetBuilder(
-                        max_encoder_length=21,
-                        min_encoder_length=21,
-                        max_prediction_length=5,
-                        time_varying_known_reals=["time_idx"],
-                        time_varying_unknown_reals=["target"],
-                        categorical_encoders={"segment": NaNLabelEncoder(add_nan=True, warn=False)},
-                        static_categoricals=["segment"],
-                        target_normalizer=None,
-                    ),
-                    trainer_params=dict(max_epochs=1),
-                    lr=0.01,
-                ),
-                [],
-                "example_tsds",
-            ),
-            (
                 RNNModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),

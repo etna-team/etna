@@ -11,7 +11,7 @@ if SETTINGS.torch_required:
 
 
 class DeepARLoss(_Loss):
-    """Base class to create any loss for DeepARNativeModel."""
+    """Base class to create any loss for DeepARModel."""
 
     @staticmethod
     @abstractmethod

@@ -53,14 +53,18 @@ We have prepared a set of tutorials for an easy introduction:
 
 #### [Deep learning models](https://github.com/etna-team/etna/tree/master/examples/202-NN_examples.ipynb)
 - Loading dataset
-- Architecture
 - Testing models
   - Baseline 
-  - DeepAR 
-  - RNN 
+  - DeepARNative
+  - TFTNative
+  - RNN
+  - MLP
   - Deep State Model 
   - N-BEATS Model 
   - PatchTS Model
+  - Chronos Model
+  - Chronos Bolt Model
+  - TimesFM Model
 
 #### [Ensembles](https://github.com/etna-team/etna/tree/master/examples/203-ensembles.ipynb)
 - Loading dataset 

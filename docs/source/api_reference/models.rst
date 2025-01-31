@@ -81,8 +81,8 @@ Native neural network models:
    nn.NBeatsGenericModel
    nn.NBeatsInterpretableModel
    nn.PatchTSModel
-   nn.DeepARNativeModel
-   nn.TFTNativeModel
+   nn.DeepARModel
+   nn.TFTModel
 
 Utilities for :py:class:`~etna.models.nn.deepstate.deepstate.DeepStateModel`
 
@@ -97,23 +97,6 @@ Utilities for :py:class:`~etna.models.nn.deepstate.deepstate.DeepStateModel`
    nn.deepstate.DaylySeasonalitySSM
    nn.deepstate.SeasonalitySSM
    nn.deepstate.YearlySeasonalitySSM
-
-Neural network models based on ``pytorch_forecasting``:
-
-.. autosummary::
-   :toctree: api/
-   :template: class.rst
-
-   nn.DeepARModel
-   nn.TFTModel
-
-Utilities for neural network models based on ``pytorch_forecasting``:
-
-.. autosummary::
-   :toctree: api/
-   :template: class.rst
-
-   nn.PytorchForecastingDatasetBuilder
 
 Pretrained neural network models:
 

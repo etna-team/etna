@@ -5,10 +5,10 @@ import pytest
 from pytorch_lightning import seed_everything
 
 from etna.metrics import MAE
-from etna.models.nn import DeepARNativeModel
-from etna.models.nn.deepar_native.deepar import DeepARNativeNet
-from etna.models.nn.deepar_native.loss import GaussianLoss
-from etna.models.nn.deepar_native.loss import NegativeBinomialLoss
+from etna.models.nn import DeepARModel
+from etna.models.nn.deepar.deepar import DeepARNet
+from etna.models.nn.deepar.loss import GaussianLoss
+from etna.models.nn.deepar.loss import NegativeBinomialLoss
 from etna.pipeline import Pipeline
 from etna.transforms import FilterFeaturesTransform
 from etna.transforms import LabelEncoderTransform
@@ -39,7 +39,7 @@ def test_deepar_model_run_weekly_overfit(
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
     encoder_length = 14
     decoder_length = 14
-    model = DeepARNativeModel(
+    model = DeepARModel(
         input_size=1,
         encoder_length=encoder_length,
         decoder_length=decoder_length,
@@ -63,7 +63,7 @@ def test_deepar_model_run_weekly_overfit(
 def test_handling_categoricals(ts_different_regressors, embedding_sizes, features_to_encode):
     encoder_length = 4
     decoder_length = 1
-    model = DeepARNativeModel(
+    model = DeepARModel(
         input_size=3,
         encoder_length=encoder_length,
         decoder_length=decoder_length,
@@ -92,7 +92,7 @@ def test_deepar_make_samples(df_name, scale, weights, cat_columns, request):
     decoder_length = 1
 
     ts_samples = list(
-        DeepARNativeNet.make_samples(
+        DeepARNet.make_samples(
             deepar_module,
             df=df,
             encoder_length=encoder_length,
@@ -149,7 +149,7 @@ def test_deepar_make_samples(df_name, scale, weights, cat_columns, request):
 def test_context_size(encoder_length):
     encoder_length = encoder_length
     decoder_length = encoder_length
-    model = DeepARNativeModel(
+    model = DeepARModel(
         input_size=1, encoder_length=encoder_length, decoder_length=decoder_length, trainer_params=dict(max_epochs=100)
     )
 
@@ -157,12 +157,12 @@ def test_context_size(encoder_length):
 
 
 def test_save_load(example_tsds):
-    model = DeepARNativeModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = DeepARModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
 def test_params_to_tune(example_tsds):
     ts = example_tsds
-    model = DeepARNativeModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = DeepARModel(input_size=1, encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)

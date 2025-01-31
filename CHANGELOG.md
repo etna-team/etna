@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Add `ClearMLLogger` ([#568](https://github.com/etna-team/etna/pull/568))
+- **Breaking:** Add a restriction on equal feature sets across segments in the dataset ([#581](https://github.com/etna-team/etna/pull/581))
 - 
 - 
 - 
@@ -20,15 +21,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
-- 
+- **Breaking:** Rename `DeepARNativeModel` -> `DeepARModel`, `TFTNativeModel` -> `TFTModel` ([#585](https://github.com/etna-team/etna/pull/585))
 - Implement non-empty `params_to_tune` for `VotingEnsemble` ([#557](https://github.com/etna-team/etna/pull/557))
 - 
 - Implement non-empty `params_to_tune` for `DirectEnsemble` ([#559](https://github.com/etna-team/etna/pull/559))
 - 
 - Implement non-empty `params_to_tune` for `StackingEnsemble` ([#561](https://github.com/etna-team/etna/pull/561))
 - 
-- 
-- 
+- **Breaking:** Make `level_names` property of `HierarchicalStructure` read-only ([#582](https://github.com/etna-team/etna/pull/582))
+- **Breaking:** Set `fast_redundancy=True` as a default value in `MRMRFeatureSelectionTransform` ([#592](https://github.com/etna-team/etna/pull/592))
 - 
 - 
 - 
@@ -46,8 +47,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
--
--
+- **Breaking:** Remove parameters `freq` and `dates` from `SARIMAXModel` and `HoltWintersModel` ([#590](https://github.com/etna-team/etna/pull/590))
+- **Breaking:** Remove `pytorch-forecasting` models and utilities (`DeepARModel`, `TFTModel` and `PytorchForecastingDatasetBuilder`) ([#578](https://github.com/etna-team/etna/pull/578))
 -
 -
 -

@@ -1,5 +1,8 @@
 import re
+from collections import Counter
+from collections import defaultdict
 from enum import Enum
+from typing import DefaultDict
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -730,3 +733,26 @@ def make_timestamp_df_from_alignment(
 
     result = pd.concat(df_list)
     return result
+
+
+def _check_features_in_segments(columns: pd.MultiIndex, segments: Optional[List[str]] = None):
+    """Check whether all segments have equal feature sets."""
+    features_counts: DefaultDict[str, Counter] = defaultdict(Counter)
+    for segment, feature in columns.to_flat_index():
+        features_counts[segment].update([feature])
+
+    if segments is not None and set(features_counts.keys()) != set(segments):
+        raise ValueError(f"There is a mismatch in segments between provided and expected sets!")
+
+    compare_counter = None
+    compare_segment = None
+    for segment, counter in features_counts.items():
+        if compare_counter is None:
+            compare_counter = counter
+            compare_segment = segment
+            continue
+
+        if compare_counter != counter:
+            raise ValueError(
+                f"There is a mismatch in feature sets between segments '{compare_segment}' and '{segment}'!"
+            )
