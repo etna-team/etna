@@ -46,7 +46,7 @@ def deep_base_model_mock():
 @pytest.fixture()
 def ts_mock():
     torch_dataset = MagicMock()
-    torch_dataset.index.__len__.return_value = 100
+    torch_dataset.timestamps.__len__.return_value = 100
     return torch_dataset
 
 
