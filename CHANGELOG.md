@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 - **Breaking:** Make `level_names` property of `HierarchicalStructure` read-only ([#582](https://github.com/etna-team/etna/pull/582))
 - **Breaking:** Set `fast_redundancy=True` as a default value in `MRMRFeatureSelectionTransform` ([#592](https://github.com/etna-team/etna/pull/592))
-- 
+- **Breaking:** Remove `return_features` parameter from `FilterFeaturesTransform`, `GaleShapleyFeatureSelectionTransform`, `TreeFeatureSelectionTransform`, `MRMRFeatureSelectionTransform` ([#594](https://github.com/etna-team/etna/pull/594))
 - 
 - 
 
