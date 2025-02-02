@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
-- 
+- Fix column duplication when using `FourierDecomposeTransform` ([#595](https://github.com/etna-team/etna/pull/595))
 - 
 - 
 - 
