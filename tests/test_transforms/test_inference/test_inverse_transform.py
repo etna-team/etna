@@ -3409,4 +3409,3 @@ class TestInverseTransformFutureWithoutTarget:
     ):
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_future_without_target(ts, transform, expected_changes=expected_changes)
-
