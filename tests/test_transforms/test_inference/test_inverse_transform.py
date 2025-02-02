@@ -196,18 +196,10 @@ class TestInverseTransformTrain:
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
-            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                GaleShapleyFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"month", "year", "weekday"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
@@ -224,33 +216,9 @@ class TestInverseTransformTrain:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(),
-                    top_k=2,
-                    return_features=True,
-                    fast_redundancy=True,
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                TreeFeatureSelectionTransform(
-                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"year", "month", "monthday"}},
             ),
             # math
             (
@@ -660,18 +628,10 @@ class TestInverseTransformTrain:
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
-            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                GaleShapleyFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"month", "year", "weekday"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
@@ -688,33 +648,9 @@ class TestInverseTransformTrain:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(),
-                    top_k=2,
-                    return_features=True,
-                    fast_redundancy=True,
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                TreeFeatureSelectionTransform(
-                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"year", "month", "monthday"}},
             ),
             # math
             (
@@ -1712,18 +1648,10 @@ class TestInverseTransformTrainNewSegments:
             (MeanEncoderTransform(in_column="weekday", out_column="mean_encoder", mode="macro"), "ts_with_exog", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
-            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                GaleShapleyFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"year", "weekday", "month"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
@@ -1740,30 +1668,9 @@ class TestInverseTransformTrainNewSegments:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                TreeFeatureSelectionTransform(
-                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"month", "year", "weekday"}},
             ),
             # math
             (
@@ -2494,51 +2401,6 @@ class TestInverseTransformFutureNewSegments:
                 ts, transform, train_segments=["segment_1", "segment_2"], expected_changes={}
             )
 
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # feature_selection
-            # TODO: working incorrectly, should fail
-            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
-            (
-                GaleShapleyFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"monthday", "positive", "weekday", "year", "month"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "monthday", "weekday"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "monthday", "weekday"}},
-            ),
-            (
-                TreeFeatureSelectionTransform(
-                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"year", "month", "weekday"}},
-            ),
-        ],
-    )
-    def test_inverse_transform_future_new_segments_failed_error(
-        self, transform, dataset_name, expected_changes, request
-    ):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_future_new_segments(
-            ts, transform, train_segments=["segment_1", "segment_2"], expected_changes=expected_changes
-        )
-
 
 class TestInverseTransformFutureWithTarget:
     """Test inverse transform on future dataset with known target.
@@ -2662,18 +2524,10 @@ class TestInverseTransformFutureWithTarget:
             (SegmentEncoderTransform(), "regular_ts", {}),
             # feature_selection
             (FilterFeaturesTransform(exclude=["year"]), "ts_with_exog", {}),
-            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
             (
                 GaleShapleyFeatureSelectionTransform(relevance_table=StatisticsRelevanceTable(), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                GaleShapleyFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"month", "year", "positive"}},
             ),
             (
                 MRMRFeatureSelectionTransform(
@@ -2690,33 +2544,9 @@ class TestInverseTransformFutureWithTarget:
                 {},
             ),
             (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(),
-                    top_k=2,
-                    return_features=True,
-                    fast_redundancy=True,
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
                 TreeFeatureSelectionTransform(model=DecisionTreeRegressor(random_state=42), top_k=2),
                 "ts_with_exog",
                 {},
-            ),
-            (
-                TreeFeatureSelectionTransform(
-                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"year", "month", "weekday"}},
             ),
             # math
             (
@@ -3580,44 +3410,3 @@ class TestInverseTransformFutureWithoutTarget:
         ts = request.getfixturevalue(dataset_name)
         self._test_inverse_transform_future_without_target(ts, transform, expected_changes=expected_changes)
 
-    @to_be_fixed(raises=Exception)
-    @pytest.mark.parametrize(
-        "transform, dataset_name, expected_changes",
-        [
-            # feature_selection
-            (FilterFeaturesTransform(exclude=["year"], return_features=True), "ts_with_exog", {"create": {"year"}}),
-            (
-                GaleShapleyFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"month", "year", "weekday"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=True
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
-                MRMRFeatureSelectionTransform(
-                    relevance_table=StatisticsRelevanceTable(), top_k=2, return_features=True, fast_redundancy=False
-                ),
-                "ts_with_exog",
-                {"create": {"positive", "weekday", "year"}},
-            ),
-            (
-                TreeFeatureSelectionTransform(
-                    model=DecisionTreeRegressor(random_state=42), top_k=2, return_features=True
-                ),
-                "ts_with_exog",
-                {"create": {"year", "month", "weekday"}},
-            ),
-        ],
-    )
-    def test_inverse_transform_future_without_target_failed_error(
-        self, transform, dataset_name, expected_changes, request
-    ):
-        ts = request.getfixturevalue(dataset_name)
-        self._test_inverse_transform_future_without_target(ts, transform, expected_changes=expected_changes)
