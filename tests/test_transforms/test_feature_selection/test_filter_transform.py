@@ -96,120 +96,13 @@ def test_exclude_filter_wrong_column(ts_with_features):
         transform.fit_transform(ts_with_features)
 
 
-@pytest.mark.parametrize("return_features", [True, False])
-@pytest.mark.parametrize(
-    "columns, saved_columns",
-    [
-        ([], []),
-        (["exog_1"], ["exog_1"]),
-        (["exog_1", "exog_2"], ["exog_1", "exog_2"]),
-        (["exog_2"], ["exog_2"]),
-    ],
-)
-def test_transform_exclude_save_columns(ts_with_features, columns, saved_columns, return_features):
-    original_df = ts_with_features.to_pandas()
-    transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
-    transform.fit_transform(ts_with_features)
-    df_transformed = transform._df_removed
-    if return_features:
-        got_columns = set(df_transformed.columns.get_level_values("feature"))
-        assert got_columns == set(saved_columns)
-        for column in got_columns:
-            assert np.all(
-                df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]]
-            )
-    else:
-        assert df_transformed is None
-
-
-@pytest.mark.parametrize("return_features", [True, False])
-@pytest.mark.parametrize(
-    "columns, saved_columns",
-    [
-        (["target", "exog_1"], ["exog_2"]),
-        (["target"], ["exog_1", "exog_2"]),
-        (["target", "exog_2"], ["exog_1"]),
-        (["target", "exog_1", "exog_2"], []),
-    ],
-)
-def test_transform_include_save_columns(ts_with_features, columns, saved_columns, return_features):
-    original_df = ts_with_features.to_pandas()
-    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
-    transform.fit_transform(ts_with_features)
-    df_transformed = transform._df_removed
-    if return_features:
-        got_columns = set(df_transformed.columns.get_level_values("feature"))
-        assert got_columns == set(saved_columns)
-        for column in got_columns:
-            assert np.all(
-                df_transformed.loc[:, pd.IndexSlice[:, column]] == original_df.loc[:, pd.IndexSlice[:, column]]
-            )
-    else:
-        assert df_transformed is None
-
-
-@pytest.mark.parametrize(
-    "columns, return_features, expected_columns",
-    [
-        ([], True, ["exog_1", "target", "exog_2"]),
-        ([], False, ["target", "exog_1", "exog_2"]),
-        (["exog_1"], True, ["target", "exog_2", "exog_1"]),
-        (["exog_1"], False, ["exog_2", "target"]),
-        (["exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
-        (["exog_1", "exog_2"], False, ["target"]),
-        (["exog_2"], True, ["exog_1", "target", "exog_2"]),
-        (
-            ["exog_2"],
-            False,
-            [
-                "target",
-                "exog_1",
-            ],
-        ),
-    ],
-)
-def test_inverse_transform_back_excluded_columns(ts_with_features, columns, return_features, expected_columns):
-    original_df = ts_with_features.to_pandas()
-    transform = FilterFeaturesTransform(exclude=columns, return_features=return_features)
-    transform.fit_transform(ts_with_features)
-    transform.inverse_transform(ts_with_features)
-    columns_inversed = set(ts_with_features.columns.get_level_values("feature"))
-    assert columns_inversed == set(expected_columns)
-    for column in ts_with_features.columns:
-        assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
-
-
-@pytest.mark.parametrize(
-    "columns, return_features, expected_columns",
-    [
-        (["target", "exog_1"], True, ["exog_1", "target", "exog_2"]),
-        (["target", "exog_1"], False, ["exog_1", "target"]),
-        (["target"], True, ["exog_1", "target", "exog_2"]),
-        (["target"], False, ["target"]),
-        (["target", "exog_2"], True, ["exog_1", "target", "exog_2"]),
-        (["target", "exog_2"], False, ["exog_2", "target"]),
-        (["target", "exog_1", "exog_2"], True, ["exog_1", "target", "exog_2"]),
-        (["target", "exog_1", "exog_2"], False, ["exog_1", "target", "exog_2"]),
-    ],
-)
-def test_inverse_transform_back_included_columns(ts_with_features, columns, return_features, expected_columns):
-    original_df = ts_with_features.to_pandas()
-    transform = FilterFeaturesTransform(include=columns, return_features=return_features)
-    transform.fit_transform(ts_with_features)
-    transform.inverse_transform(ts_with_features)
-    columns_inversed = set(ts_with_features.columns.get_level_values("feature"))
-    assert columns_inversed == set(expected_columns)
-    for column in ts_with_features.columns:
-        assert np.all(ts_with_features[:, :, column] == original_df.loc[:, pd.IndexSlice[:, column]])
-
-
 @pytest.mark.parametrize(
     "transform",
     [
-        FilterFeaturesTransform(include=["target"], return_features=True),
-        FilterFeaturesTransform(include=["target"], return_features=False),
-        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
-        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
+        FilterFeaturesTransform(include=["target"]),
+        FilterFeaturesTransform(include=["target"]),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"]),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"]),
     ],
 )
 def test_save_load(transform, ts_with_features):
@@ -219,10 +112,10 @@ def test_save_load(transform, ts_with_features):
 @pytest.mark.parametrize(
     "transform",
     [
-        FilterFeaturesTransform(include=["target"], return_features=True),
-        FilterFeaturesTransform(include=["target"], return_features=False),
-        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
-        FilterFeaturesTransform(exclude=["exog_1", "exog_2"], return_features=False),
+        FilterFeaturesTransform(include=["target"]),
+        FilterFeaturesTransform(include=["target"]),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"]),
+        FilterFeaturesTransform(exclude=["exog_1", "exog_2"]),
     ],
 )
 def test_params_to_tune(transform):

@@ -1,24 +1,21 @@
 import warnings
 from abc import ABC
 from typing import List
-from typing import Optional
 from typing import Union
 
 import pandas as pd
 from typing_extensions import Literal
 
-from etna.transforms import ReversibleTransform
+from etna.transforms import IrreversibleTransform
 
 
-class BaseFeatureSelectionTransform(ReversibleTransform, ABC):
+class BaseFeatureSelectionTransform(IrreversibleTransform, ABC):
     """Base class for feature selection transforms."""
 
-    def __init__(self, features_to_use: Union[List[str], Literal["all"]] = "all", return_features: bool = False):
+    def __init__(self, features_to_use: Union[List[str], Literal["all"]] = "all"):
         super().__init__(required_features="all")
         self.features_to_use = features_to_use
         self.selected_features: List[str] = []
-        self.return_features = return_features
-        self._df_removed: Optional[pd.DataFrame] = None
 
     def get_regressors_info(self) -> List[str]:
         """Return the list with regressors created by the transform."""
@@ -44,26 +41,9 @@ class BaseFeatureSelectionTransform(ReversibleTransform, ABC):
         Returns
         -------
         result: pd.DataFrame
-            Dataframe with with only selected features
+            Dataframe with only selected features
         """
         rest_columns = set(df.columns.get_level_values("feature")) - set(self._get_features_to_use(df))
         selected_columns = sorted(self.selected_features + list(rest_columns))
         result = df.loc[:, pd.IndexSlice[:, selected_columns]]
-        if self.return_features:
-            self._df_removed = df.drop(result.columns, axis=1)
         return result
-
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply inverse transform to the data.
-
-        Parameters
-        ----------
-        df:
-            dataframe to apply inverse transformation
-
-        Returns
-        -------
-        result: pd.DataFrame
-            dataframe before transformation
-        """
-        return pd.concat([df, self._df_removed], axis=1)

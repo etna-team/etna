@@ -250,7 +250,6 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         top_k: int,
         features_to_use: Union[List[str], Literal["all"]] = "all",
         use_rank: bool = False,
-        return_features: bool = False,
         **relevance_params,
     ):
         """Init GaleShapleyFeatureSelectionTransform.
@@ -269,7 +268,7 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
         return_features:
             indicates whether to return features or not.
         """
-        super().__init__(features_to_use=features_to_use, return_features=return_features)
+        super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.use_rank = use_rank
