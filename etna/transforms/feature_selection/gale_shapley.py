@@ -265,8 +265,6 @@ class GaleShapleyFeatureSelectionTransform(BaseFeatureSelectionTransform):
             if "all" value is given, all columns are used
         use_rank:
             if True, use rank in relevance table computation
-        return_features:
-            indicates whether to return features or not.
         """
         super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
