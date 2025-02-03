@@ -196,7 +196,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         if return_components:
             raise NotImplementedError("This mode isn't currently implemented!")
 
-        max_context_size = len(ts.index) - prediction_size
+        max_context_size = len(ts.timestamps) - prediction_size
         if max_context_size <= 0:
             raise ValueError("Dataset doesn't have any context timestamps.")
 
@@ -220,7 +220,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
                 **predict_kwargs,
             )  # shape [n_segments, prediction_length, n_quantiles], [n_segments, prediction_length]
 
-        end_idx = len(ts.index)
+        end_idx = len(ts.timestamps)
         future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
 
         if prediction_interval:

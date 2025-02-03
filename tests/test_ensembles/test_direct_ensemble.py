@@ -134,10 +134,10 @@ def test_predict_values(direct_ensemble_pipeline, simple_ts_train):
     direct_ensemble_pipeline.fit(simple_ts_train)
     smallest_pipeline.fit(simple_ts_train)
     prediction = direct_ensemble_pipeline.predict(
-        ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
+        ts=simple_ts_train, start_timestamp=simple_ts_train.timestamps[1], end_timestamp=simple_ts_train.timestamps[2]
     )
     expected_prediction = smallest_pipeline.predict(
-        ts=simple_ts_train, start_timestamp=simple_ts_train.index[1], end_timestamp=simple_ts_train.index[2]
+        ts=simple_ts_train, start_timestamp=simple_ts_train.timestamps[1], end_timestamp=simple_ts_train.timestamps[2]
     )
     pd.testing.assert_frame_equal(prediction.to_pandas(), expected_prediction.to_pandas())
 

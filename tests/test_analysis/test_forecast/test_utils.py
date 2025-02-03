@@ -68,7 +68,7 @@ def test_get_residuals_with_components(residuals_with_components):
 def test_get_residuals_not_matching_lengths(residuals):
     """Test that get_residuals fails to find residuals correctly if ts hasn't answers."""
     residuals_df, forecast_df, ts = residuals
-    ts = TSDataset(df=ts[ts.index[:-10], :, :], freq="D")
+    ts = TSDataset(df=ts[ts.timestamps[:-10], :, :], freq="D")
     with pytest.raises(KeyError):
         _ = get_residuals(forecast_df=forecast_df, ts=ts)
 

@@ -75,7 +75,7 @@ class TestForecastInSampleFullNoTarget:
         # forecasting
         forecast_ts.transform(transforms)
         forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
-        prediction_size = len(forecast_ts.index)
+        prediction_size = len(forecast_ts.timestamps)
         forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
 
         # checking
@@ -390,8 +390,8 @@ class TestForecastInSampleSuffixNoTarget:
 
         # forecasting
         forecast_ts.transform(transforms)
-        forecast_ts.df.loc[forecast_ts.index[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
-        prediction_size = len(forecast_ts.index) - num_skip_points
+        forecast_ts.df.loc[forecast_ts.timestamps[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
+        prediction_size = len(forecast_ts.timestamps) - num_skip_points
         forecast_ts.df = forecast_ts.df.iloc[(num_skip_points - model.context_size) :]
         forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
 
@@ -1167,7 +1167,7 @@ class TestForecastMixedInOutSample:
         forecast_full_ts = TSDataset(df=df_full, df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
         forecast_full_ts.transform(transforms)
         forecast_full_ts.df = forecast_full_ts.df.iloc[(num_skip_points - model.context_size) :]
-        full_prediction_size = len(forecast_full_ts.index) - model.context_size
+        full_prediction_size = len(forecast_full_ts.timestamps) - model.context_size
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
 
         # checking

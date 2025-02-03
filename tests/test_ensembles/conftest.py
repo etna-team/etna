@@ -197,9 +197,9 @@ def naive_featured_pipeline_2() -> Pipeline:
 
 
 @pytest.fixture
-def forecasts_ts(
+def forecasts_df(
     example_tsds: "TSDataset", naive_featured_pipeline_1: Pipeline, naive_featured_pipeline_2: Pipeline
-) -> List["TSDataset"]:
+) -> List[pd.DataFrame]:
     ensemble = StackingEnsemble(pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use="all")
     forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
         delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
@@ -209,10 +209,10 @@ def forecasts_ts(
 
 
 @pytest.fixture
-def targets(example_tsds: "TSDataset", forecasts_ts: List["TSDataset"]) -> pd.Series:
+def targets(example_tsds: "TSDataset", forecasts_df: List[pd.DataFrame]) -> pd.DataFrame:
     y = pd.concat(
         [
-            example_tsds[forecasts_ts[0].index.min() : forecasts_ts[0].index.max(), segment, "target"]
+            example_tsds[forecasts_df[0].index.min() : forecasts_df[0].index.max(), segment, "target"]
             for segment in example_tsds.segments
         ],
         axis=0,

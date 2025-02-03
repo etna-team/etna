@@ -44,13 +44,13 @@ class Transform(SaveMixin, BaseMixin):
             ts.drop_features(features=columns_to_remove, drop_from_exog=False)
         if len(columns_to_add) != 0:
             new_regressors = self.get_regressors_info()
-            ts.add_columns_from_pandas(
+            ts.add_features_from_pandas(
                 df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[:, columns_to_add]],
                 update_exog=False,
                 regressors=new_regressors,
             )
         if len(columns_to_update) != 0:
-            ts.update_columns_from_pandas(
+            ts.update_features_from_pandas(
                 df_update=df_transformed.loc[pd.IndexSlice[:], pd.IndexSlice[:, columns_to_update]]
             )
         return ts

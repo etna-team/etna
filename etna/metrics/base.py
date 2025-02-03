@@ -253,7 +253,7 @@ class Metric(AbstractMetric, BaseMixin):
         ValueError:
             If there are mismatches in ``y_true`` and ``y_pred`` timestamps
         """
-        if not y_true.index.equals(y_pred.index):
+        if not y_true.timestamps.equals(y_pred.timestamps):
             raise ValueError("y_true and y_pred have different timestamps")
 
     def _validate_nans(self, y_true: TSDataset, y_pred: TSDataset):

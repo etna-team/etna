@@ -188,7 +188,7 @@ class FoldMask(BaseMixin):
         ValueError:
             Last target timestamp should be not later than horizon steps after last train timestamp
         """
-        timestamps = ts.index.to_list()
+        timestamps = ts.timestamps.to_list()
 
         if self.first_train_timestamp is not None and self.first_train_timestamp not in timestamps:
             raise ValueError("First train timestamp isn't present in a given dataset!")
@@ -559,7 +559,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         end_timestamp = _check_timestamp_param(param=end_timestamp, param_name="end_timestamp", freq=ts.freq)
 
         min_timestamp = ts.describe()["start_timestamp"].max()
-        max_timestamp = ts.index[-1]
+        max_timestamp = ts.timestamps[-1]
 
         if start_timestamp is None:
             start_timestamp = min_timestamp
@@ -719,7 +719,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             assert_never(mode)
 
         masks = []
-        dataset_timestamps = list(ts.index)
+        dataset_timestamps = list(ts.timestamps)
         min_timestamp_idx, max_timestamp_idx = 0, len(dataset_timestamps)
         for offset in range(n_folds, 0, -1):
             min_train_idx = min_timestamp_idx + (n_folds - offset) * stride * constant_history_length
@@ -756,7 +756,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         ts: TSDataset, masks: List[FoldMask], horizon: int
     ) -> Generator[Tuple[TSDataset, TSDataset], None, None]:
         """Generate folds."""
-        timestamps = list(ts.index)
+        timestamps = list(ts.timestamps)
         for mask in masks:
             min_train_idx = timestamps.index(mask.first_train_timestamp)
             max_train_idx = timestamps.index(mask.last_train_timestamp)
@@ -824,10 +824,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             logger.start_experiment(job_type="crossval", group=str(fold_number))
 
             fold: Dict[str, Any] = {}
-            for stage_name, stage_df in zip(("train", "test"), (train, test)):
+            for stage_name, stage_ts in zip(("train", "test"), (train, test)):
                 fold[f"{stage_name}_timerange"] = {}
-                fold[f"{stage_name}_timerange"]["start"] = stage_df.index.min()
-                fold[f"{stage_name}_timerange"]["end"] = stage_df.index.max()
+                fold[f"{stage_name}_timerange"]["start"] = stage_ts.timestamps.min()
+                fold[f"{stage_name}_timerange"]["end"] = stage_ts.timestamps.max()
 
             forecast.df = forecast.df.loc[mask.target_timestamps]
             test.df = test.df.loc[mask.target_timestamps]
@@ -906,7 +906,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 ts=ts, n_folds=masks, horizon=self.horizon, mode=mode, stride=stride
             )
         for i, mask in enumerate(masks):
-            mask.first_train_timestamp = mask.first_train_timestamp if mask.first_train_timestamp else ts.index[0]
+            mask.first_train_timestamp = mask.first_train_timestamp if mask.first_train_timestamp else ts.timestamps[0]
             masks[i] = mask
         for mask in masks:
             mask.validate_on_dataset(ts=ts, horizon=self.horizon)

@@ -670,7 +670,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             raise NotImplementedError("This mode isn't currently implemented!")
 
         expected_length = prediction_size + self.encoder_length
-        if len(ts.index) < expected_length:
+        if len(ts.timestamps) < expected_length:
             raise ValueError(
                 "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataset!"
             )
@@ -682,7 +682,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             dropna=False,
         )
         predictions = self.raw_predict(test_dataset)
-        end_idx = len(ts.index)
+        end_idx = len(ts.timestamps)
         future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
         for (segment, feature_nm), value in predictions.items():
             # we don't want to change dtype after assignment, but there can happen cast to float32
