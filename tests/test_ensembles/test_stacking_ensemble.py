@@ -67,7 +67,7 @@ def test_cv_fail_wrong_number(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipe
     ),
 )
 def test_features_to_use(
-    forecasts_ts: TSDataset,
+    forecasts_df: List[pd.DataFrame],
     naive_featured_pipeline_1,
     naive_featured_pipeline_2,
     features_to_use: Union[None, Literal[all], List[str]],
@@ -77,13 +77,13 @@ def test_features_to_use(
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
-    obtained_features = ensemble._filter_features_to_use(forecasts_ts)
+    obtained_features = ensemble._filter_features_to_use(forecasts_df)
     assert obtained_features == expected_features
 
 
 @pytest.mark.parametrize("features_to_use", (["regressor_lag_feature_10"]))
 def test_features_to_use_wrong_format(
-    forecasts_ts: TSDataset,
+    forecasts_df: List[pd.DataFrame],
     naive_featured_pipeline_1,
     naive_featured_pipeline_2,
     features_to_use: Union[None, Literal[all], List[str]],
@@ -93,12 +93,12 @@ def test_features_to_use_wrong_format(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
     with pytest.warns(UserWarning, match="Feature list is passed in the wrong format."):
-        _ = ensemble._filter_features_to_use(forecasts_ts)
+        _ = ensemble._filter_features_to_use(forecasts_df)
 
 
 @pytest.mark.parametrize("features_to_use", ([["unknown_feature"]]))
 def test_features_to_use_not_found(
-    forecasts_ts: TSDataset,
+    forecasts_df: List[pd.DataFrame],
     naive_featured_pipeline_1,
     naive_featured_pipeline_2,
     features_to_use: Union[None, Literal[all], List[str]],
@@ -108,7 +108,7 @@ def test_features_to_use_not_found(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     )
     with pytest.warns(UserWarning, match=f"Features {set(features_to_use)} are not found and will be dropped!"):
-        _ = ensemble._filter_features_to_use(forecasts_ts)
+        _ = ensemble._filter_features_to_use(forecasts_df)
 
 
 @pytest.mark.filterwarnings("ignore: Features {'unknown'} are not found and will be dropped!")
@@ -140,7 +140,7 @@ def test_features_to_use_not_found(
 )
 def test_make_features(
     example_tsds,
-    forecasts_ts,
+    forecasts_df: List[pd.DataFrame],
     targets,
     naive_featured_pipeline_1: Pipeline,
     naive_featured_pipeline_2: Pipeline,
@@ -153,7 +153,7 @@ def test_make_features(
     ensemble = StackingEnsemble(
         pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use=features_to_use
     ).fit(example_tsds)
-    x, y = ensemble._make_features(ts=example_tsds, forecasts=forecasts_ts, train=True)
+    x, y = ensemble._make_features(ts=example_tsds, forecasts=forecasts_df, train=True)
     features = set(x.columns.get_level_values("feature"))
     assert isinstance(x, pd.DataFrame)
     assert isinstance(y, pd.Series)
@@ -258,7 +258,9 @@ def test_predict_interface(
     start_idx = 20
     end_idx = 30
     prediction = ensemble.predict(
-        ts=example_tsds, start_timestamp=example_tsds.index[start_idx], end_timestamp=example_tsds.index[end_idx]
+        ts=example_tsds,
+        start_timestamp=example_tsds.timestamps[start_idx],
+        end_timestamp=example_tsds.timestamps[end_idx],
     )
     features = set(prediction.columns.get_level_values("feature")) - {"target"}
     assert isinstance(prediction, TSDataset)
@@ -292,8 +294,8 @@ def test_predict_calls_process_forecasts(example_tsds: TSDataset, naive_ensemble
 
     result = naive_ensemble._predict(
         ts=example_tsds,
-        start_timestamp=example_tsds.index[20],
-        end_timestamp=example_tsds.index[30],
+        start_timestamp=example_tsds.timestamps[20],
+        end_timestamp=example_tsds.timestamps[30],
         prediction_interval=False,
         quantiles=(),
         return_components=False,

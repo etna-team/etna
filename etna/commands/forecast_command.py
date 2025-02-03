@@ -31,7 +31,7 @@ def compute_horizon(horizon: int, forecast_params: Dict[str, Any], tsdataset: TS
         forecast_start_timestamp = _check_timestamp_param(
             param=forecast_params["start_timestamp"], param_name="start_timestamp", freq=tsdataset.freq
         )
-        train_end_timestamp = tsdataset.index.max()
+        train_end_timestamp = tsdataset.timestamps.max()
 
         if forecast_start_timestamp <= train_end_timestamp:
             raise ValueError("Parameter `start_timestamp` should greater than end of training dataset!")

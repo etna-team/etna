@@ -169,8 +169,8 @@ def test_predict_calls_vote(example_tsds: TSDataset, naive_pipeline_1: Pipeline,
 
     result = ensemble._predict(
         ts=example_tsds,
-        start_timestamp=example_tsds.index[20],
-        end_timestamp=example_tsds.index[30],
+        start_timestamp=example_tsds.timestamps[20],
+        end_timestamp=example_tsds.timestamps[30],
         prediction_interval=False,
         quantiles=(),
         return_components=False,

@@ -444,7 +444,7 @@ def const_ts_anomal() -> TSDataset:
 @pytest.fixture
 def ts_diff_endings(example_reg_tsds):
     ts = deepcopy(example_reg_tsds)
-    ts.loc[ts.index[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    ts.loc[ts.timestamps[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
     return ts
 
 

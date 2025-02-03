@@ -314,7 +314,7 @@ def test_forecast_prediction_interval_not_builtin(example_tsds, model):
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds, model):
-    example_tsds.df.loc[example_tsds.index[-2], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds.df.loc[example_tsds.timestamps[-2], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -325,7 +325,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds
 @pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
-    example_tsds.df.loc[example_tsds.index[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds.df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -339,7 +339,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, 
 @pytest.mark.parametrize("model", (MovingAverageModel(),))
 @pytest.mark.parametrize("stride", (1, 4, 6))
 def test_add_forecast_borders_overlapping_timestamps(example_tsds, model, stride):
-    example_tsds.df.loc[example_tsds.index[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds.df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -586,7 +586,7 @@ def test_backtest_forecasts_timestamps(ts_name, n_folds, horizon, expected_times
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     _, forecast, _ = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)
-    timestamp = ts.index
+    timestamp = ts.timestamps
 
     np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
@@ -637,7 +637,7 @@ def test_get_historical_forecasts_timestamps(ts_name, n_folds, horizon, expected
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     forecast = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
-    timestamp = ts.index
+    timestamp = ts.timestamps
 
     np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
@@ -654,7 +654,7 @@ def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, exp
     """Check that Pipeline.backtest with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)
-    timestamp = example_tsdf.index
+    timestamp = example_tsdf.timestamps
 
     np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
@@ -673,7 +673,7 @@ def test_get_historical_forecasts_timestamps_with_stride(
     """Check that Pipeline.get_historical_forecasts with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
     forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds, stride=stride)
-    timestamp = example_tsdf.index
+    timestamp = example_tsdf.timestamps
 
     np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
 
@@ -1051,7 +1051,7 @@ def test_backtest_fold_info_timestamps(
     _, _, info_df = pipeline.backtest(
         ts=ts, metrics=DEFAULT_METRICS, mode=mode, n_folds=n_folds, refit=refit, stride=stride
     )
-    timestamp = ts.index
+    timestamp = ts.timestamps
 
     np.testing.assert_array_equal(info_df["train_start_time"], timestamp[expected_train_start_indices])
     np.testing.assert_array_equal(info_df["train_end_time"], timestamp[expected_train_end_indices])
@@ -1529,10 +1529,10 @@ def test_generate_folds_datasets(
     pipeline = Pipeline(model=NaiveModel(lag=7))
     mask = pipeline._prepare_fold_masks(ts=ts, masks=[mask], mode=CrossValidationMode.expand, stride=-1)[0]
     train, test = list(pipeline._generate_folds_datasets(ts=ts, masks=[mask], horizon=horizon))[0]
-    assert train.index.min() == expected_train_start
-    assert train.index.max() == mask.last_train_timestamp
-    assert test.index.min() == expected_test_start
-    assert test.index.max() == expected_test_end
+    assert train.timestamps.min() == expected_train_start
+    assert train.timestamps.max() == mask.last_train_timestamp
+    assert test.timestamps.min() == expected_test_start
+    assert test.timestamps.max() == expected_test_end
 
 
 @pytest.mark.parametrize(
@@ -1651,9 +1651,9 @@ def test_make_backtest_fold_groups_length_refit_int(n_folds, refit, expected_ref
 )
 def test_backtest_one_point(simple_ts: TSDataset, lag: int, expected: Dict[str, List[float]]):
     mask = FoldMask(
-        simple_ts.index.min(),
-        simple_ts.index.min() + np.timedelta64(6, "D"),
-        [simple_ts.index.min() + np.timedelta64(8, "D")],
+        simple_ts.timestamps.min(),
+        simple_ts.timestamps.min() + np.timedelta64(6, "D"),
+        [simple_ts.timestamps.min() + np.timedelta64(8, "D")],
     )
     pipeline = Pipeline(model=NaiveModel(lag=lag), transforms=[], horizon=2)
     metrics_df, _, _ = pipeline.backtest(ts=simple_ts, metrics=[SMAPE()], n_folds=[mask], aggregate_metrics=True)
@@ -1668,9 +1668,9 @@ def test_backtest_one_point(simple_ts: TSDataset, lag: int, expected: Dict[str, 
 )
 def test_backtest_two_points(masked_ts: TSDataset, lag: int, expected: Dict[str, List[float]]):
     mask = FoldMask(
-        masked_ts.index.min(),
-        masked_ts.index.min() + np.timedelta64(6, "D"),
-        [masked_ts.index.min() + np.timedelta64(9, "D"), masked_ts.index.min() + np.timedelta64(10, "D")],
+        masked_ts.timestamps.min(),
+        masked_ts.timestamps.min() + np.timedelta64(6, "D"),
+        [masked_ts.timestamps.min() + np.timedelta64(9, "D"), masked_ts.timestamps.min() + np.timedelta64(10, "D")],
     )
     pipeline = Pipeline(model=NaiveModel(lag=lag), transforms=[], horizon=4)
     metrics_df, _, _ = pipeline.backtest(ts=masked_ts, metrics=[MAE()], n_folds=[mask], aggregate_metrics=True)
@@ -1740,9 +1740,9 @@ def test_backtest_nans_at_beginning(ts_name, request):
 def test_backtest_nans_at_beginning_with_mask(ts_name, request):
     ts = request.getfixturevalue(ts_name)
     mask = FoldMask(
-        ts.index.min(),
-        ts.index.min() + np.timedelta64(5, "D"),
-        [ts.index.min() + np.timedelta64(6, "D"), ts.index.min() + np.timedelta64(8, "D")],
+        ts.timestamps.min(),
+        ts.timestamps.min() + np.timedelta64(5, "D"),
+        [ts.timestamps.min() + np.timedelta64(6, "D"), ts.timestamps.min() + np.timedelta64(8, "D")],
     )
     pipeline = Pipeline(model=NaiveModel(), horizon=3)
     _ = pipeline.backtest(

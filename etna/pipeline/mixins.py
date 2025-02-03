@@ -64,7 +64,7 @@ class ModelPipelinePredictMixin:
     def _determine_prediction_size(
         self, ts: TSDataset, start_timestamp: Union[pd.Timestamp, int], end_timestamp: Union[pd.Timestamp, int]
     ) -> int:
-        timestamp_indices = pd.Series(np.arange(len(ts.index)), index=ts.index)
+        timestamp_indices = pd.Series(np.arange(len(ts.timestamps)), index=ts.timestamps)
         timestamps = timestamp_indices.loc[start_timestamp:end_timestamp]
         return len(timestamps)
 

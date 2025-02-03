@@ -133,7 +133,7 @@ def test_predict_train(model, example_tsds):
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()
-    assert len(res) == len(example_tsds.index) * 2
+    assert len(res) == len(example_tsds.timestamps) * 2
 
 
 @pytest.mark.parametrize(
@@ -152,7 +152,7 @@ def test_predict_train_with_regressors(model, example_reg_tsds):
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()
-    assert len(res) == len(example_reg_tsds.index) * 2
+    assert len(res) == len(example_reg_tsds.timestamps) * 2
 
 
 @pytest.mark.parametrize(

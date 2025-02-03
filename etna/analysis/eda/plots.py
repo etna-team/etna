@@ -333,7 +333,7 @@ def plot_holidays(
     if segments is None:
         segments = sorted(ts.segments)
 
-    holidays_df = _create_holidays_df(holidays, index=ts.index, as_is=as_is)
+    holidays_df = _create_holidays_df(holidays, index=ts.timestamps, as_is=as_is)
 
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
@@ -633,7 +633,7 @@ def distribution_plot(
           default value is "1M"
 
         * integer for data with integer timestamp, groups are formed by ``timestamp // freq``,
-          default value is ``ts.index.max() + 1``
+          default value is ``ts.timestamps.max() + 1``
 
     n_rows:
         maximum number of rows to plot
@@ -657,7 +657,7 @@ def distribution_plot(
     if ts.freq is None:
         # make only one group
         if freq is None:
-            freq = ts.index.max() + 1
+            freq = ts.timestamps.max() + 1
         grouped_data = df_full.groupby(df_full.timestamp // freq)
     else:
         if freq is None:

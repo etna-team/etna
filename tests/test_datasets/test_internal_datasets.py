@@ -282,8 +282,8 @@ def test_dataset_statistics(
 ):
     ts_full = load_dataset(dataset_name, parts="full", rebuild_dataset=True)
     assert ts_full.df.shape == expected_shape
-    assert ts_full.index.min() == expected_min_timestamp
-    assert ts_full.index.max() == expected_max_timestamp
+    assert ts_full.timestamps.min() == expected_min_timestamp
+    assert ts_full.timestamps.max() == expected_max_timestamp
 
     if dataset_parts:
         ts_parts = load_dataset(dataset_name, parts=dataset_parts)

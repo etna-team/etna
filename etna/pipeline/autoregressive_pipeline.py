@@ -138,7 +138,7 @@ class AutoRegressivePipeline(
         target_components_dfs = []
         for idx_start in range(0, self.horizon, self.step):
             current_step = min(self.step, self.horizon - idx_start)
-            current_idx_border = ts.index.shape[0] + idx_start
+            current_idx_border = ts.timestamps.shape[0] + idx_start
             current_ts = TSDataset(
                 df=prediction_df.iloc[:current_idx_border],
                 freq=ts.freq,
