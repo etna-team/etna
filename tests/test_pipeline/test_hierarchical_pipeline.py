@@ -115,7 +115,7 @@ def test_raw_predict_correctness(market_level_constant_hierarchical_ts, reconcil
 
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
     pipeline.fit(ts=ts)
-    forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.index[3])
+    forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.timestamps[3])
     np.testing.assert_allclose(forecast[..., "target"].values, answer)
 
 
@@ -146,7 +146,7 @@ def test_raw_predict_level(market_level_simple_hierarchical_ts, reconciliator):
 
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
     pipeline.fit(ts=ts)
-    forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.index[1])
+    forecast = pipeline.raw_predict(ts=ts, start_timestamp=ts.timestamps[1])
     assert forecast.current_df_level == pipeline.reconciliator.source_level
 
 
@@ -189,7 +189,7 @@ def test_predict_correctness(market_level_constant_hierarchical_ts, reconciliato
 
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
     pipeline.fit(ts=ts)
-    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[3])
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.timestamps[3])
     np.testing.assert_allclose(forecast[..., "target"].values, answer)
 
 
@@ -220,7 +220,7 @@ def test_predict_level(market_level_simple_hierarchical_ts, reconciliator):
 
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
     pipeline.fit(ts=ts)
-    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1])
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.timestamps[1])
     assert forecast.current_df_level == pipeline.reconciliator.target_level
 
 
@@ -251,7 +251,7 @@ def test_predict_columns_duplicates(market_level_constant_hierarchical_ts_w_exog
     ts = market_level_constant_hierarchical_ts_w_exog
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
     pipeline.fit(ts=ts)
-    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[3])
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.timestamps[3])
     assert not any(forecast.df.columns.duplicated())
 
 
@@ -383,7 +383,7 @@ def test_predict_interval_presented(product_level_constant_hierarchical_ts, reco
 
     pipeline.fit(ts=ts)
     forecast = pipeline.predict(
-        ts=ts, start_timestamp=ts.index[1], prediction_interval=True, quantiles=[0.025, 0.5, 0.975]
+        ts=ts, start_timestamp=ts.timestamps[1], prediction_interval=True, quantiles=[0.025, 0.5, 0.975]
     )
     assert forecast.prediction_intervals_names == ("target_0.025", "target_0.5", "target_0.975")
 
@@ -427,7 +427,7 @@ def test_predict_confidence_intervals(product_level_constant_hierarchical_ts, re
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=2)
 
     pipeline.fit(ts=ts)
-    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1], prediction_interval=True)
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.timestamps[1], prediction_interval=True)
 
     assert forecast.prediction_intervals_names == ("target_0.025", "target_0.975")
     for segment in forecast.segments:
@@ -716,7 +716,7 @@ def test_predict_with_return_components(
         reconciliator=BottomUpReconciliator(target_level="market", source_level="product"), model=model
     )
     pipeline.fit(ts)
-    forecast = pipeline.predict(ts=ts, start_timestamp=ts.index[1], return_components=True)
+    forecast = pipeline.predict(ts=ts, start_timestamp=ts.timestamps[1], return_components=True)
 
     assert sorted(forecast.target_components_names) == sorted(["target_component_a", "target_component_b"])
 

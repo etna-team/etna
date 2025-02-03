@@ -59,7 +59,7 @@ class EuclideanDistance(Distance):
         pd.DataFrame:
             dataframe with columns "timestamp" and "target" that contains the series
         """
-        centroid = pd.DataFrame({"timestamp": ts.index.values, "target": ts.df.mean(axis=1).values})
+        centroid = pd.DataFrame({"timestamp": ts.timestamps.values, "target": ts.df.mean(axis=1).values})
         return centroid
 
 

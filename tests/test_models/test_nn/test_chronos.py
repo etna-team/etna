@@ -190,7 +190,7 @@ def test_forecast_prediction_intervals(ts, model, request):
     forecast = pipeline.forecast(prediction_interval=True, quantiles=quantiles)
     forecast_df = forecast.to_pandas(flatten=True)
     assert isinstance(forecast, TSDataset)
-    assert len(forecast.index) == 1
+    assert len(forecast.timestamps) == 1
     assert forecast.features == ["target", "target_0.1", "target_0.9"]
     assert forecast_df["target_0.9"].gt(forecast_df["target_0.1"]).all()
 

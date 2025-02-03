@@ -68,8 +68,8 @@ def test_predict_mixin_create_ts(
     ts.fit_transform(transforms)
     created_ts = mixin._create_ts(ts=ts, start_timestamp=start_timestamp, end_timestamp=end_timestamp)
 
-    assert created_ts.index[0] == expected_start_timestamp
-    assert created_ts.index[-1] == end_timestamp
+    assert created_ts.timestamps[0] == expected_start_timestamp
+    assert created_ts.timestamps[-1] == end_timestamp
     assert created_ts.regressors == ts.regressors
     expected_df = ts.df.loc[expected_start_timestamp:end_timestamp]
     pd.testing.assert_frame_equal(created_ts.df, expected_df, check_categorical=False)

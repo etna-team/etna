@@ -184,10 +184,10 @@ def test_forecast(ts_trend_seasonal, model_stl):
     """Test that transform works correctly in forecast."""
     transform = STLTransform(in_column="target", period=7, model=model_stl)
     ts_train, ts_test = ts_trend_seasonal.train_test_split(
-        ts_trend_seasonal.index[0],
-        ts_trend_seasonal.index[-4],
-        ts_trend_seasonal.index[-3],
-        ts_trend_seasonal.index[-1],
+        ts_trend_seasonal.timestamps[0],
+        ts_trend_seasonal.timestamps[-4],
+        ts_trend_seasonal.timestamps[-3],
+        ts_trend_seasonal.timestamps[-1],
     )
     transform.fit_transform(ts_train)
     model = NaiveModel()

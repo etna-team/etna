@@ -49,7 +49,7 @@ def _max_n_folds_forecast(pipeline: Pipeline, context_size: int, ts: Optional[TS
         else:
             ts = pipeline.ts
 
-    num_points = len(ts.index)
+    num_points = len(ts.timestamps)
     horizon = pipeline.horizon
 
     return _estimate_n_folds(num_points=num_points, horizon=horizon, stride=horizon, context_size=context_size)
@@ -65,7 +65,7 @@ def _max_n_folds_backtest(pipeline: Pipeline, context_size: int, ts: TSDataset, 
     if backtest_with_intervals:
         raise NotImplementedError("Number of folds estimation for backtest with intervals is not implemented!")
 
-    num_points = len(ts.index)
+    num_points = len(ts.timestamps)
 
     horizon = pipeline.horizon
     stride = method_kwargs.get("stride", horizon)
