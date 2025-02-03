@@ -141,7 +141,7 @@ class TSDataset:
         """
         self.freq = freq
         self.df_exog = None
-        self.raw_df = self._prepare_df(df=df.copy(deep=True), freq=freq)
+        self.raw_df = self._prepare_df(df=df, freq=freq)
         self.df = self.raw_df.copy(deep=True)
 
         self.hierarchical_structure = hierarchical_structure
@@ -149,7 +149,7 @@ class TSDataset:
         self.current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
-            self.df_exog = self._prepare_df_exog(df_exog=df_exog.copy(deep=True), freq=freq)
+            self.df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
 
             self.known_future = self._check_known_future(known_future, self.df_exog)
             self._regressors = copy(self.known_future)
@@ -244,15 +244,15 @@ class TSDataset:
             freq=freq,
             timestamp_name=original_timestamp_name,
         )
-        timestamp_df = TSDataset.to_dataset(timestamp_df)
 
         if df_exog is not None:
             df_exog_realigned = apply_alignment(df=df_exog, alignment=alignment)
+
+            df_exog_realigned = pd.merge(df_exog_realigned, timestamp_df, how="outer", on=["timestamp", "segment"])
             df_exog_realigned = TSDataset.to_dataset(df_exog_realigned)
 
-            df_exog_realigned = df_exog_realigned.join(timestamp_df, how="outer")
         else:
-            df_exog_realigned = timestamp_df
+            df_exog_realigned = TSDataset.to_dataset(timestamp_df)
 
         known_future_realigned: Union[Literal["all"], Sequence]
         if known_future != "all":
@@ -328,6 +328,9 @@ class TSDataset:
         if df_format is DataFrameFormat.long:
             df = cls.to_dataset(df)
 
+        else:
+            df = df.copy(deep=True)
+
         # cast segment to str type
         cls._cast_segment_to_str(df)
 
@@ -363,6 +366,9 @@ class TSDataset:
         df_format = DataFrameFormat.determine(df_exog)
         if df_format is DataFrameFormat.long:
             df_exog = cls.to_dataset(df_exog)
+
+        else:
+            df_exog = df_exog.copy(deep=True)
 
         df_exog = cls._cast_segment_to_str(df=df_exog)
         if freq is not None:
@@ -548,33 +554,55 @@ class TSDataset:
                 return sorted(known_future_unique)
 
     @staticmethod
-    def _check_regressors(df: pd.DataFrame, df_regressors: pd.DataFrame):
-        """Check that regressors begin not later than in ``df`` and end later than in ``df``."""
-        if df_regressors.shape[1] == 0:
-            return
-        # TODO: check performance
-        df_segments = df.columns.get_level_values("segment")
-        for segment in df_segments:
-            target_min = df[segment]["target"].first_valid_index()
-            target_min = pd.NaT if target_min is None else target_min
-            target_max = df[segment]["target"].last_valid_index()
-            target_max = pd.NaT if target_max is None else target_max
+    def _get_min_max_valid_timestamp(
+        df: pd.DataFrame, segments: Sequence[str], regressors: Optional[Sequence[str]] = None
+    ) -> Tuple[Sequence[pd.Timestamp], Sequence[pd.Timestamp]]:
+        """Estimate first and last valid indices for the dataframe."""
+        df_values = df.values.reshape((len(df), len(segments), -1))
 
-            exog_series_min = df_regressors[segment].first_valid_index()
-            exog_series_min = pd.NaT if exog_series_min is None else exog_series_min
-            exog_series_max = df_regressors[segment].last_valid_index()
-            exog_series_max = pd.NaT if exog_series_max is None else exog_series_max
-            if target_min < exog_series_min:
+        if regressors is not None:
+            # expected equal features for all segments and sorted column index
+            features = df.columns.get_level_values("feature")
+            segment_features = features[: len(features) // len(segments)]
+            regressors_mask = segment_features.isin(set(regressors))
+            df_values = df_values[..., regressors_mask]
+
+        df_mask = ~np.any(pd.isna(df_values), axis=-1)
+        min_ids = np.argmax(df_mask, axis=0)
+        max_ids = len(df_mask) - np.argmax(df_mask[::-1], axis=0) - 1
+
+        min_index = df.index.values[min_ids]
+        max_index = df.index.values[max_ids]
+
+        none_segments = ~np.any(df_mask, axis=0)
+        min_index[none_segments] = np.datetime64("NaT")
+        max_index[none_segments] = np.datetime64("NaT")
+
+        return min_index, max_index
+
+    def _check_regressors(self, df: pd.DataFrame):
+        """Check that regressors begin not later than in ``df`` and end later than in ``df``."""
+        if len(self.known_future) == 0:
+            return
+
+        segments = df.columns.get_level_values("segment")
+
+        target_min, target_max = self._get_min_max_valid_timestamp(df=df, segments=segments)
+        exog_series_min, exog_series_max = self._get_min_max_valid_timestamp(
+            df=self.df_exog, segments=segments, regressors=self.known_future
+        )
+        for i, segment in enumerate(segments):
+            if target_min[i] < exog_series_min[i]:
                 raise ValueError(
                     f"All the regressor series should start not later than corresponding 'target'."
                     f"Series of segment {segment} have not enough history: "
-                    f"{target_min} < {exog_series_min}."
+                    f"{target_min[i]} < {exog_series_min[i]}."
                 )
-            if target_max >= exog_series_max:
+            if target_max[i] >= exog_series_max[i]:
                 raise ValueError(
                     f"All the regressor series should finish later than corresponding 'target'."
                     f"Series of segment {segment} have not enough history: "
-                    f"{target_max} >= {exog_series_max}."
+                    f"{target_max[i]} >= {exog_series_max[i]}."
                 )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -582,10 +610,10 @@ class TSDataset:
             raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
 
         # TODO: this check could probably be skipped at make_future
-        df_regressors = self.df_exog.loc[:, pd.IndexSlice[:, self.known_future]]
-        self._check_regressors(df=df, df_regressors=df_regressors)
+        self._check_regressors(df=df)
 
-        df = pd.concat((df, self.df_exog), axis=1).loc[df.index].sort_index(axis=1, level=(0, 1))
+        df = df.merge(self.df_exog, how="left", left_index=True, right_index=True)
+        df.sort_index(axis=1, level=(0, 1), inplace=True)
 
         _check_features_in_segments(columns=df.columns)
 
@@ -964,22 +992,19 @@ class TSDataset:
         2021-01-04           3           8
         2021-01-05           4           9
         """
-        df_copy = df.copy(deep=True)
+        df = df.set_index(["timestamp", "segment"])
 
-        if not pd.api.types.is_integer_dtype(df_copy["timestamp"]):
-            df_copy["timestamp"] = pd.to_datetime(df_copy["timestamp"])
+        df = df.unstack()
+        if not pd.api.types.is_integer_dtype(df.index):
+            df.index = pd.to_datetime(df.index)
 
-        df_copy["segment"] = df_copy["segment"].astype(str)
+        if not pd.api.types.is_string_dtype(df.columns.levels[1]):
+            df.columns = df.columns.set_levels(df.columns.levels[1].astype(str), level=1)
 
-        feature_columns = df_copy.columns.tolist()
-        feature_columns.remove("timestamp")
-        feature_columns.remove("segment")
-
-        df_copy = df_copy.pivot(index="timestamp", columns="segment")
-        df_copy = df_copy.reorder_levels([1, 0], axis=1)
-        df_copy.columns.names = ["segment", "feature"]
-        df_copy = df_copy.sort_index(axis=1, level=(0, 1))
-        return df_copy
+        df = df.reorder_levels([1, 0], axis=1)
+        df.columns.names = ["segment", "feature"]
+        df.sort_index(axis=1, level=(0, 1), inplace=True)
+        return df
 
     @staticmethod
     def _hierarchical_structure_from_level_columns(
