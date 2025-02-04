@@ -11,6 +11,7 @@ from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Union
 
@@ -555,7 +556,7 @@ class TSDataset:
 
     @staticmethod
     def _get_min_max_valid_timestamp(
-        df: pd.DataFrame, segments: Sequence[str], regressors: Optional[Sequence[str]] = None
+        df: pd.DataFrame, segments: Set[str], regressors: Optional[Sequence[str]] = None
     ) -> Tuple[Sequence[pd.Timestamp], Sequence[pd.Timestamp]]:
         """Estimate first and last valid indices for the dataframe."""
         df_values = df.values.reshape((len(df), len(segments), -1))
@@ -585,12 +586,13 @@ class TSDataset:
         if len(self.known_future) == 0:
             return
 
-        segments = df.columns.get_level_values("segment")
+        segments = set(df.columns.get_level_values("segment"))
 
         target_min, target_max = self._get_min_max_valid_timestamp(df=df, segments=segments)
         exog_series_min, exog_series_max = self._get_min_max_valid_timestamp(
             df=self.df_exog, segments=segments, regressors=self.known_future
         )
+
         for i, segment in enumerate(segments):
             if target_min[i] < exog_series_min[i]:
                 raise ValueError(
