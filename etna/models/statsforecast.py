@@ -8,11 +8,11 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+from statsforecast.models import ARIMA
 from statsforecast.models import AutoARIMA
 from statsforecast.models import AutoCES
 from statsforecast.models import AutoETS
 from statsforecast.models import AutoTheta
-from statsforecast.models import ARIMA
 
 from etna.datasets.utils import determine_freq
 from etna.datasets.utils import determine_num_steps

@@ -169,7 +169,9 @@ class SklearnTransform(ReversibleTransform):
             transformed_features = pd.DataFrame(
                 transformed, columns=df.loc[:, pd.IndexSlice[:, self.in_column]].columns, index=df.index
             ).sort_index(axis=1)
-            transformed_features.columns = pd.MultiIndex.from_product([segments, self.out_columns], names=df.columns.names)
+            transformed_features.columns = pd.MultiIndex.from_product(
+                [segments, self.out_columns], names=df.columns.names
+            )
             df = pd.concat((df, transformed_features), axis=1)
             df = df.sort_index(axis=1)
 

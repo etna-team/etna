@@ -44,9 +44,11 @@ def dateflags_true_df() -> pd.DataFrame:
         df = dataframes[i]
         df[f"{out_column}_day_number_in_week"] = df["timestamp"].dt.weekday.astype(int)
         df[f"{out_column}_day_number_in_month"] = df["timestamp"].dt.day.astype(int)
-        df[f"{out_column}_day_number_in_year"] = df["timestamp"].apply(
-            lambda dt: dt.dayofyear + 1 if not dt.is_leap_year and dt.month >= 3 else dt.dayofyear
-        ).astype(int)
+        df[f"{out_column}_day_number_in_year"] = (
+            df["timestamp"]
+            .apply(lambda dt: dt.dayofyear + 1 if not dt.is_leap_year and dt.month >= 3 else dt.dayofyear)
+            .astype(int)
+        )
         df[f"{out_column}_week_number_in_year"] = df["timestamp"].dt.isocalendar().week.astype(int)
         df[f"{out_column}_month_number_in_year"] = df["timestamp"].dt.month.astype(int)
         df[f"{out_column}_season_number"] = (df["timestamp"].dt.month % 12 // 3 + 1).astype(int)

@@ -81,7 +81,9 @@ def test_base_mixin_set_params_with_nonexistent_attributes_estimator():
     # Need to be discussed
     first_exception = exc_info.value.__cause__
     assert isinstance(first_exception, TypeError)
-    assert str(first_exception) == "CatBoostRegressor.__init__() got an unexpected keyword argument 'incorrect_attribute'"
+    assert (
+        str(first_exception) == "CatBoostRegressor.__init__() got an unexpected keyword argument 'incorrect_attribute'"
+    )
 
 
 def test_base_mixin_set_params_with_nonexistent_not_nested_attribute_pipeline():
@@ -94,8 +96,7 @@ def test_base_mixin_set_params_with_nonexistent_not_nested_attribute_pipeline():
         )
     first_exception = exc_info.value.__cause__
     assert isinstance(first_exception, TypeError)
-    assert str(
-        first_exception) == "Pipeline.__init__() got an unexpected keyword argument 'incorrect_estimator'"
+    assert str(first_exception) == "Pipeline.__init__() got an unexpected keyword argument 'incorrect_estimator'"
 
 
 def test_base_mixin_set_params_with_nonexistent_nested_attribute_pipeline():
@@ -108,7 +109,9 @@ def test_base_mixin_set_params_with_nonexistent_nested_attribute_pipeline():
         )
     first_exception = exc_info.value.__cause__
     assert isinstance(first_exception, TypeError)
-    assert str(first_exception) == "CatBoostRegressor.__init__() got an unexpected keyword argument 'incorrect_attribute'"
+    assert (
+        str(first_exception) == "CatBoostRegressor.__init__() got an unexpected keyword argument 'incorrect_attribute'"
+    )
 
 
 @pytest.mark.parametrize(

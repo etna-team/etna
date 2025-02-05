@@ -298,7 +298,9 @@ class ExogShiftTransform(IrreversibleTransform):
                 features_to_remove.append(feature_name)
 
         if len(features_to_remove) > 0:
-            result = result.drop(columns=pd.MultiIndex.from_product([segments, features_to_remove], names=df.columns.names))
+            result = result.drop(
+                columns=pd.MultiIndex.from_product([segments, features_to_remove], names=df.columns.names)
+            )
 
         result = pd.concat([result] + shifted_features, axis=1)
         result.sort_index(axis=1, inplace=True)

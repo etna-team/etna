@@ -107,7 +107,9 @@ class LambdaTransform(ReversibleTransform):
                 result, transformed_features, features_left=[self.in_column], features_right=[self.in_column]
             )
         else:
-            transformed_features.columns = pd.MultiIndex.from_product([segments, [self.change_column]], names=df.columns.names)
+            transformed_features.columns = pd.MultiIndex.from_product(
+                [segments, [self.change_column]], names=df.columns.names
+            )
             result = pd.concat([result] + [transformed_features], axis=1)
             result = result.sort_index(axis=1)
         return result
