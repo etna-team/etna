@@ -266,7 +266,11 @@ filterwarnings = [
     "ignore: X does not have valid feature names, but IsolationForest was fitted with feature names", # fixed here https://github.com/scikit-learn/scikit-learn/issues/25844
     "ignore: Series.__getitem__ treating keys as positions is deprecated", # pandas deprecated
     "ignore: The provided callable <function nanmean at 0x107af25f0> is currently using DataFrameGroupBy.mean", # pandas deprecated
-    "ignore: '*' is deprecated and will be removed in a future version, please use '*' instead", # pandas deprecated
+    "ignore: 'T' is deprecated and will be removed in a future version, please use 'min' instead", # pandas deprecated
+    "ignore: 'H' is deprecated and will be removed in a future version, please use 'h' instead", # pandas deprecated
+    "ignore: 'M' is deprecated and will be removed in a future version, please use 'ME' instead", # pandas deprecated
+    "ignore: 'Q' is deprecated and will be removed in a future version, please use 'QE' instead", # pandas deprecated
+    "ignore: 'Y' is deprecated and will be removed in a future version, please use 'YE' instead", # pandas deprecated
     "ignore: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True", # torch patchts
     "ignore: MPS available but not used", # lightning for mac
     "ignore: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.", # sklearn
