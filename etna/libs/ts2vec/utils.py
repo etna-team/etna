@@ -83,8 +83,7 @@ def centerize_vary_length_series(x):
 class AveragedModel(torch.optim.swa_utils.AveragedModel):
 
     def __init__(self, model, device=None, avg_fn=None, use_buffers=False):
-        super(torch.optim.swa_utils.AveragedModel, self).__init__()
-        self.module = deepcopy(model)
+        super().__init__(deepcopy(model))
         if device is not None:
             self.module = self.module.to(device)
         self.register_buffer('n_averaged',

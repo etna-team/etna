@@ -105,7 +105,7 @@ class WindowStatisticsTransform(IrreversibleTransform, ABC):
         y = np.nan_to_num(y, copy=False, nan=self.fillna)[::-1]
 
         result = df.join(
-            pd.DataFrame(y, columns=pd.MultiIndex.from_product([segments, [self.out_column_name]]), index=df.index)
+            pd.DataFrame(y, columns=pd.MultiIndex.from_product([segments, [self.out_column_name]], names=df.columns.names), index=df.index)
         )
         result = result.sort_index(axis=1)
         return result

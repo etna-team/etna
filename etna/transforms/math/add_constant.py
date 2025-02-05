@@ -92,7 +92,7 @@ class AddConstTransform(ReversibleTransform):
             )
         else:
             column_name = self._get_column_name()
-            transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]])
+            transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]], names=df.columns.names)
             result = pd.concat((result, transformed_features), axis=1)
             result = result.sort_index(axis=1)
         return result

@@ -408,9 +408,9 @@ def test_transform_category_day(in_column, ts_name, iso_code, answer, request):
             "RUS",
             np.array(
                 ["NO_HOLIDAY"] * 6
-                + ["Day off (substituted from 02/23/2020)", "NO_HOLIDAY", "Day off (substituted from 03/08/2020)"]
+                + ["Выходной (перенесено с 23.02.2020)", "NO_HOLIDAY", "Выходной (перенесено с 08.03.2020)"]
                 + ["NO_HOLIDAY"] * 7
-                + ["Day off (substituted from 01/04/2020)", "Day off (substituted from 05/09/2020)"]
+                + ["Выходной (перенесено с 04.01.2020)", "Выходной (перенесено с 09.05.2020)"]
             ),
         ),
         (

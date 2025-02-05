@@ -94,4 +94,4 @@ def test_configure_optimizer(net_name, request):
     optimizers, schedulers = net.configure_optimizers()
 
     assert isinstance(optimizers[0], torch.optim.Adam)
-    assert isinstance(schedulers[0]["scheduler"], torch.optim.lr_scheduler._LRScheduler)
+    assert isinstance(schedulers[0]["scheduler"], torch.optim.lr_scheduler.LambdaLR)

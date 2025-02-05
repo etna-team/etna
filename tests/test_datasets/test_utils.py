@@ -459,7 +459,7 @@ def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq
 @pytest.mark.parametrize(
     "timestamps,answer",
     (
-        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "M"),
+        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "ME"),
         (pd.date_range(start="2020-01-01", periods=3, freq="W"), "W-SUN"),
         (pd.date_range(start="2020-01-01", periods=3, freq="D"), "D"),
         (pd.Series(np.arange(10)), None),

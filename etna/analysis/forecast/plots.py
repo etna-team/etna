@@ -420,7 +420,7 @@ def plot_backtest_interactive(
         if history_len == "all":
             plot_df = segment_history_df.append(segment_backtest_df)
         elif history_len > 0:
-            plot_df = segment_history_df.tail(history_len).append(segment_backtest_df)
+            plot_df = pd.concat([segment_history_df.tail(history_len), segment_backtest_df], ignore_index=True)
         else:
             plot_df = segment_backtest_df
         fig.add_trace(

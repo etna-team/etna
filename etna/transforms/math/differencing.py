@@ -166,7 +166,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
                 transformed, columns=df.loc[:, pd.IndexSlice[segments, self.in_column]].columns, index=df.index
             )
             column_name = self._get_column_name()
-            transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]])
+            transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]], names=df.columns.names)
             result_df = pd.concat((df, transformed_features), axis=1)
             result_df = result_df.sort_index(axis=1)
 

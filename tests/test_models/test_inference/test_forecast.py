@@ -111,7 +111,7 @@ class TestForecastInSampleFullNoTarget:
     )
     def test_forecast_in_sample_full_no_target_failed_nans_sklearn(self, model, transforms, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+        with pytest.raises(ValueError, match="Input X contains NaN."):
             self._test_forecast_in_sample_full_no_target(ts, model, transforms)
 
     @pytest.mark.parametrize(
@@ -262,7 +262,7 @@ class TestForecastInSampleFull:
     )
     def test_forecast_in_sample_full_failed_nans_sklearn(self, model, transforms, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+        with pytest.raises(ValueError, match="Input X contains NaN"):
             _test_prediction_in_sample_full(ts, model, transforms, method_name="forecast")
 
     @pytest.mark.parametrize(

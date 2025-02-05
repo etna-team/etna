@@ -76,7 +76,7 @@ class EmbeddingSegmentTransform(IrreversibleTransform):
         )  # (n_timestamps, n_segments * output_dim)
 
         df_encoded = pd.DataFrame(
-            embeddings, columns=pd.MultiIndex.from_product([segments, self._get_out_columns()]), index=df.index
+            embeddings, columns=pd.MultiIndex.from_product([segments, self._get_out_columns()], names=df.columns.names), index=df.index
         )
         df = pd.concat([df, df_encoded], axis=1)
         df = df.sort_index(axis=1)

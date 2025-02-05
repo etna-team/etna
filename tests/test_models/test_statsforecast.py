@@ -6,8 +6,8 @@ from statsforecast.models import AutoARIMA
 from statsforecast.models import AutoCES
 from statsforecast.models import AutoETS
 from statsforecast.models import AutoTheta
+from statsforecast.models import ARIMA
 
-from etna.libs.statsforecast import ARIMA
 from etna.models import StatsForecastARIMAModel
 from etna.models import StatsForecastAutoARIMAModel
 from etna.models import StatsForecastAutoCESModel
