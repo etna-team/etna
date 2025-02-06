@@ -115,6 +115,8 @@ class DeadlineMovingAverageModel(
         """
         # we make a normalization to treat "1d" like "D"
         freq = pd.tseries.frequencies.to_offset(ts.freq).freqstr
+        # TODO: change _freqs_available to match new literals for `freq` in pandas !
+        if freq == "h": freq = "H"  # Now this is a stub for tests, it will need to be reworked
         if freq not in self._freqs_available:
             raise ValueError(f"Freq {freq} is not supported! Use daily or hourly frequency!")
 
