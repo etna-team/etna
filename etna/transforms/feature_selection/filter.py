@@ -4,17 +4,16 @@ from typing import Sequence
 
 import pandas as pd
 
-from etna.transforms.base import ReversibleTransform
+from etna.transforms.base import IrreversibleTransform
 
 
-class FilterFeaturesTransform(ReversibleTransform):
+class FilterFeaturesTransform(IrreversibleTransform):
     """Filters features in each segment of the dataframe."""
 
     def __init__(
         self,
         include: Optional[Sequence[str]] = None,
         exclude: Optional[Sequence[str]] = None,
-        return_features: bool = False,
     ):
         """Create instance of FilterFeaturesTransform.
 
@@ -24,18 +23,14 @@ class FilterFeaturesTransform(ReversibleTransform):
             list of columns to pass through filter
         exclude:
             list of columns to not pass through
-        return_features:
-            indicates whether to return features or not.
         Raises
         ------
         ValueError:
-            if both options set or non of them
+            if both options set or none of them
         """
         super().__init__(required_features="all")
         self.include: Optional[Sequence[str]] = None
         self.exclude: Optional[Sequence[str]] = None
-        self.return_features: bool = return_features
-        self._df_removed: Optional[pd.DataFrame] = None
         if include is not None and exclude is None:
             self.include = list(set(include))
         elif exclude is not None and include is None:
@@ -84,23 +79,6 @@ class FilterFeaturesTransform(ReversibleTransform):
             if not set(self.exclude).issubset(features):
                 raise ValueError(f"Features {set(self.exclude) - set(features)} are not present in the dataset.")
             result = df.drop(columns=self.exclude, level="feature")
-        if self.return_features:
-            self._df_removed = df.drop(result.columns, axis=1)
 
         result = result.sort_index(axis=1)
         return result
-
-    def _inverse_transform(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply inverse transform to the data.
-
-        Parameters
-        ----------
-        df:
-            dataframe to apply inverse transformation
-
-        Returns
-        -------
-        result: pd.DataFrame
-            dataframe before transformation
-        """
-        return pd.concat([df, self._df_removed], axis=1)

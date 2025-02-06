@@ -1714,7 +1714,7 @@ def test_backtest_pass_with_filter_transform(ts_with_feature):
         model=ProphetModel(),
         transforms=[
             LogTransform(in_column="feature_1"),
-            FilterFeaturesTransform(exclude=["feature_1"], return_features=True),
+            FilterFeaturesTransform(exclude=["feature_1"]),
         ],
         horizon=10,
     )
