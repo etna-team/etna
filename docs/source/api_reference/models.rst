@@ -80,7 +80,7 @@ Native neural network models:
    nn.DeepStateModel
    nn.NBeatsGenericModel
    nn.NBeatsInterpretableModel
-   nn.PatchTSModel
+   nn.PatchTSTModel
    nn.DeepARModel
    nn.TFTModel
 
