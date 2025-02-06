@@ -210,7 +210,6 @@ def test_save_native_mixin_load_ok(recwarn, tmp_path):
     assert isinstance(loaded_dummy.net, MLPNet)
     assert loaded_dummy.trainer is None
     # one false positive warning
-    print([i.message for i in recwarn.list])
     assert len(recwarn) == 1
 
 
