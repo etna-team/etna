@@ -572,10 +572,10 @@ def test_context_size_seasonal_ma(model):
         (DeadlineMovingAverageModel(window=3, seasonality="month"), "D", 3 * 31),
         (DeadlineMovingAverageModel(window=1, seasonality="year"), "D", 366),
         (DeadlineMovingAverageModel(window=3, seasonality="year"), "D", 3 * 366),
-        (DeadlineMovingAverageModel(window=1, seasonality="month"), "H", 31 * 24),
-        (DeadlineMovingAverageModel(window=3, seasonality="month"), "H", 3 * 31 * 24),
-        (DeadlineMovingAverageModel(window=1, seasonality="year"), "H", 366 * 24),
-        (DeadlineMovingAverageModel(window=3, seasonality="year"), "H", 3 * 366 * 24),
+        (DeadlineMovingAverageModel(window=1, seasonality="month"), "h", 31 * 24),
+        (DeadlineMovingAverageModel(window=3, seasonality="month"), "h", 3 * 31 * 24),
+        (DeadlineMovingAverageModel(window=1, seasonality="year"), "h", 366 * 24),
+        (DeadlineMovingAverageModel(window=3, seasonality="year"), "h", 3 * 366 * 24),
     ],
 )
 def test_context_size_deadline_ma(model, freq, expected_context_size):

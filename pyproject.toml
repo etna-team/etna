@@ -265,17 +265,24 @@ filterwarnings = [
     "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev", # Pycharm debugging
     "ignore: X does not have valid feature names, but IsolationForest was fitted with feature names", # fixed here https://github.com/scikit-learn/scikit-learn/issues/25844
     "ignore: Series.__getitem__ treating keys as positions is deprecated", # pandas deprecated
-    "ignore: The provided callable <function nanmean at 0x107af25f0> is currently using DataFrameGroupBy.mean", # pandas deprecated
-    "ignore: 'T' is deprecated and will be removed in a future version, please use 'min' instead", # pandas deprecated
-    "ignore: 'H' is deprecated and will be removed in a future version, please use 'h' instead", # pandas deprecated
-    "ignore: 'M' is deprecated and will be removed in a future version, please use 'ME' instead", # pandas deprecated
-    "ignore: 'Q' is deprecated and will be removed in a future version, please use 'QE' instead", # pandas deprecated
-    "ignore: 'Y' is deprecated and will be removed in a future version, please use 'YE' instead", # pandas deprecated
+    "ignore: '.*' is deprecated and will be removed in a future version", # pandas deprecated
     "ignore: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True", # torch patchts
     "ignore: MPS available but not used", # lightning for mac
     "ignore: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.", # sklearn
     "ignore: DataFrame.groupby with axis=1 is deprecated", # pandas
-    "ignore: Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas", # pandas
+    "ignore: Conversion of an array with ndim > 0 to a scalar is deprecated", # numpy in Prophet
+    "ignore: DataFrame.fillna with 'method' is deprecated and will raise in a future version",
+    "ignore: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas",
+    "ignore: Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas",
+    "ignore: The provided callable <.*> is currently using DataFrameGroupBy..*", # pandas deprecated
+    "ignore: The provided callable <.*> is currently using DataFrame.*",
+    "ignore: The provided callable <.*> is currently using SeriesGroupBy..*",
+    "ignore: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
+    "ignore: Non-integer 'periods' in pd.date_range, pd.timedelta_range, pd.period_range, and pd.interval_range",
+    "ignore: suggest_uniform has been deprecated in v3.0.0. This feature will be removed in v6.0.0", # optuna
+    "ignore: .* bool will be deprecated in a future version", # matplotlib
+    "ignore: invalid value encountered in divide",
+    "ignore: The argument 'infer_datetime_format' is deprecated and will be removed in a future version.", # pandas.pydata
 ]
 markers = [
     "smoke"

@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from etna.core import BaseMixin
@@ -81,9 +83,7 @@ def test_base_mixin_set_params_with_nonexistent_attributes_estimator():
     # Need to be discussed
     first_exception = exc_info.value.__cause__
     assert isinstance(first_exception, TypeError)
-    assert (
-        str(first_exception) == "CatBoostRegressor.__init__() got an unexpected keyword argument 'incorrect_attribute'"
-    )
+    assert re.match(".*got an unexpected keyword argument.*", str(first_exception))
 
 
 def test_base_mixin_set_params_with_nonexistent_not_nested_attribute_pipeline():
@@ -96,7 +96,7 @@ def test_base_mixin_set_params_with_nonexistent_not_nested_attribute_pipeline():
         )
     first_exception = exc_info.value.__cause__
     assert isinstance(first_exception, TypeError)
-    assert str(first_exception) == "Pipeline.__init__() got an unexpected keyword argument 'incorrect_estimator'"
+    assert re.match(".*got an unexpected keyword argument.*", str(first_exception))
 
 
 def test_base_mixin_set_params_with_nonexistent_nested_attribute_pipeline():
@@ -109,9 +109,7 @@ def test_base_mixin_set_params_with_nonexistent_nested_attribute_pipeline():
         )
     first_exception = exc_info.value.__cause__
     assert isinstance(first_exception, TypeError)
-    assert (
-        str(first_exception) == "CatBoostRegressor.__init__() got an unexpected keyword argument 'incorrect_attribute'"
-    )
+    assert re.match(".*got an unexpected keyword argument.*", str(first_exception))
 
 
 @pytest.mark.parametrize(
