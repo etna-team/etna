@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -83,6 +84,7 @@ def plot_feature_relevance(
     border_value = None
     features = list(set(ts.features) - {"target"})
     relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
+    ax: Union[plt.Axes, Sequence[plt.Axes]]
     if relevance_aggregation_mode == "per-segment":
         _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
@@ -133,6 +135,6 @@ def plot_feature_relevance(
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
         sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
         if border_value is not None:
-            ax.axvline(border_value)  # type: ignore
-        ax.set_title("Feature relevance")  # type: ignore
-        ax.grid()  # type: ignore
+            ax.axvline(border_value)
+        ax.set_title("Feature relevance")
+        ax.grid()
