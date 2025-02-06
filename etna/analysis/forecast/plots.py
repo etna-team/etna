@@ -975,7 +975,7 @@ def plot_forecast_decomposition(
             ax_array[i].plot(segment_test_df.index.values, segment_test_df["target"].values, label="target")
         else:
             # skip color for target
-            next(ax_array[i]._get_lines.prop_cycler)
+            ax_array[i].get_lines()[0].set_color(ax_array[i]._get_lines.get_next_color())
 
         for component in components:
             if components_mode == ComponentsMode.per_component:
