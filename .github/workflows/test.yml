@@ -91,7 +91,7 @@ jobs:
     strategy:
       matrix:
         pandas-version:
-          - "^2"
+          - ">=2"
       fail-fast: false
 
     steps:
