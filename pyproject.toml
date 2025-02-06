@@ -283,6 +283,7 @@ filterwarnings = [
     "ignore: .* bool will be deprecated in a future version", # matplotlib
     "ignore: invalid value encountered in divide",
     "ignore: The argument 'infer_datetime_format' is deprecated and will be removed in a future version.", # pandas.pydata
+    "ignore: Could not infer format, so each element will be parsed individually",
 ]
 markers = [
     "smoke"
