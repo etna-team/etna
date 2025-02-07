@@ -55,13 +55,13 @@ We have prepared a set of tutorials for an easy introduction:
 - Loading dataset
 - Testing models
   - Baseline 
-  - DeepARNative
-  - TFTNative
+  - DeepAR
+  - TFT
   - RNN
   - MLP
   - Deep State Model 
   - N-BEATS Model 
-  - PatchTS Model
+  - PatchTST Model
   - Chronos Model
   - Chronos Bolt Model
   - TimesFM Model

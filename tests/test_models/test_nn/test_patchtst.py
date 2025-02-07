@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 
 from etna.metrics import MAE
-from etna.models.nn import PatchTSModel
-from etna.models.nn.patchts import PatchTSNet
+from etna.models.nn import PatchTSTModel
+from etna.models.nn.patchtst import PatchTSTNet
 from etna.transforms import StandardScalerTransform
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
@@ -15,13 +15,13 @@ from tests.test_models.utils import assert_sampling_is_valid
     "horizon",
     [8, 13, 15],
 )
-def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_weekly_function_with_horizon, horizon):
+def test_patchtst_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_weekly_function_with_horizon, horizon):
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
     std = StandardScalerTransform(in_column="target")
     ts_train.fit_transform([std])
     encoder_length = 14
     decoder_length = 14
-    model = PatchTSModel(
+    model = PatchTSTModel(
         encoder_length=encoder_length, decoder_length=decoder_length, patch_len=1, trainer_params=dict(max_epochs=20)
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
@@ -37,13 +37,13 @@ def test_patchts_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_wee
     "horizon",
     [8, 13, 15],
 )
-def test_patchts_model_run_weekly_overfit_with_scaler_medium_patch(ts_dataset_weekly_function_with_horizon, horizon):
+def test_patchtst_model_run_weekly_overfit_with_scaler_medium_patch(ts_dataset_weekly_function_with_horizon, horizon):
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
     std = StandardScalerTransform(in_column="target")
     ts_train.fit_transform([std])
     encoder_length = 14
     decoder_length = 14
-    model = PatchTSModel(
+    model = PatchTSTModel(
         encoder_length=encoder_length, decoder_length=decoder_length, trainer_params=dict(max_epochs=20)
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
@@ -56,14 +56,14 @@ def test_patchts_model_run_weekly_overfit_with_scaler_medium_patch(ts_dataset_we
 
 
 @pytest.mark.parametrize("df_name", ["example_make_samples_df", "example_make_samples_df_int_timestamp"])
-def test_patchts_make_samples(df_name, request):
+def test_patchtst_make_samples(df_name, request):
     df = request.getfixturevalue(df_name)
     module = MagicMock()
     encoder_length = 8
     decoder_length = 4
 
     ts_samples = list(
-        PatchTSNet.make_samples(module, df=df, encoder_length=encoder_length, decoder_length=decoder_length)
+        PatchTSTNet.make_samples(module, df=df, encoder_length=encoder_length, decoder_length=decoder_length)
     )
 
     assert len(ts_samples) == len(df) - encoder_length - decoder_length + 1
@@ -83,12 +83,12 @@ def test_patchts_make_samples(df_name, request):
 
 
 def test_save_load(example_tsds):
-    model = PatchTSModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = PatchTSTModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
 
 def test_params_to_tune(example_tsds):
     ts = example_tsds
-    model = PatchTSModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = PatchTSTModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
