@@ -248,7 +248,6 @@ filterwarnings = [
     "ignore: `sentry_sdk.Hub` is deprecated and will be removed in a future major release.",
     "ignore::DeprecationWarning:holidays",
     "ignore:This property will be removed in 2.0.0.", # torchmetrics
-    "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
     "ignore: Jupyter is migrating its paths to use standard platformdirs",
     "ignore: Argument `closed` is deprecated in favor of `inclusive`",
