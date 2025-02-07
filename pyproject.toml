@@ -283,7 +283,8 @@ filterwarnings = [
     "ignore: invalid value encountered in divide",
     "ignore: The argument 'infer_datetime_format' is deprecated and will be removed in a future version.", # pandas.pydata
     "ignore: Could not infer format, so each element will be parsed individually",
-    "ignore: datetime.datetime.utcfromtimestamp.* is deprecated and scheduled for removal in a future version" # python 3.12
+    "ignore: datetime.datetime.utcfromtimestamp.* is deprecated and scheduled for removal in a future version", # python 3.12
+    "ignore: os.fork.* was called" # os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
 ]
 markers = [
     "smoke"
