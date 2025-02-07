@@ -46,6 +46,18 @@ def config_with_concat():
     }
 
 
+@pytest.fixture
+def config_with_sum():
+    return {
+        "_target_": "etna.pipeline.Pipeline",
+        "horizon": "${__aux__.horizon}",
+        "model": {"_target_": "etna.models.LinearPerSegmentModel"},
+        "transforms": [
+            {"_target_": "etna.transforms.LagTransform", "in_column": "target", "lags": ["${sum:${horizon},2}"]}
+        ],
+    }
+
+
 def test_shift(config_with_shift):
     pipeline = construct_pipeline(config_with_shift)
     assert pipeline.transforms[0].lags == [8, 9]
@@ -59,3 +71,8 @@ def test_mult(config_with_mult):
 def test_concat(config_with_concat):
     pipeline = construct_pipeline(config_with_concat)
     assert pipeline.transforms[0].in_column == "target"
+
+
+def test_sum(config_with_sum):
+    pipeline = construct_pipeline(config_with_sum)
+    assert pipeline.transforms[0].lags == [9]
