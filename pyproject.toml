@@ -8,9 +8,9 @@ license = "Apache-2.0"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Intended Audience :: Science/Research",
@@ -89,7 +89,7 @@ transformers = {version = ">=4.42,<5", optional = true}
 accelerate = {version = "^1", optional = true}
 huggingface-hub = {version = ">=0.23", optional = true}
 
-jax = {version = ">0.4.25", optional = true}
+jax = {version = ">0.4.3", optional = true}
 jaxlib = {version = "<1", optional = true}
 utilsforecast = {version = ">=0.1.10,<1", optional = true}
 
