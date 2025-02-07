@@ -2437,8 +2437,7 @@ files = [
 ml-dtypes = ">=0.2.0"
 numpy = [
     {version = ">=1.22", markers = "python_version < \"3.11\""},
-    {version = ">=1.23.2", markers = "python_version >= \"3.11\" and python_version < \"3.12\""},
-    {version = ">=1.26.0", markers = "python_version >= \"3.12\""},
+    {version = ">=1.26.0", markers = "python_version >= \"3.11\""},
 ]
 opt-einsum = "*"
 scipy = [
