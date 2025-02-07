@@ -401,7 +401,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         exog_future = self._select_regressors(df)
 
-        forecast_results = fit_results.get_forecast(horizon, exog=exog_future).prediction_results.results
+        forecast_results = fit_results.get_forecast(horizon, exog=exog_future).prediction_results.oos_results
         state = forecast_results.predicted_state[:, :-1]
 
         if model.mle_regression:
