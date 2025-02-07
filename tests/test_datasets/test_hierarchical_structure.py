@@ -264,7 +264,10 @@ def test_level_names_immutable(structure: Dict[str, List[str]], names: List[str]
 )
 def test_level_names_immutable_error(structure: Dict[str, List[str]], names: List[str]):
     h = HierarchicalStructure(level_structure=structure, level_names=names)
-    with pytest.raises(AttributeError, match="can't set attribute"):
+    with pytest.raises(
+        AttributeError,
+        match="can't set attribute | property 'level_names' of 'HierarchicalStructure' object has no setter",
+    ):
         h.level_names = ["l1", "l2"]
 
 
