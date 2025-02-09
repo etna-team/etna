@@ -266,7 +266,7 @@ def test_forecast_fails_components(example_tsds):
 
 @pytest.mark.smoke
 def test_list_models():
-    assert TimesFMModel.list_models() == ["google/timesfm-1.0-200m-pytorch"]
+    assert TimesFMModel.list_models() == ["google/timesfm-1.0-200m-pytorch", "google/timesfm-2.0-500m-pytorch"]
 
 
 @pytest.mark.smoke
