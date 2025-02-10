@@ -1,3 +1,4 @@
+import sys
 from typing import Optional
 
 import numpy as np
@@ -401,6 +402,7 @@ def test_transform_category_day(in_column, ts_name, iso_code, answer, request):
         assert df[segment]["holiday"].dtype == "category"
 
 
+@pytest.mark.skipif(sys.version_info.minor < 12, reason="In Python 3.12 Russian holidays are called in Russian")
 @pytest.mark.parametrize(
     "iso_code,answer",
     (
@@ -424,7 +426,39 @@ def test_transform_category_day(in_column, ts_name, iso_code, answer, request):
         ),
     ),
 )
-def test_transform_category_w_mon(iso_code: str, answer: np.array, two_segments_w_mon):
+def test_transform_category_w_mon_python_10(iso_code: str, answer: np.array, two_segments_w_mon):
+    holidays_finder = HolidayTransform(iso_code=iso_code, mode="category", out_column="holiday")
+    df = holidays_finder.fit_transform(two_segments_w_mon).to_pandas()
+    for segment in df.columns.get_level_values("segment").unique():
+        assert np.array_equal(df[segment]["holiday"].to_numpy(), answer)
+        assert df[segment]["holiday"].dtype == "category"
+
+
+@pytest.mark.skipif(sys.version_info.minor >= 12, reason="In Python 3.12 Russian holidays are called in Russian")
+@pytest.mark.parametrize(
+    "iso_code,answer",
+    (
+        (
+            "RUS",
+            np.array(
+                ["NO_HOLIDAY"] * 6
+                + ["Выходной (перенесено с 23.02.2020)", "NO_HOLIDAY", "Выходной (перенесено с 08.03.2020)"]
+                + ["NO_HOLIDAY"] * 7
+                + ["Выходной (перенесено с 04.01.2020)", "Выходной (перенесено с 09.05.2020)"]
+            ),
+        ),
+        (
+            "US",
+            np.array(
+                ["NO_HOLIDAY", "Martin Luther King Jr. Day"]
+                + ["NO_HOLIDAY"] * 3
+                + ["Washington's Birthday"]
+                + ["NO_HOLIDAY"] * 12
+            ),
+        ),
+    ),
+)
+def test_transform_category_w_mon_python_12(iso_code: str, answer: np.array, two_segments_w_mon):
     holidays_finder = HolidayTransform(iso_code=iso_code, mode="category", out_column="holiday")
     df = holidays_finder.fit_transform(two_segments_w_mon).to_pandas()
     for segment in df.columns.get_level_values("segment").unique():
