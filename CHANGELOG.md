@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `ClearMLLogger` ([#568](https://github.com/etna-team/etna/pull/568))
 - **Breaking:** Add a restriction on equal feature sets across segments in the dataset ([#581](https://github.com/etna-team/etna/pull/581))
 - Add `concat` resolver for `OmegaConf` ([#604](https://github.com/etna-team/etna/pull/604))
-- 
-- 
+- Add 500m `TimesFM` model support ([#605](https://github.com/etna-team/etna/pull/605))
+- Add `num_layers`, `use_positional_embedding`, `normalize_target`, `normalize_exog`, `forecast_with_exog_mode` parameters to `TimesFM` model ([#605](https://github.com/etna-team/etna/pull/605))
 - 
 - 
 - 

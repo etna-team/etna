@@ -164,7 +164,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/154248137ccce29b01f4c3a765e85c3d9e4d92ba/src/timesfm/patched_decoder.py)
+# Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/c9a582506b7588a39bc11b38b17c0020e5942629/src/timesfm/pytorch_patched_decoder.py)
 
 """Pytorch version of patched decoder."""
 
@@ -176,7 +176,7 @@ from torch import nn
 import torch.nn.functional as F
 
 
-def _create_quantiles() -> List[float]:
+def create_quantiles() -> List[float]:
     return [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
 
@@ -203,7 +203,7 @@ class TimesFMConfig:
     # Horizon length
     horizon_len: int = 128
     # quantiles
-    quantiles: List[float] = dataclasses.field(default_factory=_create_quantiles)
+    quantiles: List[float] = dataclasses.field(default_factory=create_quantiles)
     # Padding value
     pad_val: float = 1123581321.0
     # Tolerance
@@ -881,7 +881,7 @@ class PatchedTimeSeriesDecoder(nn.Module):
       freq: torch.LongTensor,
       horizon_len: int,
       output_patch_len: Optional[int] = None,
-      max_len: int = 512,
+      max_len: Optional[int] = None,
       return_forecast_on_context: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Auto-regressive decoding without caching.
@@ -908,6 +908,8 @@ class PatchedTimeSeriesDecoder(nn.Module):
         final_out = input_ts
         context_len = final_out.shape[1]
         full_outputs = []
+        if max_len is None:
+            max_len = context_len
         if paddings.shape[1] != final_out.shape[1] + horizon_len:
             raise ValueError(
               "Length of paddings must match length of input + horizon_len:"
@@ -923,9 +925,8 @@ class PatchedTimeSeriesDecoder(nn.Module):
             if return_forecast_on_context and step_index == 0:
                 # For the first decodings step, collect the model forecast on the
                 # context except the unavailable first input batch forecast.
-                new_full_ts = fprop_outputs[:, :-1, :self.config.patch_len, :]
-                new_full_ts = fprop_outputs.view(new_full_ts.size(0), -1,
-                                                 new_full_ts.size(3))
+                new_full_ts = fprop_outputs[:, 0:-1, 0:self.config.patch_len, :]
+                new_full_ts = new_full_ts.reshape(new_full_ts.size(0), -1, new_full_ts.size(3))
 
                 full_outputs.append(new_full_ts)
 
