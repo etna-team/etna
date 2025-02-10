@@ -164,7 +164,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/154248137ccce29b01f4c3a765e85c3d9e4d92ba/src/timesfm/timesfm_base.py)
+# Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/c9a582506b7588a39bc11b38b17c0020e5942629/src/timesfm/timesfm_base.py)
 # replace print with logging
 
 import warnings
@@ -211,15 +211,62 @@ def freq_map(freq: Optional[str]):
       warnings.warn("Frequency is None. Mapping it to 0, that can be not optimal. Better to set it to known frequency")
       return 0
   freq = str.upper(freq)
-  if (freq.endswith("H") or freq.endswith("T") or freq.endswith("MIN") or
-      freq.endswith("D") or freq.endswith("B") or freq.endswith("U")):
+  if freq.endswith(("H", "T", "MIN", "D", "B", "U", "S")):
     return 0
   elif freq.endswith(("W", "M", "MS")):
     return 1
-  elif freq.endswith("Y") or freq.endswith("Q"):
+  elif freq.endswith(("Y", "Q", "A")):
     return 2
   else:
     raise ValueError(f"Invalid frequency: {freq}")
+
+
+def strip_leading_nans(arr):
+  """
+  Removes contiguous NaN values from the beginning of a NumPy array.
+  Args:
+    arr: The input NumPy array.
+  Returns:
+    A new NumPy array with leading NaN values removed.
+    If the array is all NaNs or empty, returns an empty array.
+  """
+
+  isnan = np.isnan(arr)
+  first_valid_index = np.argmax(~isnan)
+  return arr[first_valid_index:]
+
+def linear_interpolation(arr):
+  """
+    Performs linear interpolation to fill NaN values in a 1D numpy array.
+    Args:
+        arr: The 1D numpy array containing NaN values.
+    Returns:
+        A new numpy array with NaN values filled using linear interpolation,
+        or the original array if no NaNs are present.
+        Returns None if the input is not a 1D array.
+        Returns the original array if there are no NaN values.
+    """
+
+  nans = np.isnan(arr)
+  if not np.any(nans):  # Check if there are any NaNs
+    return arr
+
+  def x(z):
+      return z.nonzero()[0]
+
+  nans_indices = x(nans)
+  non_nans_indices = x(~nans)
+  non_nans_values = arr[~nans]
+
+  try:
+    arr[nans] = np.interp(nans_indices, non_nans_indices, non_nans_values)
+  except ValueError:
+    if len(non_nans_values) > 0:
+      mu = np.nanmean(arr)
+    else:
+      mu = 0.0
+    arr = np.where(np.isfinite(arr), arr, mu)
+  return arr
 
 
 # Per time series normalization: forward.
@@ -474,6 +521,17 @@ class TimesFmBase:
     ValueError: If the checkpoint is not properly loaded.
     """
     stats = None
+
+    tmp_inputs = []
+    for each_input in inputs:
+      arr = np.array(each_input)
+      if not np.isfinite(arr).all():
+        arr = np.where(np.isfinite(arr), arr, np.nan)
+        arr = strip_leading_nans(arr)
+        arr = linear_interpolation(arr)
+      tmp_inputs.append(arr)
+
+    inputs = tmp_inputs
     if normalize:
       inputs, stats = _normalize(inputs)
     mean_forecast, quantile_forecast = self._forecast(
@@ -729,6 +787,7 @@ class TimesFmBase:
       model_name: str = "timesfm",
       window_size: Optional[int] = None,
       num_jobs: int = 1,
+      normalize: bool = False,
       verbose: bool = True,
   ) -> pd.DataFrame:
     """Forecasts on a list of time series.
@@ -747,6 +806,7 @@ class TimesFmBase:
       window_size: window size of trend + residual decomposition. If None then
         we do not do decomposition.
       num_jobs: number of parallel processes to use for dataframe processing.
+      normalize: normalize context before forecasting or not.
       verbose: output model states in terminal.
 
     Returns:
@@ -791,6 +851,7 @@ class TimesFmBase:
     freq_inps = [freq_map(freq)] * len(new_inputs)
     _, full_forecast = self.forecast(new_inputs,
                                      freq=freq_inps,
+                                     normalize=normalize,
                                      window_size=window_size)
     if verbose:
       logging.info("Finished forecasting.")
