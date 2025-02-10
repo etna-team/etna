@@ -232,7 +232,7 @@ class SeasonalMovingAverageModel(
         df = ts.to_pandas()
         y_pred = self._predict(df=df, prediction_size=prediction_size)
         ts.df = ts.df.iloc[-prediction_size:]
-        col_types = {col: y_pred.dtype for col in df.columns}
+        col_types = {col: y_pred.dtype for col in df.columns if col[1] == "target"}
         ts.df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
         ts.df = ts.df.astype(col_types)
 

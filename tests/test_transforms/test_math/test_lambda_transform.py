@@ -71,7 +71,7 @@ def test_save_transform(ts_non_negative, transform_original, transform_function,
         [LambdaTransform(in_column="target", out_column=out_column, transform_func=transform_function, inplace=False)]
     )
     assert set(ts_copy.columns) == set(ts.columns)
-    for column in ts.columns.get_level_values("feature"):
+    for column in ts.columns.get_level_values("feature").unique():
         np.testing.assert_allclose(ts_copy[:, :, column], ts[:, :, column], rtol=1e-9)
 
 

@@ -24,8 +24,8 @@ from etna.models.mixins import SaveDeepBaseModelMixin
 
 if SETTINGS.torch_required:
     import torch
-    from pytorch_lightning import LightningModule
-    from pytorch_lightning import Trainer
+    from lightning.pytorch import LightningModule
+    from lightning.pytorch import Trainer
     from torch.utils.data import DataLoader
     from torch.utils.data import Dataset
     from torch.utils.data import random_split
@@ -506,7 +506,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         test_batch_size:
             batch size for testing
         trainer_params:
-            Pytorch ligthning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch ligthning trainer parameters (api reference :py:class:`lightning.pytorch.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:

@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from pytorch_lightning import seed_everything
+from lightning.pytorch import seed_everything
 
 from etna.metrics import MAE
 from etna.models.nn import DeepARModel

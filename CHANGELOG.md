@@ -32,17 +32,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Set `fast_redundancy=True` as a default value in `MRMRFeatureSelectionTransform` ([#592](https://github.com/etna-team/etna/pull/592))
 - **Breaking:** Remove `return_features` parameter from `FilterFeaturesTransform`, `GaleShapleyFeatureSelectionTransform`, `TreeFeatureSelectionTransform`, `MRMRFeatureSelectionTransform` ([#594](https://github.com/etna-team/etna/pull/594))
 - 
-- **Non-backward compatibility:** Bump minimum `pandas` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
-- **Non-backward compatibility:** Bump minimum `torch` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
-- **Non-backward compatibility:** Bump minimum `statsmodels` version to 0.14 ([#599](https://github.com/etna-team/etna/pull/599))
-- **Non-backward compatibility:** Bump minimum `jax` version to 0.4.28 ([#599](https://github.com/etna-team/etna/pull/599))
-- **Non-backward compatibility:** Bump minimum `jaxlib` version to 0.4.25 ([#599](https://github.com/etna-team/etna/pull/599))
-- **Non-backward compatibility:** Bump minimum `transformers` version to 4.42 ([#599](https://github.com/etna-team/etna/pull/599))
-- **Non-backward compatibility:** Bump minimum `scikit-learn` version to 1.4 ([#599](https://github.com/etna-team/etna/pull/599))
-- **Non-backward compatibility:** Bump minimum `pmdarima` version to 2.0.4 ([#599](https://github.com/etna-team/etna/pull/599))
-- 
-- Bump minimum `optuna` version to 4.0 ([#599](https://github.com/etna-team/etna/pull/599))
-- Bump minimum `statsforecast` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `pandas` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `torch` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `statsmodels` version to 0.14 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `jax` version to 0.4.28 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `jaxlib` version to 0.4.25 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `transformers` version to 4.42 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `scikit-learn` version to 1.4 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `pmdarima` version to 2.0.4 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `scipy` version to 1.12 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `optuna` version to 4.0 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `statsforecast` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
+-
+-
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
