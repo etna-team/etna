@@ -20,8 +20,8 @@ if SETTINGS.torch_required:
     import torch.nn as nn
 
 
-class PatchTSBatch(TypedDict):
-    """Batch specification for PatchTS."""
+class PatchTSTBatch(TypedDict):
+    """Batch specification for PatchTST."""
 
     encoder_target: "torch.Tensor"
     decoder_target: "torch.Tensor"
@@ -52,8 +52,8 @@ class PositionalEncoding(nn.Module):
         return self.dropout(x)
 
 
-class PatchTSNet(DeepBaseNet):
-    """PatchTS based Lightning module."""
+class PatchTSTNet(DeepBaseNet):
+    """PatchTST based Lightning module."""
 
     def __init__(
         self,
@@ -68,7 +68,7 @@ class PatchTSNet(DeepBaseNet):
         loss: "torch.nn.Module",
         optimizer_params: Optional[dict],
     ) -> None:
-        """Init PatchTS.
+        """Init PatchTST.
 
         Parameters
         ----------
@@ -120,7 +120,7 @@ class PatchTSNet(DeepBaseNet):
         self.lr = lr
         self.optimizer_params = {} if optimizer_params is None else optimizer_params
 
-    def forward(self, x: PatchTSBatch, *args, **kwargs):  # type: ignore
+    def forward(self, x: PatchTSTBatch, *args, **kwargs):  # type: ignore
         """Forward pass.
 
         Parameters
@@ -157,7 +157,7 @@ class PatchTSNet(DeepBaseNet):
 
         return self.projection(y)  # (batch_size, 1)
 
-    def step(self, batch: PatchTSBatch, *args, **kwargs):  # type: ignore
+    def step(self, batch: PatchTSTBatch, *args, **kwargs):  # type: ignore
         """Step for loss computation for training or validation.
 
         Parameters
@@ -239,8 +239,8 @@ class PatchTSNet(DeepBaseNet):
         return optimizer
 
 
-class PatchTSModel(DeepBaseModel):
-    """PatchTS model using PyTorch layers. For more details read the `paper <https://arxiv.org/abs/2211.14730>`_.
+class PatchTSTModel(DeepBaseModel):
+    """PatchTST model using PyTorch layers. For more details read the `paper <https://arxiv.org/abs/2211.14730>`_.
 
     Model uses only `target` column, other columns will be ignored.
 
@@ -271,7 +271,7 @@ class PatchTSModel(DeepBaseModel):
         val_dataloader_params: Optional[dict] = None,
         split_params: Optional[dict] = None,
     ):
-        """Init PatchTS model.
+        """Init PatchTST model.
 
         Parameters
         ----------
@@ -327,7 +327,7 @@ class PatchTSModel(DeepBaseModel):
         self.loss = loss if loss is not None else nn.MSELoss()
         self.optimizer_params = optimizer_params
         super().__init__(
-            net=PatchTSNet(
+            net=PatchTSTNet(
                 encoder_length,
                 patch_len=self.patch_len,
                 stride=self.stride,

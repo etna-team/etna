@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Add `ClearMLLogger` ([#568](https://github.com/etna-team/etna/pull/568))
 - **Breaking:** Add a restriction on equal feature sets across segments in the dataset ([#581](https://github.com/etna-team/etna/pull/581))
-- 
+- Add `concat` resolver for `OmegaConf` ([#604](https://github.com/etna-team/etna/pull/604))
 - 
 - 
 - 
@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Rename `TSDataset.index` to `TSDataset.timestamps` ([#593](https://github.com/etna-team/etna/pull/593))
 - **Breaking:** Rename `TSDataset.add_columns_from_pandas` to `TSDataset.add_features_from_pandas` ([#593](https://github.com/etna-team/etna/pull/593))
 - **Breaking:** Rename `TSDataset.update_columns_from_pandas` to `TSDataset.update_features_from_pandas` ([#593](https://github.com/etna-team/etna/pull/593))
-- 
+- **Breaking:** Rename `PatchTSModel` to `PatchTSTModel` ([#601](https://github.com/etna-team/etna/pull/601))
 - 
 - 
 - Fix `TSDataset.train_test_split` to pass all features to train and test parts ([#545](https://github.com/etna-team/etna/pull/545))

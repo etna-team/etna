@@ -38,7 +38,7 @@ from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
-from etna.models.nn import PatchTSModel
+from etna.models.nn import PatchTSTModel
 from etna.models.nn import RNNModel
 from etna.models.nn import TFTModel
 from etna.models.nn import TimesFMModel
@@ -136,7 +136,7 @@ class TestForecastInSampleFullNoTarget:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
@@ -302,7 +302,7 @@ class TestForecastInSampleFull:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 DeepStateModel(
                     ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()]),
@@ -434,7 +434,7 @@ class TestForecastInSampleSuffixNoTarget:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
@@ -533,7 +533,7 @@ class TestForecastInSampleSuffix:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
@@ -651,7 +651,7 @@ class TestForecastOutSample:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -729,7 +729,7 @@ class TestForecastOutSample:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -881,7 +881,7 @@ class TestForecastOutSamplePrefix:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -995,7 +995,7 @@ class TestForecastOutSampleSuffix:
             (SeasonalMovingAverageModel(), [], "example_tsds"),
             (NaiveModel(lag=3), [], "example_tsds"),
             (DeadlineMovingAverageModel(window=1), [], "example_tsds"),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -1211,7 +1211,7 @@ class TestForecastMixedInOutSample:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -1343,7 +1343,7 @@ class TestForecastSubsetSegments:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -1456,7 +1456,7 @@ class TestForecastNewSegments:
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
