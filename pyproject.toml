@@ -42,14 +42,14 @@ authors = [
 
 [tool.poetry.dependencies]
 python = ">=3.10.0, <3.13.0"
-scikit-learn = ">=1.2, <2"
+scikit-learn = ">=1.4, <2"
 pandas = "^2"
 catboost = "^1"
 ruptures = "^1.1.5"
 numba = ">=0.53.1"
 seaborn = ">=0.11.1,<1"
 statsmodels = "^0.14"
-pmdarima = ">=2"
+pmdarima = ">=2.0.4"
 dill = "^0.3.4"
 toml = "^0.10.2"
 loguru = ">=0.7"
@@ -264,7 +264,7 @@ filterwarnings = [
     "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev", # Pycharm debugging
     "ignore: X does not have valid feature names, but IsolationForest was fitted with feature names", # fixed here https://github.com/scikit-learn/scikit-learn/issues/25844
     "ignore: Series.__getitem__ treating keys as positions is deprecated", # pandas deprecated
-    "ignore: '.*' is deprecated and will be removed in a future version", # pandas deprecated
+    "ignore: '.*' is deprecated and will be removed in a future version", # pandas deprecated literals for freq
     "ignore: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True", # torch patchts
     "ignore: MPS available but not used", # lightning for mac
     "ignore: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.", # sklearn

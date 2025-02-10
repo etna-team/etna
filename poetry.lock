@@ -7769,4 +7769,4 @@ wandb = ["wandb"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.0, <3.13.0"
-content-hash = "fdd401eaf160a6bea729e615d370e09c0dafd113ff6badb31167be67f1500784"
+content-hash = "af944a1db4469f3d709cb7a9ae92f037016ce2431de4951198bf0a79e6c9fe56"
