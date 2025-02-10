@@ -110,7 +110,7 @@ class NBeatsBaseNet(DeepBaseNet):
         }
         yield sample
 
-    def configure_optimizers(self) -> Tuple[List["torch.optim.Optimizer"], List[Dict[str, Any]]]:
+    def configure_optimizers(self) -> Tuple[List["torch.optim.Optimizer"], List[Dict[str, Any]]]:  # type: ignore
         """Optimizer configuration."""
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, **self.optimizer_params)
         epochs = self.optimizer_params.get("max_epochs", 1000)

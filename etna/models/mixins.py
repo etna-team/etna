@@ -732,7 +732,7 @@ class SaveDeepBaseModelMixin(SaveMixin):
         obj = super().load(path=path)
 
         with zipfile.ZipFile(path, "r") as archive:
-            obj.net = _load_pl_model(archive=archive, filename="net.pt")
+            obj.net = _load_pl_model(archive=archive, filename="net.pt")  # type: ignore
             obj.trainer = None
 
         return obj

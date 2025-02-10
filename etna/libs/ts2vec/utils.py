@@ -65,9 +65,9 @@ def split_with_nan(x, sections, axis=0):
     return arrs
 
 
-def take_per_row(A, indx, num_elem):
-    all_indx = indx[:, None] + np.arange(num_elem)
-    return A[torch.arange(all_indx.shape[0])[:, None], all_indx]
+def take_per_row(A, index, num_elem):
+    all_index = index[:, None] + np.arange(num_elem)
+    return A[torch.arange(all_index.shape[0])[:, None], all_index]
 
 
 def centerize_vary_length_series(x):
