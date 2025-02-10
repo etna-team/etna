@@ -402,7 +402,7 @@ def test_transform_category_day(in_column, ts_name, iso_code, answer, request):
         assert df[segment]["holiday"].dtype == "category"
 
 
-@pytest.mark.skipif(sys.version_info.minor < 12, reason="In Python 3.12 Russian holidays are called in Russian")
+@pytest.mark.skipif(sys.version_info.minor >= 12, reason="In Python 3.12 Russian holidays are called in Russian")
 @pytest.mark.parametrize(
     "iso_code,answer",
     (
@@ -434,7 +434,7 @@ def test_transform_category_w_mon_python_10(iso_code: str, answer: np.array, two
         assert df[segment]["holiday"].dtype == "category"
 
 
-@pytest.mark.skipif(sys.version_info.minor >= 12, reason="In Python 3.12 Russian holidays are called in Russian")
+@pytest.mark.skipif(sys.version_info.minor < 12, reason="In Python 3.12 Russian holidays are called in Russian")
 @pytest.mark.parametrize(
     "iso_code,answer",
     (
