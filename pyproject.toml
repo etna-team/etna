@@ -266,7 +266,7 @@ filterwarnings = [
     "ignore: Series.__getitem__ treating keys as positions is deprecated", # pandas deprecated
     "ignore: '.*' is deprecated and will be removed in a future version", # pandas deprecated literals for freq
     "ignore: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True", # torch patchts
-    "ignore: MPS available but not used", # lightning for mac
+    "ignore: GPU available but not used", # lightning for mac
     "ignore: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.", # sklearn
     "ignore: DataFrame.groupby with axis=1 is deprecated", # pandas
     "ignore: Conversion of an array with ndim > 0 to a scalar is deprecated", # numpy in Prophet

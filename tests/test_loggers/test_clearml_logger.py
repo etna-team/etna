@@ -4,7 +4,7 @@ from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
-from lightning.pytorch.loggers import TensorBoardLogger
+from pytorch_lightning.loggers import TensorBoardLogger
 
 from etna.loggers import ClearMLLogger
 from etna.loggers import tslogger as _tslogger

@@ -24,8 +24,8 @@ from etna.models.decorators import log_decorator
 
 if SETTINGS.torch_required:
     import torch
-    from lightning.pytorch import LightningModule
-    from lightning.pytorch import Trainer
+    from pytorch_lightning import LightningModule
+    from pytorch_lightning import Trainer
 
 
 class ModelForecastingMixin(ABC):
