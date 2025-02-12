@@ -123,7 +123,7 @@ class HolidayTransform(IrreversibleTransform):
         self.mode = mode
         self._mode = HolidayTransformMode(mode)
         self._freq: str = _DEFAULT_FREQ  # type: ignore
-        self.holidays = holidays.country_holidays(iso_code)
+        self.holidays = holidays.country_holidays(iso_code, language="en_US")
         self.out_column = out_column
         self.in_column = in_column
 

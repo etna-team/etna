@@ -80,7 +80,6 @@ def test_base_mixin_set_params_with_nonexistent_attributes_estimator():
     with pytest.raises(RuntimeError) as exc_info:
         catboost_model.set_params(**{"incorrect_attribute": 1e-3})
 
-    # Need to be discussed
     first_exception = exc_info.value.__cause__
     assert isinstance(first_exception, TypeError)
     assert re.match(".*got an unexpected keyword argument.*", str(first_exception))
