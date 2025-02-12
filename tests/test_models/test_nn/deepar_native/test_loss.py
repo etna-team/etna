@@ -1,6 +1,6 @@
 import pytest
 import torch
-from pytorch_lightning import seed_everything
+from lightning.pytorch import seed_everything
 
 from etna.models.nn.deepar.loss import GaussianLoss
 from etna.models.nn.deepar.loss import NegativeBinomialLoss

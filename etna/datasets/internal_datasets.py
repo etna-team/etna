@@ -688,7 +688,7 @@ def get_weather_dataset(dataset_dir: Path) -> None:
         data = pd.concat([data, data_])
 
     data = data.rename({"Date Time": "timestamp"}, axis=1)
-    data["timestamp"] = pd.to_datetime(data["timestamp"])
+    data["timestamp"] = pd.to_datetime(data["timestamp"], format="%d.%m.%Y %H:%M:%S")
 
     data = data.melt("timestamp", var_name="segment", value_name="target")
 
@@ -990,9 +990,9 @@ datasets_dict: Dict[str, Dict] = {
         "freq": "10T",
         "parts": ("train", "test", "full"),
         "hash": {
-            "train": "71393681d125a2c3c39fbe2a2aedd9a1",
+            "train": "70ffe726161c200ae785643b38e33a11",
             "test": "a4808adbba4a50de5e4ece42ed44a333",
-            "full": "18222d1300d550a23cb27c6188559384",
+            "full": "cb3deebbed9b20bcd8d7c501644bf840",
         },
     },
     "ETTm1": {

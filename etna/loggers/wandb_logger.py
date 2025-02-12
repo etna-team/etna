@@ -13,7 +13,7 @@ from etna import SETTINGS
 from etna.loggers.base import BaseLogger
 
 if TYPE_CHECKING:
-    from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+    from lightning.pytorch.loggers import WandbLogger as PLWandbLogger
 
     from etna.datasets import TSDataset
 
@@ -223,7 +223,7 @@ class WandbLogger(BaseLogger):
     @property
     def pl_logger(self):
         """Pytorch lightning loggers."""
-        from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+        from lightning.pytorch.loggers import WandbLogger as PLWandbLogger
 
         self._pl_logger = PLWandbLogger(experiment=self.experiment, log_model=self.log_model)
         return self._pl_logger

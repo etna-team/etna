@@ -15,7 +15,7 @@ from etna.models.nn.mlp import MLPNet
 
 if SETTINGS.torch_required:
     import torch
-    from pytorch_lightning import Trainer
+    from lightning.pytorch import Trainer
 
 import pandas as pd
 

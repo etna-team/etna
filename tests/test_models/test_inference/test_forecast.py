@@ -1397,7 +1397,7 @@ class TestForecastSubsetSegments:
         ],
     )
     def test_forecast_subset_segments_failed_chronos(self, model, transforms, dataset_name, request):
-        """This test is expected to fail due to LLM non determinism"""
+        """This test fails due to LLM non determinism on MacOS, but it passes on Linux."""
         ts = request.getfixturevalue(dataset_name)
         try:
             self._test_forecast_subset_segments(ts, model, transforms, segments=["segment_1"])
