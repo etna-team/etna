@@ -575,7 +575,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Model after fit
         """
-        # TODO: we have to remove this after casting to float32
+        # TODO: https://github.com/etna-team/etna/issues/612
         if torch.mps.is_available():
             self.trainer_params["accelerator"] = "cpu"
 
