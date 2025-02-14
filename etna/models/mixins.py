@@ -24,8 +24,8 @@ from etna.models.decorators import log_decorator
 
 if SETTINGS.torch_required:
     import torch
-    from pytorch_lightning import LightningModule
-    from pytorch_lightning import Trainer
+    from lightning.pytorch import LightningModule
+    from lightning.pytorch import Trainer
 
 
 class ModelForecastingMixin(ABC):
@@ -732,69 +732,7 @@ class SaveDeepBaseModelMixin(SaveMixin):
         obj = super().load(path=path)
 
         with zipfile.ZipFile(path, "r") as archive:
-            obj.net = _load_pl_model(archive=archive, filename="net.pt")
+            obj.net = _load_pl_model(archive=archive, filename="net.pt")  # type: ignore
             obj.trainer = None
-
-        return obj
-
-
-class SavePytorchForecastingMixin(SaveMixin):
-    """Implementation of ``AbstractSaveable`` for :py:mod:`pytorch_forecasting` models.
-
-    It saves object to the zip archive with files:
-
-    * metadata.json: contains library version and class name.
-
-    * object.pkl: pickled without ``self.model`` and ``self.trainer``.
-
-    * model.pt: parameters of ``self.model`` saved by ``torch.save`` if model was fitted.
-    """
-
-    def save(self, path: pathlib.Path):
-        """Save the object.
-
-        Parameters
-        ----------
-        path:
-            Path to save object to.
-        """
-        self.trainer: Optional[Trainer]
-        self.model: Optional[LightningModule]
-
-        if self.model is None:
-            self._save(path=path, skip_attributes=["trainer"])
-        else:
-            self._save(path=path, skip_attributes=["trainer", "model"])
-            with zipfile.ZipFile(path, "a") as archive:
-                _save_pl_model(archive=archive, filename="model.pt", model=self.model)
-
-    @classmethod
-    def load(cls, path: pathlib.Path, ts: Optional[TSDataset] = None) -> Self:
-        """Load an object.
-
-        Warning
-        -------
-        This method uses :py:mod:`dill` module which is not secure.
-        It is possible to construct malicious data which will execute arbitrary code during loading.
-        Never load data that could have come from an untrusted source, or that could have been tampered with.
-
-        Parameters
-        ----------
-        path:
-            Path to load object from.
-        ts:
-            TSDataset to set into loaded pipeline.
-
-        Returns
-        -------
-        :
-            Loaded object.
-        """
-        obj = super().load(path=path)
-        obj.trainer = None
-
-        if not hasattr(obj, "model"):
-            with zipfile.ZipFile(path, "r") as archive:
-                obj.model = _load_pl_model(archive=archive, filename="model.pt")
 
         return obj

@@ -98,7 +98,7 @@ class TestPredictInSampleFull:
     )
     def test_predict_in_sample_full_failed_nans_sklearn(self, model, transforms, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+        with pytest.raises(ValueError, match="Input X contains NaN"):
             _test_prediction_in_sample_full(ts, model, transforms, method_name="predict")
 
     @pytest.mark.parametrize(

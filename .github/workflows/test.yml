@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.10']
+        python-version: ['3.10', '3.12']
         shard-id: [0, 1, 2]
       fail-fast: false
 
@@ -91,11 +91,8 @@ jobs:
     strategy:
       matrix:
         pandas-version:
-          - ">=1.1,<1.2"
-          - ">=1.2,<1.3"
-          - ">=1.3,<1.4"
-          - ">=1.4,<1.5"
-          - ">=1.5,<2"
+          - ">=2.0,<2.1"
+          - ">=2.1,<2.2"
       fail-fast: false
 
     steps:
@@ -105,7 +102,7 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v2
         with:
-          python-version: 3.8
+          python-version: "3.10"
 
       - name: Install Poetry
         uses: snok/install-poetry@v1

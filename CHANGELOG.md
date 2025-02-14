@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add 500m `TimesFM` model support ([#605](https://github.com/etna-team/etna/pull/605))
 - Add `num_layers`, `use_positional_embedding`, `normalize_target`, `normalize_exog`, `forecast_with_exog_mode` parameters to `TimesFM` model ([#605](https://github.com/etna-team/etna/pull/605))
 - 
+- Add Python versions 3.11 and 3.12 ([#599](https://github.com/etna-team/etna/pull/599))
+- 
 - 
 - 
 - 
@@ -32,7 +34,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Set `fast_redundancy=True` as a default value in `MRMRFeatureSelectionTransform` ([#592](https://github.com/etna-team/etna/pull/592))
 - **Breaking:** Remove `return_features` parameter from `FilterFeaturesTransform`, `GaleShapleyFeatureSelectionTransform`, `TreeFeatureSelectionTransform`, `MRMRFeatureSelectionTransform` ([#594](https://github.com/etna-team/etna/pull/594))
 - 
-- 
+- **Breaking:** Bump minimum `pandas` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `torch` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `statsmodels` version to 0.14 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `jax` version to 0.4.28 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `jaxlib` version to 0.4.25 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `transformers` version to 4.42 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `scikit-learn` version to 1.4 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `pmdarima` version to 2.0.4 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `scipy` version to 1.12 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `optuna` version to 4.0 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Bump minimum `statsforecast` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
+-
+-
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
@@ -50,8 +64,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
 - **Breaking:** Remove parameters `freq` and `dates` from `SARIMAXModel` and `HoltWintersModel` ([#590](https://github.com/etna-team/etna/pull/590))
 - **Breaking:** Remove `pytorch-forecasting` models and utilities (`DeepARModel`, `TFTModel` and `PytorchForecastingDatasetBuilder`) ([#578](https://github.com/etna-team/etna/pull/578))
--
--
+- 
+- **Breaking:** Remove Python versions 3.8 and 3.9 ([#599](https://github.com/etna-team/etna/pull/599))
+- **Breaking:** Remove argument `verbose` from `SimpleImputerSubsegment` (#599](https://github.com/etna-team/etna/pull/599))
 -
 -
 

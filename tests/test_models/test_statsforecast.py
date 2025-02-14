@@ -2,12 +2,12 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+from statsforecast.models import ARIMA
 from statsforecast.models import AutoARIMA
 from statsforecast.models import AutoCES
 from statsforecast.models import AutoETS
 from statsforecast.models import AutoTheta
 
-from etna.libs.statsforecast import ARIMA
 from etna.models import StatsForecastARIMAModel
 from etna.models import StatsForecastAutoARIMAModel
 from etna.models import StatsForecastAutoCESModel

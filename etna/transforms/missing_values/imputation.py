@@ -24,7 +24,6 @@ class SimpleImputerSubsegment(SimpleImputer):
         missing_values=np.nan,
         strategy="mean",
         fill_value=None,
-        verbose=0,
         copy=True,
         add_indicator=False,
     ):
@@ -32,7 +31,6 @@ class SimpleImputerSubsegment(SimpleImputer):
             missing_values=missing_values,
             strategy=strategy,
             fill_value=fill_value,
-            verbose=verbose,
             copy=copy,
             add_indicator=add_indicator,
         )

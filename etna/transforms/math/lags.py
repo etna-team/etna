@@ -98,7 +98,7 @@ class LagTransform(IrreversibleTransform):
             column_name = self._get_column_name(lag)
             # this could lead to type changes due to introduction of NaNs
             transformed_features = features.shift(lag)
-            transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]])
+            transformed_features.columns = pd.MultiIndex.from_product([segments, [column_name]], names=df.columns.names)
             all_transformed_features.append(transformed_features)
         result = pd.concat([result] + all_transformed_features, axis=1)
         result = result.sort_index(axis=1)
@@ -292,13 +292,15 @@ class ExogShiftTransform(IrreversibleTransform):
                 shifted_feature = feature.shift(shift)
 
                 column_name = f"{feature_name}_shift_{shift}"
-                shifted_feature.columns = pd.MultiIndex.from_product([segments, [column_name]])
+                shifted_feature.columns = pd.MultiIndex.from_product([segments, [column_name]], names=df.columns.names)
 
                 shifted_features.append(shifted_feature)
                 features_to_remove.append(feature_name)
 
         if len(features_to_remove) > 0:
-            result = result.drop(columns=pd.MultiIndex.from_product([segments, features_to_remove]))
+            result = result.drop(
+                columns=pd.MultiIndex.from_product([segments, features_to_remove], names=df.columns.names)
+            )
 
         result = pd.concat([result] + shifted_features, axis=1)
         result.sort_index(axis=1, inplace=True)

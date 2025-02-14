@@ -291,7 +291,7 @@ class ClearMLLogger(BaseLogger):
     def pl_logger(self):
         """Pytorch lightning loggers."""
         if self._pl_logger is None:
-            from pytorch_lightning.loggers import TensorBoardLogger
+            from lightning.pytorch.loggers import TensorBoardLogger
 
             prefix = "" if self._fold_id is None else f"Fold-{self._fold_id}"
             self._pl_logger = TensorBoardLogger(

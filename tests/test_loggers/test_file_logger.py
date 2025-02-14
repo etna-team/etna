@@ -241,12 +241,12 @@ def test_local_file_logger_with_stacking_ensemble(example_df):
         ensemble_pipeline = StackingEnsemble(
             pipelines=[
                 Pipeline(
-                    model=NaiveModel(lag=10),
+                    model=NaiveModel(lag=9),
                     transforms=[],
                     horizon=5,
                 ),
                 Pipeline(
-                    model=NaiveModel(lag=10),
+                    model=NaiveModel(lag=9),
                     transforms=[],
                     horizon=5,
                 ),

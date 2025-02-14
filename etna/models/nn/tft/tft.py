@@ -571,7 +571,7 @@ class TFTModel(DeepBaseModel):
         optimizer_params:
             parameters for optimizer for Adam optimizer (api reference :py:class:`torch.optim.Adam`)
         trainer_params:
-            Pytorch lightning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch lightning trainer parameters (api reference :py:class:`lightning.pytorch.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:

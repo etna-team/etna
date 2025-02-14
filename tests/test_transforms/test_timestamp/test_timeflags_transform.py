@@ -33,13 +33,15 @@ def timeflags_true_df() -> pd.DataFrame:
     out_column = "timeflag"
     for i in range(len(dataframes)):
         df = dataframes[i]
-        df[f"{out_column}_minute_in_hour_number"] = df["timestamp"].dt.minute
-        df[f"{out_column}_fifteen_minutes_in_hour_number"] = df[f"{out_column}_minute_in_hour_number"] // 15
-        df[f"{out_column}_half_hour_number"] = df[f"{out_column}_minute_in_hour_number"] // 30
+        df[f"{out_column}_minute_in_hour_number"] = df["timestamp"].dt.minute.astype(int)
+        df[f"{out_column}_fifteen_minutes_in_hour_number"] = (df[f"{out_column}_minute_in_hour_number"] // 15).astype(
+            int
+        )
+        df[f"{out_column}_half_hour_number"] = (df[f"{out_column}_minute_in_hour_number"] // 30).astype(int)
 
-        df[f"{out_column}_hour_number"] = df["timestamp"].dt.hour
-        df[f"{out_column}_half_day_number"] = df[f"{out_column}_hour_number"] // 12
-        df[f"{out_column}_one_third_day_number"] = df[f"{out_column}_hour_number"] // 8
+        df[f"{out_column}_hour_number"] = df["timestamp"].dt.hour.astype(int)
+        df[f"{out_column}_half_day_number"] = (df[f"{out_column}_hour_number"] // 12).astype(int)
+        df[f"{out_column}_one_third_day_number"] = (df[f"{out_column}_hour_number"] // 8).astype(int)
 
         features = df.columns.difference(["timestamp"])
         df[features] = df[features].astype("category")

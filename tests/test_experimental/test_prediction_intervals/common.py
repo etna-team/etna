@@ -60,6 +60,7 @@ class DummyPredictionIntervals(BasePredictionIntervals):
         borders = []
         for segment in ts.segments:
             target_df = (predictions[:, segment, "target"]).to_frame()
+            target_df.columns.names = predictions.df.columns.names
             borders.append(target_df.rename({"target": f"target_lower"}, axis=1) - self.width / 2)
             borders.append(target_df.rename({"target": f"target_upper"}, axis=1) + self.width / 2)
 

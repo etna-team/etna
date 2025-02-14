@@ -4,7 +4,7 @@ from unittest.mock import call
 from unittest.mock import patch
 
 import pytest
-from pytorch_lightning.loggers import TensorBoardLogger
+from lightning.pytorch.loggers import TensorBoardLogger
 
 from etna.loggers import ClearMLLogger
 from etna.loggers import tslogger as _tslogger
@@ -80,7 +80,6 @@ def test_clearml_logger_log(init_task, tslogger):
     cml_logger._get_logger().report_text.assert_has_calls(calls)
 
 
-@pytest.mark.filterwarnings("ignore:The frame.append method is deprecated")
 @patch("etna.loggers.clearml_logger.ClearMLLogger.init_task")
 def test_default_pipeline(init_task, tslogger, example_tsds):
     cml_logger = ClearMLLogger()

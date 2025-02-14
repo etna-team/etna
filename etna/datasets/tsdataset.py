@@ -451,10 +451,10 @@ class TSDataset:
 
             # check if we have enough values in regressors
             # TODO: check performance
-            if self.regressors:
+            if self.known_future:
                 future_index = df.index.difference(self.timestamps)
                 for segment in self.segments:
-                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.regressors]].index
+                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
                     if not np.all(future_index.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
@@ -1050,7 +1050,7 @@ class TSDataset:
             raise ValueError("Value of level_columns shouldn't be empty!")
 
         df_copy = df.copy(deep=True)
-        df_copy["segment"] = df_copy[level_columns].astype("string").add(sep).sum(axis=1).str[:-1]
+        df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
         if not keep_level_columns:
             df_copy.drop(columns=level_columns, inplace=True)
         df_copy = TSDataset.to_dataset(df_copy)
@@ -1296,7 +1296,9 @@ class TSDataset:
         except (pd.errors.InvalidIndexError, ValueError):
             raise ValueError("The dataset features set contains duplicates!")
 
+        original_types = df.dtypes.to_dict()
         self.df.iloc[:, column_idx] = df
+        self.df = self.df.astype(original_types)
 
     def add_features_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
