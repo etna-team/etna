@@ -681,7 +681,16 @@ def distribution_plot(
     for period, df_slice in grouped_data:
         if period not in groups:
             continue
-        sns.boxplot(data=df_slice.sort_values(by="segment"), y="z", x="segment", ax=ax[i], fliersize=False)
+        sns.boxplot(
+            data=df_slice.sort_values(by="segment"),
+            y="z",
+            x="segment",
+            ax=ax[i],
+            fliersize=False,
+            hue="segment",
+            legend=False,
+            palette="tab10",
+        )
         ax[i].set_title(f"{period}")
         ax[i].grid()
         i += 1
