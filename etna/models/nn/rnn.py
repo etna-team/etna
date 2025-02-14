@@ -109,8 +109,16 @@ class RNNNet(DeepBaseNet):
         decoder_target = x["decoder_target"].float()  # (batch_size, decoder_length, 1)
         decoder_length = decoder_real.shape[1]
 
-        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
-        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+        encoder_embeddings = (
+            self.embedding(encoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((encoder_real.shape[0], encoder_real.shape[1], 0), device=encoder_real.device)
+        )
+        decoder_embeddings = (
+            self.embedding(decoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((decoder_real.shape[0], decoder_real.shape[1], 0), device=decoder_real.device)
+        )
 
         encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
         decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
@@ -152,8 +160,16 @@ class RNNNet(DeepBaseNet):
 
         decoder_length = decoder_real.shape[1]
 
-        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
-        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+        encoder_embeddings = (
+            self.embedding(encoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((encoder_real.shape[0], encoder_real.shape[1], 0), device=encoder_real.device)
+        )
+        decoder_embeddings = (
+            self.embedding(decoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((decoder_real.shape[0], decoder_real.shape[1], 0), device=decoder_real.device)
+        )
 
         encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
         decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)

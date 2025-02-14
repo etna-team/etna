@@ -126,7 +126,11 @@ class DeepStateNet(DeepBaseNet):
             :, :, :seq_length
         ]  # (num_models, batch_size, seq_length)
 
-        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
+        encoder_embeddings = (
+            self.embedding(encoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((encoder_real.shape[0], encoder_real.shape[1], 0), device=encoder_real.device)
+        )
         encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
 
         output, (_, _) = self.RNN(encoder_values)  # (batch_size, seq_length, latent_dim)
@@ -173,8 +177,16 @@ class DeepStateNet(DeepBaseNet):
             :, :, seq_length:
         ]  # (num_models, batch_size, horizon)
 
-        encoder_embeddings = self.embedding(encoder_categorical) if self.embedding is not None else torch.Tensor()
-        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+        encoder_embeddings = (
+            self.embedding(encoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((encoder_real.shape[0], encoder_real.shape[1], 0), device=encoder_real.device)
+        )
+        decoder_embeddings = (
+            self.embedding(decoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((decoder_real.shape[0], decoder_real.shape[1], 0), device=decoder_real.device)
+        )
 
         encoder_values = torch.concat((encoder_real, encoder_embeddings), dim=2)
         decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
