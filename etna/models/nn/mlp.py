@@ -103,7 +103,11 @@ class MLPNet(DeepBaseNet):
         decoder_real = batch["decoder_real"].float()
         decoder_categorical = batch["decoder_categorical"]  # each (batch_size, decoder_length, 1)
 
-        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+        decoder_embeddings = (
+            self.embedding(decoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((decoder_real.shape[0], decoder_real.shape[1], 0), device=decoder_real.device)
+        )
 
         decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
 
@@ -126,7 +130,11 @@ class MLPNet(DeepBaseNet):
         decoder_categorical = batch["decoder_categorical"]  # each (batch_size, decoder_length, 1)
         decoder_target = batch["decoder_target"].float()
 
-        decoder_embeddings = self.embedding(decoder_categorical) if self.embedding is not None else torch.Tensor()
+        decoder_embeddings = (
+            self.embedding(decoder_categorical)
+            if self.embedding is not None
+            else torch.zeros((decoder_real.shape[0], decoder_real.shape[1], 0), device=decoder_real.device)
+        )
 
         decoder_values = torch.concat((decoder_real, decoder_embeddings), dim=2)
         output = self.mlp(decoder_values)
