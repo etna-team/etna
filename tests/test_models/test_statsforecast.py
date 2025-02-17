@@ -2,12 +2,12 @@ from copy import deepcopy
 
 import numpy as np
 import pytest
+from statsforecast.models import ARIMA
 from statsforecast.models import AutoARIMA
 from statsforecast.models import AutoCES
 from statsforecast.models import AutoETS
 from statsforecast.models import AutoTheta
 
-from etna.libs.statsforecast import ARIMA
 from etna.models import StatsForecastARIMAModel
 from etna.models import StatsForecastAutoARIMAModel
 from etna.models import StatsForecastAutoCESModel
@@ -133,7 +133,7 @@ def test_predict_train(model, example_tsds):
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()
-    assert len(res) == len(example_tsds.index) * 2
+    assert len(res) == len(example_tsds.timestamps) * 2
 
 
 @pytest.mark.parametrize(
@@ -152,7 +152,7 @@ def test_predict_train_with_regressors(model, example_reg_tsds):
     res = res.to_pandas(flatten=True)
 
     assert not res.isnull().values.any()
-    assert len(res) == len(example_reg_tsds.index) * 2
+    assert len(res) == len(example_reg_tsds.timestamps) * 2
 
 
 @pytest.mark.parametrize(

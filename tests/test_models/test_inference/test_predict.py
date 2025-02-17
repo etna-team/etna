@@ -31,14 +31,14 @@ from etna.models import StatsForecastAutoThetaModel
 from etna.models import TBATSModel
 from etna.models.nn import ChronosBoltModel
 from etna.models.nn import ChronosModel
-from etna.models.nn import DeepARNativeModel
+from etna.models.nn import DeepARModel
 from etna.models.nn import DeepStateModel
 from etna.models.nn import MLPModel
 from etna.models.nn import NBeatsGenericModel
 from etna.models.nn import NBeatsInterpretableModel
-from etna.models.nn import PatchTSModel
+from etna.models.nn import PatchTSTModel
 from etna.models.nn import RNNModel
-from etna.models.nn import TFTNativeModel
+from etna.models.nn import TFTModel
 from etna.models.nn import TimesFMModel
 from etna.models.nn.deepstate import CompositeSSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
@@ -98,7 +98,7 @@ class TestPredictInSampleFull:
     )
     def test_predict_in_sample_full_failed_nans_sklearn(self, model, transforms, dataset_name, request):
         ts = request.getfixturevalue(dataset_name)
-        with pytest.raises(ValueError, match="Input contains NaN, infinity or a value too large"):
+        with pytest.raises(ValueError, match="Input X contains NaN"):
             _test_prediction_in_sample_full(ts, model, transforms, method_name="predict")
 
     @pytest.mark.parametrize(
@@ -125,16 +125,16 @@ class TestPredictInSampleFull:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
@@ -231,16 +231,16 @@ class TestPredictInSampleSuffix:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
@@ -363,16 +363,16 @@ class TestPredictInSampleSuffix:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[2, 3])],
@@ -469,16 +469,16 @@ class TestPredictOutSample:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -603,16 +603,16 @@ class TestPredictOutSamplePrefix:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -740,16 +740,16 @@ class TestPredictOutSampleSuffix:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -837,7 +837,7 @@ class TestPredictMixedInOutSample:
         forecast_full_ts = TSDataset(df=df_full, df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
         forecast_full_ts.transform(transforms)
         forecast_full_ts.df = forecast_full_ts.df.iloc[(num_skip_points - model.context_size) :]
-        full_prediction_size = len(forecast_full_ts.index) - model.context_size
+        full_prediction_size = len(forecast_full_ts.timestamps) - model.context_size
         forecast_full_ts = make_predict(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
 
         # predicting only in sample
@@ -847,7 +847,7 @@ class TestPredictMixedInOutSample:
         forecast_in_sample_ts.transform(transforms)
         to_skip = num_skip_points - model.context_size
         forecast_in_sample_ts.df = forecast_in_sample_ts.df.iloc[to_skip:]
-        in_sample_prediction_size = len(forecast_in_sample_ts.index) - model.context_size
+        in_sample_prediction_size = len(forecast_in_sample_ts.timestamps) - model.context_size
         forecast_in_sample_ts = make_predict(
             model=model, ts=forecast_in_sample_ts, prediction_size=in_sample_prediction_size
         )
@@ -904,16 +904,16 @@ class TestPredictMixedInOutSample:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -978,7 +978,7 @@ class TestPredictSubsetSegments:
     """
 
     def _test_predict_subset_segments(self, ts, model, transforms, segments, num_skip_points=50):
-        prediction_size = len(ts.index) - num_skip_points
+        prediction_size = len(ts.timestamps) - num_skip_points
 
         # select subset of tsdataset
         segments = list(set(segments))
@@ -1045,16 +1045,16 @@ class TestPredictSubsetSegments:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],
@@ -1114,7 +1114,7 @@ class TestPredictNewSegments:
 
         # forecasting
         test_ts.df = test_ts.df.iloc[(num_skip_points - model.context_size) :]
-        prediction_size = len(ts.index) - num_skip_points
+        prediction_size = len(ts.timestamps) - num_skip_points
         forecast_ts = make_predict(model=model, ts=test_ts, prediction_size=prediction_size)
 
         # checking
@@ -1149,16 +1149,16 @@ class TestPredictNewSegments:
                 "example_tsds",
             ),
             (
-                DeepARNativeModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                DeepARModel(input_size=1, encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
             (
-                TFTNativeModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
-            (PatchTSModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
+            (PatchTSTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (
                 MLPModel(input_size=2, hidden_size=[10], decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [LagTransform(in_column="target", lags=[5, 6])],

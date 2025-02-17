@@ -313,7 +313,7 @@ class MeanEncoderTransform(IrreversibleTransform):
 
                 feature = pd.DataFrame(
                     feature.values.reshape(len(timestamps), n_segments),
-                    columns=pd.MultiIndex.from_product([segments, [self.out_column]]),
+                    columns=pd.MultiIndex.from_product([segments, [self.out_column]], names=df.columns.names),
                     index=intersected_df.index,
                 )
                 intersected_df = pd.concat([intersected_df, feature], axis=1)
@@ -334,7 +334,7 @@ class MeanEncoderTransform(IrreversibleTransform):
                 feature = feature.fillna(self._global_means)
                 feature = pd.DataFrame(
                     feature.values.reshape(len(segments), n_timestamps).T,
-                    columns=pd.MultiIndex.from_product([segments, [self.out_column]]),
+                    columns=pd.MultiIndex.from_product([segments, [self.out_column]], names=df.columns.names),
                     index=future_df.index,
                 )
                 future_df = pd.concat([future_df, feature], axis=1)

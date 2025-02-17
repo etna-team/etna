@@ -32,8 +32,8 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 from etna.libs.ts2vec.encoder import TSEncoder
 from etna.loggers import tslogger, ConsoleLogger
-from etna.libs.ts2vec.losses import  hierarchical_contrastive_loss
-from etna.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan, AveragedModel
+from etna.libs.ts2vec.losses import hierarchical_contrastive_loss
+from etna.libs.ts2vec.utils import take_per_row, split_with_nan, centerize_vary_length_series, torch_pad_nan
 import math
 
 
@@ -69,7 +69,7 @@ class TS2Vec:
         self.temporal_unit = temporal_unit
 
         self._net = TSEncoder(input_dims=input_dims, output_dims=output_dims, hidden_dims=hidden_dims, depth=depth)
-        self.net = AveragedModel(self._net)
+        self.net = torch.optim.swa_utils.AveragedModel(self._net)
         self.net.update_parameters(self._net)
 
         self.after_iter_callback = after_iter_callback

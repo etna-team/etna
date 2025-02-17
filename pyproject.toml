@@ -8,9 +8,9 @@ license = "Apache-2.0"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Intended Audience :: Science/Research",
@@ -41,25 +41,25 @@ authors = [
 ]
 
 [tool.poetry.dependencies]
-python = ">=3.8.0, <3.11.0"
-scikit-learn = ">=0.24, <2"
-pandas = "^1.1"
-catboost = ">=0.21"
+python = ">=3.10.0, <3.13.0"
+scikit-learn = ">=1.4, <2"
+pandas = ">=2.0.0,<2.2.0"
+catboost = "^1"
 ruptures = "^1.1.5"
 numba = ">=0.53.1"
 seaborn = ">=0.11.1,<1"
-statsmodels = ">=0.12,<0.14"
-pmdarima = ">=1.8.0"
+statsmodels = "^0.14"
+pmdarima = ">=2.0.4"
 dill = "^0.3.4"
 toml = "^0.10.2"
-loguru = "^0.5.3"
-hydra-slayer = "^0.2.0"
-typer = "^0.4.0"
+loguru = ">=0.7"
+hydra-slayer = ">=0.5"
+typer = ">=0.12"
 omegaconf = "^2.1.1"
-holidays = ">=0.13,<1.0"
+holidays = ">=0.40"
 boto3 = "^1.5"
 botocore = "*"
-scipy = "^1.0"
+scipy = ">=1.12,<1.15" # https://github.com/blue-yonder/tsfresh/issues/1098, this currently limits scipy version
 Bottleneck = "^1.3.4"
 numpy = "<2"
 joblib = "*"
@@ -73,25 +73,24 @@ types-Deprecated = "1.2.9"
 
 prophet = {version = "^1.0", optional = true}
 
-torch = {version = ">=1.8.0,<3", optional = true}
-pytorch-lightning = {version = "*", optional = true}
+torch = {version = "^2", optional = true}
+lightning = {version = "*", optional = true}
 einops = {version = "*", optional = true}
 
-wandb = {version = "^0.12.2", optional = true}
+wandb = {version = ">=0.16", optional = true}
 clearml = {version = "^1.15", optional = true}
 tensorboard = {version = "^2.12.0", optional = true}
 
-optuna = {version = ">=2.5.0,<3.0.0", optional = true}
-sqlalchemy = {version = "^1.1.0", optional = true}
+optuna = {version = "^4", optional = true}
 
-statsforecast = {version = "1.4", optional = true}
+statsforecast = {version = "^2", optional = true}
 
-transformers = {version = "<5", optional = true}
-accelerate = {version = "<1", optional = true}
-huggingface-hub = {version = ">=0.21,<0.23", optional = true}
+transformers = {version = ">=4.42,<5", optional = true}
+accelerate = {version = "^1", optional = true}
+huggingface-hub = {version = ">=0.23", optional = true}
 
-jax = {version = "<1", optional = true}
-jaxlib = {version = "<1", optional = true}
+jax = {version = ">0.4.28,<1", optional = true}
+jaxlib = {version = ">0.4.25,<1", optional = true}
 utilsforecast = {version = ">=0.1.10,<1", optional = true}
 
 sphinx-mathjax-offline = {version = "^0.0.2", optional = true}
@@ -131,10 +130,10 @@ types-setuptools = {version = "^65.7.0", optional = true}
 [tool.poetry.extras]
 # optional deps
 prophet = ["prophet"]
-torch = ["torch", "pytorch-lightning", "einops"]
+torch = ["torch", "lightning", "einops"]
 wandb = ["wandb"]
 clearml = ["clearml", "tensorboard"]
-auto = ["optuna", "sqlalchemy"]
+auto = ["optuna"]
 classification = ["pyts", "tsfresh"]
 statsforecast = ["statsforecast"]
 chronos = ["torch", "transformers", "accelerate", "huggingface-hub"]
@@ -149,9 +148,9 @@ style = ["black", "isort", "flake8", "pep8-naming", "flake8-docstrings", "mypy",
 
 all = [
     "prophet",
-    "torch", "pytorch-lightning", "einops",
+    "torch", "lightning", "einops",
     "wandb", "clearml", "tensorboard",
-    "optuna", "sqlalchemy",
+    "optuna",
     "pyts", "tsfresh",
     "statsforecast",
     "transformers", "accelerate", "huggingface-hub",
@@ -160,9 +159,9 @@ all = [
 
 all-dev = [
     "prophet",
-    "torch", "pytorch-lightning", "einops",
+    "torch", "lightning", "einops",
     "wandb", "clearml", "tensorboard",
-    "optuna", "sqlalchemy",
+    "optuna",
     "click", "semver",
     "Sphinx", "nbsphinx", "sphinx-mathjax-offline", "myst-parser", "GitPython", "pydata-sphinx-theme", "sphinx-design",
     "pytest-cov", "pytest", "pytest-shard",
@@ -219,7 +218,6 @@ filterwarnings = [
     # etna warnings
     "ignore: TSDataset freq can't be inferred",
     "ignore: You probably set wrong freq. Discovered freq in you data",
-    "ignore: Option `fast_redundancy=False` was added for backward compatibility and will be removed in etna 3.0.0.",
     "ignore: Some regressors don't have enough values",
     "ignore: Segments contains NaNs in the last timestamps",
     "ignore: Given top_k=.* is bigger than n_features=.*. Transform will not filter",
@@ -250,10 +248,8 @@ filterwarnings = [
     "ignore: `sentry_sdk.Hub` is deprecated and will be removed in a future major release.",
     "ignore::DeprecationWarning:holidays",
     "ignore:This property will be removed in 2.0.0.", # torchmetrics
-    "ignore::pytorch_lightning.utilities.rank_zero.LightningDeprecationWarning",
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
     "ignore: Jupyter is migrating its paths to use standard platformdirs",
-    "ignore::sqlalchemy.exc.MovedIn20Warning",
     "ignore: Argument `closed` is deprecated in favor of `inclusive`",
     "ignore: In a future version, `df.* = newvals` will attempt to set the values inplace instead of always setting a new array",
     "ignore: In a future version, DataFrame.*mean.* will return a scalar mean over the entire DataFrame",
@@ -263,12 +259,32 @@ filterwarnings = [
     "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated", # prophet
     "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
     "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # pandas: old version uses deprecated numpy parameter
-    "ignore: Trying to infer the `batch_size` from an ambiguous collection", # pytorch_forecasting
     "ignore: Implicitly cleaning up <TemporaryDirectory",
-    "ignore: Call to deprecated class DeepARModel.",
     "ignore: dropout option adds dropout after all but last recurrent layer",
-    "ignore: Call to deprecated class TFTModel.",
-    "ignore: X does not have valid feature names, but IsolationForest was fitted with feature names" # fixed here https://github.com/scikit-learn/scikit-learn/issues/25844
+    "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev", # Pycharm debugging
+    "ignore: X does not have valid feature names, but IsolationForest was fitted with feature names", # fixed here https://github.com/scikit-learn/scikit-learn/issues/25844
+    "ignore: Series.__getitem__ treating keys as positions is deprecated", # pandas deprecated
+    "ignore: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True", # torch patchts
+    "ignore: GPU available but not used", # lightning for mac
+    "ignore: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.", # sklearn
+    "ignore: DataFrame.groupby with axis=1 is deprecated", # pandas
+    "ignore: Conversion of an array with ndim > 0 to a scalar is deprecated", # numpy in Prophet
+    "ignore: DataFrame.fillna with 'method' is deprecated and will raise in a future version",
+    "ignore: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas",
+    "ignore: Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas",
+    "ignore: The provided callable <.*> is currently using DataFrameGroupBy..*", # pandas deprecated
+    "ignore: The provided callable <.*> is currently using DataFrame.*",
+    "ignore: The provided callable <.*> is currently using SeriesGroupBy..*",
+    "ignore: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
+    "ignore: Non-integer 'periods' in pd.date_range, pd.timedelta_range, pd.period_range, and pd.interval_range",
+    "ignore: suggest_uniform has been deprecated in v3.0.0. This feature will be removed in v6.0.0", # optuna
+    "ignore: .* bool will be deprecated in a future version", # matplotlib
+    "ignore: invalid value encountered in divide",
+    "ignore: The argument 'infer_datetime_format' is deprecated and will be removed in a future version.", # pandas.pydata
+    "ignore: Could not infer format, so each element will be parsed individually",
+    "ignore: datetime.datetime.utcfromtimestamp.* is deprecated and scheduled for removal in a future version", # python 3.12
+    "ignore: os.fork.* was called", # os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
+    "ignore: The 'train_dataloader' does not have many workers which may be a bottleneck" # lightning
 ]
 markers = [
     "smoke"

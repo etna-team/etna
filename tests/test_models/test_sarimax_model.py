@@ -32,7 +32,7 @@ def _check_predict(ts, model):
     res = res.to_pandas(flatten=True)
 
     assert not res["target"].isnull().values.any()
-    assert len(res) == len(ts.index) * 2
+    assert len(res) == len(ts.timestamps) * 2
 
 
 def test_fit_with_exogs_warning(ts_with_non_regressor_exog):

@@ -13,7 +13,7 @@ from etna import SETTINGS
 from etna.loggers.base import BaseLogger
 
 if TYPE_CHECKING:
-    from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+    from lightning.pytorch.loggers import WandbLogger as PLWandbLogger
 
     from etna.datasets import TSDataset
 
@@ -72,12 +72,12 @@ class WandbLogger(BaseLogger):
             This sets `wandb.config`, a dictionary-like object for saving inputs to your job,
             like hyperparameters for a model or settings for a data preprocessing job.
         log_model:
-            Log checkpoints created by :py:class:`pytorch_lightning.callbacks.ModelCheckpoint`
+            Log checkpoints created by :py:class:`lightning.pytorch.callbacks.ModelCheckpoint`
             as W&B artifacts. `latest` and `best` aliases are automatically set.
 
             * if ``log_model == 'all'``, checkpoints are logged during training.
             * if ``log_model == True``, checkpoints are logged at the end of training, except when
-              ``pytorch_lightning.callbacks.ModelCheckpoint.save_top_k==-1``
+              ``lightning.pytorch.callbacks.ModelCheckpoint.save_top_k==-1``
               which also logs every checkpoint during training.
             * if ``log_model == False`` (default), no checkpoint is logged.
         """
@@ -223,7 +223,7 @@ class WandbLogger(BaseLogger):
     @property
     def pl_logger(self):
         """Pytorch lightning loggers."""
-        from pytorch_lightning.loggers import WandbLogger as PLWandbLogger
+        from lightning.pytorch.loggers import WandbLogger as PLWandbLogger
 
         self._pl_logger = PLWandbLogger(experiment=self.experiment, log_model=self.log_model)
         return self._pl_logger

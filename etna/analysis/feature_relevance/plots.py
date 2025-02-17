@@ -4,6 +4,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
 
@@ -83,6 +84,7 @@ def plot_feature_relevance(
     border_value = None
     features = list(set(ts.features) - {"target"})
     relevance_df = relevance_table(df=ts[:, segments, "target"], df_exog=ts[:, segments, features], **relevance_params)
+    ax: Union[plt.Axes, Sequence[plt.Axes]]
     if relevance_aggregation_mode == "per-segment":
         _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
@@ -105,7 +107,10 @@ def plot_feature_relevance(
                     border_value = border_value / relevance.sum()
                 relevance = relevance / relevance.sum()
 
-            sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax[i])
+            sns.barplot(
+                x=relevance.values, y=relevance.index, orient="h", ax=ax[i], hue=relevance.index, palette="tab10"
+            )
+            ax[i].set_ylabel("")
             if border_value is not None:
                 ax[i].axvline(border_value)
             ax[i].set_title(f"Feature relevance: {segment}")
@@ -131,8 +136,11 @@ def plot_feature_relevance(
             relevance = relevance / relevance.sum()
 
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
-        sns.barplot(x=relevance.values, y=relevance.index, orient="h", ax=ax)
+        sns.barplot(
+            x=relevance.values, y=relevance.index, orient="h", ax=ax, hue=relevance.index, legend=False, palette="tab10"
+        )
         if border_value is not None:
-            ax.axvline(border_value)  # type: ignore
-        ax.set_title("Feature relevance")  # type: ignore
-        ax.grid()  # type: ignore
+            ax.axvline(border_value)
+        ax.set_title("Feature relevance")
+        ax.set_ylabel("")
+        ax.grid()

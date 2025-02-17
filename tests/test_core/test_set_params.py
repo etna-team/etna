@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from etna.core import BaseMixin
@@ -75,28 +77,38 @@ def test_base_mixin_set_params_doesnt_change_params_inplace_pipeline():
 
 def test_base_mixin_set_params_with_nonexistent_attributes_estimator():
     catboost_model = CatBoostMultiSegmentModel(iterations=1000, depth=10)
-    with pytest.raises(TypeError, match=".*got an unexpected keyword argument.*"):
+    with pytest.raises(RuntimeError) as exc_info:
         catboost_model.set_params(**{"incorrect_attribute": 1e-3})
+
+    first_exception = exc_info.value.__cause__
+    assert isinstance(first_exception, TypeError)
+    assert re.match(".*got an unexpected keyword argument.*", str(first_exception))
 
 
 def test_base_mixin_set_params_with_nonexistent_not_nested_attribute_pipeline():
     pipeline = Pipeline(model=CatBoostMultiSegmentModel(iterations=1000, depth=10), transforms=(), horizon=5)
-    with pytest.raises(TypeError, match=".*got an unexpected keyword argument.*"):
+    with pytest.raises(RuntimeError) as exc_info:
         pipeline.set_params(
             **{
                 "incorrect_estimator": "value",
             }
         )
+    first_exception = exc_info.value.__cause__
+    assert isinstance(first_exception, TypeError)
+    assert re.match(".*got an unexpected keyword argument.*", str(first_exception))
 
 
 def test_base_mixin_set_params_with_nonexistent_nested_attribute_pipeline():
     pipeline = Pipeline(model=CatBoostMultiSegmentModel(iterations=1000, depth=10), transforms=(), horizon=5)
-    with pytest.raises(TypeError, match=".*got an unexpected keyword argument.*"):
+    with pytest.raises(RuntimeError) as exc_info:
         pipeline.set_params(
             **{
                 "model.incorrect_attribute": "value",
             }
         )
+    first_exception = exc_info.value.__cause__
+    assert isinstance(first_exception, TypeError)
+    assert re.match(".*got an unexpected keyword argument.*", str(first_exception))
 
 
 @pytest.mark.parametrize(

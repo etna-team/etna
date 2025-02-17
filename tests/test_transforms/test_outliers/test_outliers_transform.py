@@ -33,7 +33,7 @@ from tests.test_transforms.utils import find_columns_diff
 from tests.utils import select_segments_subset
 
 
-def made_specific_ds(ts, add_error=True):
+def made_specific_ds(ts: TSDataset, add_error=True):
     timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")
     info_col1 = [1 if np.sin(i) > 0.5 else 0 for i in range(len(timestamp))]
     info_col2 = [1 if np.sin(i) > 0 else 0 for i in range(len(timestamp))]
@@ -50,7 +50,7 @@ def made_specific_ds(ts, add_error=True):
         }
     )
 
-    ts.add_columns_from_pandas(df_update=TSDataset.to_dataset(df=df))
+    ts.add_features_from_pandas(df_update=TSDataset.to_dataset(df=df))
 
     return ts
 

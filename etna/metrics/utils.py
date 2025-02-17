@@ -143,13 +143,16 @@ def aggregate_metrics_df(metrics_df: pd.DataFrame) -> Dict[str, Optional[float]]
             .mean(numeric_only=False)
             .reset_index()
             .drop(["segment", "fold_number"], axis=1)
+            .astype(float)
             .apply(list(METRICS_AGGREGATION_MAP.values()))
             .to_dict()
         )
 
     # case for aggregate_metrics=True
     else:
-        metrics_dict = metrics_df.drop(["segment"], axis=1).apply(list(METRICS_AGGREGATION_MAP.values())).to_dict()
+        metrics_dict = (
+            metrics_df.drop(["segment"], axis=1).astype(float).apply(list(METRICS_AGGREGATION_MAP.values())).to_dict()
+        )
 
     cur_dict = {}
     for metrics_key, values in metrics_dict.items():

@@ -24,8 +24,8 @@ from etna.models.mixins import SaveDeepBaseModelMixin
 
 if SETTINGS.torch_required:
     import torch
-    from pytorch_lightning import LightningModule
-    from pytorch_lightning import Trainer
+    from lightning.pytorch import LightningModule
+    from lightning.pytorch import Trainer
     from torch.utils.data import DataLoader
     from torch.utils.data import Dataset
     from torch.utils.data import random_split
@@ -506,7 +506,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         test_batch_size:
             batch size for testing
         trainer_params:
-            Pytorch ligthning trainer parameters (api reference :py:class:`pytorch_lightning.trainer.trainer.Trainer`)
+            Pytorch ligthning trainer parameters (api reference :py:class:`lightning.pytorch.trainer.trainer.Trainer`)
         train_dataloader_params:
             parameters for train dataloader like sampler for example (api reference :py:class:`torch.utils.data.DataLoader`)
         test_dataloader_params:
@@ -575,6 +575,10 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Model after fit
         """
+        # TODO: https://github.com/etna-team/etna/issues/612
+        if torch.mps.is_available():
+            self.trainer_params["accelerator"] = "cpu"
+
         if self.split_params:
             if isinstance(torch_dataset, Sized):
                 torch_dataset_size = len(torch_dataset)
@@ -670,7 +674,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             raise NotImplementedError("This mode isn't currently implemented!")
 
         expected_length = prediction_size + self.encoder_length
-        if len(ts.index) < expected_length:
+        if len(ts.timestamps) < expected_length:
             raise ValueError(
                 "Given context isn't big enough, try to decrease context_size, prediction_size or increase length of given dataset!"
             )
@@ -682,7 +686,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             dropna=False,
         )
         predictions = self.raw_predict(test_dataset)
-        end_idx = len(ts.index)
+        end_idx = len(ts.timestamps)
         future_ts = ts.tsdataset_idx_slice(start_idx=end_idx - prediction_size, end_idx=end_idx)
         for (segment, feature_nm), value in predictions.items():
             # we don't want to change dtype after assignment, but there can happen cast to float32

@@ -458,10 +458,10 @@ class TSDataset:
 
             # check if we have enough values in regressors
             # TODO: check performance
-            if self.regressors:
-                future_index = df.index.difference(self.index)
+            if self.known_future:
+                future_index = df.index.difference(self.timestamps)
                 for segment in self.segments:
-                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.regressors]].index
+                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
                     if not np.all(future_index.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
@@ -1077,7 +1077,7 @@ class TSDataset:
             raise ValueError("Value of level_columns shouldn't be empty!")
 
         df_copy = df.copy(deep=True)
-        df_copy["segment"] = df_copy[level_columns].astype("string").add(sep).sum(axis=1).str[:-1]
+        df_copy["segment"] = df_copy[level_columns].astype("string").agg(sep.join, axis=1)
         if not keep_level_columns:
             df_copy.drop(columns=level_columns, inplace=True)
         df_copy = TSDataset.to_dataset(df_copy)
@@ -1285,7 +1285,7 @@ class TSDataset:
 
         return train, test
 
-    def update_columns_from_pandas(self, df_update: pd.DataFrame):
+    def update_features_from_pandas(self, df_update: pd.DataFrame):
         """Update the existing columns in the dataset with the new values from pandas dataframe.
 
         Before updating columns in ``df``, columns of ``df_update`` will be cropped by the last timestamp in ``df``.
@@ -1323,9 +1323,11 @@ class TSDataset:
         except (pd.errors.InvalidIndexError, ValueError):
             raise ValueError("The dataset features set contains duplicates!")
 
+        original_types = df.dtypes.to_dict()
         self.df.iloc[:, column_idx] = df
+        self.df = self.df.astype(original_types)
 
-    def add_columns_from_pandas(
+    def add_features_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
     ):
         """Update the dataset with the new columns from pandas dataframe.
@@ -1401,7 +1403,7 @@ class TSDataset:
         self._regressors = list(set(self._regressors) - features_set)
 
     @property
-    def index(self) -> pd.Index:
+    def timestamps(self) -> pd.Index:
         """Return TSDataset timestamp index.
 
         Returns
@@ -1409,7 +1411,7 @@ class TSDataset:
         :
             timestamp index of TSDataset
         """
-        return self.df.index
+        return self.df.index.copy()
 
     def level_names(self) -> Optional[List[str]]:
         """Return names of the levels in the hierarchical structure."""
@@ -1938,4 +1940,4 @@ class TSDataset:
         :
             Tuple of TSDataset sizes
         """
-        return len(self.index), len(self.segments), len(self.features)
+        return len(self.timestamps), len(self.segments), len(self.features)

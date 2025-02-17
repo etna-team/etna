@@ -48,12 +48,17 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         self,
         path_or_url: str,
         encoder_length: int = 512,
+        num_layers: int = 20,
+        use_positional_embedding: bool = True,
+        normalize_target: bool = False,
         device: Literal["cpu", "gpu"] = "cpu",
         batch_size: int = 128,
         static_reals: Optional[List[str]] = None,
         static_categoricals: Optional[List[str]] = None,
         time_varying_reals: Optional[List[str]] = None,
         time_varying_categoricals: Optional[List[str]] = None,
+        normalize_exog: bool = True,
+        forecast_with_exog_mode: Literal["timesfm + xreg", "xreg + timesfm"] = "xreg + timesfm",
         cache_dir: Path = _DOWNLOAD_PATH,
     ):
         """
@@ -75,6 +80,12 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             Device type. Can be "cpu" or "gpu".
         encoder_length:
             Number of last timestamps to use as a context. It needs to be a multiplier of 32.
+        num_layers:
+            Number of layers. For 200m model set ``num_layers=20`` and for 500m ``num_layers=50``.
+        use_positional_embedding:
+            Whether to use positional embeddings. For 200m model set ``use_positional_embedding=True`` and for 500m ``use_positional_embedding=False``.
+        normalize_target:
+            Whether to normalize target before forecasting. Is used only for forecasting without exogenous features.
         batch_size:
             Batch size. It can be useful when inference is done on gpu.
         static_reals:
@@ -85,17 +96,29 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             Time varying continuous features known for future.
         time_varying_categoricals:
             Time varying categorical features known for future.
+        normalize_exog:
+            Whether to normalize exogenous features before forecasting. Is used only for forecasting with exogenous features.
+        forecast_with_exog_mode:
+            Mode of forecasting with exogenous features.
+
+            - "xreg + timesfm" fits TimesFM on the residuals of a linear model forecast.
+            - "timesfm + xreg" fits a linear model on the residuals of the TimesFM forecast.
         cache_dir:
             Local path to save model from huggingface during first model initialization. All following class initializations appropriate model version will be downloaded from this path.
         """
         self.path_or_url = path_or_url
         self.encoder_length = encoder_length
+        self.num_layers = num_layers
+        self.use_positional_embedding = use_positional_embedding
+        self.normalize_target = normalize_target
         self.device = device
         self.batch_size = batch_size
         self.static_reals = static_reals
         self.static_categoricals = static_categoricals
         self.time_varying_reals = time_varying_reals
         self.time_varying_categoricals = time_varying_categoricals
+        self.normalize_exog = normalize_exog
+        self.forecast_with_exog_mode = forecast_with_exog_mode
         self.cache_dir = cache_dir
 
         self._set_pipeline()
@@ -106,14 +129,22 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             full_model_path = self._download_model_from_url()
             self.tfm = TimesFmTorch(
                 hparams=TimesFmHparams(
-                    context_len=self.encoder_length, per_core_batch_size=self.batch_size, backend=self.device
+                    context_len=self.encoder_length,
+                    num_layers=self.num_layers,
+                    per_core_batch_size=self.batch_size,
+                    backend=self.device,
+                    use_positional_embedding=self.use_positional_embedding,
                 ),
                 checkpoint=TimesFmCheckpoint(path=full_model_path),
             )
         else:
             self.tfm = TimesFmTorch(
                 hparams=TimesFmHparams(
-                    context_len=self.encoder_length, per_core_batch_size=self.batch_size, backend=self.device
+                    context_len=self.encoder_length,
+                    num_layers=self.num_layers,
+                    per_core_batch_size=self.batch_size,
+                    backend=self.device,
+                    use_positional_embedding=self.use_positional_embedding,
                 ),
                 checkpoint=TimesFmCheckpoint(path=self.path_or_url, local_dir=self.cache_dir),
             )
@@ -226,7 +257,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         if return_components:
             raise NotImplementedError("This mode isn't currently implemented!")
 
-        max_context_size = len(ts.index) - prediction_size
+        max_context_size = len(ts.timestamps) - prediction_size
         if max_context_size <= 0:
             raise ValueError("Dataset doesn't have any context timestamps.")
 
@@ -235,7 +266,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
         self.tfm._set_horizon(prediction_size)
 
-        end_idx = len(ts.index)
+        end_idx = len(ts.timestamps)
 
         all_exog = self._exog_columns()
         df_slice = ts.df.loc[:, pd.IndexSlice[:, all_exog + ["target"]]]
@@ -243,7 +274,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             df_slice.isna().any(axis=1).idxmin()
         )  # If all timestamps contains NaNs, idxmin() returns the first timestamp
 
-        target_df = df_slice.loc[first_valid_index : ts.index[-prediction_size - 1], pd.IndexSlice[:, "target"]]
+        target_df = df_slice.loc[first_valid_index : ts.timestamps[-prediction_size - 1], pd.IndexSlice[:, "target"]]
 
         nan_segment_mask = target_df.isna().any()
         if nan_segment_mask.any():
@@ -306,6 +337,8 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                 static_numerical_covariates=static_reals_dict,
                 static_categorical_covariates=static_categoricals_dict,
                 freq=[freq_map(ts.freq)] * len(ts.segments),
+                normalize_xreg_target_per_input=self.normalize_exog,
+                xreg_mode=self.forecast_with_exog_mode,
             )
             future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)
         else:
@@ -317,7 +350,9 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             target = TSDataset.to_flatten(df=target_df)
             target = target.rename(columns={"segment": "unique_id", "timestamp": "ds"})
 
-            predictions = self.tfm.forecast_on_df(target, freq=ts.freq, value_name="target")
+            predictions = self.tfm.forecast_on_df(
+                target, freq=ts.freq, value_name="target", normalize=self.normalize_target
+            )
 
             predictions = predictions.rename(columns={"unique_id": "segment", "ds": "timestamp", "timesfm": "target"})
             predictions = TSDataset.to_dataset(predictions)
@@ -336,7 +371,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         :
             List of available pretrained timesfm models.
         """
-        return ["google/timesfm-1.0-200m-pytorch"]
+        return ["google/timesfm-1.0-200m-pytorch", "google/timesfm-2.0-500m-pytorch"]
 
     def save(self, path: Path):
         """Save the model. This method doesn't save model's weights.

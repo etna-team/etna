@@ -24,7 +24,7 @@ class MeanSegmentEncoderTransform(IrreversibleTransform):
         flatten_segments = np.repeat(segments.values[np.newaxis, :], len(df), axis=0)
         segment_values = pd.DataFrame(
             data=flatten_segments,
-            columns=pd.MultiIndex.from_product([segments, [self._segment_column]]),
+            columns=pd.MultiIndex.from_product([segments, [self._segment_column]], names=df.columns.names),
             index=df.index,
         )
         df = pd.concat([df, segment_values], axis=1).sort_index(axis=1)

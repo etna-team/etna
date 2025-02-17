@@ -102,8 +102,8 @@ def test_fit(ts_name, in_column, request):
     transform = ModelDecomposeTransform(model=HoltWintersModel(), in_column=in_column)
     transform.fit(ts=ts)
 
-    assert transform._first_timestamp == ts.index.min()
-    assert transform._last_timestamp == ts.index.max()
+    assert transform._first_timestamp == ts.timestamps.min()
+    assert transform._last_timestamp == ts.timestamps.max()
 
 
 @pytest.mark.parametrize("residuals", (True, False))

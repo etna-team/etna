@@ -239,7 +239,7 @@ def base_timeseries_numeric_segments_path():
     df = pd.DataFrame(
         {
             "timestamp": list(pd.date_range("2021-06-01", periods=100)) * 2,
-            "target": np.arange(200),
+            "target": np.arange(200) - np.sin(np.arange(200)),
             # segments with numeric names and leading zeros
             "segment": ["01234"] * 100 + ["12345"] * 100,
         }

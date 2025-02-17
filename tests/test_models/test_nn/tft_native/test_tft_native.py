@@ -2,12 +2,12 @@ from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
-from pytorch_lightning import seed_everything
+from lightning.pytorch import seed_everything
 
 from etna.datasets import TSDataset
 from etna.metrics import MAE
-from etna.models.nn import TFTNativeModel
-from etna.models.nn.tft_native.tft import TFTNativeNet
+from etna.models.nn import TFTModel
+from etna.models.nn.tft.tft import TFTNet
 from etna.pipeline import Pipeline
 from etna.transforms import LabelEncoderTransform
 from etna.transforms import SegmentEncoderTransform
@@ -45,7 +45,7 @@ def test_tft_model_run_weekly_overfit(
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(horizon)
     encoder_length = 14
     decoder_length = 14
-    model = TFTNativeModel(
+    model = TFTModel(
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         lr=lr,
@@ -92,7 +92,7 @@ def test_tft_backtest(
     seed_everything(0, workers=True)
     encoder_length = 4
     decoder_length = 1
-    model = TFTNativeModel(
+    model = TFTModel(
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         static_reals=static_reals,
@@ -163,7 +163,7 @@ def test_tft_make_samples(
     ts_encoded = ts_label_encode(ts)
     df = ts_encoded.to_pandas(flatten=True)
     ts_samples = list(
-        TFTNativeNet.make_samples(
+        TFTNet.make_samples(
             tft_module,
             df=df,
             encoder_length=encoder_length,
@@ -223,7 +223,7 @@ def test_tft_make_samples(
 
 @pytest.mark.parametrize("encoder_length, decoder_length", [(2, 1), (1, 2), (10, 5)])
 def test_context_size(encoder_length, decoder_length):
-    model = TFTNativeModel(encoder_length=encoder_length, decoder_length=decoder_length)
+    model = TFTModel(encoder_length=encoder_length, decoder_length=decoder_length)
 
     assert model.context_size == encoder_length
 
@@ -258,7 +258,7 @@ def test_save_load(
     num_embeddings,
     features_to_encode,
 ):
-    model = TFTNativeModel(
+    model = TFTModel(
         encoder_length=3,
         decoder_length=3,
         static_reals=static_reals,
@@ -284,6 +284,6 @@ def test_save_load(
 
 def test_params_to_tune(example_tsds):
     ts = example_tsds
-    model = TFTNativeModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = TFTModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)

@@ -1,4 +1,5 @@
 from typing import List
+from typing import Union
 
 
 def shift(steps_number: int, values: List[int]) -> List[int]:
@@ -9,3 +10,8 @@ def shift(steps_number: int, values: List[int]) -> List[int]:
 def mult(first: int, second: int) -> int:
     """Multiply arguments."""
     return first * second
+
+
+def concat(first: Union[int, str], second: Union[int, str]) -> str:
+    """Concat arguments."""
+    return str(first) + str(second)

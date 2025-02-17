@@ -1,9 +1,9 @@
 import pytest
 import torch
-from pytorch_lightning import seed_everything
+from lightning.pytorch import seed_everything
 
-from etna.models.nn.deepar_native.loss import GaussianLoss
-from etna.models.nn.deepar_native.loss import NegativeBinomialLoss
+from etna.models.nn.deepar.loss import GaussianLoss
+from etna.models.nn.deepar.loss import NegativeBinomialLoss
 
 
 @pytest.mark.parametrize(

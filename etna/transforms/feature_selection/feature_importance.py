@@ -47,7 +47,6 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
         model: Union[Literal["catboost"], Literal["random_forest"], TreeBasedRegressor],
         top_k: int,
         features_to_use: Union[List[str], Literal["all"]] = "all",
-        return_features: bool = False,
     ):
         """
         Init TreeFeatureSelectionTransform.
@@ -71,12 +70,10 @@ class TreeFeatureSelectionTransform(BaseFeatureSelectionTransform):
             num of features to select; if there are not enough features, then all will be selected
         features_to_use:
             columns of the dataset to select from; if "all" value is given, all columns are used
-        return_features:
-            indicates whether to return features or not.
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
-        super().__init__(features_to_use=features_to_use, return_features=return_features)
+        super().__init__(features_to_use=features_to_use)
         self.top_k = top_k
         if isinstance(model, str):
             if model == "catboost":
@@ -171,12 +168,11 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
         relevance_table: RelevanceTable,
         top_k: int,
         features_to_use: Union[List[str], Literal["all"]] = "all",
-        fast_redundancy: bool = False,
+        fast_redundancy: bool = True,
         drop_zero: bool = False,
         relevance_aggregation_mode: str = AggregationMode.mean,
         redundancy_aggregation_mode: str = AggregationMode.mean,
         atol: float = 1e-10,
-        return_features: bool = False,
         **relevance_params,
     ):
         """
@@ -204,13 +200,11 @@ class MRMRFeatureSelectionTransform(BaseFeatureSelectionTransform):
             the method for redundancy values per-segment aggregation
         atol:
             the absolute tolerance to compare the float values
-        return_features:
-            indicates whether to return features or not.
         """
         if not isinstance(top_k, int) or top_k < 0:
             raise ValueError("Parameter top_k should be positive integer")
 
-        super().__init__(features_to_use=features_to_use, return_features=return_features)
+        super().__init__(features_to_use=features_to_use)
         self.relevance_table = relevance_table
         self.top_k = top_k
         self.fast_redundancy = fast_redundancy

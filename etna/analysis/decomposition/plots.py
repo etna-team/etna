@@ -473,6 +473,6 @@ def seasonal_plot(
             ticks_labels = np.array(list(ticks_dict.values()))
             idx_sort = np.argsort(ticks)
             ax[i].set_xticks(ticks=ticks[idx_sort], labels=ticks_labels[idx_sort])
-        ax[i].set_xlabel(freq)
+        ax[i].set_xlabel(freq)  # type: ignore
         ax[i].set_title(segment)
         ax[i].legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=6)

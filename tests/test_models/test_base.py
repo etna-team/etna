@@ -46,7 +46,7 @@ def deep_base_model_mock():
 @pytest.fixture()
 def ts_mock():
     torch_dataset = MagicMock()
-    torch_dataset.index.__len__.return_value = 100
+    torch_dataset.timestamps.__len__.return_value = 100
     return torch_dataset
 
 
@@ -75,9 +75,9 @@ def test_deep_base_model_fit_calls_check():
 def test_deep_base_model_raw_fit(
     trainer, dataloader, random_split, deep_base_model_mock, sized_torch_dataset_mock, loggers
 ):
-    deep_base_model_mock.trainer_params = {"logger": loggers}
+    deep_base_model_mock.trainer_params = {"logger": loggers, "accelerator": "cpu"}
     DeepBaseModel.raw_fit(self=deep_base_model_mock, torch_dataset=sized_torch_dataset_mock)
-    trainer.assert_called_with(logger=loggers)
+    trainer.assert_called_with(logger=loggers, accelerator="cpu")
     trainer.return_value.fit.assert_called_with(
         deep_base_model_mock.net, train_dataloaders=dataloader.return_value, val_dataloaders=None
     )
@@ -166,7 +166,7 @@ def test_deep_base_model_raw_predict_call(dataloader, deep_base_model_mock):
 
 
 def test_deep_base_model_forecast_fail_not_enough_context(deep_base_model_mock, ts_mock):
-    horizon = len(ts_mock.index)
+    horizon = len(ts_mock.timestamps)
     with pytest.raises(ValueError, match="Given context isn't big enough"):
         _ = DeepBaseModel.forecast(self=deep_base_model_mock, ts=ts_mock, prediction_size=horizon)
 

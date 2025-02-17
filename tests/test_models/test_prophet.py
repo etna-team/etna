@@ -32,7 +32,7 @@ def _check_predict(ts, model):
     res = res.to_pandas(flatten=True)
 
     assert not res["target"].isnull().values.any()
-    assert len(res) == len(ts.index) * len(ts.segments)
+    assert len(res) == len(ts.timestamps) * len(ts.segments)
 
 
 def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):

@@ -138,7 +138,7 @@ def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_colu
             True,
             pd.Series(
                 data=[20.0],
-                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
             ),
         ),
         (
@@ -151,7 +151,7 @@ def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_colu
             True,
             pd.Series(
                 data=[1.0],
-                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
             ),
         ),
         (
@@ -159,7 +159,7 @@ def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_colu
             False,
             pd.Series(
                 data=[1.0],
-                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
             ),
         ),
     ],
@@ -201,11 +201,13 @@ def test_get_anomalies_isolation_forest_not_use_in_column(ts_with_features):
     expected_anomalies = {
         "segment_0": pd.Series(
             data=[1.0],
-            index=pd.DatetimeIndex([np.datetime64("2000-01-04")], freq="D"),
+            index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
         ),
         "segment_1": pd.Series(
             data=[2.0],
-            index=[np.datetime64("2000-01-04")],  # Does not have freq due to missing values
+            index=pd.DatetimeIndex(
+                [np.datetime64("2000-01-04")], dtype="datetime64[ns]"
+            ),  # Does not have freq due to missing values
         ),
     }
     anomalies = get_anomalies_isolation_forest(

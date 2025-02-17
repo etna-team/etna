@@ -420,7 +420,7 @@ def plot_backtest_interactive(
         if history_len == "all":
             plot_df = segment_history_df.append(segment_backtest_df)
         elif history_len > 0:
-            plot_df = segment_history_df.tail(history_len).append(segment_backtest_df)
+            plot_df = pd.concat([segment_history_df.tail(history_len), segment_backtest_df], ignore_index=True)
         else:
             plot_df = segment_backtest_df
         fig.add_trace(
@@ -760,10 +760,10 @@ def plot_metric_per_segment(
         sort_idx = sort_idx[::-1]
     segments = segments[sort_idx][:top_k]
     values = values[sort_idx][:top_k]
-    sns.barplot(x=values, y=segments, orient="h", **barplot_params)
+    sns.barplot(x=values, y=segments, orient="h", **barplot_params, hue=segments, legend=False, palette="tab10")
     plt.title("Metric per-segment plot")
-    plt.xlabel("Segment")
-    plt.ylabel(metric_name)
+    plt.ylabel("Segment")
+    plt.xlabel(metric_name)
     plt.grid()
 
 
@@ -862,9 +862,17 @@ def metric_per_segment_distribution_plot(
     # draw plot for each fold
     if per_fold_aggregation_mode is None and "fold_number" in metrics_df.columns:
         if plot_type_enum == MetricPlotType.hist:
-            plot_function(data=metrics_df, x=metric_name, hue="fold_number", **seaborn_params)
+            plot_function(data=metrics_df, x=metric_name, hue="fold_number", palette="tab10", **seaborn_params)
         else:
-            plot_function(data=metrics_df, x="fold_number", y=metric_name, **seaborn_params)
+            plot_function(
+                data=metrics_df,
+                x="fold_number",
+                y=metric_name,
+                hue="fold_number",
+                palette="tab10",
+                legend=False,
+                **seaborn_params,
+            )
             plt.xlabel("Fold")
 
     # draw one plot of aggregated data
@@ -975,7 +983,7 @@ def plot_forecast_decomposition(
             ax_array[i].plot(segment_test_df.index.values, segment_test_df["target"].values, label="target")
         else:
             # skip color for target
-            next(ax_array[i]._get_lines.prop_cycler)
+            ax_array[i].get_lines()[0].set_color(ax_array[i]._get_lines.get_next_color())
 
         for component in components:
             if components_mode == ComponentsMode.per_component:

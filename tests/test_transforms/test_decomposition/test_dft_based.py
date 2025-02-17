@@ -123,8 +123,8 @@ def test_fit(ts_name, in_column, request):
     transform = FourierDecomposeTransform(k=5, in_column=in_column)
     transform.fit(ts=ts)
 
-    assert transform._first_timestamp == ts.index.min()
-    assert transform._last_timestamp == ts.index.max()
+    assert transform._first_timestamp == ts.timestamps.min()
+    assert transform._last_timestamp == ts.timestamps.max()
 
 
 @pytest.mark.parametrize("residuals", (True, False))
@@ -311,3 +311,18 @@ def test_stride_transform(forward_stride_datasets, k):
 
     assert not transformed.df.iloc[:10].isna().any().any()
     assert transformed.df.iloc[10:].isna().all().any()
+
+
+def test_repetitive_fit_transform(ts_with_exogs):
+    transform = FourierDecomposeTransform(in_column="target", k=3)
+
+    ts_with_exogs = transform.fit_transform(ts_with_exogs)
+    columns_before = ts_with_exogs.columns.tolist()
+
+    ts_with_exogs = transform.inverse_transform(ts_with_exogs)
+
+    transform = FourierDecomposeTransform(in_column="target", k=3)
+
+    ts_with_exogs = transform.fit_transform(ts_with_exogs)
+    columns_after = ts_with_exogs.columns.tolist()
+    assert columns_before == columns_after

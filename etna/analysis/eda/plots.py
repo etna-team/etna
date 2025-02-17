@@ -8,8 +8,10 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Sequence
 from typing import Tuple
 from typing import Union
+from typing import cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -84,24 +86,26 @@ def plot_correlation_matrix(
     if mode not in ["macro", "per-segment"]:
         raise ValueError(f"'{mode}' is not a valid method of mode.")
 
+    ax: Union[plt.Axes, Sequence[plt.Axes]]
     if mode == "macro":
         fig, ax = plt.subplots(figsize=figsize)
         correlation_matrix = get_correlation_matrix(ts, columns, segments, method)
         labels = list(ts[:, segments, columns].columns.values)
         ax = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax, **heatmap_kwargs)
+        ax = cast(plt.Axes, ax)
         ax.set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
         ax.set_yticks(np.arange(len(labels)) + 0.5, labels=labels)
         plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
         plt.setp(ax.get_yticklabels(), rotation=0, ha="right", rotation_mode="anchor")
         ax.set_title("Correlation Heatmap")
 
-    if mode == "per-segment":
+    elif mode == "per-segment":
         fig, ax = _prepare_axes(len(segments), columns_num=columns_num, figsize=figsize)
 
         for i, segment in enumerate(segments):
             correlation_matrix = get_correlation_matrix(ts, columns, [segment], method)
             labels = list(ts[:, segment, columns].columns.values)
-            ax[i] = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax[i], **heatmap_kwargs)
+            ax[i] = sns.heatmap(correlation_matrix, annot=True, fmt=".1g", square=True, ax=ax[i], **heatmap_kwargs)  # type: ignore
             ax[i].set_xticks(np.arange(len(labels)) + 0.5, labels=labels)
             ax[i].set_yticks(np.arange(len(labels)) + 0.5, labels=labels)
             plt.setp(ax[i].get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
@@ -211,6 +215,7 @@ def plot_periodogram(
     df = ts.to_pandas()
 
     # plot periodograms
+    ax: Union[plt.Axes, Sequence[plt.Axes]]
     if amplitude_aggregation_mode == "per-segment":
         _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
         for i, segment in enumerate(segments):
@@ -255,14 +260,14 @@ def plot_periodogram(
         spectrum = spectrum[frequencies >= 1]
         frequencies = frequencies[frequencies >= 1]
         _, ax = plt.subplots(figsize=figsize, constrained_layout=True)
-        ax.step(frequencies, spectrum)  # type: ignore
-        ax.set_xscale("log")  # type: ignore
-        ax.set_xlabel("Frequency")  # type: ignore
-        ax.set_ylabel("Power spectral density")  # type: ignore
+        ax.step(frequencies, spectrum)
+        ax.set_xscale("log")
+        ax.set_xlabel("Frequency")
+        ax.set_ylabel("Power spectral density")
         if xticks is not None:
-            ax.set_xticks(ticks=xticks, labels=xticks)  # type: ignore
-        ax.set_title("Periodogram")  # type: ignore
-        ax.grid()  # type: ignore
+            ax.set_xticks(ticks=xticks, labels=xticks)
+        ax.set_title("Periodogram")
+        ax.grid()
 
 
 def plot_holidays(
@@ -333,7 +338,7 @@ def plot_holidays(
     if segments is None:
         segments = sorted(ts.segments)
 
-    holidays_df = _create_holidays_df(holidays, index=ts.index, as_is=as_is)
+    holidays_df = _create_holidays_df(holidays, index=ts.timestamps, as_is=as_is)
 
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
@@ -633,7 +638,7 @@ def distribution_plot(
           default value is "1M"
 
         * integer for data with integer timestamp, groups are formed by ``timestamp // freq``,
-          default value is ``ts.index.max() + 1``
+          default value is ``ts.timestamps.max() + 1``
 
     n_rows:
         maximum number of rows to plot
@@ -657,7 +662,7 @@ def distribution_plot(
     if ts.freq is None:
         # make only one group
         if freq is None:
-            freq = ts.index.max() + 1
+            freq = ts.timestamps.max() + 1
         grouped_data = df_full.groupby(df_full.timestamp // freq)
     else:
         if freq is None:
@@ -676,7 +681,16 @@ def distribution_plot(
     for period, df_slice in grouped_data:
         if period not in groups:
             continue
-        sns.boxplot(data=df_slice.sort_values(by="segment"), y="z", x="segment", ax=ax[i], fliersize=False)
+        sns.boxplot(
+            data=df_slice.sort_values(by="segment"),
+            y="z",
+            x="segment",
+            ax=ax[i],
+            fliersize=False,
+            hue="segment",
+            legend=False,
+            palette="tab10",
+        )
         ax[i].set_title(f"{period}")
         ax[i].grid()
         i += 1
