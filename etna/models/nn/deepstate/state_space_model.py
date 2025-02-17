@@ -372,7 +372,7 @@ class WeeklySeasonalitySSM(SeasonalitySSM):
         return x.weekday()
 
 
-class DaylySeasonalitySSM(SeasonalitySSM):
+class DailySeasonalitySSM(SeasonalitySSM):
     """Class for Daily Seasonality State Space Model.
 
     Note
