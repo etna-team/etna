@@ -561,6 +561,7 @@ class TSDataset:
         df: pd.DataFrame, segments: Set[str], regressors: Optional[Sequence[str]] = None
     ) -> Tuple[Sequence[pd.Timestamp], Sequence[pd.Timestamp]]:
         """Estimate first and last valid indices for the dataframe."""
+        # shape: (num_samples, num_segments, num_features)
         df_values = df.values.reshape((len(df), len(segments), -1))
 
         if regressors is not None:
@@ -568,9 +569,13 @@ class TSDataset:
             features = df.columns.get_level_values("feature")
             segment_features = features[: len(features) // len(segments)]
             regressors_mask = segment_features.isin(set(regressors))
+            # shape: (num_samples, num_segments, num_regressors)
             df_values = df_values[..., regressors_mask]
 
+        # shape: (num_samples, num_segments)
         df_mask = ~np.any(pd.isna(df_values), axis=-1)
+
+        # shape: (num_segments,)
         min_ids = np.argmax(df_mask, axis=0)
         max_ids = len(df_mask) - np.argmax(df_mask[::-1], axis=0) - 1
 
