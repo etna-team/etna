@@ -621,11 +621,8 @@ class TSDataset:
         # TODO: this check could probably be skipped at make_future
         self._check_regressors(df=df)
 
-        df_to_merge = self.df_exog
-        if df_to_merge.size > df.size:
-            df, df_to_merge = df_to_merge, df
+        df = df.merge(self.df_exog, how="left", left_index=True, right_index=True)
 
-        df = df.merge(df_to_merge, how="left", left_index=True, right_index=True)
         df.sort_index(axis=1, level=(0, 1), inplace=True)
 
         _check_features_in_segments(columns=df.columns)
@@ -1007,7 +1004,7 @@ class TSDataset:
         """
         df = df.set_index(["timestamp", "segment"])
 
-        df = df.unstack(level=-1, sort=False)
+        df = df.unstack(level=-1)
         if not pd.api.types.is_integer_dtype(df.index):
             df.index = pd.to_datetime(df.index)
 
