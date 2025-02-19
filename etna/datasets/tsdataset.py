@@ -143,7 +143,7 @@ class TSDataset:
         self.freq = freq
         self.df_exog = None
         self.raw_df = self._prepare_df(df=df, freq=freq)
-        self.df = self.raw_df.copy(deep=True)
+        self.df = self.raw_df.copy(deep=None)
 
         self.hierarchical_structure = hierarchical_structure
         self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
@@ -342,7 +342,7 @@ class TSDataset:
 
             new_index = np.arange(df.index.min(), df.index.max() + 1)
             index_name = df.index.name
-            df = df.reindex(new_index)
+            df = df.reindex(new_index, copy=False)
             df.index.name = index_name
 
         else:
@@ -358,7 +358,9 @@ class TSDataset:
                     f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {freq}"
                 )
 
-            df = df.asfreq(freq)
+            new_index = pd.date_range(start=df.index.min(), end=df.index.max(), freq=freq)
+            new_index.name = df.index.name  # type: ignore
+            df = df.reindex(new_index, copy=False)
 
         return df
 
@@ -614,7 +616,11 @@ class TSDataset:
         # TODO: this check could probably be skipped at make_future
         self._check_regressors(df=df)
 
-        df = df.merge(self.df_exog, how="left", left_index=True, right_index=True)
+        df_to_merge = self.df_exog
+        if df_to_merge.size > df.size:
+            df, df_to_merge = df_to_merge, df
+
+        df = df.merge(df_to_merge, how="left", left_index=True, right_index=True)
         df.sort_index(axis=1, level=(0, 1), inplace=True)
 
         _check_features_in_segments(columns=df.columns)
@@ -996,16 +1002,20 @@ class TSDataset:
         """
         df = df.set_index(["timestamp", "segment"])
 
-        df = df.unstack()
+        df = df.unstack(level=-1, sort=False)
         if not pd.api.types.is_integer_dtype(df.index):
             df.index = pd.to_datetime(df.index)
 
         if not pd.api.types.is_string_dtype(df.columns.levels[1]):
             df.columns = df.columns.set_levels(df.columns.levels[1].astype(str), level=1)
 
-        df = df.reorder_levels([1, 0], axis=1)
+        df.columns = df.columns.reorder_levels([1, 0])
         df.columns.names = ["segment", "feature"]
         df.sort_index(axis=1, level=(0, 1), inplace=True)
+
+        if df._is_view or df._is_copy is None:
+            df = df.copy(deep=None)
+
         return df
 
     @staticmethod
