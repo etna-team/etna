@@ -319,7 +319,7 @@ class TFTNet(DeepBaseNet):
                     x=decoder_features
                 )  # (batch_size, decoder_length, hidden_size)
         else:
-            decoder_output = torch.zeros(batch_size, decoder_length, self.hidden_size)
+            decoder_output = torch.zeros(batch_size, decoder_length, self.hidden_size, device=encoder_output.device)
         residual = torch.cat((encoder_output, decoder_output), dim=1)
 
         # Pass encoder and decoder data through LSTM

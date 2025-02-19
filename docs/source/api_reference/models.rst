@@ -94,7 +94,7 @@ Utilities for :py:class:`~etna.models.nn.deepstate.deepstate.DeepStateModel`
    nn.deepstate.LevelSSM
    nn.deepstate.LevelTrendSSM
    nn.deepstate.SeasonalitySSM
-   nn.deepstate.DaylySeasonalitySSM
+   nn.deepstate.DailySeasonalitySSM
    nn.deepstate.SeasonalitySSM
    nn.deepstate.YearlySeasonalitySSM
 
