@@ -1213,19 +1213,20 @@ def test_check_regressors_error(exog_starts_later: bool, exog_ends_earlier: bool
     df_regressors = TSDataset.to_dataset(df_regressors)
 
     with pytest.raises(ValueError):
-        TSDataset._check_regressors(df=df, df_regressors=df_regressors)
+        _ = TSDataset(df=df, df_exog=df_regressors, known_future="all", freq="D")
 
 
 def test_check_regressors_pass(df_and_regressors):
     """Check that regressors check on creation passes with correct regressors."""
     df, df_exog, _ = df_and_regressors
-    _ = TSDataset._check_regressors(df=df, df_regressors=df_exog)
+    _ = TSDataset(df=df, df_exog=df_exog, known_future="all", freq="D")
 
 
 def test_check_regressors_pass_empty(df_and_regressors):
     """Check that regressors check on creation passes with no regressors."""
     df, _, _ = df_and_regressors
-    _ = TSDataset._check_regressors(df=df, df_regressors=pd.DataFrame())
+    df_exog = pd.DataFrame(columns=["timestamp", "segment", "exog"])
+    _ = TSDataset(df=df, df_exog=df_exog, known_future="all", freq="D")
 
 
 def test_getitem_only_date(tsdf_with_exog):
@@ -1968,7 +1969,6 @@ def test_create_from_misaligned_with_exog(
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
     pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
 
-    expected_df_exog = TSDataset.to_dataset(apply_alignment(df=df_exog, alignment=alignment))
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,
         start=expected_raw_df.index[0],
@@ -1976,7 +1976,10 @@ def test_create_from_misaligned_with_exog(
         freq=freq,
         timestamp_name=original_timestamp_name,
     )
-    expected_df_exog = expected_df_exog.join(TSDataset.to_dataset(timestamp_df), how="outer")
+    expected_df_exog = apply_alignment(df=df_exog, alignment=alignment)
+    expected_df_exog = pd.merge(expected_df_exog, timestamp_df, how="outer", on=["timestamp", "segment"])
+    expected_df_exog = TSDataset.to_dataset(expected_df_exog)
+
     pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
 
     expected_known_future = sorted(set(known_future).union([original_timestamp_name]))
@@ -2016,7 +2019,6 @@ def test_create_from_misaligned_with_exog_all(
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
     pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
 
-    expected_df_exog = TSDataset.to_dataset(apply_alignment(df=df_exog, alignment=alignment))
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,
         start=expected_raw_df.index[0],
@@ -2024,7 +2026,11 @@ def test_create_from_misaligned_with_exog_all(
         freq=freq,
         timestamp_name=original_timestamp_name,
     )
-    expected_df_exog = expected_df_exog.join(TSDataset.to_dataset(timestamp_df), how="outer")
+
+    expected_df_exog = apply_alignment(df=df_exog, alignment=alignment)
+    expected_df_exog = pd.merge(expected_df_exog, timestamp_df, how="outer", on=["timestamp", "segment"])
+
+    expected_df_exog = TSDataset.to_dataset(expected_df_exog)
     pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
 
     assert ts.known_future == expected_known_future
