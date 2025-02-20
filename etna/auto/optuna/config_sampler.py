@@ -94,7 +94,7 @@ class ConfigSampler(BaseSampler):
 
         if len(unfinished_hashes) == 0:
             study.stop()
-        if len(unfinished_hashes) == 1 and list(unfinished_hashes)[0] == hash_to_sample:
+        if len(unfinished_hashes) == 1 and unfinished_hashes.pop() == hash_to_sample:
             study.stop()
 
     def _get_unfinished_hashes(self, study: Study, current_trial: Optional[FrozenTrial] = None) -> Set[str]:
