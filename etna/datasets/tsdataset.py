@@ -520,16 +520,11 @@ class TSDataset:
         :
             TSDataset based on indexing slice.
         """
-        df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
-        tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
-        # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        tsdataset_slice.known_future = deepcopy(self.known_future)
-        tsdataset_slice._regressors = deepcopy(self.regressors)
-        if self.df_exog is not None:
-            tsdataset_slice.df_exog = self.df_exog.copy(deep=True)
-        tsdataset_slice._target_components_names = deepcopy(self._target_components_names)
-        tsdataset_slice._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
-        return tsdataset_slice
+        ts_slice = deepcopy(self)
+        ts_slice.df = ts_slice.df.iloc[start_idx:end_idx].copy(deep=None)
+        ts_slice.raw_df = ts_slice.raw_df.iloc[start_idx:end_idx].copy(deep=None)
+
+        return ts_slice
 
     @staticmethod
     def _check_known_future(
