@@ -26,6 +26,7 @@ from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _check_features_in_segments
 from etna.datasets.utils import _check_timestamp_param
+from etna.datasets.utils import _slice_index_wide_dataframe
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import get_level_dataframe
@@ -520,9 +521,23 @@ class TSDataset:
         :
             TSDataset based on indexing slice.
         """
-        ts_slice = deepcopy(self)
-        ts_slice.df = ts_slice.df.iloc[start_idx:end_idx].copy(deep=None)
-        ts_slice.raw_df = ts_slice.raw_df.iloc[start_idx:end_idx].copy(deep=None)
+        self_df = self.df
+        self_raw_df = self.raw_df
+
+        try:
+            # we do this to avoid redundant copying of data
+            self.df = None
+            self.raw_df = None
+
+            ts_slice = deepcopy(self)
+            ts_slice.df = _slice_index_wide_dataframe(df=self_df, start=start_idx, stop=end_idx, label_indexing=False)
+            ts_slice.raw_df = _slice_index_wide_dataframe(
+                df=self_raw_df, start=start_idx, stop=end_idx, label_indexing=False
+            )
+
+        finally:
+            self.df = self_df
+            self.raw_df = self_raw_df
 
         return ts_slice
 
@@ -1255,36 +1270,16 @@ class TSDataset:
             # we do this to avoid redundant copying of data
             self.df = None
             self.raw_df = None
+
             train = deepcopy(self)
+            train.df = _slice_index_wide_dataframe(df=self_df, start=train_start_defined, stop=train_end_defined)
+            train.raw_df = _slice_index_wide_dataframe(
+                df=self_raw_df, start=train_start_defined, stop=train_end_defined
+            )
 
-            # we want to make sure it makes only one copy
-            train_df = self_df.loc[train_start_defined:train_end_defined]
-            if train_df._is_view or train_df._is_copy is not None:
-                train.df = train_df.copy()
-            else:
-                train.df = train_df
-
-            # we want to make sure it makes only one copy
-            train_raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
-            if train_raw_df._is_view or train_raw_df._is_copy is not None:
-                train.raw_df = train_raw_df.copy()
-            else:
-                train.raw_df = train_raw_df
-
-            # we want to make sure it makes only one copy
             test = deepcopy(self)
-            test_df = self_df.loc[test_start_defined:test_end_defined]
-            if test_df._is_view or test_df._is_copy is not None:
-                test.df = test_df.copy()
-            else:
-                test.df = test_df
-
-            # we want to make sure it makes only one copy
-            test_raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
-            if test_raw_df._is_view or test_raw_df._is_copy is not None:
-                test.raw_df = test_raw_df.copy()
-            else:
-                test.raw_df = test_raw_df
+            test.df = _slice_index_wide_dataframe(df=self_df, start=test_start_defined, stop=test_end_defined)
+            test.raw_df = _slice_index_wide_dataframe(df=self_raw_df, start=train_start_defined, stop=test_end_defined)
 
         finally:
             self.df = self_df
