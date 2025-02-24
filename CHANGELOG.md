@@ -46,7 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Bump minimum `optuna` version to 4.0 ([#599](https://github.com/etna-team/etna/pull/599))
 - **Breaking:** Bump minimum `statsforecast` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
 - Optimize performance of exogenous variables addition to the dataset ([#596](https://github.com/etna-team/etna/pull/596))
-- Update `TSDataset.tsdataset_idx_slice` method ([#618](https://github.com/etna-team/etna/pull/618))
 - 
 
 ### Fixed
@@ -60,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** rename `DaylySeasonalitySSM` to `DailySeasonalitySSM` ([#615](https://github.com/etna-team/etna/pull/615))
 - Fix `TSDataset.train_test_split` to pass all features to train and test parts ([#545](https://github.com/etna-team/etna/pull/545))
 - Fix `ConfigSampler` to handle trials without hash ([#616](https://github.com/etna-team/etna/pull/616))
-- Fix method `TSDataset.tsdataset_idx_slice` loses hierarchical structure ([#618](https://github.com/etna-team/etna/pull/618))
+- Fix method `TSDataset.tsdataset_idx_slice` to not lose hierarchical structure ([#618](https://github.com/etna-team/etna/pull/618))
 - 
 
 ### Removed
