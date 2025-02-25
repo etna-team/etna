@@ -144,7 +144,7 @@ class TSDataset:
         self.freq = freq
         self.df_exog = None
         self.raw_df = self._prepare_df(df=df, freq=freq)
-        self.df = self.raw_df.copy(deep=None)
+        self.df = self.raw_df.copy(deep=True)
 
         self.hierarchical_structure = hierarchical_structure
         self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
@@ -1026,7 +1026,7 @@ class TSDataset:
         df.sort_index(axis=1, level=(0, 1), inplace=True)
 
         if df._is_view or df._is_copy is None:
-            df = df.copy(deep=None)
+            df = df.copy(deep=True)
 
         return df
 

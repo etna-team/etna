@@ -770,6 +770,6 @@ def _slice_index_wide_dataframe(
     # we want to make sure it makes only one copy
     df = indexer[start:stop]  # type: ignore
     if df._is_view or df._is_copy is not None:
-        df = df.copy(deep=None)
+        df = df.copy(deep=True)
 
     return df
