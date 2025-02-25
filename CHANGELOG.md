@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimize performance of exogenous variables addition to the dataset ([#596](https://github.com/etna-team/etna/pull/596))
 - Change cpu docker image to use Python 3.10 ([#617](https://github.com/etna-team/etna/pull/617))
 - Change cuda docker image to use Python 3.10 and cuda 12.4.0 ([#617](https://github.com/etna-team/etna/pull/617))
--
+- 
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
@@ -61,7 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** rename `DaylySeasonalitySSM` to `DailySeasonalitySSM` ([#615](https://github.com/etna-team/etna/pull/615))
 - Fix `TSDataset.train_test_split` to pass all features to train and test parts ([#545](https://github.com/etna-team/etna/pull/545))
 - Fix `ConfigSampler` to handle trials without hash ([#616](https://github.com/etna-team/etna/pull/616))
+- Fix method `TSDataset.tsdataset_idx_slice` to not lose hierarchical structure ([#618](https://github.com/etna-team/etna/pull/618))
 - Fix colors of lines in `plot_forecast_decomposition` ([#617](https://github.com/etna-team/etna/pull/617))
+- 
 
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))

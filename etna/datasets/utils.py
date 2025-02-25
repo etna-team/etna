@@ -756,3 +756,20 @@ def _check_features_in_segments(columns: pd.MultiIndex, segments: Optional[List[
             raise ValueError(
                 f"There is a mismatch in feature sets between segments '{compare_segment}' and '{segment}'!"
             )
+
+
+def _slice_index_wide_dataframe(
+    df: pd.DataFrame,
+    start: Optional[Union[int, str, pd.Timestamp]] = None,
+    stop: Optional[Union[int, str, pd.Timestamp]] = None,
+    label_indexing: bool = True,
+) -> pd.DataFrame:
+    """Slice index of the dataframe in the wide format with copy."""
+    indexer = df.loc if label_indexing else df.iloc
+
+    # we want to make sure it makes only one copy
+    df = indexer[start:stop]  # type: ignore
+    if df._is_view or df._is_copy is not None:
+        df = df.copy(deep=True)
+
+    return df

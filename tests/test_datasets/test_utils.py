@@ -9,6 +9,7 @@ from etna.datasets import duplicate_data
 from etna.datasets import generate_ar_df
 from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _check_features_in_segments
+from etna.datasets.utils import _slice_index_wide_dataframe
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import determine_freq
@@ -1013,3 +1014,17 @@ def test_check_features_in_segments_ok(columns):
 )
 def test_check_features_in_segments_ok_with_expected_segments(columns):
     _check_features_in_segments(columns=columns, segments=[1, 2])
+
+
+@pytest.mark.parametrize("start, stop", ((0, 4), (4, -1), (-5, -1), (None, 6), (5, None), (None, None)))
+def test_slice_index_wide_dataframe_int_idx(df_aligned_datetime, start, stop):
+    res = _slice_index_wide_dataframe(df=df_aligned_datetime, start=start, stop=stop, label_indexing=False)
+    pd.testing.assert_frame_equal(res, df_aligned_datetime.iloc[start:stop])
+
+
+@pytest.mark.parametrize(
+    "start, stop", (("2020-01-01", "2020-01-04"), (None, "2020-01-10"), ("2020-01-09", None), (None, None))
+)
+def test_slice_index_wide_dataframe_label_idx(df_aligned_datetime, start, stop):
+    res = _slice_index_wide_dataframe(df=df_aligned_datetime, start=start, stop=stop, label_indexing=True)
+    pd.testing.assert_frame_equal(res, df_aligned_datetime.loc[start:stop])
