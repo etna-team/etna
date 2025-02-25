@@ -26,6 +26,7 @@ from etna.datasets.hierarchical_structure import HierarchicalStructure
 from etna.datasets.utils import DataFrameFormat
 from etna.datasets.utils import _check_features_in_segments
 from etna.datasets.utils import _check_timestamp_param
+from etna.datasets.utils import _slice_index_wide_dataframe
 from etna.datasets.utils import _TorchDataset
 from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import get_level_dataframe
@@ -143,7 +144,7 @@ class TSDataset:
         self.freq = freq
         self.df_exog = None
         self.raw_df = self._prepare_df(df=df, freq=freq)
-        self.df = self.raw_df.copy(deep=None)
+        self.df = self.raw_df.copy(deep=True)
 
         self.hierarchical_structure = hierarchical_structure
         self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
@@ -520,16 +521,25 @@ class TSDataset:
         :
             TSDataset based on indexing slice.
         """
-        df_slice = self.df.iloc[start_idx:end_idx].copy(deep=True)
-        tsdataset_slice = TSDataset(df=df_slice, freq=self.freq)
-        # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        tsdataset_slice.known_future = deepcopy(self.known_future)
-        tsdataset_slice._regressors = deepcopy(self.regressors)
-        if self.df_exog is not None:
-            tsdataset_slice.df_exog = self.df_exog.copy(deep=True)
-        tsdataset_slice._target_components_names = deepcopy(self._target_components_names)
-        tsdataset_slice._prediction_intervals_names = deepcopy(self._prediction_intervals_names)
-        return tsdataset_slice
+        self_df = self.df
+        self_raw_df = self.raw_df
+
+        try:
+            # we do this to avoid redundant copying of data
+            self.df = None
+            self.raw_df = None
+
+            ts_slice = deepcopy(self)
+            ts_slice.df = _slice_index_wide_dataframe(df=self_df, start=start_idx, stop=end_idx, label_indexing=False)
+            ts_slice.raw_df = _slice_index_wide_dataframe(
+                df=self_raw_df, start=start_idx, stop=end_idx, label_indexing=False
+            )
+
+        finally:
+            self.df = self_df
+            self.raw_df = self_raw_df
+
+        return ts_slice
 
     @staticmethod
     def _check_known_future(
@@ -1016,7 +1026,7 @@ class TSDataset:
         df.sort_index(axis=1, level=(0, 1), inplace=True)
 
         if df._is_view or df._is_copy is None:
-            df = df.copy(deep=None)
+            df = df.copy(deep=True)
 
         return df
 
@@ -1260,36 +1270,16 @@ class TSDataset:
             # we do this to avoid redundant copying of data
             self.df = None
             self.raw_df = None
+
             train = deepcopy(self)
+            train.df = _slice_index_wide_dataframe(df=self_df, start=train_start_defined, stop=train_end_defined)
+            train.raw_df = _slice_index_wide_dataframe(
+                df=self_raw_df, start=train_start_defined, stop=train_end_defined
+            )
 
-            # we want to make sure it makes only one copy
-            train_df = self_df.loc[train_start_defined:train_end_defined]
-            if train_df._is_view or train_df._is_copy is not None:
-                train.df = train_df.copy()
-            else:
-                train.df = train_df
-
-            # we want to make sure it makes only one copy
-            train_raw_df = self_raw_df.loc[train_start_defined:train_end_defined]
-            if train_raw_df._is_view or train_raw_df._is_copy is not None:
-                train.raw_df = train_raw_df.copy()
-            else:
-                train.raw_df = train_raw_df
-
-            # we want to make sure it makes only one copy
             test = deepcopy(self)
-            test_df = self_df.loc[test_start_defined:test_end_defined]
-            if test_df._is_view or test_df._is_copy is not None:
-                test.df = test_df.copy()
-            else:
-                test.df = test_df
-
-            # we want to make sure it makes only one copy
-            test_raw_df = self_raw_df.loc[train_start_defined:test_end_defined]
-            if test_raw_df._is_view or test_raw_df._is_copy is not None:
-                test.raw_df = test_raw_df.copy()
-            else:
-                test.raw_df = test_raw_df
+            test.df = _slice_index_wide_dataframe(df=self_df, start=test_start_defined, stop=test_end_defined)
+            test.raw_df = _slice_index_wide_dataframe(df=self_raw_df, start=train_start_defined, stop=test_end_defined)
 
         finally:
             self.df = self_df

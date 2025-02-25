@@ -1513,6 +1513,16 @@ def test_tsdataset_idx_slice_pass_prediction_intervals_to_output(ts_with_predict
     )
 
 
+def test_tsdataset_idx_slice_pass_hierarchical_structure_to_output(product_level_constant_forecast_with_quantiles):
+    ts = product_level_constant_forecast_with_quantiles
+    initial_hs = ts.hierarchical_structure
+    slice_hs = ts.tsdataset_idx_slice(start_idx=1, end_idx=2).hierarchical_structure
+
+    assert slice_hs is not None
+    assert slice_hs.level_names == initial_hs.level_names
+    assert slice_hs.level_structure == initial_hs.level_structure
+
+
 def test_to_torch_dataset_without_drop(tsdf_with_exog):
     def make_samples(df):
         return [{"target": df.target.values, "segment": df["segment"].values[0]}]
