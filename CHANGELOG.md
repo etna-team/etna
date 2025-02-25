@@ -61,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** rename `DaylySeasonalitySSM` to `DailySeasonalitySSM` ([#615](https://github.com/etna-team/etna/pull/615))
 - Fix `TSDataset.train_test_split` to pass all features to train and test parts ([#545](https://github.com/etna-team/etna/pull/545))
 - Fix `ConfigSampler` to handle trials without hash ([#616](https://github.com/etna-team/etna/pull/616))
+- Fix colors of lines in `plot_forecast_decomposition` ([#617](https://github.com/etna-team/etna/pull/617))
 
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
