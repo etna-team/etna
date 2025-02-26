@@ -951,6 +951,7 @@ def plot_forecast_decomposition(
 
     column_names = set(forecast_ts.features)
     components = list(match_target_components(column_names))
+    skip_first_component = test_ts is None
 
     if len(components) == 0:
         raise ValueError("No components were detected in the provided `forecast_ts`.")
@@ -981,9 +982,6 @@ def plot_forecast_decomposition(
 
         if test_ts is not None:
             ax_array[i].plot(segment_test_df.index.values, segment_test_df["target"].values, label="target")
-        else:
-            # skip color for target
-            ax_array[i].get_lines()[0].set_color(ax_array[i]._get_lines.get_next_color())
 
         for component in components:
             if components_mode == ComponentsMode.per_component:
@@ -994,6 +992,11 @@ def plot_forecast_decomposition(
             ax_array[i].plot(
                 segment_forecast_df.index.values, segment_forecast_df[component].values, label=component, alpha=alpha
             )
+
+            if skip_first_component:
+                # skip color for target
+                ax_array[i].get_lines()[1].set_color(ax_array[i]._get_lines.get_next_color())
+                skip_first_component = False
 
         ax_array[i].tick_params("x", rotation=45)
         ax_array[i].legend(loc="upper left")

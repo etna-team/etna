@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=python:3.8-slim-buster
+ARG BASE_IMAGE=python:3.10-slim-buster
 FROM ${BASE_IMAGE}
 
 RUN apt-get -y update && apt-get -y --no-install-recommends install build-essential git openssh-client && rm -rf /var/lib/apt/lists/*

@@ -69,4 +69,4 @@ def delete_pipe(image_name: str, leave_last_n_images: int):
 
 if __name__ == "__main__":
     delete_pipe("etna-cpu", 10)
-    delete_pipe("etna-cuda-11.6.2", 10)
+    delete_pipe("etna-cuda-12.4.0", 10)
