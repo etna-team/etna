@@ -1530,10 +1530,11 @@ def test_to_torch_dataset_without_drop(tsdf_with_exog):
     torch_dataset = tsdf_with_exog.to_torch_dataset(make_samples, dropna=False)
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
-        torch_dataset[0]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Moscow", "target"]].values
+        torch_dataset[0]["target"],
+        tsdf_with_exog.df.loc[:, pd.IndexSlice["Moscow", "target"]].values.astype(np.float32),
     )
     np.testing.assert_array_equal(
-        torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
+        torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
     )
 
 
@@ -1548,10 +1549,12 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
         torch_dataset[0]["target"],
-        tsdf_with_exog.df.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values,
+        tsdf_with_exog.df.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values.astype(
+            np.float32
+        ),
     )
     np.testing.assert_array_equal(
-        torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values
+        torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
     )
 
 
