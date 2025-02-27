@@ -244,11 +244,12 @@ class DeepARNet(DeepBaseNet):
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
             .values
+            .astype(np.float32)
         )
 
         # Categories that were not seen during `fit` will be filled with new category
         for feature in self.embedding_sizes:
-            df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
+            df[feature] = df[feature].astype(np.float32).fillna(self.embedding_sizes[feature][0])
 
         # Columns in `values_categorical` are in the same order as in `embedding_sizes`
         values_categorical = df[self.embedding_sizes.keys()].values.T
@@ -299,7 +300,7 @@ class DeepARNet(DeepBaseNet):
             sample["decoder_target"] = target[encoder_length:]
 
             sample["segment"] = segment
-            sample["weight"] = 1 + sample["encoder_target"].mean() if self.scale else 1
+            sample["weight"] = (1 + sample["encoder_target"].mean()).astype(np.float32) if self.scale else 1
 
             return sample
 

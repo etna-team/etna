@@ -575,9 +575,6 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Model after fit
         """
-        # TODO: https://github.com/etna-team/etna/issues/612
-        if torch.mps.is_available():
-            self.trainer_params["accelerator"] = "cpu"
 
         if self.split_params:
             if isinstance(torch_dataset, Sized):

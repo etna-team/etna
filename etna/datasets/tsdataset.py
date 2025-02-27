@@ -1927,6 +1927,9 @@ class TSDataset:
         if dropna:
             df = df.dropna()  # TODO: Fix this
 
+        float64_columns = df.select_dtypes(include='float64').columns
+        df[float64_columns] = df[float64_columns].astype('float32')
+
         ts_segments = [df_segment for _, df_segment in df.groupby("segment")]
         ts_samples = [samples for df_segment in ts_segments for samples in make_samples(df_segment)]
 
