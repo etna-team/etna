@@ -146,12 +146,12 @@ class MLPNet(DeepBaseNet):
         values_real = (
             df.drop(["target", "segment", "timestamp"] + list(self.embedding_sizes.keys()), axis=1)
             .select_dtypes(include=[np.number])
-            .values
+            .values.astype(np.float32)
         )
 
         # Categories that were not seen during `fit` will be filled with new category
         for feature in self.embedding_sizes:
-            df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
+            df[feature] = df[feature].astype(np.float32).fillna(self.embedding_sizes[feature][0])
 
         # Columns in `values_categorical` are in the same order as in `embedding_sizes`
         values_categorical = df[self.embedding_sizes.keys()].values.T

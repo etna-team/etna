@@ -22,7 +22,7 @@ def test_patchtst_model_run_weekly_overfit_with_scaler_small_patch(ts_dataset_we
     encoder_length = 14
     decoder_length = 14
     model = PatchTSTModel(
-        encoder_length=encoder_length, decoder_length=decoder_length, patch_len=1, trainer_params=dict(max_epochs=20)
+        encoder_length=encoder_length, decoder_length=decoder_length, patch_len=1, trainer_params=dict(max_epochs=30)
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)

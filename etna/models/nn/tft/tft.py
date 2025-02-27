@@ -380,7 +380,7 @@ class TFTNet(DeepBaseNet):
         """Make samples from segment DataFrame."""
         segment = df["segment"].values[0]
         for feature in self.num_embeddings:
-            df[feature] = df[feature].astype(float).fillna(self.num_embeddings[feature])
+            df[feature] = df[feature].astype(np.float32).fillna(self.num_embeddings[feature])
 
         reals_columns = list(set(self.static_reals + self.time_varying_reals_encoder + self.time_varying_reals_decoder))
         categ_columns = list(
@@ -393,7 +393,7 @@ class TFTNet(DeepBaseNet):
 
         df = df[reals_columns + categ_columns]
         column_to_index = {column: index for index, column in enumerate(df.columns)}
-        values = df.values.T
+        values = df.values.T.astype(np.float32)
 
         def _make(
             values: np.ndarray,
