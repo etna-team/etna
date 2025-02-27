@@ -190,8 +190,7 @@ class RNNNet(DeepBaseNet):
             .assign(target_shifted=df["target"].shift(1))
             .drop(["target"], axis=1)
             .pipe(lambda x: x[["target_shifted"] + [i for i in x.columns if i != "target_shifted"]])
-            .values
-            .astype(np.float32)
+            .values.astype(np.float32)
         )
         # Categories that were not seen during `fit` will be filled with new category
         for feature in self.embedding_sizes:

@@ -225,7 +225,9 @@ class DeepStateNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.drop(columns=["target", "segment", "timestamp"] + list(self.embedding_sizes.keys())).values.astype(np.float32)
+        values_real = df.drop(
+            columns=["target", "segment", "timestamp"] + list(self.embedding_sizes.keys())
+        ).values.astype(np.float32)
 
         # Categories that were not seen during `fit` will be filled with new category
         for feature in self.embedding_sizes:

@@ -575,7 +575,6 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Model after fit
         """
-
         if self.split_params:
             if isinstance(torch_dataset, Sized):
                 torch_dataset_size = len(torch_dataset)
