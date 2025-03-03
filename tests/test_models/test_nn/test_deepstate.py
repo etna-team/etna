@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
+import torch
 
 from etna.metrics import MAE
 from etna.models.nn import DeepStateModel
@@ -44,7 +46,7 @@ def test_deepstate_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_functi
         input_size=0,
         encoder_length=encoder_length,
         decoder_length=decoder_length,
-        trainer_params=dict(max_epochs=100),
+        trainer_params=dict(max_epochs=100, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)
@@ -71,7 +73,7 @@ def test_handling_categoricals(ts_different_regressors, embedding_sizes, feature
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         embedding_sizes=embedding_sizes,
-        trainer_params=dict(max_epochs=1),
+        trainer_params=dict(max_epochs=100, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     pipeline = Pipeline(
         model=model,
@@ -152,7 +154,7 @@ def test_save_load(example_tsds):
         input_size=0,
         encoder_length=14,
         decoder_length=14,
-        trainer_params=dict(max_epochs=1),
+        trainer_params=dict(max_epochs=100, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
@@ -164,7 +166,26 @@ def test_params_to_tune(example_tsds):
         input_size=0,
         encoder_length=14,
         decoder_length=14,
-        trainer_params=dict(max_epochs=1),
+        trainer_params=dict(max_epochs=100, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
+
+
+@patch("torch.mps.is_available", return_value=True)
+def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_with_horizon):
+    ts_train, ts_test = ts_dataset_weekly_function_with_horizon(8)
+
+    encoder_length = 14
+    decoder_length = 14
+    model = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        trainer_params=dict(max_epochs=100),
+    )
+    with pytest.raises(
+        NotImplementedError, match="DeepStateModel does not support MPS. Please use CPU on your MacBook."
+    ):
+        model.fit(ts_train)
