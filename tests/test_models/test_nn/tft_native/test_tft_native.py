@@ -295,7 +295,7 @@ def test_params_to_tune(example_tsds):
     assert_sampling_is_valid(model=model, ts=ts)
 
 
-@patch("lightning.pytorch.accelerators.mps.MPSAccelerator.is_available", return_value=True)
+@patch("torch.mps.is_available", return_value=True)
 def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_with_horizon):
     ts_train, ts_test = ts_dataset_weekly_function_with_horizon(8)
     encoder_length = 14

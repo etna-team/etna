@@ -117,16 +117,7 @@ class DeepStateNet(DeepBaseNet):
         -------
         :
             loss, true_target, prediction_target
-        Raises
-        ------
-        :
-        NotImplementedError:
-            If MPS is used for training.
         """
-        # Sometimes we feed lstm an empty tensor https://github.com/pytorch/pytorch/issues/123171
-        if self.device.type == "mps":
-            raise NotImplementedError("DeepStateModel does not support MPS. Please use CPU on your MacBook.")
-
         encoder_real = batch["encoder_real"].float()  # (batch_size, seq_length, input_size)
         encoder_categorical = batch["encoder_categorical"]  # each (batch_size, seq_length, 1)
         targets = batch["encoder_target"].float()  # (batch_size, seq_length, 1)
