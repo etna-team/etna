@@ -46,7 +46,7 @@ def test_deepstate_model_run_weekly_overfit_with_scaler(ts_dataset_weekly_functi
         input_size=0,
         encoder_length=encoder_length,
         decoder_length=decoder_length,
-        trainer_params=dict(max_epochs=100),
+        trainer_params=dict(max_epochs=100, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     future = ts_train.make_future(horizon, transforms=[std], tail_steps=encoder_length)
     model.fit(ts_train)
