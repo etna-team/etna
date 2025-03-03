@@ -51,7 +51,7 @@ def test_tft_model_run_weekly_overfit(
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         lr=lr,
-        trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+        trainer_params=dict(max_epochs=epochs, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     pipeline = Pipeline(model=model, transforms=transform, horizon=horizon)
     pipeline.fit(ts_train)
