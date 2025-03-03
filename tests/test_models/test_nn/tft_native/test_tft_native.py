@@ -1,7 +1,9 @@
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
+import torch
 from lightning.pytorch import seed_everything
 
 from etna.datasets import TSDataset
@@ -49,7 +51,7 @@ def test_tft_model_run_weekly_overfit(
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         lr=lr,
-        trainer_params=dict(max_epochs=epochs),
+        trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     pipeline = Pipeline(model=model, transforms=transform, horizon=horizon)
     pipeline.fit(ts_train)
@@ -102,7 +104,7 @@ def test_tft_backtest(
         time_varying_categoricals_encoder=time_varying_categoricals_encoder,
         time_varying_categoricals_decoder=time_varying_categoricals_decoder,
         num_embeddings=num_embeddings,
-        trainer_params=dict(max_epochs=1),
+        trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     pipeline = Pipeline(
         model=model,
@@ -268,7 +270,7 @@ def test_save_load(
         time_varying_categoricals_encoder=time_varying_categoricals_encoder,
         time_varying_categoricals_decoder=time_varying_categoricals_decoder,
         num_embeddings=num_embeddings,
-        trainer_params=dict(max_epochs=1),
+        trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
     )
     assert_model_equals_loaded_original(
         model=model,
@@ -284,6 +286,25 @@ def test_save_load(
 
 def test_params_to_tune(example_tsds):
     ts = example_tsds
-    model = TFTModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = TFTModel(
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+    )
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
+
+
+@patch("lightning.pytorch.accelerators.mps.MPSAccelerator.is_available", return_value=True)
+def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_with_horizon):
+    ts_train, ts_test = ts_dataset_weekly_function_with_horizon(8)
+    encoder_length = 14
+    decoder_length = 14
+    model = TFTModel(
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        trainer_params=dict(max_epochs=1),
+    )
+    pipeline = Pipeline(model=model, horizon=8)
+    with pytest.raises(NotImplementedError, match="TFTModel does not support MPS. Please use CPU on your MacBook."):
+        pipeline.fit(ts_train)

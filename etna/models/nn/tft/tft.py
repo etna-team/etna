@@ -370,7 +370,15 @@ class TFTNet(DeepBaseNet):
         -------
         :
             loss, true_target, prediction_target
+        Raises
+        ------
+        :
+        NotImplementedError:
+            If MPS is used for training.
         """
+        if self.device.type == "mps":
+            raise NotImplementedError("TFTModel does not support MPS. Please use CPU on your MacBook.")
+
         target_pred = self.forward(batch)  # (batch_size, decoder_length, 1)
         target_true = batch["decoder_target"].float()  # (batch_size, decoder_length, 1)
         loss = self.loss(target_pred, target_true)
