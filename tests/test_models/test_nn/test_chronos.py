@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
+from hydra_slayer import get_from_params
 from pandas.testing import assert_frame_equal
 
 from etna.datasets import TSDataset
@@ -287,3 +288,23 @@ def test_chronos_bolt_save_load(tmp_path, ts_increasing_integers):
 )
 def test_params_to_tune(model):
     assert len(model.params_to_tune()) == 0
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        {
+            "_target_": "etna.models.nn.ChronosModel",
+            "path_or_url": "amazon/chronos-bolt-tiny",
+        },
+        {
+            "_target_": "etna.models.nn.ChronosBoltModel",
+            "path_or_url": "amazon/chronos-t5-tiny",
+        },
+    ],
+)
+def test_(config):
+
+    model = get_from_params(**config)
+    config_new = model.to_dict()
+    _ = get_from_params(**config_new)
