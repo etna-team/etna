@@ -303,7 +303,7 @@ def test_params_to_tune(model):
         },
     ],
 )
-def test_(config):
+def test_chainable_get_from_params(config):
 
     model = get_from_params(**config)
     config_new = model.to_dict()
