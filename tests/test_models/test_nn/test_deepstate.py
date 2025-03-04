@@ -72,7 +72,7 @@ def test_handling_categoricals(ts_different_regressors, embedding_sizes, feature
         encoder_length=encoder_length,
         decoder_length=decoder_length,
         embedding_sizes=embedding_sizes,
-        trainer_params=dict(max_epochs=100),
+        trainer_params=dict(max_epochs=1),
     )
     pipeline = Pipeline(
         model=model,
@@ -153,7 +153,7 @@ def test_save_load(example_tsds):
         input_size=0,
         encoder_length=14,
         decoder_length=14,
-        trainer_params=dict(max_epochs=100),
+        trainer_params=dict(max_epochs=1),
     )
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=[], horizon=3)
 
@@ -165,7 +165,7 @@ def test_params_to_tune(example_tsds):
         input_size=0,
         encoder_length=14,
         decoder_length=14,
-        trainer_params=dict(max_epochs=100),
+        trainer_params=dict(max_epochs=1),
     )
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
@@ -185,5 +185,5 @@ def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_w
             input_size=0,
             encoder_length=encoder_length,
             decoder_length=decoder_length,
-            trainer_params=dict(max_epochs=100, accelerator="mps"),
+            trainer_params=dict(max_epochs=1, accelerator="mps"),
         )
