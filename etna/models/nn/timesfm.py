@@ -158,6 +158,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         model_file = self.path_or_url.split("/")[-1]
         full_model_path = f"{self.cache_dir}/{model_file}"
         if not os.path.exists(full_model_path):
+            Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
             request.urlretrieve(url=self.path_or_url, filename=full_model_path)
         return full_model_path
 
