@@ -580,11 +580,6 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         -------
         :
             Model after fit
-        Raises
-        ------
-        :
-        NotImplementedError:
-            If MPS is used for training TFTModel or DeepStateModel.
         """
         if self.split_params:
             if isinstance(torch_dataset, Sized):

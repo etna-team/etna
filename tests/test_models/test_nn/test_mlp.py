@@ -225,7 +225,7 @@ def test_mlp_warning_training_with_mps(mock_is_available):
     with pytest.warns(
         UserWarning,
         match="If you use MPS sometimes it can cause unexpected results.\
-                               If this happens try setting `accelerate=cpu` in trainer_params.",
+               If this happens try setting `accelerate=cpu` in trainer_params.",
     ):
         decoder_length = 14
         model = MLPModel(
