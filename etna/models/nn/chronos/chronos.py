@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 from typing import Sequence
+from typing import Union
 
 from etna import SETTINGS
 from etna.datasets import TSDataset
@@ -31,7 +32,7 @@ class ChronosModel(ChronosBaseModel):
         path_or_url: str,
         encoder_length: int = 512,
         device: str = "cpu",
-        dtype: torch.dtype = torch.float32,
+        dtype: Union[str, torch.dtype] = "float32",
         num_samples: int = 1,
         temperature: float = 1.0,
         top_k: int = 50,

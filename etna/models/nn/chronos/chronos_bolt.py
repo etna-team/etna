@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List
 from typing import Sequence
+from typing import Union
 
 from etna import SETTINGS
 from etna.datasets import TSDataset
@@ -31,7 +32,7 @@ class ChronosBoltModel(ChronosBaseModel):
         path_or_url: str,
         encoder_length: int = 2048,
         device: str = "cpu",
-        dtype: torch.dtype = torch.float32,
+        dtype: Union[str, torch.dtype] = "float32",
         limit_prediction_length: bool = False,
         batch_size: int = 128,
         cache_dir: Path = _DOWNLOAD_PATH,
