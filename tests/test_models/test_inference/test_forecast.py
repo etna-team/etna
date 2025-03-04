@@ -3,7 +3,6 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 import pytest
-import torch
 from pandas.testing import assert_frame_equal
 from typing_extensions import get_args
 
@@ -133,11 +132,7 @@ class TestForecastInSampleFullNoTarget:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -148,7 +143,7 @@ class TestForecastInSampleFullNoTarget:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -303,11 +298,7 @@ class TestForecastInSampleFull:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -318,7 +309,7 @@ class TestForecastInSampleFull:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -439,11 +430,7 @@ class TestForecastInSampleSuffixNoTarget:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -459,7 +446,7 @@ class TestForecastInSampleSuffixNoTarget:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -542,11 +529,7 @@ class TestForecastInSampleSuffix:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -562,7 +545,7 @@ class TestForecastInSampleSuffix:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -664,11 +647,7 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -684,7 +663,7 @@ class TestForecastOutSample:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -746,11 +725,7 @@ class TestForecastOutSample:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -819,7 +794,7 @@ class TestForecastOutSample:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -902,11 +877,7 @@ class TestForecastOutSamplePrefix:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -946,7 +917,7 @@ class TestForecastOutSamplePrefix:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -1075,11 +1046,7 @@ class TestForecastOutSampleSuffix:
         "model, transforms, dataset_name",
         [
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1100,7 +1067,7 @@ class TestForecastOutSampleSuffix:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -1240,11 +1207,7 @@ class TestForecastMixedInOutSample:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1260,7 +1223,7 @@ class TestForecastMixedInOutSample:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -1376,11 +1339,7 @@ class TestForecastSubsetSegments:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1419,7 +1378,7 @@ class TestForecastSubsetSegments:
                     input_size=1,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [SegmentEncoderTransform()],
                 "example_tsds",
@@ -1496,11 +1455,7 @@ class TestForecastNewSegments:
                 "example_tsds",
             ),
             (
-                TFTModel(
-                    encoder_length=7,
-                    decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
-                ),
+                TFTModel(encoder_length=7, decoder_length=7, trainer_params=dict(max_epochs=1)),
                 [],
                 "example_tsds",
             ),
@@ -1516,7 +1471,7 @@ class TestForecastNewSegments:
                     input_size=0,
                     encoder_length=7,
                     decoder_length=7,
-                    trainer_params=dict(max_epochs=1, accelerator="cpu" if torch.mps.is_available() else "auto"),
+                    trainer_params=dict(max_epochs=1),
                 ),
                 [],
                 "example_tsds",

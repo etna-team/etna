@@ -535,6 +535,11 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         self.split_params = {} if split_params is None else split_params
         self.trainer: Optional[Trainer] = None
 
+        if torch.mps.is_available() and self.trainer_params.get("accelerator", None) != "cpu":
+            warning_message = "If you use MPS sometimes it can cause unexpected results.\
+                               If this happens try setting `accelerate=cpu` in trainer_params."
+            warnings.warn(warning_message, UserWarning)
+
     @property
     def context_size(self) -> int:
         """Context size of the model."""
@@ -615,20 +620,6 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             self.trainer_params["logger"] = tslogger.pl_loggers
         else:
             self.trainer_params["logger"] += tslogger.pl_loggers
-
-        # Currently, TFTModel and DeepStateModel don't support training on MPS
-        # Sometimes we feed lstm an empty tensor for DeepStateModel https://github.com/pytorch/pytorch/issues/123171
-        if (
-            (net_name := self.__class__.__name__) in ("TFTModel", "DeepStateModel")
-            and torch.mps.is_available()
-            and self.trainer_params.get("accelerator", None) != "cpu"
-        ):
-            raise NotImplementedError(f"{net_name} does not support MPS. Please use CPU on your MacBook.")
-
-        if torch.mps.is_available() and self.trainer_params.get("accelerator", None) != "cpu":
-            warning_message = "If you use MPS sometimes it can cause unexpected results.\
-                               If this happens try setting `accelerate=cpu` in trainer_params."
-            warnings.warn(warning_message, UserWarning)
 
         self.trainer = Trainer(**self.trainer_params)
         self.trainer.fit(self.net, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
