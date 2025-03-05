@@ -48,8 +48,6 @@ class SSM(ABC, BaseMixin):
 
        :math:`\sigma_0` - prior standard deviation
     """
-    def __init__(self):
-        pass
 
     @abstractmethod
     def latent_dim(self) -> int:
