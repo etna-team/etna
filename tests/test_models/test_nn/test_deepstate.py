@@ -192,10 +192,10 @@ def test_accelerator_cpu_when_mps_is_available(mock_is_available):
     encoder_length = 14
     decoder_length = 14
     model = DeepStateModel(
-            ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
-            input_size=0,
-            encoder_length=encoder_length,
-            decoder_length=decoder_length,
-            trainer_params=dict(max_epochs=1),
-        )
+        ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+        input_size=0,
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        trainer_params=dict(max_epochs=1),
+    )
     assert model.trainer_params["accelerator"] == "cpu"
