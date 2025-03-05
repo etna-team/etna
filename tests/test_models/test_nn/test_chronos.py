@@ -308,3 +308,9 @@ def test_chainable_get_from_params(config):
     model = get_from_params(**config)
     config_new = model.to_dict()
     _ = get_from_params(**config_new)
+
+
+@pytest.mark.parametrize("dtype", ["float32", "bfloat16", "float16"])
+def test_all_string_dtypes(dtype):
+    _ = ChronosModel(path_or_url="amazon/chronos-t5-tiny", dtype=dtype)
+    _ = ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", dtype=dtype)
