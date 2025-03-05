@@ -220,12 +220,12 @@ def test_params_to_tune(model, example_tsds):
     assert_sampling_is_valid(model=model, ts=ts)
 
 
-@patch("torch.backends.mps.is_available", return_value=True)
+@patch("torch.mps.is_available", return_value=True)
 def test_mlp_warning_training_with_mps(mock_is_available):
     with pytest.warns(
         UserWarning,
-        match="If you use MPS sometimes it can cause unexpected results.\
-               If this happens try setting `accelerate=cpu` in trainer_params.",
+        match="If you use MPS sometimes it can cause unexpected results."
+              " If this happens try setting `accelerate=cpu` in trainer_params.",
     ):
         decoder_length = 14
         model = MLPModel(

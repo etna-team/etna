@@ -536,8 +536,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         self.trainer: Optional[Trainer] = None
 
         if torch.mps.is_available() and self.trainer_params.get("accelerator", None) != "cpu":
-            warning_message = "If you use MPS sometimes it can cause unexpected results.\
-                               If this happens try setting `accelerate=cpu` in trainer_params."
+            warning_message = "If you use MPS sometimes it can cause unexpected results." \
+                              " If this happens try setting `accelerate=cpu` in trainer_params."
             warnings.warn(warning_message, UserWarning)
 
     @property
