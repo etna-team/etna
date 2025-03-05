@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List
+from typing import Optional
 from typing import Sequence
+from typing import Union
 
 from etna import SETTINGS
 from etna.datasets import TSDataset
@@ -31,7 +33,7 @@ class ChronosModel(ChronosBaseModel):
         path_or_url: str,
         encoder_length: int = 512,
         device: str = "cpu",
-        dtype: torch.dtype = torch.float32,
+        dtype: Optional[Union[str, torch.dtype]] = None,
         num_samples: int = 1,
         temperature: float = 1.0,
         top_k: int = 50,
@@ -62,7 +64,7 @@ class ChronosModel(ChronosBaseModel):
         device:
             Device type. See ``device_map`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
         dtype:
-            Torch dtype of computation. See ``torch_dtype`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
+            Torch dtype of computation. See ``torch_dtype`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`. By default "float32" is set.
         encoder_length:
             Number of last timestamps to use as a context.
         num_samples:
@@ -84,7 +86,7 @@ class ChronosModel(ChronosBaseModel):
         self.path_or_url = path_or_url
         self.encoder_length = encoder_length
         self.device = device
-        self.dtype = dtype
+        self.dtype = dtype if dtype is not None else "float32"
         self.num_samples = num_samples
         self.temperature = temperature
         self.top_k = top_k
