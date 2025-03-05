@@ -199,7 +199,7 @@ def test_deep_base_model_forecast_throw_error_on_return_components():
 def test_deep_base_model_warning_training_with_mps(mock_is_available):
     with pytest.warns(
         UserWarning,
-        match='If you use MPS, it can sometimes cause unexpected results.'
+        match="If you use MPS, it can sometimes cause unexpected results."
         ' If this happens try setting `accelerator="cpu"` in `trainer_params`.',
     ):
         model = DeepBaseModel(
