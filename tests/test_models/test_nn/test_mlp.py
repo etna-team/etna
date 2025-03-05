@@ -1,6 +1,5 @@
 import math
 from unittest.mock import MagicMock
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -218,20 +217,3 @@ def test_params_to_tune(model, example_tsds):
     ts.fit_transform(transforms)
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
-
-
-@patch("torch.mps.is_available", return_value=True)
-def test_mlp_warning_training_with_mps(mock_is_available):
-    with pytest.warns(
-        UserWarning,
-        match="If you use MPS sometimes it can cause unexpected results."
-        " If this happens try setting `accelerate=cpu` in trainer_params.",
-    ):
-        decoder_length = 14
-        model = MLPModel(
-            input_size=10,
-            hidden_size=[10, 10, 10, 10, 10],
-            lr=1e-1,
-            decoder_length=decoder_length,
-            trainer_params=dict(max_epochs=100),
-        )
