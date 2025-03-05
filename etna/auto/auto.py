@@ -40,6 +40,7 @@ from etna.metrics import Sign
 from etna.metrics.utils import MetricAggregationStatistics
 from etna.metrics.utils import aggregate_metrics_df
 from etna.pipeline.base import BasePipeline
+from loguru import logger
 
 
 class _Callback(Protocol):
@@ -471,6 +472,7 @@ class Auto(AutoBase):
             pipeline_config.update(trial.params)
 
             pipeline: BasePipeline = get_from_params(**pipeline_config)
+            logger.info(f"Current pipeline: {pipeline}")
             if initializer is not None:
                 initializer(pipeline=pipeline)
 
