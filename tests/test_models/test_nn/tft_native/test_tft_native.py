@@ -304,3 +304,15 @@ def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_w
             decoder_length=decoder_length,
             trainer_params=dict(max_epochs=1, accelerator="mps"),
         )
+
+
+@patch("torch.mps.is_available", return_value=True)
+def test_accelerator_cpu_when_mps_is_available(mock_is_available):
+    encoder_length = 14
+    decoder_length = 14
+    model = TFTModel(
+            encoder_length=encoder_length,
+            decoder_length=decoder_length,
+            trainer_params=dict(max_epochs=1),
+        )
+    assert model.trainer_params["accelerator"] == "cpu"

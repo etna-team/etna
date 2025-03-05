@@ -173,8 +173,6 @@ def test_params_to_tune(example_tsds):
 
 @patch("torch.mps.is_available", return_value=True)
 def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_with_horizon):
-    ts_train, ts_test = ts_dataset_weekly_function_with_horizon(8)
-
     encoder_length = 14
     decoder_length = 14
     with pytest.raises(
@@ -187,3 +185,17 @@ def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_w
             decoder_length=decoder_length,
             trainer_params=dict(max_epochs=1, accelerator="mps"),
         )
+
+
+@patch("torch.mps.is_available", return_value=True)
+def test_accelerator_cpu_when_mps_is_available(mock_is_available):
+    encoder_length = 14
+    decoder_length = 14
+    model = DeepStateModel(
+            ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
+            input_size=0,
+            encoder_length=encoder_length,
+            decoder_length=decoder_length,
+            trainer_params=dict(max_epochs=1),
+        )
+    assert model.trainer_params["accelerator"] == "cpu"
