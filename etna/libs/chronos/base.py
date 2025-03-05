@@ -157,6 +157,7 @@
 # https://github.com/autogluon/autogluon/blob/f57beb26cb769c6e0d484a6af2b89eab8aee73a8/timeseries/src/autogluon/timeseries/models/chronos/pipeline/base.py
 
 # Note: Copied from chronos repository (https://github.com/amazon-science/chronos-forecasting/blob/47cac082c1848835db463bee1768bb355b26968f/src/chronos/base.py)
+# Remove dtype conversion from string to torch.dtype
 
 from enum import Enum
 from pathlib import Path
@@ -189,7 +190,6 @@ class PipelineRegistry(type):
 
 class BaseChronosPipeline(metaclass=PipelineRegistry):
     forecast_type: ForecastType
-    dtypes = {"bfloat16": torch.bfloat16, "float32": torch.float32}
 
     def __init__(self, inner_model: "PreTrainedModel"):
         """
@@ -289,10 +289,6 @@ class BaseChronosPipeline(metaclass=PipelineRegistry):
         from ``transformers``.
         """
         from transformers import AutoConfig
-
-        torch_dtype = kwargs.get("torch_dtype", "auto")
-        if torch_dtype != "auto" and isinstance(torch_dtype, str):
-            kwargs["torch_dtype"] = cls.dtypes[torch_dtype]
 
         config = AutoConfig.from_pretrained(pretrained_model_name_or_path, **kwargs)
         is_valid_config = hasattr(config, "chronos_pipeline_class") or hasattr(
