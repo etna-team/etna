@@ -892,7 +892,7 @@ class TSDataset:
                 # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
                 df_dict[column] = pd.Series(
                     stacked, dtype=df_cur.dtypes.iloc[0]
-                )  # pandas FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+                )  # pandas FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`  # codespell:ignore ser
         df_flat = pd.DataFrame(df_dict)
 
         return df_flat
