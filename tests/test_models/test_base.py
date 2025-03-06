@@ -193,3 +193,24 @@ def test_deep_base_model_forecast_loop(simple_tsdf, deep_base_model_mock, ts_moc
 def test_deep_base_model_forecast_throw_error_on_return_components():
     with pytest.raises(NotImplementedError, match="This mode isn't currently implemented!"):
         DeepBaseModel.forecast(self=Mock(), ts=Mock(), prediction_size=Mock(), return_components=True)
+
+
+@patch("torch.mps.is_available", return_value=True)
+def test_deep_base_model_warning_training_with_mps(mock_is_available):
+    with pytest.warns(
+        UserWarning,
+        match="If you use MPS, it can sometimes cause unexpected results."
+        ' If this happens try setting `accelerator="cpu"` in `trainer_params`.',
+    ):
+        model = DeepBaseModel(
+            net=Mock(),
+            encoder_length=10,
+            decoder_length=10,
+            train_batch_size=10,
+            test_batch_size=10,
+            trainer_params=None,
+            train_dataloader_params=None,
+            test_dataloader_params=None,
+            val_dataloader_params=None,
+            split_params=None,
+        )

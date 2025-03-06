@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -284,6 +285,34 @@ def test_save_load(
 
 def test_params_to_tune(example_tsds):
     ts = example_tsds
-    model = TFTModel(encoder_length=14, decoder_length=14, trainer_params=dict(max_epochs=1))
+    model = TFTModel(
+        encoder_length=14,
+        decoder_length=14,
+        trainer_params=dict(max_epochs=1),
+    )
     assert len(model.params_to_tune()) > 0
     assert_sampling_is_valid(model=model, ts=ts)
+
+
+@patch("torch.mps.is_available", return_value=True)
+def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_with_horizon):
+    encoder_length = 14
+    decoder_length = 14
+    with pytest.raises(NotImplementedError, match="TFTModel does not support MPS. Please use CPU on your MacBook."):
+        model = TFTModel(
+            encoder_length=encoder_length,
+            decoder_length=decoder_length,
+            trainer_params=dict(max_epochs=1, accelerator="mps"),
+        )
+
+
+@patch("torch.mps.is_available", return_value=True)
+def test_accelerator_cpu_when_mps_is_available(mock_is_available):
+    encoder_length = 14
+    decoder_length = 14
+    model = TFTModel(
+        encoder_length=encoder_length,
+        decoder_length=decoder_length,
+        trainer_params=dict(max_epochs=1),
+    )
+    assert model.trainer_params["accelerator"] == "cpu"

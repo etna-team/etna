@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `num_layers`, `use_positional_embedding`, `normalize_target`, `normalize_exog`, `forecast_with_exog_mode` parameters to `TimesFM` model ([#605](https://github.com/etna-team/etna/pull/605))
 - Add logging loss during DL models training ([#615](https://github.com/etna-team/etna/pull/615))
 - Add Python versions 3.11 and 3.12 ([#599](https://github.com/etna-team/etna/pull/599))
-- 
-- 
+- Add the ability to train DL models (except `TFTModel` and `DeepStateModel`) on MPS [#621](https://github.com/etna-team/etna/pull/621)
+- Add warning if training DL models on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - 
 - 
 - 
