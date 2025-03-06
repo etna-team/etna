@@ -470,9 +470,9 @@ class Auto(AutoBase):
             pipeline_config = dict()
             pipeline_config.update(trial.relative_params)
             pipeline_config.update(trial.params)
+            logger.info(f"Current pipeline: {pipeline_config}")
 
             pipeline: BasePipeline = get_from_params(**pipeline_config)
-            logger.info(f"Current pipeline: {pipeline}")
             if initializer is not None:
                 initializer(pipeline=pipeline)
 
