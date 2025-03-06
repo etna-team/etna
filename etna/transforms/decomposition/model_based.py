@@ -184,7 +184,9 @@ class ModelDecomposeTransform(IrreversibleTransform):
         rename = dict(zip(decompose_ts.target_components_names, components_names))
 
         if self.residuals:
-            components_sum = components_df.groupby(level="segment", axis=1).sum()
+            components_sum = (
+                components_df.T.groupby(level="segment").sum().T
+            )  # pandas FutureWarning: DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
             for segment in ts.segments:
                 components_df[segment, f"{self.in_column}_residuals"] = target[segment] - components_sum[segment]
 

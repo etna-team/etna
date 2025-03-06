@@ -48,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimize performance of exogenous variables addition to the dataset ([#596](https://github.com/etna-team/etna/pull/596))
 - Change cpu docker image to use Python 3.10 ([#617](https://github.com/etna-team/etna/pull/617))
 - Change cuda docker image to use Python 3.10 and cuda 12.4.0 ([#617](https://github.com/etna-team/etna/pull/617))
+- Rework the use of some deprecated functionalities ([#624](https://github.com/etna-team/etna/pull/624))
 - 
 
 ### Fixed

@@ -102,7 +102,7 @@ def mrmr(
             return relevant_features + not_relevant_features[: (top_k - len(relevant_features))]
         not_selected_features = relevant_features
 
-    redundancy_table = pd.DataFrame(1, index=all_features, columns=all_features)
+    redundancy_table = pd.DataFrame(1.0, index=all_features, columns=all_features)
 
     for i in range(top_k):
         score_numerator = relevance.loc[not_selected_features]
@@ -133,7 +133,7 @@ def mrmr(
             redundancy_table.loc[not_selected_features, last_selected_feature] = (
                 segment_redundancy.agg(redundancy_aggregation_fn)
                 .clip(atol)
-                .fillna(1)
+                .fillna(1.0)
                 .loc[not_selected_features]
                 .values.squeeze()
             )
