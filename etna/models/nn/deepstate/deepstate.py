@@ -225,11 +225,13 @@ class DeepStateNet(DeepBaseNet):
 
     def make_samples(self, df: pd.DataFrame, encoder_length: int, decoder_length: int) -> Iterator[dict]:
         """Make samples from segment DataFrame."""
-        values_real = df.drop(columns=["target", "segment", "timestamp"] + list(self.embedding_sizes.keys())).values
+        values_real = df.drop(
+            columns=["target", "segment", "timestamp"] + list(self.embedding_sizes.keys())
+        ).values.astype(np.float32)
 
         # Categories that were not seen during `fit` will be filled with new category
         for feature in self.embedding_sizes:
-            df[feature] = df[feature].astype(float).fillna(self.embedding_sizes[feature][0])
+            df[feature] = df[feature].astype(np.float32).fillna(self.embedding_sizes[feature][0])
 
         # Columns in `values_categorical` are in the same order as in `embedding_sizes`
         values_categorical = df[self.embedding_sizes.keys()].values.T
@@ -316,6 +318,10 @@ class DeepStateModel(DeepBaseModel):
     ----
     This model requires ``torch`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
+
+    Note
+    ----
+    This model does not currently support training on MPS.
     """
 
     def __init__(
@@ -386,6 +392,16 @@ class DeepStateModel(DeepBaseModel):
         self.n_samples = n_samples
         self.lr = lr
         self.optimizer_params = optimizer_params
+
+        # Sometimes we feed lstm an empty tensor for DeepStateModel https://github.com/pytorch/pytorch/issues/123171
+        if torch.mps.is_available():
+            trainer_params = {} if trainer_params is None else trainer_params
+            accelerator = trainer_params.get("accelerator", None)
+            if accelerator == "mps":
+                raise NotImplementedError("DeepStateModel does not support MPS. Please use CPU on your MacBook.")
+            elif accelerator is None:
+                trainer_params["accelerator"] = "cpu"
+
         super().__init__(
             net=DeepStateNet(
                 ssm=self.ssm,

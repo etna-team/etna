@@ -1,4 +1,5 @@
 import functools
+import warnings
 from abc import ABC
 from abc import abstractmethod
 from typing import Any
@@ -534,6 +535,13 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         self.split_params = {} if split_params is None else split_params
         self.trainer: Optional[Trainer] = None
 
+        if torch.mps.is_available() and self.trainer_params.get("accelerator", None) != "cpu":
+            warning_message = (
+                "If you use MPS, it can sometimes cause unexpected results."
+                ' If this happens try setting `accelerator="cpu"` in `trainer_params`.'
+            )
+            warnings.warn(warning_message, UserWarning)
+
     @property
     def context_size(self) -> int:
         """Context size of the model."""
@@ -575,10 +583,6 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
         :
             Model after fit
         """
-        # TODO: https://github.com/etna-team/etna/issues/612
-        if torch.mps.is_available():
-            self.trainer_params["accelerator"] = "cpu"
-
         if self.split_params:
             if isinstance(torch_dataset, Sized):
                 torch_dataset_size = len(torch_dataset)

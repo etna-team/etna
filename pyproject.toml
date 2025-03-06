@@ -224,6 +224,7 @@ filterwarnings = [
     "ignore: Given top_k=.* is less than n_segments=.*. Algo will filter data without Gale-Shapley run.",
     "ignore: This model doesn't work with exogenous features",
     "ignore: Some of external objects in input parameters could be not",
+    "ignore: If you use MPS sometimes it can cause unexpected results",
     # external warnings
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
     "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",

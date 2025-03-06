@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List
+from typing import Optional
 from typing import Sequence
+from typing import Union
 
 from etna import SETTINGS
 from etna.datasets import TSDataset
@@ -31,7 +33,7 @@ class ChronosBoltModel(ChronosBaseModel):
         path_or_url: str,
         encoder_length: int = 2048,
         device: str = "cpu",
-        dtype: torch.dtype = torch.float32,
+        dtype: Optional[Union[str, torch.dtype]] = None,
         limit_prediction_length: bool = False,
         batch_size: int = 128,
         cache_dir: Path = _DOWNLOAD_PATH,
@@ -59,7 +61,7 @@ class ChronosBoltModel(ChronosBaseModel):
         device:
             Device type. See ``device_map`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
         dtype:
-            Torch dtype of computation. See ``torch_dtype`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`.
+            Torch dtype of computation. See ``torch_dtype`` parameter of :py:func:`transformers.PreTrainedModel.from_pretrained`. By default "float32" is set.
         limit_prediction_length:
             Whether to cancel prediction if prediction_length is greater that built-in prediction length from the model.
         batch_size:
@@ -71,7 +73,7 @@ class ChronosBoltModel(ChronosBaseModel):
         self.path_or_url = path_or_url
         self.encoder_length = encoder_length
         self.device = device
-        self.dtype = dtype
+        self.dtype = dtype if dtype is not None else "float32"
         self.limit_prediction_length = limit_prediction_length
         self.batch_size = batch_size
         self.cache_dir = cache_dir

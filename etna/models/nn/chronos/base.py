@@ -32,7 +32,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         path_or_url: str,
         encoder_length: int,
         device: str,
-        dtype: torch.dtype,
+        dtype: Union[str, torch.dtype],
         cache_dir: Path,
     ):
         """

@@ -380,7 +380,7 @@ class TFTNet(DeepBaseNet):
         """Make samples from segment DataFrame."""
         segment = df["segment"].values[0]
         for feature in self.num_embeddings:
-            df[feature] = df[feature].astype(float).fillna(self.num_embeddings[feature])
+            df[feature] = df[feature].astype(np.float32).fillna(self.num_embeddings[feature])
 
         reals_columns = list(set(self.static_reals + self.time_varying_reals_encoder + self.time_varying_reals_decoder))
         categ_columns = list(
@@ -393,7 +393,7 @@ class TFTNet(DeepBaseNet):
 
         df = df[reals_columns + categ_columns]
         column_to_index = {column: index for index, column in enumerate(df.columns)}
-        values = df.values.T
+        values = df.values.T.astype(np.float32)
 
         def _make(
             values: np.ndarray,
@@ -500,6 +500,10 @@ class TFTModel(DeepBaseModel):
     Note
     ----
     This model was previously named ``TFTNativeModel``. The original ``TFTModel`` based on ``pytorch_forecasting`` was removed.
+
+    Note
+    ----
+    This model does not currently support training on MPS.
     """
 
     def __init__(
@@ -608,6 +612,15 @@ class TFTModel(DeepBaseModel):
         self.num_embeddings = num_embeddings if num_embeddings is not None else {}
         self.optimizer_params = optimizer_params
         self.loss = nn.MSELoss() if loss is None else loss
+
+        if torch.mps.is_available():
+            trainer_params = {} if trainer_params is None else trainer_params
+            accelerator = trainer_params.get("accelerator", None)
+            if accelerator == "mps":
+                raise NotImplementedError("TFTModel does not support MPS. Please use CPU on your MacBook.")
+            elif accelerator is None:
+                trainer_params["accelerator"] = "cpu"
+
         super().__init__(
             net=TFTNet(
                 encoder_length=self.encoder_length,
