@@ -89,7 +89,9 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is
     if as_is:
         holidays_df = pd.DataFrame(index=index, columns=holidays.columns, data=False)
         dt = holidays_df.index.intersection(holidays.index)
-        holidays_df.loc[dt, :] = holidays.loc[dt, :]
+        holidays_df.loc[dt, :] = holidays.loc[dt, :].astype(
+            bool
+        )  # pandas Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas. Value '[1 1 1 1]' has dtype incompatible with bool, please explicitly cast to a compatible dtype first.
         return holidays_df
 
     holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)

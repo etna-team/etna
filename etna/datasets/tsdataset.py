@@ -890,7 +890,9 @@ class TSDataset:
             else:
                 stacked = df_cur.values.T.ravel()
                 # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
-                df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
+                df_dict[column] = pd.Series(
+                    stacked, dtype=df_cur.dtypes.iloc[0]
+                )  # pandas FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
         df_flat = pd.DataFrame(df_dict)
 
         return df_flat
@@ -1517,7 +1519,9 @@ class TSDataset:
         except ValueError:
             raise ValueError(f"Set of target components differs between segments!")
 
-        components_sum = target_components_df.groupby(axis=1, level="segment").sum()
+        components_sum = (
+            target_components_df.T.groupby(level="segment").sum().T
+        )  # pandas DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
         if not np.allclose(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 

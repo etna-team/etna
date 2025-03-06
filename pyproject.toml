@@ -225,62 +225,35 @@ filterwarnings = [
     "ignore: This model doesn't work with exogenous features",
     "ignore: Some of external objects in input parameters could be not",
     # external warnings
-    "ignore: Attribute 'logging_metrics' is an instance of `nn.Module` and is already",
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
     "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",
     "ignore: Optimization failed to converge. Check mle_retvals",
     "ignore: No frequency information was provided, so inferred frequency .* will be used",
     "ignore: Non-stationary starting autoregressive parameters found. Using zeros as starting parameters.",
-    "ignore: You defined a `validation_step` but have no `val_dataloader`. Skipping val",
-    "ignore: invalid value encountered in double_scalars",
-    "ignore: invalid value encountered in expm1",
-    "ignore: Arrays of bytes/strings is being converted to decimal numbers if",
-    "ignore: The dataloader, train_dataloader, does not have many workers which may",
-    "ignore: Creating a tensor from a list of numpy.ndarrays",
-    "ignore: ReduceLROnPlateau conditioned on metric val_loss which is not available but strict",
+    "ignore: You defined a `validation_step` but have no `val_dataloader`. Skipping val",  # lightning
     "ignore: Checkpoint directory .* exists and is not empty",
-    "ignore: distutils Version classes are deprecated.",
     "ignore: invalid escape sequence", # mostly due to LaTeX in docstrings
     "ignore:(.|\n)*A value is trying to be set on a copy of a slice from a DataFrame", # SettingWithCopyWarning
     "ignore: New behaviour in v1.1.5.* a small bias is added", # ruptures: normal cost
     "ignore: Dynamic prediction specified to begin during out-of-sample forecasting period, and so has no effect.",
-    "ignore: `ModuleAvailableCache` is a special case of `RequirementCache`.", # lightning_utilities
-    "ignore: `sentry_sdk.Hub` is deprecated and will be removed in a future major release.",
     "ignore::DeprecationWarning:holidays",
-    "ignore:This property will be removed in 2.0.0.", # torchmetrics
     "ignore: numpy.ufunc size changed, may indicate binary incompatibility",
     "ignore: Jupyter is migrating its paths to use standard platformdirs",
-    "ignore: Argument `closed` is deprecated in favor of `inclusive`",
-    "ignore: In a future version, `df.* = newvals` will attempt to set the values inplace instead of always setting a new array",
-    "ignore: In a future version, DataFrame.*mean.* will return a scalar mean over the entire DataFrame",
-    "ignore: The behavior of indexing on a MultiIndex with a nested sequence of labels is deprecated and will change in a future version",
     "ignore: Non-invertible starting MA parameters found",
     "ignore: Optimization did not converge :tbats.error.ModelWarning.ModelWarning",
-    "ignore: The behavior of Timestamp.utcfromtimestamp is deprecated", # prophet
-    "ignore: Starting from v1.9.0, `tensorboardX` has been removed as a dependency",
-    "ignore: the `interpolation=` argument to percentile was renamed to `method=`", # pandas: old version uses deprecated numpy parameter
     "ignore: Implicitly cleaning up <TemporaryDirectory",
     "ignore: dropout option adds dropout after all but last recurrent layer",
     "ignore::matplotlib._api.deprecation.MatplotlibDeprecationWarning:pydev", # Pycharm debugging
-    "ignore: X does not have valid feature names, but IsolationForest was fitted with feature names", # fixed here https://github.com/scikit-learn/scikit-learn/issues/25844
-    "ignore: Series.__getitem__ treating keys as positions is deprecated", # pandas deprecated
     "ignore: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.self_attn.batch_first was not True", # torch patchts
     "ignore: GPU available but not used", # lightning for mac
-    "ignore: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.", # sklearn
-    "ignore: DataFrame.groupby with axis=1 is deprecated", # pandas
+    "ignore: 'force_all_finite' was renamed to 'ensure_all_finite' in 1.6 and will be removed in 1.8.", # sklearn and pmdarima
     "ignore: Conversion of an array with ndim > 0 to a scalar is deprecated", # numpy in Prophet
-    "ignore: DataFrame.fillna with 'method' is deprecated and will raise in a future version",
-    "ignore: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas",
-    "ignore: Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas",
     "ignore: The provided callable <.*> is currently using DataFrameGroupBy..*", # pandas deprecated
     "ignore: The provided callable <.*> is currently using DataFrame.*",
     "ignore: The provided callable <.*> is currently using SeriesGroupBy..*",
     "ignore: The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
-    "ignore: Non-integer 'periods' in pd.date_range, pd.timedelta_range, pd.period_range, and pd.interval_range",
-    "ignore: suggest_uniform has been deprecated in v3.0.0. This feature will be removed in v6.0.0", # optuna
-    "ignore: .* bool will be deprecated in a future version", # matplotlib
+    "ignore: .* bool will be deprecated in a future version", # https://github.com/mwaskom/seaborn/issues/3804
     "ignore: invalid value encountered in divide",
-    "ignore: The argument 'infer_datetime_format' is deprecated and will be removed in a future version.", # pandas.pydata
     "ignore: Could not infer format, so each element will be parsed individually",
     "ignore: datetime.datetime.utcfromtimestamp.* is deprecated and scheduled for removal in a future version", # python 3.12
     "ignore: os.fork.* was called", # os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
