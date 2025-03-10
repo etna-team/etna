@@ -192,9 +192,7 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
 
         # check forecast_df
         forecast_df = TSDataset.to_flatten(forecast_df)
-        forecast_df_saved = pd.read_csv(
-            crossval_results_folder.joinpath("forecast.csv"), parse_dates=["timestamp"], infer_datetime_format=True
-        )
+        forecast_df_saved = pd.read_csv(crossval_results_folder.joinpath("forecast.csv"), parse_dates=["timestamp"])
         assert np.all(
             forecast_df_saved[["timestamp", "fold_number", "segment"]]
             == forecast_df[["timestamp", "fold_number", "segment"]]
@@ -206,7 +204,6 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
         fold_info_df_saved = pd.read_csv(
             crossval_results_folder.joinpath("fold_info.csv"),
             parse_dates=["train_start_time", "train_end_time", "test_start_time", "test_end_time"],
-            infer_datetime_format=True,
         )
         assert np.all(fold_info_df_saved == fold_info_df)
 

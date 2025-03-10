@@ -89,7 +89,7 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is
     if as_is:
         holidays_df = pd.DataFrame(index=index, columns=holidays.columns, data=False)
         dt = holidays_df.index.intersection(holidays.index)
-        holidays_df.loc[dt, :] = holidays.loc[dt, :]
+        holidays_df.loc[dt, :] = holidays.loc[dt, :].astype(bool)
         return holidays_df
 
     holidays_df = pd.DataFrame(index=index, columns=holidays["holiday"].unique(), data=False)

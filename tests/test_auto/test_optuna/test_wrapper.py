@@ -16,8 +16,8 @@ def grid_sampler():
 @pytest.fixture()
 def objective():
     def _objective(trial):
-        x = trial.suggest_uniform("x", -2, 2)
-        y = trial.suggest_uniform("y", -1, 1)
+        x = trial.suggest_float("x", -2, 2)
+        y = trial.suggest_float("y", -1, 1)
         return x**2 + y**2
 
     return _objective
