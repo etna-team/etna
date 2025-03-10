@@ -174,7 +174,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
         _beginning_nans_mask = (
             df.ffill().isna()
-        )  # DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
+        )
         self._nans_to_impute_mask = df.isna() & (~_beginning_nans_mask)
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -229,7 +229,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         elif self._strategy is ImputerMode.forward_fill:
             df.ffill(
                 inplace=True
-            )  # DataFrame.fillna with 'method' is deprecated and will raise in a future version. Use obj.ffill() or obj.bfill() instead.
+            )
         elif self._strategy is ImputerMode.mean:
             self._mean_imputer.transform(df)  # type: ignore
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:

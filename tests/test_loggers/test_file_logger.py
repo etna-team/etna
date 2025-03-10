@@ -194,7 +194,7 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
         forecast_df = TSDataset.to_flatten(forecast_df)
         forecast_df_saved = pd.read_csv(
             crossval_results_folder.joinpath("forecast.csv"), parse_dates=["timestamp"]
-        )  # FutureWarning: The argument 'infer_datetime_format' is deprecated and will be removed in a future version. A strict version of it is now the default, see https://pandas.pydata.org/pdeps/0004-consistent-to-datetime-parsing.html. You can safely remove this argument.
+        )
         assert np.all(
             forecast_df_saved[["timestamp", "fold_number", "segment"]]
             == forecast_df[["timestamp", "fold_number", "segment"]]

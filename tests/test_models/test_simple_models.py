@@ -795,7 +795,7 @@ def test_sma_model_predict_components_sum_up_to_target(example_tsds, method_name
     target_components_df = forecast.get_target_components()
     np.testing.assert_allclose(
         target.values, target_components_df.T.groupby(level="segment").sum().T.values
-    )  # DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+    )
 
 
 @pytest.mark.parametrize(
@@ -857,7 +857,7 @@ def test_deadline_ma_predict_components_sum_up_to_target(long_periodic_ts, metho
 
     np.testing.assert_allclose(
         target.values, components.T.groupby(level="segment").sum().T.values
-    )  # DataFrame.groupby with axis=1 is deprecated. Do `frame.T.groupby(...)` without axis instead.
+    )
 
 
 @pytest.mark.parametrize(
