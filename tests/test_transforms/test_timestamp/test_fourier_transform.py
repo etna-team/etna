@@ -77,7 +77,7 @@ def example_ts_external_datetime_timestamp(example_df):
 @pytest.fixture
 def example_ts_external_irregular_datetime_timestamp(example_ts_external_datetime_timestamp) -> TSDataset:
     ts = example_ts_external_datetime_timestamp
-    df = ts.raw_df
+    df = ts._raw_df
     df_exog = ts.df_exog
     df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta("3H")
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
@@ -87,7 +87,7 @@ def example_ts_external_irregular_datetime_timestamp(example_ts_external_datetim
 @pytest.fixture
 def example_ts_external_datetime_timestamp_different_freq(example_ts_external_datetime_timestamp) -> TSDataset:
     ts = example_ts_external_datetime_timestamp
-    df = ts.raw_df
+    df = ts._raw_df
     df_exog = ts.df_exog
     df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = pd.date_range(
         start="2020-01-01", periods=len(df_exog), freq="D"
@@ -99,7 +99,7 @@ def example_ts_external_datetime_timestamp_different_freq(example_ts_external_da
 @pytest.fixture
 def example_ts_external_datetime_timestamp_with_nans(example_ts_external_datetime_timestamp) -> TSDataset:
     ts = example_ts_external_datetime_timestamp
-    df = ts.raw_df
+    df = ts._raw_df
     df_exog = ts.df_exog
     df_exog.loc[df_exog.index[:3], pd.IndexSlice["segment_0", "external_timestamp"]] = np.NaN
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
@@ -122,7 +122,7 @@ def example_ts_external_int_timestamp(example_df):
 @pytest.fixture
 def example_ts_external_int_timestamp_with_nans(example_ts_external_int_timestamp) -> TSDataset:
     ts = example_ts_external_int_timestamp
-    df = ts.raw_df
+    df = ts._raw_df
     df_exog = ts.df_exog
     df_exog.loc[df_exog.index[:3], pd.IndexSlice["segment_0", "external_timestamp"]] = np.NaN
     df_exog.loc[df_exog.index[3:6], pd.IndexSlice["segment_1", "external_timestamp"]] = np.NaN
@@ -132,7 +132,7 @@ def example_ts_external_int_timestamp_with_nans(example_ts_external_int_timestam
 
 @pytest.fixture
 def example_ts_with_regressor(example_ts):
-    df = example_ts.raw_df
+    df = example_ts._raw_df
     df_exog = example_ts.df_exog
     ts = TSDataset(df=df.iloc[:-1], df_exog=df_exog, freq=example_ts.freq, known_future=["external_timestamp"])
     return ts
@@ -343,7 +343,7 @@ def test_transform_values_with_shift(shift, in_column, ts_name, period, mod, req
     ts = request.getfixturevalue(ts_name)
 
     ts_1 = ts
-    ts_2 = TSDataset(df=ts.raw_df.iloc[shift:], df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
+    ts_2 = TSDataset(df=ts._raw_df.iloc[shift:], df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
     transform = FourierTransform(period=period, mods=[mod], out_column="regressor_fourier", in_column=in_column)
 
     transform.fit(ts)

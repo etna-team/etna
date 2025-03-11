@@ -44,7 +44,7 @@ def tsdf_with_exog(random_seed) -> TSDataset:
 
 @pytest.fixture
 def tsdf_int_with_exog(tsdf_with_exog) -> TSDataset:
-    df = tsdf_with_exog.raw_df
+    df = tsdf_with_exog._raw_df
     df_exog = tsdf_with_exog.df_exog
     ref_point = pd.Timestamp("2021-01-01")
     df.index = pd.Index((df.index - ref_point).days, name=df.index.name)
@@ -1932,7 +1932,7 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
 
     alignment = infer_alignment(df)
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
-    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+    pd.testing.assert_frame_equal(ts._raw_df, expected_raw_df)
 
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,
@@ -1980,7 +1980,7 @@ def test_create_from_misaligned_with_exog(
 
     alignment = infer_alignment(df)
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
-    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+    pd.testing.assert_frame_equal(ts._raw_df, expected_raw_df)
 
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,
@@ -2030,7 +2030,7 @@ def test_create_from_misaligned_with_exog_all(
 
     alignment = infer_alignment(df)
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
-    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+    pd.testing.assert_frame_equal(ts._raw_df, expected_raw_df)
 
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,

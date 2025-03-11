@@ -25,7 +25,7 @@ def to_be_fixed(raises, match=None):
 
 
 def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
-    df = ts.raw_df.loc[:, pd.IndexSlice[segments, :]].copy()
+    df = ts._raw_df.loc[:, pd.IndexSlice[segments, :]].copy()
     df = df.loc[ts._df.index]
     df_exog = ts.df_exog
     if df_exog is not None:
