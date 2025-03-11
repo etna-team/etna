@@ -2126,3 +2126,10 @@ def test_not_equal_updated_known_futures(df_and_regressors):
     new_known_future = ts.known_future
     new_known_future.append("new_regressor")
     assert ts.known_future != new_known_future
+
+
+def test_error_set_freq(df_and_regressors):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    with pytest.raises(AttributeError, match="can't set attribute"):
+        ts.freq = "H"
