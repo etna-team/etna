@@ -25,8 +25,8 @@ def ts_with_exogs_train_test(ts_with_exogs):
 
 @pytest.fixture()
 def forward_stride_datasets(ts_with_exogs):
-    train_df = ts_with_exogs.df.iloc[:-10]
-    test_df = ts_with_exogs.df.iloc[-20:]
+    train_df = ts_with_exogs._df.iloc[:-10]
+    test_df = ts_with_exogs._df.iloc[-20:]
 
     train_ts = TSDataset(df=train_df, freq=ts_with_exogs.freq)
     test_ts = TSDataset(df=test_df, freq=ts_with_exogs.freq)

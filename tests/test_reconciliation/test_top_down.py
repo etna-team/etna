@@ -306,4 +306,4 @@ def test_reconcile_with_quantiles(total_level_constant_forecast_with_quantiles, 
     reconciled_ts = reconciliator.reconcile(ts=forecast)
 
     assert reconciled_ts.prediction_intervals_names == forecast.prediction_intervals_names
-    np.testing.assert_array_almost_equal(reconciled_ts.df.values, answer)
+    np.testing.assert_array_almost_equal(reconciled_ts._df.values, answer)

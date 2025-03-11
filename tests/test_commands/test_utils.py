@@ -143,7 +143,7 @@ def test_estimate_max_n_folds_forecast_with_ts(pipeline_without_context, example
     pipeline.fit(ts=example_tsds)
 
     ts_to_forecast = deepcopy(example_tsds)
-    ts_to_forecast.df = ts_to_forecast.df.iloc[-(context_size + expected) :]
+    ts_to_forecast._df = ts_to_forecast._df.iloc[-(context_size + expected) :]
 
     n_folds = estimate_max_n_folds(
         pipeline=pipeline, method_name="forecast", ts=ts_to_forecast, context_size=context_size

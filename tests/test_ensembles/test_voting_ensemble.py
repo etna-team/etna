@@ -113,7 +113,7 @@ def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline
     ensemble.fit(ts=example_tsds)
     forecast = ensemble.forecast()
     assert isinstance(forecast, TSDataset)
-    assert len(forecast.df) == HORIZON
+    assert len(forecast._df) == HORIZON
 
 
 def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, naive_pipeline_2):
@@ -198,7 +198,7 @@ def test_multiprocessing_ensembles(
     single_jobs_forecast = single_jobs_ensemble.forecast()
     multi_jobs_forecast = multi_jobs_ensemble.forecast()
 
-    assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
+    assert (single_jobs_forecast._df == multi_jobs_forecast._df).all().all()
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))

@@ -59,7 +59,7 @@ def test_pipeline_fit_forecast(example_tsds, pipeline_name, request):
     intervals_pipeline_pred = intervals_pipeline.forecast(prediction_interval=False)
     pipeline_pred = pipeline.forecast(prediction_interval=False)
 
-    pd.testing.assert_frame_equal(intervals_pipeline_pred.df, pipeline_pred.df)
+    pd.testing.assert_frame_equal(intervals_pipeline_pred._df, pipeline_pred._df)
 
 
 @pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
@@ -72,7 +72,7 @@ def test_forecast_with_fitted_pipeline(example_tsds, pipeline_name, request):
     intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
     intervals_pipeline_pred = intervals_pipeline.forecast(prediction_interval=False)
 
-    pd.testing.assert_frame_equal(intervals_pipeline_pred.df, pipeline_pred.df)
+    pd.testing.assert_frame_equal(intervals_pipeline_pred._df, pipeline_pred._df)
 
 
 @pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))

@@ -43,7 +43,7 @@ def test_pipeline_fit_forecast_without_intervals(example_tsds, pipeline_name, re
     intervals_pipeline_pred = intervals_pipeline.forecast(prediction_interval=False)
     pipeline_pred = pipeline.forecast(prediction_interval=False)
 
-    pd.testing.assert_frame_equal(intervals_pipeline_pred.df, pipeline_pred.df)
+    pd.testing.assert_frame_equal(intervals_pipeline_pred._df, pipeline_pred._df)
 
 
 @pytest.mark.parametrize("stride", (2, 5, 10))

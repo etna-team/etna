@@ -207,7 +207,7 @@ def test_inverse_transform_train(transform_constructor, constructor_kwargs, outl
     outliers_solid_tsds = transform.fit_transform(ts=outliers_solid_tsds)
     transform.inverse_transform(ts=outliers_solid_tsds)
 
-    assert np.all(original_df == outliers_solid_tsds.df)
+    assert np.all(original_df == outliers_solid_tsds._df)
 
 
 @pytest.mark.parametrize("in_column", ["target", "regressor_1"])
@@ -230,7 +230,7 @@ def test_inverse_transform_future(transform_constructor, constructor_kwargs, out
     original_future_df = future.to_pandas()
     future.inverse_transform([transform])
     # check equals and has nans in the same places
-    assert np.all((future.df == original_future_df) | (future.df.isna() & original_future_df.isna()))
+    assert np.all((future._df == original_future_df) | (future._df.isna() & original_future_df.isna()))
 
 
 @pytest.mark.parametrize(

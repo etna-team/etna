@@ -415,7 +415,7 @@ def test_get_level_dataset(hierarchical_structure_name, source_df_name, target_l
     assert target_ts.hierarchical_structure == estimated_target_ts.hierarchical_structure
     assert target_ts.current_df_level == estimated_target_ts.current_df_level
 
-    pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
+    pd.testing.assert_frame_equal(target_ts._df, estimated_target_ts._df)
 
 
 @pytest.mark.parametrize(
@@ -450,7 +450,7 @@ def test_get_level_dataset_with_exog(
     estimated_target_ts = source_ts.get_level_dataset(target_level)
 
     assert target_ts.current_df_exog_level == estimated_target_ts.current_df_exog_level
-    pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
+    pd.testing.assert_frame_equal(target_ts._df, estimated_target_ts._df)
 
 
 def test_get_level_dataset_no_hierarchy_error(market_level_df):

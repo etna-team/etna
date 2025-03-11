@@ -96,7 +96,7 @@ def df_all_missing(df_all_date_present) -> pd.DataFrame:
 @pytest.fixture
 def ts_all_missing_two_segments(ts_all_date_present_two_segments) -> TSDataset:
     """Create TSDataset with all values set to nan."""
-    ts_all_date_present_two_segments.loc[:, :] = np.NaN
+    ts_all_date_present_two_segments._df.loc[:, :] = np.NaN
     return ts_all_date_present_two_segments
 
 
@@ -155,7 +155,7 @@ def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
 @pytest.fixture()
 def daily_exog_ts_diff_endings(daily_exog_ts):
     ts = daily_exog_ts["ts"]
-    ts.loc[ts.timestamps[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
+    ts._df.loc[ts.timestamps[-5] :, pd.IndexSlice["segment_1", "target"]] = np.NAN
     return ts
 
 

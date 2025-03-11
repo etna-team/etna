@@ -136,7 +136,7 @@ def test_forecast(ts, expected_ts_increasing_integers, encoder_length, request):
     pipeline = Pipeline(model=model, horizon=2)
     pipeline.fit(ts)
     forecast = pipeline.forecast()
-    assert_frame_equal(forecast.df, expected_ts_increasing_integers.df, atol=1)
+    assert_frame_equal(forecast._df, expected_ts_increasing_integers._df, atol=1)
 
 
 def test_forecast_failed_nan_middle_target(ts_nan_middle):
@@ -168,7 +168,7 @@ def test_forecast_exogenous_features(ts, expected_ts_increasing_integers, encode
     pipeline = Pipeline(model=model, transforms=transforms, horizon=horizon)
     pipeline.fit(ts)
     forecast = pipeline.forecast()
-    assert_frame_equal(forecast.df.loc[:, pd.IndexSlice[:, "target"]], expected_ts_increasing_integers.df, atol=1)
+    assert_frame_equal(forecast._df.loc[:, pd.IndexSlice[:, "target"]], expected_ts_increasing_integers._df, atol=1)
 
 
 def test_forecast_exog_features_failed_nan_middle_target(ts_nan_middle):

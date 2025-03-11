@@ -46,7 +46,7 @@ def test_fit(ts, request):
 )
 def test_transform(daily_exog_ts, inplace, out_column, expected_resampled_ts, request):
     daily_exog_ts = daily_exog_ts["ts"]
-    expected_resampled_df = request.getfixturevalue(expected_resampled_ts).df
+    expected_resampled_df = request.getfixturevalue(expected_resampled_ts)._df
     resampler = ResampleWithDistributionTransform(
         in_column="regressor_exog", inplace=inplace, distribution_column="target", out_column=out_column
     )
@@ -72,7 +72,7 @@ def test_transform_future(daily_exog_ts, inplace, out_column, expected_resampled
     daily_exog_ts.fit_transform([resampler])
     future = daily_exog_ts.make_future(3, transforms=[resampler])
     expected_future = expected_resampled_ts.make_future(3)
-    assert future.df.equals(expected_future.df)
+    assert future._df.equals(expected_future._df)
 
 
 def test_fit_transform_with_nans(daily_exog_ts_diff_endings):

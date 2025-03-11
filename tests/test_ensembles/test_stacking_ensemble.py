@@ -213,7 +213,7 @@ def test_forecast_interface(
     forecast = ensemble.forecast()
     features = set(forecast.columns.get_level_values("feature")) - {"target"}
     assert isinstance(forecast, TSDataset)
-    assert len(forecast.df) == HORIZON
+    assert len(forecast._df) == HORIZON
     assert features == expected_features
 
 
@@ -264,7 +264,7 @@ def test_predict_interface(
     )
     features = set(prediction.columns.get_level_values("feature")) - {"target"}
     assert isinstance(prediction, TSDataset)
-    assert len(prediction.df) == end_idx - start_idx + 1
+    assert len(prediction._df) == end_idx - start_idx + 1
     assert features == expected_features
 
 
@@ -332,7 +332,7 @@ def test_multiprocessing_ensembles(
     single_jobs_forecast = single_jobs_ensemble.forecast()
     multi_jobs_forecast = multi_jobs_ensemble.forecast()
 
-    assert (single_jobs_forecast.df == multi_jobs_forecast.df).all().all()
+    assert (single_jobs_forecast._df == multi_jobs_forecast._df).all().all()
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))

@@ -167,7 +167,7 @@ def test_predict_train_with_regressors(model, example_reg_tsds):
 )
 def test_predict_before_train_fail(model, example_tsds):
     train_ts = deepcopy(example_tsds)
-    train_ts.df = train_ts.df.iloc[10:]
+    train_ts._df = train_ts._df.iloc[10:]
     before_train_ts = deepcopy(example_tsds)
     model.fit(train_ts)
 
@@ -269,7 +269,7 @@ def test_forecast_future_with_gap_fail(model, example_tsds):
     horizon = 7
     model.fit(example_tsds)
     future_ts = example_tsds.make_future(future_steps=horizon)
-    future_ts.df = future_ts.df.iloc[2:]
+    future_ts._df = future_ts._df.iloc[2:]
 
     with pytest.raises(
         NotImplementedError,

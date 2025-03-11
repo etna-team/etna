@@ -74,7 +74,7 @@ class TestForecastInSampleFullNoTarget:
 
         # forecasting
         forecast_ts.transform(transforms)
-        forecast_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
+        forecast_ts.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
         prediction_size = len(forecast_ts.timestamps)
         forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
 
@@ -390,9 +390,9 @@ class TestForecastInSampleSuffixNoTarget:
 
         # forecasting
         forecast_ts.transform(transforms)
-        forecast_ts.df.loc[forecast_ts.timestamps[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
+        forecast_ts.loc[forecast_ts.timestamps[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
         prediction_size = len(forecast_ts.timestamps) - num_skip_points
-        forecast_ts.df = forecast_ts.df.iloc[(num_skip_points - model.context_size) :]
+        forecast_ts._df = forecast_ts._df.iloc[(num_skip_points - model.context_size) :]
         forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
 
         # checking
@@ -831,7 +831,7 @@ class TestForecastOutSamplePrefix:
         forecast_prefix_ts = ts.make_future(
             future_steps=full_prediction_size, tail_steps=model.context_size, transforms=transforms
         )
-        forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-prediction_size_diff]
+        forecast_prefix_ts._df = forecast_prefix_ts._df.iloc[:-prediction_size_diff]
         forecast_prefix_ts = make_forecast(model=model, ts=forecast_prefix_ts, prediction_size=prefix_prediction_size)
 
         # checking
@@ -958,14 +958,14 @@ class TestForecastOutSampleSuffix:
         if isinstance(model, get_args(ContextRequiredModelType)):
             # firstly we should forecast prefix to use it as a context
             forecast_prefix_ts = deepcopy(forecast_gap_ts)
-            forecast_prefix_ts.df = forecast_prefix_ts.df.iloc[:-suffix_prediction_size]
+            forecast_prefix_ts._df = forecast_prefix_ts._df.iloc[:-suffix_prediction_size]
             forecast_prefix_ts = model.forecast(forecast_prefix_ts, prediction_size=prediction_size_diff)
-            forecast_gap_ts.df = forecast_gap_ts.df.combine_first(forecast_prefix_ts.df)
+            forecast_gap_ts._df = forecast_gap_ts._df.combine_first(forecast_prefix_ts._df)
 
             # forecast suffix with known context for it
             forecast_gap_ts = model.forecast(forecast_gap_ts, prediction_size=suffix_prediction_size)
         else:
-            forecast_gap_ts.df = forecast_gap_ts.df.iloc[prediction_size_diff:]
+            forecast_gap_ts._df = forecast_gap_ts._df.iloc[prediction_size_diff:]
             forecast_gap_ts = model.forecast(forecast_gap_ts)
 
         # checking
@@ -1166,7 +1166,7 @@ class TestForecastMixedInOutSample:
         df_full = pd.concat((df, future_df))
         forecast_full_ts = TSDataset(df=df_full, df_exog=ts.df_exog, freq=ts.freq, known_future=ts.known_future)
         forecast_full_ts.transform(transforms)
-        forecast_full_ts.df = forecast_full_ts.df.iloc[(num_skip_points - model.context_size) :]
+        forecast_full_ts._df = forecast_full_ts._df.iloc[(num_skip_points - model.context_size) :]
         full_prediction_size = len(forecast_full_ts.timestamps) - model.context_size
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
 

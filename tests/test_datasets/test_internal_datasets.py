@@ -68,7 +68,7 @@ def test_load_all_parts():
         shutil.rmtree(dataset_path)
     ts_train, ts_test, ts_full = load_dataset("custom_internal_dataset", parts=("train", "test", "full"))
     shutil.rmtree(dataset_path)
-    assert ts_train.df.shape[0] + ts_test.df.shape[0] == ts_full.df.shape[0]
+    assert ts_train._df.shape[0] + ts_test._df.shape[0] == ts_full._df.shape[0]
 
 
 def test_not_present_part():
@@ -281,14 +281,14 @@ def test_dataset_statistics(
     dataset_name, expected_shape, expected_min_timestamp, expected_max_timestamp, dataset_parts
 ):
     ts_full = load_dataset(dataset_name, parts="full", rebuild_dataset=True)
-    assert ts_full.df.shape == expected_shape
+    assert ts_full._df.shape == expected_shape
     assert ts_full.timestamps.min() == expected_min_timestamp
     assert ts_full.timestamps.max() == expected_max_timestamp
 
     if dataset_parts:
         ts_parts = load_dataset(dataset_name, parts=dataset_parts)
-        parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
-        assert ts_full.df.shape[0] == parts_rows
+        parts_rows = sum([ts._df.shape[0] for ts in ts_parts])
+        assert ts_full._df.shape[0] == parts_rows
 
 
 @pytest.mark.parametrize(

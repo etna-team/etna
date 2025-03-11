@@ -102,14 +102,14 @@ def test_transform_not_fit(ts_with_exogs):
 def test_get_feature_names(example_reg_tsds, expected={"regressor_exog_weekend"}):
     t = ExogShiftTransform(lag=1)
     t.fit(ts=example_reg_tsds)
-    feature_names = t._get_feature_names(example_reg_tsds.df)
+    feature_names = t._get_feature_names(example_reg_tsds._df)
     assert set(feature_names) == expected
 
 
 def test_get_feature_names_no_exog_error(ts_with_exogs):
     t = ExogShiftTransform(lag=1)
     t.fit(ts=ts_with_exogs)
-    df = ts_with_exogs.df.drop(columns=["feat3"], level=1)
+    df = ts_with_exogs._df.drop(columns=["feat3"], level=1)
 
     with pytest.raises(ValueError, match="Feature `feat3` is expected to be in the dataframe!"):
         t._get_feature_names(df)
@@ -153,7 +153,7 @@ def test_estimate_shift(ts_with_exogs, lag, horizon, expected):
 def test_shift_no_exog(simple_tsdf, lag, expected={"target"}):
     t = ExogShiftTransform(lag=lag, horizon=1)
     transformed = t.fit_transform(simple_tsdf)
-    assert set(transformed.df.columns.get_level_values("feature")) == expected
+    assert set(transformed.columns.get_level_values("feature")) == expected
 
 
 @pytest.mark.parametrize(
@@ -176,7 +176,7 @@ def test_transformed_names(ts_name, lag, horizon, expected, request):
 
     t = ExogShiftTransform(lag=lag, horizon=horizon)
     transformed = t.fit_transform(ts=ts)
-    column_names = transformed.df.columns.get_level_values("feature")
+    column_names = transformed.columns.get_level_values("feature")
     assert set(column_names) == expected
 
 

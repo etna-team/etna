@@ -30,7 +30,7 @@ def df_segment_0():
             "exog_1": [1.0, 1.0, 1.0],
         }
     )
-    df = TSDataset(df=df, freq="D").df["segment_0"].dropna()
+    df = TSDataset(df=df, freq="D")._df["segment_0"].dropna()
     return df
 
 
@@ -44,7 +44,7 @@ def df_segment_1():
             "exog_1": [2.0, 2.0, 2.0],
         }
     )
-    df = TSDataset(df=df, freq="D").df["segment_1"].dropna()
+    df = TSDataset(df=df, freq="D")._df["segment_1"].dropna()
     return df
 
 

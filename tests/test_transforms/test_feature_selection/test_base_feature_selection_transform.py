@@ -19,7 +19,7 @@ def test_get_features_to_use(ts_with_exog: pd.DataFrame, features_to_use, expect
     base_selector = MRMRFeatureSelectionTransform(
         relevance_table=StatisticsRelevanceTable(), top_k=3, features_to_use=features_to_use
     )
-    features = base_selector._get_features_to_use(ts_with_exog.df)
+    features = base_selector._get_features_to_use(ts_with_exog._df)
     assert sorted(features) == sorted(expected_features)
 
 
@@ -30,7 +30,7 @@ def test_get_features_to_use_raise_warning(ts_with_exog: pd.DataFrame):
     with pytest.warns(
         UserWarning, match="Columns from feature_to_use which are out of dataframe columns will be dropped!"
     ):
-        _ = base_selector._get_features_to_use(ts_with_exog.df)
+        _ = base_selector._get_features_to_use(ts_with_exog._df)
 
 
 @pytest.mark.parametrize(

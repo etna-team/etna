@@ -193,9 +193,9 @@ def test_forecast_1_point(example_tsds):
     model.fit(example_tsds)
     future_ts = example_tsds.make_future(future_steps=horizon)
     pred = model.forecast(future_ts)
-    assert len(pred.df) == horizon
+    assert len(pred._df) == horizon
     pred_quantiles = model.forecast(future_ts, prediction_interval=True, quantiles=[0.025, 0.8])
-    assert len(pred_quantiles.df) == horizon
+    assert len(pred_quantiles._df) == horizon
 
 
 def test_save_load(example_tsds):

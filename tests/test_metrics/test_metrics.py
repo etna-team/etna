@@ -110,7 +110,7 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
     metric = metric_class(mode=MetricAggregationMode.per_segment)
     value = metric(y_true=true_df, y_pred=forecast_df)
     assert isinstance(value, dict)
-    for segment in forecast_df.df.columns.get_level_values("segment").unique():
+    for segment in forecast_df.columns.get_level_values("segment").unique():
         assert segment in value
 
 
@@ -143,9 +143,9 @@ def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
 def test_invalid_target_columns(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
     forecast_df, true_df = train_test_dfs
-    columns = forecast_df.df.columns.to_list()
+    columns = forecast_df._df.columns.to_list()
     columns[0] = ("segment_1", "not_target")
-    forecast_df.df.columns = pd.MultiIndex.from_tuples(columns, names=["segment", "feature"])
+    forecast_df._df.columns = pd.MultiIndex.from_tuples(columns, names=["segment", "feature"])
     metric = metric_class()
     with pytest.raises(ValueError, match="All the segments in .* should contain 'target' column"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
@@ -170,7 +170,7 @@ def test_invalid_index(metric_class, two_dfs_with_different_timestamps):
 def test_invalid_nans_pred(metric_class, train_test_dfs):
     """Check metrics behavior in case of nans in prediction."""
     forecast_df, true_df = train_test_dfs
-    forecast_df.df.iloc[0, 0] = np.NaN
+    forecast_df._df.iloc[0, 0] = np.NaN
     metric = metric_class()
     with pytest.raises(ValueError, match="There are NaNs in y_pred"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
@@ -196,7 +196,7 @@ def test_invalid_nans_pred(metric_class, train_test_dfs):
 def test_invalid_nans_true(metric, train_test_dfs):
     """Check metrics behavior in case of nans in true values."""
     forecast_df, true_df = train_test_dfs
-    true_df.df.iloc[0, 0] = np.NaN
+    true_df._df.iloc[0, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in y_true"):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
@@ -221,10 +221,10 @@ def test_invalid_nans_true(metric, train_test_dfs):
 def test_invalid_single_nan_ignore(metric, train_test_dfs):
     """Check metrics behavior in case of ignoring one nan in true values."""
     forecast_df, true_df = train_test_dfs
-    true_df.df.iloc[0, 0] = np.NaN
+    true_df._df.iloc[0, 0] = np.NaN
     value = metric(y_true=true_df, y_pred=forecast_df)
     assert isinstance(value, dict)
-    segments = set(forecast_df.df.columns.get_level_values("segment").unique().tolist())
+    segments = set(forecast_df.columns.get_level_values("segment").unique().tolist())
     assert value.keys() == segments
     assert all(isinstance(cur_value, float) for cur_value in value.values())
 
@@ -249,12 +249,12 @@ def test_invalid_single_nan_ignore(metric, train_test_dfs):
 def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_test_dfs):
     """Check per-segment metrics behavior in case of ignoring segment of all nans in true values."""
     forecast_df, true_df = train_test_dfs
-    true_df.df.iloc[:, 0] = np.NaN
+    true_df._df.iloc[:, 0] = np.NaN
     value = metric(y_true=true_df, y_pred=forecast_df)
 
     assert isinstance(value, dict)
-    segments = set(forecast_df.df.columns.get_level_values("segment").unique().tolist())
-    empty_segment = true_df.df.columns.get_level_values("segment").unique()[0]
+    segments = set(forecast_df.columns.get_level_values("segment").unique().tolist())
+    empty_segment = true_df.columns.get_level_values("segment").unique()[0]
     assert value.keys() == segments
     for cur_segment, cur_value in value.items():
         if cur_segment == empty_segment:
@@ -283,7 +283,7 @@ def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_te
 def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
     """Check macro metrics behavior in case of ignoring segment of all nans in true values."""
     forecast_df, true_df = train_test_dfs
-    true_df.df.iloc[:, 0] = np.NaN
+    true_df._df.iloc[:, 0] = np.NaN
     value = metric(y_true=true_df, y_pred=forecast_df)
     assert isinstance(value, float)
 
@@ -308,7 +308,7 @@ def test_invalid_segment_nans_ignore_macro(metric, train_test_dfs):
 def test_invalid_all_nans_ignore_macro(metric, expected_type, train_test_dfs):
     """Check macro metrics behavior in case of all nan values in true values."""
     forecast_df, true_df = train_test_dfs
-    true_df.df.iloc[:, :] = np.NaN
+    true_df._df.iloc[:, :] = np.NaN
     value = metric(y_true=true_df, y_pred=forecast_df)
     assert isinstance(value, expected_type)
 
@@ -411,9 +411,9 @@ def test_metric_values_with_changed_segment_order(metric_class, train_test_dfs):
     segments = np.array(forecast_df.segments)
 
     forecast_segment_order = segments[[3, 2, 0, 1, 4]]
-    forecast_df_new.df = forecast_df_new.df.loc[:, pd.IndexSlice[forecast_segment_order, :]]
+    forecast_df_new._df = forecast_df_new.loc[:, pd.IndexSlice[forecast_segment_order, :]]
     true_segment_order = segments[[4, 1, 3, 2, 0]]
-    true_df_new.df = true_df_new.df.loc[:, pd.IndexSlice[true_segment_order, :]]
+    true_df_new._df = true_df_new.loc[:, pd.IndexSlice[true_segment_order, :]]
 
     metric = metric_class(mode="per-segment")
     metrics_initial = metric(y_pred=forecast_df, y_true=true_df)

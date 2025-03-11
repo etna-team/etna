@@ -180,11 +180,11 @@ def check_inverse_transform_inplace_filled_test(
     # make predictions by hand taking into account the nature of ts_nans
     future_ts = ts_train.make_future(20, transforms=[transform])
     if order == 1:
-        future_ts.df.loc[:, pd.IndexSlice["1", "target"]] = 1 * period
-        future_ts.df.loc[:, pd.IndexSlice["2", "target"]] = 2 * period
+        future_ts.loc[:, pd.IndexSlice["1", "target"]] = 1 * period
+        future_ts.loc[:, pd.IndexSlice["2", "target"]] = 2 * period
     elif order >= 2:
-        future_ts.df.loc[:, pd.IndexSlice["1", "target"]] = 0
-        future_ts.df.loc[:, pd.IndexSlice["2", "target"]] = 0
+        future_ts.loc[:, pd.IndexSlice["1", "target"]] = 0
+        future_ts.loc[:, pd.IndexSlice["2", "target"]] = 0
     else:
         assert_never(order)
 
@@ -343,7 +343,7 @@ def test_general_interface_transform_not_inplace(transform, ts_nans):
 def test_general_fit_fail_nans(transform, ts_nans):
     """Test that differencing transform fails to fit on segments with NaNs inside."""
     # put nans inside one segment
-    ts_nans.df.iloc[-3, 0] = np.NaN
+    ts_nans._df.iloc[-3, 0] = np.NaN
 
     with pytest.raises(ValueError, match="There should be no NaNs inside the segments"):
         transform.fit(ts_nans)
@@ -464,7 +464,7 @@ def test_full_inverse_transform_inplace_fail_new_segments(ts_segments_split):
 def test_general_inverse_transform_fail_not_all_test(transform, ts_nans):
     """Test that differencing transform fails to make inverse_transform only on part of train."""
     transform.fit_transform(ts_nans)
-    ts_nans.df = ts_nans.df.iloc[1:]
+    ts_nans._df = ts_nans._df.iloc[1:]
 
     with pytest.raises(ValueError, match="Inverse transform can be applied only to full train"):
         transform.inverse_transform(ts_nans)

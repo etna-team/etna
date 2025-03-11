@@ -40,10 +40,10 @@ def run_base_pipeline_compat_check(ts, intervals_pipeline, expected_columns):
     intervals_pipeline.fit(ts=ts)
 
     intervals_pipeline_pred = intervals_pipeline.forecast(prediction_interval=True)
-    columns = intervals_pipeline_pred.df.columns.get_level_values("feature")
+    columns = intervals_pipeline_pred.columns.get_level_values("feature")
 
     assert len(expected_columns - set(columns)) == 0
-    assert np.sum(intervals_pipeline_pred.df.isna().values) == 0
+    assert np.sum(intervals_pipeline_pred._df.isna().values) == 0
 
 
 class DummyPredictionIntervals(BasePredictionIntervals):
@@ -60,12 +60,12 @@ class DummyPredictionIntervals(BasePredictionIntervals):
         borders = []
         for segment in ts.segments:
             target_df = (predictions[:, segment, "target"]).to_frame()
-            target_df.columns.names = predictions.df.columns.names
+            target_df.columns.names = predictions.columns.names
             borders.append(target_df.rename({"target": f"target_lower"}, axis=1) - self.width / 2)
             borders.append(target_df.rename({"target": f"target_upper"}, axis=1) + self.width / 2)
 
-        # directly store borders in ts.df
-        predictions.df = pd.concat([predictions.df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
+        # directly store borders in ts._df
+        predictions._df = pd.concat([predictions._df] + borders, axis=1).sort_index(axis=1, level=(0, 1))
 
         return predictions
 
