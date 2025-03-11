@@ -525,3 +525,12 @@ def test_error_set_current_df_level(market_level_df, hierarchical_structure):
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
     with pytest.raises(AttributeError, match="can't set attribute"):
         ts.current_df_level = "market_2"
+
+
+def test_error_set_current_df_exog_level(
+    product_level_df, market_level_df_exog, hierarchical_structure
+):
+    df, df_exog = product_level_df, market_level_df_exog
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+    with pytest.raises(AttributeError, match="can't set attribute"):
+        ts.current_df_level = "market_2"
