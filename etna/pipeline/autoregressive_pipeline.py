@@ -189,7 +189,7 @@ class AutoRegressivePipeline(
 
         # cut only last timestamps from result dataset
         prediction_ts._df = prediction_ts._df.tail(self.horizon)
-        prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
+        prediction_ts._raw_df = prediction_ts._raw_df.tail(self.horizon)
 
         if return_components:
             target_components_df = pd.concat(target_components_dfs)

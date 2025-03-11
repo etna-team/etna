@@ -35,7 +35,7 @@ class ModelPipelinePredictMixin:
         self.model: ModelType
         self.transforms: Sequence[Transform]
 
-        df = deepcopy(ts.raw_df)
+        df = deepcopy(ts._raw_df)
         df_exog = deepcopy(ts.df_exog)
         freq = deepcopy(ts.freq)
         known_future = deepcopy(ts.known_future)

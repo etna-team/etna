@@ -143,8 +143,8 @@ class TSDataset:
         """
         self.freq = freq
         self.df_exog = None
-        self.raw_df = self._prepare_df(df=df, freq=freq)
-        self._df = self.raw_df.copy(deep=True)
+        self._raw_df = self._prepare_df(df=df, freq=freq)
+        self._df = self._raw_df.copy(deep=True)
 
         self.hierarchical_structure = hierarchical_structure
         self.current_df_level: Optional[str] = self._get_dataframe_level(df=self._df)
@@ -454,7 +454,7 @@ class TSDataset:
         2021-07-04          33          38    NaN          73          78    NaN
         """
         self._check_endings(warning=True)
-        df = self._expand_index(df=self.raw_df, freq=self.freq, future_steps=future_steps)
+        df = self._expand_index(df=self._raw_df, freq=self.freq, future_steps=future_steps)
 
         if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df=df)
@@ -522,22 +522,22 @@ class TSDataset:
             TSDataset based on indexing slice.
         """
         self_df = self._df
-        self_raw_df = self.raw_df
+        self_raw_df = self._raw_df
 
         try:
             # we do this to avoid redundant copying of data
             self._df = None
-            self.raw_df = None
+            self._raw_df = None
 
             ts_slice = deepcopy(self)
             ts_slice._df = _slice_index_wide_dataframe(df=self_df, start=start_idx, stop=end_idx, label_indexing=False)
-            ts_slice.raw_df = _slice_index_wide_dataframe(
+            ts_slice._raw_df = _slice_index_wide_dataframe(
                 df=self_raw_df, start=start_idx, stop=end_idx, label_indexing=False
             )
 
         finally:
             self._df = self_df
-            self.raw_df = self_raw_df
+            self._raw_df = self_raw_df
 
         return ts_slice
 
@@ -890,7 +890,7 @@ class TSDataset:
             else:
                 stacked = df_cur.values.T.ravel()
                 # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
-                df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes.iloc[0])
+                df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
         df_flat = pd.DataFrame(df_dict)
 
         return df_flat
@@ -1265,25 +1265,25 @@ class TSDataset:
             warnings.warn(f"Min timestamp in df is {self._df.index.min()}.")
 
         self_df = self._df
-        self_raw_df = self.raw_df
+        self_raw_df = self._raw_df
         try:
             # we do this to avoid redundant copying of data
             self._df = None
-            self.raw_df = None
+            self._raw_df = None
 
             train = deepcopy(self)
             train._df = _slice_index_wide_dataframe(df=self_df, start=train_start_defined, stop=train_end_defined)
-            train.raw_df = _slice_index_wide_dataframe(
+            train._raw_df = _slice_index_wide_dataframe(
                 df=self_raw_df, start=train_start_defined, stop=train_end_defined
             )
 
             test = deepcopy(self)
             test._df = _slice_index_wide_dataframe(df=self_df, start=test_start_defined, stop=test_end_defined)
-            test.raw_df = _slice_index_wide_dataframe(df=self_raw_df, start=train_start_defined, stop=test_end_defined)
+            test._raw_df = _slice_index_wide_dataframe(df=self_raw_df, start=train_start_defined, stop=test_end_defined)
 
         finally:
             self._df = self_df
-            self.raw_df = self_raw_df
+            self._raw_df = self_raw_df
 
         return train, test
 
@@ -1517,7 +1517,7 @@ class TSDataset:
         except ValueError:
             raise ValueError(f"Set of target components differs between segments!")
 
-        components_sum = target_components_df.T.groupby(level="segment").sum().T
+        components_sum = target_components_df.groupby(axis=1, level="segment").sum()
         if not np.allclose(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
