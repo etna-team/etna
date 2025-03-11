@@ -68,7 +68,7 @@ def two_segments_simple_ts_daily_int_timestamp(two_segments_simple_ts_daily: TSD
 def two_segments_simple_ts_daily_with_regressor(two_segments_simple_ts_daily: TSDataset) -> TSDataset:
     ts = two_segments_simple_ts_daily
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     ts = TSDataset(df=df.iloc[:-3], df_exog=df_exog, freq=ts.freq, known_future=["external_timestamp"])
     return ts
 
@@ -77,7 +77,7 @@ def two_segments_simple_ts_daily_with_regressor(two_segments_simple_ts_daily: TS
 def two_segments_simple_ts_daily_with_nans(two_segments_simple_ts_daily: TSDataset):
     ts = two_segments_simple_ts_daily
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     df_exog.loc[df_exog.index[:3], pd.IndexSlice[:, "external_timestamp"]] = np.NaN
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
@@ -149,7 +149,7 @@ def two_segments_w_mon_int_timestamp(two_segments_w_mon: TSDataset):
 def two_segments_w_mon_external_int_timestamp(two_segments_w_mon_int_timestamp: TSDataset):
     ts = two_segments_w_mon_int_timestamp
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     external_int_timestamp = np.arange(len(df_exog))
     df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = external_int_timestamp
     df_exog.loc[:, pd.IndexSlice["segment_2", "external_timestamp"]] = external_int_timestamp
@@ -161,7 +161,7 @@ def two_segments_w_mon_external_int_timestamp(two_segments_w_mon_int_timestamp: 
 def two_segments_w_mon_external_irregular_timestamp(two_segments_w_mon: TSDataset):
     ts = two_segments_w_mon
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta("3H")
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
@@ -171,7 +171,7 @@ def two_segments_w_mon_external_irregular_timestamp(two_segments_w_mon: TSDatase
 def two_segments_w_mon_external_irregular_timestamp_different_freq(two_segments_w_mon: TSDataset):
     ts = two_segments_w_mon
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = pd.date_range(
         start="2020-01-01", periods=len(df_exog), freq="W-SUN"
     )
@@ -183,7 +183,7 @@ def two_segments_w_mon_external_irregular_timestamp_different_freq(two_segments_
 def two_segments_w_mon_with_nans(two_segments_w_mon: TSDataset):
     ts = two_segments_w_mon
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     df_exog.loc[df_exog.index[:3], pd.IndexSlice[:, "external_timestamp"]] = np.NaN
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
@@ -193,7 +193,7 @@ def two_segments_w_mon_with_nans(two_segments_w_mon: TSDataset):
 def two_segments_w_mon_with_regressor(two_segments_w_mon: TSDataset) -> TSDataset:
     ts = two_segments_w_mon
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     ts = TSDataset(df=df.iloc[:-3], df_exog=df_exog, freq=ts.freq, known_future=["external_timestamp"])
     return ts
 

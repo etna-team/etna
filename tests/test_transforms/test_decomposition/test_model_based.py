@@ -60,7 +60,7 @@ def test_prepare_ts_in_column_target(ts_with_exogs):
     prepared_ts = transform._prepare_ts(ts=ts)
 
     assert prepared_ts is not ts
-    assert prepared_ts.df_exog is None
+    assert prepared_ts._df_exog is None
     pd.testing.assert_frame_equal(prepared_ts._df, ts[..., "target"])
 
 
@@ -80,7 +80,7 @@ def test_prepare_ts_in_column_feature(ts_name, in_column, request):
 
     assert prepared_ts is not ts
     assert "feature" not in prepared_ts.features
-    assert prepared_ts.df_exog is None
+    assert prepared_ts._df_exog is None
     pd.testing.assert_frame_equal(
         prepared_ts._df, ts[..., in_column].rename({in_column: "target"}, axis=1, level="feature")
     )

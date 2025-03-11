@@ -72,7 +72,7 @@ def ts_with_specials(df_with_specials):
 @pytest.fixture()
 def ts_with_specials_and_regressor(ts_with_specials) -> TSDataset:
     df = ts_with_specials._raw_df
-    df_exog = ts_with_specials.df_exog
+    df_exog = ts_with_specials._df_exog
     ts = TSDataset(df=df.iloc[:-10], df_exog=df_exog, freq=ts_with_specials.freq, known_future=["external_timestamp"])
     return ts
 
@@ -81,7 +81,7 @@ def ts_with_specials_and_regressor(ts_with_specials) -> TSDataset:
 def ts_with_specials_and_nans_in_timestamp(ts_with_specials) -> TSDataset:
     ts = ts_with_specials
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     df_exog.loc[df_exog.index[:3], pd.IndexSlice[:, "external_timestamp"]] = np.NaN
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts

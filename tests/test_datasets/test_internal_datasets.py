@@ -364,11 +364,11 @@ def test_df_exog_statistics(
 ):
     ts_parts = load_dataset(dataset_name, parts=dataset_parts)
     for i, part in enumerate(ts_parts):
-        assert part.df_exog.shape == expected_df_exog_shapes[i]
+        assert part._df_exog.shape == expected_df_exog_shapes[i]
     for i, part in enumerate(ts_parts):
-        assert (part.df_exog.index.min(), part.df_exog.index.max()) == expected_df_exog_timestamps[i]
+        assert (part._df_exog.index.min(), part._df_exog.index.max()) == expected_df_exog_timestamps[i]
     for i, part in enumerate(ts_parts):
-        exog_col_type = part.df_exog.dtypes.iloc[0]
+        exog_col_type = part._df_exog.dtypes.iloc[0]
         assert pd.api.types.is_datetime64_dtype(exog_col_type)
 
 

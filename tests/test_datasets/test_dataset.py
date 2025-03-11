@@ -45,7 +45,7 @@ def tsdf_with_exog(random_seed) -> TSDataset:
 @pytest.fixture
 def tsdf_int_with_exog(tsdf_with_exog) -> TSDataset:
     df = tsdf_with_exog._raw_df
-    df_exog = tsdf_with_exog.df_exog
+    df_exog = tsdf_with_exog._df_exog
     ref_point = pd.Timestamp("2021-01-01")
     df.index = pd.Index((df.index - ref_point).days, name=df.index.name)
     df_exog.index = pd.Index((df_exog.index - ref_point).days, name=df_exog.index.name)
@@ -746,9 +746,9 @@ def test_train_test_split(ts_name, borders, true_borders, request):
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
     pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
-    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
     pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
-    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
 @pytest.mark.parametrize(
@@ -771,9 +771,9 @@ def test_train_test_split_with_test_size(ts_name, test_size, true_borders, reque
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
     pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
-    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
     pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
-    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
 @pytest.mark.filterwarnings("ignore: test_size, test_start and test_end cannot be")
@@ -854,9 +854,9 @@ def test_train_test_split_both(ts_name, test_size, borders, true_borders, reques
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
     pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
-    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
     pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
-    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
 @pytest.mark.parametrize(
@@ -1189,7 +1189,7 @@ def test_make_future_warn_not_enough_regressors(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
-        ts.make_future(ts.df_exog.shape[0] + 100)
+        ts.make_future(ts._df_exog.shape[0] + 100)
 
 
 @pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
@@ -1498,7 +1498,7 @@ def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     assert ts_slice.known_future == tsdf_with_exog.known_future
     assert ts_slice.regressors == tsdf_with_exog.regressors
     pd.testing.assert_frame_equal(ts_slice._df, tsdf_with_exog._df.iloc[start_idx:end_idx])
-    pd.testing.assert_frame_equal(ts_slice.df_exog, tsdf_with_exog.df_exog)
+    pd.testing.assert_frame_equal(ts_slice._df_exog, tsdf_with_exog._df_exog)
 
 
 def test_tsdataset_idx_slice_pass_target_components_to_output(ts_with_target_components):
@@ -1569,7 +1569,7 @@ def test_add_features_from_pandas_update_df_exog(df_and_regressors, df_update_ad
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
     ts.add_features_from_pandas(df_update=df_update_add_feature, update_exog=True)
-    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated_add_feature)
+    pd.testing.assert_frame_equal(ts._df_exog, df_exog_updated_add_feature)
 
 
 @pytest.mark.parametrize(
@@ -1681,7 +1681,7 @@ def test_drop_features(df_and_regressors, features, drop_from_exog, df_expected_
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=drop_from_exog)
-    df_columns, df_exog_columns = ts.to_flatten(ts._df).columns, ts.to_flatten(ts.df_exog).columns
+    df_columns, df_exog_columns = ts.to_flatten(ts._df).columns, ts.to_flatten(ts._df_exog).columns
     assert sorted(df_columns) == sorted(df_expected_columns)
     assert sorted(df_exog_columns) == sorted(df_exog_expected_columns)
 
@@ -1942,7 +1942,7 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
         timestamp_name=original_timestamp_name,
     )
     expected_df_exog = TSDataset.to_dataset(timestamp_df)
-    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+    pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     assert original_timestamp_name in ts.known_future
     assert ts.freq is None
@@ -1993,7 +1993,7 @@ def test_create_from_misaligned_with_exog(
     expected_df_exog = pd.merge(expected_df_exog, timestamp_df, how="outer", on=["timestamp", "segment"])
     expected_df_exog = TSDataset.to_dataset(expected_df_exog)
 
-    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+    pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     expected_known_future = sorted(set(known_future).union([original_timestamp_name]))
     assert ts.known_future == expected_known_future
@@ -2044,7 +2044,7 @@ def test_create_from_misaligned_with_exog_all(
     expected_df_exog = pd.merge(expected_df_exog, timestamp_df, how="outer", on=["timestamp", "segment"])
 
     expected_df_exog = TSDataset.to_dataset(expected_df_exog)
-    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+    pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     assert ts.known_future == expected_known_future
     assert ts.freq is None

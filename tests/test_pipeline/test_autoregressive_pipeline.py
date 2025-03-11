@@ -151,7 +151,7 @@ def test_forecast_columns(example_reg_tsds):
 
     # check regressor values
     assert forecast_pipeline[:, :, "regressor_exog_weekend"].equals(
-        original_ts.df_exog.loc[forecast_pipeline.timestamps, pd.IndexSlice[:, "regressor_exog_weekend"]]
+        original_ts._df_exog.loc[forecast_pipeline.timestamps, pd.IndexSlice[:, "regressor_exog_weekend"]]
     )
 
 

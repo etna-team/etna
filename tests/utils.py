@@ -27,7 +27,7 @@ def to_be_fixed(raises, match=None):
 def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
     df = ts._raw_df.loc[:, pd.IndexSlice[segments, :]].copy()
     df = df.loc[ts._df.index]
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     if df_exog is not None:
         df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
     known_future = ts.known_future
@@ -38,7 +38,7 @@ def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
 
 def convert_ts_to_int_timestamp(ts: TSDataset, shift=0):
     df = ts.to_pandas(features=["target"])
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
 
     if df_exog is not None:
         exog_shift = determine_num_steps(start_timestamp=df_exog.index[0], end_timestamp=df.index[0], freq=ts.freq)
@@ -58,7 +58,7 @@ def convert_ts_to_int_timestamp(ts: TSDataset, shift=0):
 
 def convert_ts_index_to_freq(ts: TSDataset, freq: str, shift=0):
     df = ts.to_pandas(features=["target"])
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
 
     if df_exog is not None:
         exog_shift = determine_num_steps(start_timestamp=df_exog.index[0], end_timestamp=df.index[0], freq=ts.freq)

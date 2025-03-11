@@ -86,7 +86,7 @@ def train_ts_int_timestamp(train_ts) -> TSDataset:
 @pytest.fixture
 def train_ts_with_regressor(train_ts) -> TSDataset:
     df = train_ts._raw_df
-    df_exog = train_ts.df_exog
+    df_exog = train_ts._df_exog
     ts = TSDataset(df=df.iloc[:-10], df_exog=df_exog, freq=train_ts.freq, known_future=["external_timestamp"])
     return ts
 
@@ -95,7 +95,7 @@ def train_ts_with_regressor(train_ts) -> TSDataset:
 def train_ts_with_nans(train_ts) -> TSDataset:
     ts = train_ts
     df = ts._raw_df
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     df_exog.loc[df_exog.index[:3], pd.IndexSlice[:, "external_timestamp"]] = np.NaN
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
