@@ -52,8 +52,8 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
     new_ts = TSDataset(df=true_df, freq=ts_copy.freq, hierarchical_structure=ts_copy.hierarchical_structure)
     new_ts.known_future = deepcopy(ts_copy.known_future)
     new_ts._regressors = deepcopy(ts_copy.regressors)
-    if ts.df_exog is not None:
-        new_ts.df_exog = ts.df_exog.copy(deep=True)
+    if ts._df_exog is not None:
+        new_ts._df_exog = ts._df_exog.copy(deep=True)
     return new_ts
 
 

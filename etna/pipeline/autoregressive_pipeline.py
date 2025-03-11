@@ -142,7 +142,7 @@ class AutoRegressivePipeline(
             current_ts = TSDataset(
                 df=prediction_df.iloc[:current_idx_border],
                 freq=ts.freq,
-                df_exog=ts.df_exog,
+                df_exog=ts._df_exog,
                 known_future=ts.known_future,
                 hierarchical_structure=ts.hierarchical_structure,
             )
@@ -180,7 +180,7 @@ class AutoRegressivePipeline(
         prediction_ts = TSDataset(
             df=prediction_df,
             freq=ts.freq,
-            df_exog=ts.df_exog,
+            df_exog=ts._df_exog,
             known_future=ts.known_future,
             hierarchical_structure=ts.hierarchical_structure,
         )

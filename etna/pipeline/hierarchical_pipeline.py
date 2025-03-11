@@ -307,7 +307,7 @@ class HierarchicalPipeline(Pipeline):
         hierarchical_ts = TSDataset(
             df=ts[..., "target"],
             freq=ts.freq,
-            df_exog=ts.df_exog,
+            df_exog=ts._df_exog,
             known_future=ts.known_future,
             hierarchical_structure=hierarchical_structure,
         )

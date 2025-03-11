@@ -142,7 +142,7 @@ class TSDataset:
             Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
         self.freq = freq
-        self.df_exog = None
+        self._df_exog = None
         self._raw_df = self._prepare_df(df=df, freq=freq)
         self._df = self._raw_df.copy(deep=True)
 
@@ -151,12 +151,12 @@ class TSDataset:
         self.current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
-            self.df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
+            self._df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
 
-            self.known_future = self._check_known_future(known_future, self.df_exog)
+            self.known_future = self._check_known_future(known_future, self._df_exog)
             self._regressors = copy(self.known_future)
 
-            self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
+            self.current_df_exog_level = self._get_dataframe_level(df=self._df_exog)
             if self.current_df_level == self.current_df_exog_level:
                 self._df = self._merge_exog(df=self._df)
         else:
@@ -456,7 +456,7 @@ class TSDataset:
         self._check_endings(warning=True)
         df = self._expand_index(df=self._raw_df, freq=self.freq, future_steps=future_steps)
 
-        if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
+        if self._df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df=df)
 
             # check if we have enough values in regressors
@@ -464,7 +464,7 @@ class TSDataset:
             if self.known_future:
                 future_index = df.index.difference(self.timestamps)
                 for segment in self.segments:
-                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
+                    regressors_index = self._df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
                     if not np.all(future_index.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
@@ -502,8 +502,8 @@ class TSDataset:
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
         future_ts.known_future = deepcopy(self.known_future)
         future_ts._regressors = deepcopy(self.regressors)
-        if self.df_exog is not None:
-            future_ts.df_exog = self.df_exog.copy(deep=True)
+        if self._df_exog is not None:
+            future_ts._df_exog = self._df_exog.copy(deep=True)
         return future_ts
 
     def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
@@ -607,7 +607,7 @@ class TSDataset:
 
         target_min, target_max = self._get_min_max_valid_timestamp(df=df, segments=segments)
         exog_series_min, exog_series_max = self._get_min_max_valid_timestamp(
-            df=self.df_exog, segments=segments, regressors=self.known_future
+            df=self._df_exog, segments=segments, regressors=self.known_future
         )
 
         for i, segment in enumerate(segments):
@@ -625,13 +625,13 @@ class TSDataset:
                 )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
-        if self.df_exog is None:
+        if self._df_exog is None:
             raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
 
         # TODO: this check could probably be skipped at make_future
         self._check_regressors(df=df)
 
-        df = df.merge(self.df_exog, how="left", left_index=True, right_index=True)
+        df = df.merge(self._df_exog, how="left", left_index=True, right_index=True)
 
         df.sort_index(axis=1, level=(0, 1), inplace=True)
 
@@ -1350,10 +1350,10 @@ class TSDataset:
 
         self._df = pd.concat((self._df, df_update.loc[: self._df.index.max()]), axis=1).sort_index(axis=1)
         if update_exog:
-            if self.df_exog is None:
-                self.df_exog = df_update
+            if self._df_exog is None:
+                self._df_exog = df_update
             else:
-                self.df_exog = pd.concat((self.df_exog, df_update), axis=1).sort_index(axis=1)
+                self._df_exog = pd.concat((self._df_exog, df_update), axis=1).sort_index(axis=1)
         if regressors is not None:
             self._regressors = list(set(self._regressors) | set(regressors))
 
@@ -1392,7 +1392,7 @@ class TSDataset:
 
         dfs = [("df", self._df)]
         if drop_from_exog:
-            dfs.append(("df_exog", self.df_exog))
+            dfs.append(("df_exog", self._df_exog))
 
         for name, df in dfs:
             columns_in_df = df.columns.get_level_values("feature")
@@ -1478,7 +1478,7 @@ class TSDataset:
         ts = TSDataset(
             df=target_level_df,
             freq=self.freq,
-            df_exog=self.df_exog,
+            df_exog=self._df_exog,
             known_future=self.known_future,
             hierarchical_structure=self.hierarchical_structure,
         )

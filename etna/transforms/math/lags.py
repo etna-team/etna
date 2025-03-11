@@ -190,7 +190,7 @@ class ExogShiftTransform(IrreversibleTransform):
             The fitted transform instance.
         """
         self._freq = ts.freq
-        self._save_exog_last_timestamp(df_exog=ts.df_exog)
+        self._save_exog_last_timestamp(df_exog=ts._df_exog)
 
         super().fit(ts=ts)
 
