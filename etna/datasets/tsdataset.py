@@ -148,7 +148,7 @@ class TSDataset:
 
         self.hierarchical_structure = hierarchical_structure
         self._current_df_level: Optional[str] = self._get_dataframe_level(df=self._df)
-        self.current_df_exog_level: Optional[str] = None
+        self._current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
             self._df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
@@ -156,8 +156,8 @@ class TSDataset:
             self._known_future = self._check_known_future(known_future, self._df_exog)
             self._regressors = copy(self._known_future)
 
-            self.current_df_exog_level = self._get_dataframe_level(df=self._df_exog)
-            if self._current_df_level == self.current_df_exog_level:
+            self._current_df_exog_level = self._get_dataframe_level(df=self._df_exog)
+            if self._current_df_level == self._current_df_exog_level:
                 self._df = self._merge_exog(df=self._df)
         else:
             self._known_future = self._check_known_future(known_future, df_exog)
@@ -456,7 +456,7 @@ class TSDataset:
         self._check_endings(warning=True)
         df = self._expand_index(df=self._raw_df, freq=self.freq, future_steps=future_steps)
 
-        if self._df_exog is not None and self.current_df_level == self.current_df_exog_level:
+        if self._df_exog is not None and self.current_df_level == self._current_df_exog_level:
             df = self._merge_exog(df=df)
 
             # check if we have enough values in regressors
@@ -1969,19 +1969,29 @@ class TSDataset:
 
         Returns
         -------
-        :
-            String frequency of timestamp
+        str or None
+            Frequency of timestamp.
         """
         return self._freq
 
     @property
     def current_df_level(self) -> Optional[str]:
-        """Return current level of DataFrame in hierarchical structure.
+        """Return current level of dataframe in hierarchical structure.
 
         Returns
         -------
-        :
-            String level of DataFrame
+        str or None
+            Level of dataframe.
         """
         return self._current_df_level
 
+    @property
+    def current_df_exog_level(self) -> Optional[str]:
+        """Return current level of dataframe with exogenous data in hierarchical structure.
+
+        Returns
+        -------
+        str or None
+            Level of dataframe with exogenous data.
+        """
+        return self._current_df_exog_level
