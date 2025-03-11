@@ -343,7 +343,7 @@ def test_transform_values_with_shift(shift, in_column, ts_name, period, mod, req
     ts = request.getfixturevalue(ts_name)
 
     ts_1 = ts
-    ts_2 = TSDataset(df=ts._raw_df.iloc[shift:], df_exog=ts._df_exog, freq=ts.freq, known_future=ts.known_future)
+    ts_2 = TSDataset(df=ts._raw_df.iloc[shift:], df_exog=ts._df_exog, freq=ts.freq, known_future=ts._known_future)
     transform = FourierTransform(period=period, mods=[mod], out_column="regressor_fourier", in_column=in_column)
 
     transform.fit(ts)

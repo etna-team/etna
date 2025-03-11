@@ -1495,7 +1495,7 @@ def test_to_dataset_not_modify_dataframe():
 @pytest.mark.parametrize("start_idx,end_idx", [(1, None), (None, 1), (1, 2), (1, -1)])
 def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
-    assert ts_slice.known_future == tsdf_with_exog.known_future
+    assert ts_slice._known_future == tsdf_with_exog._known_future
     assert ts_slice.regressors == tsdf_with_exog.regressors
     pd.testing.assert_frame_equal(ts_slice._df, tsdf_with_exog._df.iloc[start_idx:end_idx])
     pd.testing.assert_frame_equal(ts_slice._df_exog, tsdf_with_exog._df_exog)
@@ -1944,7 +1944,7 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
     expected_df_exog = TSDataset.to_dataset(timestamp_df)
     pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
-    assert original_timestamp_name in ts.known_future
+    assert original_timestamp_name in ts._known_future
     assert ts.freq is None
 
 
@@ -1996,7 +1996,7 @@ def test_create_from_misaligned_with_exog(
     pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     expected_known_future = sorted(set(known_future).union([original_timestamp_name]))
-    assert ts.known_future == expected_known_future
+    assert ts._known_future == expected_known_future
 
     assert ts.freq is None
 
@@ -2046,7 +2046,7 @@ def test_create_from_misaligned_with_exog_all(
     expected_df_exog = TSDataset.to_dataset(expected_df_exog)
     pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
-    assert ts.known_future == expected_known_future
+    assert ts._known_future == expected_known_future
     assert ts.freq is None
 
 
@@ -2111,3 +2111,18 @@ def test_features(ts_name, expected_features, request):
     ts = request.getfixturevalue(ts_name)
     features = ts.features
     assert sorted(features) == sorted(expected_features)
+
+
+def test_error_set_read_only_known_future(df_and_regressors):
+    df, df_exog, regressors = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=regressors)
+    with pytest.raises(AttributeError, match="can't set attribute"):
+        ts.known_future = ["exog_1"]
+
+
+def test_not_equal_updated_known_futures(df_and_regressors):
+    df, df_exog, regressors = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=regressors)
+    new_known_future = ts.known_future
+    new_known_future.append("new_regressor")
+    assert ts.known_future != new_known_future

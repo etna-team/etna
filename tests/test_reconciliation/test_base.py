@@ -116,7 +116,7 @@ def test_reconcile(hierarchical_ts, source_level, target_level, mapping_matrix, 
 
     assert obtained_ts.freq == expected_ts.freq
     assert obtained_ts.current_df_level == expected_ts.current_df_level
-    assert obtained_ts.known_future == expected_ts.known_future
+    assert obtained_ts._known_future == expected_ts._known_future
     assert obtained_ts.regressors == expected_ts.regressors
     pd.testing.assert_frame_equal(obtained_ts._df, expected_ts._df)
     pd.testing.assert_frame_equal(obtained_ts._df_exog, expected_ts._df_exog)
@@ -138,7 +138,7 @@ def test_reconcile_with_target_components(
 
     assert obtained_ts.freq == expected_ts.freq
     assert obtained_ts.current_df_level == expected_ts.current_df_level
-    assert obtained_ts.known_future == expected_ts.known_future
+    assert obtained_ts._known_future == expected_ts._known_future
     assert obtained_ts.regressors == expected_ts.regressors
     pd.testing.assert_frame_equal(obtained_ts.get_target_components(), expected_ts.get_target_components())
     pd.testing.assert_frame_equal(obtained_ts._df, expected_ts._df)

@@ -834,7 +834,7 @@ class TestPredictMixedInOutSample:
 
         # predicting mixed in-sample and out-sample
         df_full = pd.concat((train_df, future_df))
-        forecast_full_ts = TSDataset(df=df_full, df_exog=ts._df_exog, freq=ts.freq, known_future=ts.known_future)
+        forecast_full_ts = TSDataset(df=df_full, df_exog=ts._df_exog, freq=ts.freq, known_future=ts._known_future)
         forecast_full_ts.transform(transforms)
         forecast_full_ts._df = forecast_full_ts._df.iloc[(num_skip_points - model.context_size) :]
         full_prediction_size = len(forecast_full_ts.timestamps) - model.context_size
@@ -842,7 +842,7 @@ class TestPredictMixedInOutSample:
 
         # predicting only in sample
         forecast_in_sample_ts = TSDataset(
-            df=train_df, df_exog=train_ts._df_exog, freq=ts.freq, known_future=ts.known_future
+            df=train_df, df_exog=train_ts._df_exog, freq=ts.freq, known_future=ts._known_future
         )
         forecast_in_sample_ts.transform(transforms)
         to_skip = num_skip_points - model.context_size
@@ -853,7 +853,7 @@ class TestPredictMixedInOutSample:
         )
 
         # predicting only out sample
-        forecast_out_sample_ts = TSDataset(df=df_full, df_exog=ts._df_exog, freq=ts.freq, known_future=ts.known_future)
+        forecast_out_sample_ts = TSDataset(df=df_full, df_exog=ts._df_exog, freq=ts.freq, known_future=ts._known_future)
         forecast_out_sample_ts.transform(transforms)
         to_remain = model.context_size + future_prediction_size
         forecast_out_sample_ts._df = forecast_out_sample_ts._df.iloc[-to_remain:]
