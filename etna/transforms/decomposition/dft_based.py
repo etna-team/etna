@@ -192,7 +192,7 @@ class FourierDecomposeTransform(IrreversibleTransform):
 
         segment_components = pd.concat(segment_components, axis=1)
 
-        columns_before = set(ts.df.columns.get_level_values("feature"))
+        columns_before = set(ts._df.columns.get_level_values("feature"))
         columns_before &= set(segment_components.columns.get_level_values("feature"))
         self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=segment_components)
 

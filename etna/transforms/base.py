@@ -121,7 +121,7 @@ class Transform(SaveMixin, BaseMixin):
         df_transformed = self._transform(df=df)
 
         updated_columns = set(df_transformed.columns.get_level_values("feature")) & set(
-            ts.df.columns.get_level_values("feature")
+            ts._df.columns.get_level_values("feature")
         )
 
         ts = self._update_dataset(ts=ts, columns_before=columns_before | updated_columns, df_transformed=df_transformed)

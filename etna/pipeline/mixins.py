@@ -58,7 +58,7 @@ class ModelPipelinePredictMixin:
         start_idx = max(0, start_idx - self.model.context_size)
         start_timestamp = timestamp_indices.index[start_idx]
 
-        cur_ts.df = cur_ts.df.loc[start_timestamp:end_timestamp]
+        cur_ts._df = cur_ts._df.loc[start_timestamp:end_timestamp]
         return cur_ts
 
     def _determine_prediction_size(

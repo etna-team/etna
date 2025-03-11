@@ -459,14 +459,14 @@ class PerSegmentModelMixin(ModelForecastingMixin):
             quantile_df = df.loc[:, pd.IndexSlice[:, columns_list]]
             df = df.drop(columns=columns_list, level="feature")
 
-        ts.df = df
+        ts._df = df
 
         if len(quantile_columns) > 0:
             ts.add_prediction_intervals(prediction_intervals_df=quantile_df)
 
         prediction_size = kwargs.get("prediction_size")
         if prediction_size is not None:
-            ts.df = ts.df.iloc[-prediction_size:]
+            ts._df = ts._df.iloc[-prediction_size:]
         return ts
 
     def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
@@ -582,7 +582,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        horizon = len(ts.df)
+        horizon = len(ts._df)
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         # TODO: make it work with prediction intervals and context
         y = prediction_method(self=self._base_model, df=x, **kwargs).reshape(-1, horizon).T

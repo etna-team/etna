@@ -270,7 +270,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         end_idx = len(ts.timestamps)
 
         all_exog = self._exog_columns()
-        df_slice = ts.df.loc[:, pd.IndexSlice[:, all_exog + ["target"]]]
+        df_slice = ts._df.loc[:, pd.IndexSlice[:, all_exog + ["target"]]]
         first_valid_index = (
             df_slice.isna().any(axis=1).idxmin()
         )  # If all timestamps contains NaNs, idxmin() returns the first timestamp
@@ -341,7 +341,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                 normalize_xreg_target_per_input=self.normalize_exog,
                 xreg_mode=self.forecast_with_exog_mode,
             )
-            future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)
+            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)
         else:
             if ts.freq is None:
                 raise NotImplementedError(
@@ -357,9 +357,9 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
             predictions = predictions.rename(columns={"unique_id": "segment", "ds": "timestamp", "timesfm": "target"})
             predictions = TSDataset.to_dataset(predictions)
-            future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = predictions.loc[
+            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.loc[
                 :, pd.IndexSlice[:, "target"]
-            ].values  # .values is needed to cast predictions type of initial target type in ts
+                                                               ].values  # .values is needed to cast predictions type of initial target type in ts
         return future_ts
 
     @staticmethod

@@ -160,7 +160,7 @@ class Coverage(MetricWithMissingHandling, _IntervalsMetricMixin):
             lower_border = f"target_{self.quantiles[0]:.4g}"
             upper_border = f"target_{self.quantiles[1]:.4g}"
 
-        df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
+        df_true = y_true._df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
 
         intervals_df: pd.DataFrame = y_pred.get_prediction_intervals()
         df_pred_lower = intervals_df.loc[:, pd.IndexSlice[:, lower_border]].sort_index(axis=1)
@@ -296,7 +296,7 @@ class Width(MetricWithMissingHandling, _IntervalsMetricMixin):
             lower_border = f"target_{self.quantiles[0]:.4g}"
             upper_border = f"target_{self.quantiles[1]:.4g}"
 
-        df_true = y_true.df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
+        df_true = y_true._df.loc[:, pd.IndexSlice[:, "target"]].sort_index(axis=1)
 
         intervals_df: pd.DataFrame = y_pred.get_prediction_intervals()
         df_pred_lower = intervals_df.loc[:, pd.IndexSlice[:, lower_border]].sort_index(axis=1)

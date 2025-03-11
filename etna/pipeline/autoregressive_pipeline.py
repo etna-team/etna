@@ -188,7 +188,7 @@ class AutoRegressivePipeline(
         prediction_ts.inverse_transform(self.transforms)
 
         # cut only last timestamps from result dataset
-        prediction_ts.df = prediction_ts.df.tail(self.horizon)
+        prediction_ts._df = prediction_ts._df.tail(self.horizon)
         prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
 
         if return_components:

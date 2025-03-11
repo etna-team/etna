@@ -203,7 +203,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         if max_context_size < self.context_size:
             warnings.warn("Actual length of a dataset is less that context size. All history will be used as context.")
 
-        target = ts.df.loc[:, pd.IndexSlice[:, "target"]].dropna()
+        target = ts._df.loc[:, pd.IndexSlice[:, "target"]].dropna()
         context = torch.tensor(target.values.T)
 
         if prediction_interval:
@@ -229,11 +229,11 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
             )  # shape [prediction_length, segments * n_quantiles]
             quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
             columns = pd.MultiIndex.from_product([ts.segments, quantile_columns], names=["segment", "feature"])
-            quantiles_df = pd.DataFrame(quantiles_predicts[: len(ts.df)], columns=columns, index=future_ts.df.index)
+            quantiles_df = pd.DataFrame(quantiles_predicts[: len(ts._df)], columns=columns, index=future_ts._df.index)
 
             future_ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
 
-        future_ts.df.loc[:, pd.IndexSlice[:, "target"]] = target_forecast.numpy().transpose(1, 0)
+        future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = target_forecast.numpy().transpose(1, 0)
 
         return future_ts
 
