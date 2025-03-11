@@ -153,15 +153,15 @@ class TSDataset:
         if df_exog is not None:
             self._df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
 
-            self.known_future = self._check_known_future(known_future, self._df_exog)
-            self._regressors = copy(self.known_future)
+            self._known_future = self._check_known_future(known_future, self._df_exog)
+            self._regressors = copy(self._known_future)
 
             self.current_df_exog_level = self._get_dataframe_level(df=self._df_exog)
             if self.current_df_level == self.current_df_exog_level:
                 self._df = self._merge_exog(df=self._df)
         else:
-            self.known_future = self._check_known_future(known_future, df_exog)
-            self._regressors = copy(self.known_future)
+            self._known_future = self._check_known_future(known_future, df_exog)
+            self._regressors = copy(self._known_future)
 
         self._target_components_names: Tuple[str, ...] = tuple()
         self._prediction_intervals_names: Tuple[str, ...] = tuple()
@@ -461,10 +461,10 @@ class TSDataset:
 
             # check if we have enough values in regressors
             # TODO: check performance
-            if self.known_future:
+            if self._known_future:
                 future_index = df.index.difference(self.timestamps)
                 for segment in self.segments:
-                    regressors_index = self._df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
+                    regressors_index = self._df_exog.loc[:, pd.IndexSlice[segment, self._known_future]].index
                     if not np.all(future_index.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
@@ -500,7 +500,7 @@ class TSDataset:
         future_ts = TSDataset(df=future_dataset, freq=self.freq, hierarchical_structure=self.hierarchical_structure)
 
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        future_ts.known_future = deepcopy(self.known_future)
+        future_ts._known_future = deepcopy(self._known_future)
         future_ts._regressors = deepcopy(self.regressors)
         if self._df_exog is not None:
             future_ts._df_exog = self._df_exog.copy(deep=True)
@@ -600,14 +600,14 @@ class TSDataset:
 
     def _check_regressors(self, df: pd.DataFrame):
         """Check that regressors begin not later than in ``df`` and end later than in ``df``."""
-        if len(self.known_future) == 0:
+        if len(self._known_future) == 0:
             return
 
         segments = set(df.columns.get_level_values("segment"))
 
         target_min, target_max = self._get_min_max_valid_timestamp(df=df, segments=segments)
         exog_series_min, exog_series_max = self._get_min_max_valid_timestamp(
-            df=self._df_exog, segments=segments, regressors=self.known_future
+            df=self._df_exog, segments=segments, regressors=self._known_future
         )
 
         for i, segment in enumerate(segments):
@@ -890,7 +890,7 @@ class TSDataset:
             else:
                 stacked = df_cur.values.T.ravel()
                 # creating series is necessary for dtypes like "Int64", "boolean", otherwise they will be objects
-                df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes[0])
+                df_dict[column] = pd.Series(stacked, dtype=df_cur.dtypes.iloc[0])
         df_flat = pd.DataFrame(df_dict)
 
         return df_flat
@@ -1479,7 +1479,7 @@ class TSDataset:
             df=target_level_df,
             freq=self.freq,
             df_exog=self._df_exog,
-            known_future=self.known_future,
+            known_future=self._known_future,
             hierarchical_structure=self.hierarchical_structure,
         )
 
@@ -1517,7 +1517,7 @@ class TSDataset:
         except ValueError:
             raise ValueError(f"Set of target components differs between segments!")
 
-        components_sum = target_components_df.groupby(axis=1, level="segment").sum()
+        components_sum = target_components_df.T.groupby(level="segment").sum().T
         if not np.allclose(components_sum.values, self[..., "target"].values):
             raise ValueError("Components don't sum up to target!")
 
@@ -1693,7 +1693,7 @@ class TSDataset:
             "num_segments": len(self.segments),
             "num_exogs": len(exogs),
             "num_regressors": len(self.regressors),
-            "num_known_future": len(self.known_future),
+            "num_known_future": len(self._known_future),
             "freq": self.freq,
         }
 
@@ -1946,3 +1946,14 @@ class TSDataset:
             Tuple of TSDataset sizes
         """
         return len(self.timestamps), len(self.segments), len(self.features)
+
+    @property
+    def known_future(self) -> List[Optional[str]]:
+        """Return columns that are regressors.
+
+        Returns
+        -------
+        :
+            List of regressor columns
+        """
+        return self._known_future.copy()

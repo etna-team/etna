@@ -105,7 +105,7 @@ class BaseReconciliator(ABC, BaseMixin):
             df=df_reconciled,
             freq=ts.freq,
             df_exog=ts._df_exog,
-            known_future=ts.known_future,
+            known_future=ts._known_future,
             hierarchical_structure=ts.hierarchical_structure,
         )
 

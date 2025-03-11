@@ -143,7 +143,7 @@ class AutoRegressivePipeline(
                 df=prediction_df.iloc[:current_idx_border],
                 freq=ts.freq,
                 df_exog=ts._df_exog,
-                known_future=ts.known_future,
+                known_future=ts._known_future,
                 hierarchical_structure=ts.hierarchical_structure,
             )
             with warnings.catch_warnings():
@@ -181,7 +181,7 @@ class AutoRegressivePipeline(
             df=prediction_df,
             freq=ts.freq,
             df_exog=ts._df_exog,
-            known_future=ts.known_future,
+            known_future=ts._known_future,
             hierarchical_structure=ts.hierarchical_structure,
         )
         prediction_ts.transform(self.transforms)
