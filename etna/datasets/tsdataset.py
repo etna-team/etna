@@ -141,7 +141,7 @@ class TSDataset:
         hierarchical_structure:
             Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
-        self.freq = freq
+        self._freq = freq
         self._df_exog = None
         self._raw_df = self._prepare_df(df=df, freq=freq)
         self._df = self._raw_df.copy(deep=True)
@@ -1957,3 +1957,19 @@ class TSDataset:
             List of regressor columns
         """
         return self._known_future.copy()
+
+    @property
+    def freq(self) -> Optional[str]:
+        """Return frequency of timestamp, possible values:
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
+          for datetime timestamp
+
+        - None for integer timestamp
+
+        Returns
+        -------
+        :
+            String frequency of timestamp
+        """
+        return self._freq
