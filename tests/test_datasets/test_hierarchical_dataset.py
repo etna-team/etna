@@ -518,3 +518,10 @@ def test_train_test_split_pass_hierarchy_to_output(simple_hierarchical_ts):
     assert test.hierarchical_structure.level_structure == simple_hierarchical_ts.hierarchical_structure.level_structure
     assert train.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names
     assert test.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names
+
+
+def test_error_set_current_df_level(market_level_df, hierarchical_structure):
+    df = market_level_df
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    with pytest.raises(AttributeError, match="can't set attribute"):
+        ts.current_df_level = "market_2"
