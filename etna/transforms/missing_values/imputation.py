@@ -172,7 +172,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
             self._mean_imputer = SimpleImputerSubsegment(strategy="mean", copy=False)
             self._mean_imputer.fit(df)
 
-        _beginning_nans_mask = df.fillna(method="ffill").isna()
+        _beginning_nans_mask = df.ffill().isna()
         self._nans_to_impute_mask = df.isna() & (~_beginning_nans_mask)
 
     def _transform(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -225,7 +225,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
         if self._strategy is ImputerMode.constant:
             df.fillna(value=self.constant_value, inplace=True)
         elif self._strategy is ImputerMode.forward_fill:
-            df.fillna(method="ffill", inplace=True)
+            df.ffill(inplace=True)
         elif self._strategy is ImputerMode.mean:
             self._mean_imputer.transform(df)  # type: ignore
         elif self._strategy is ImputerMode.running_mean or self._strategy is ImputerMode.seasonal:
