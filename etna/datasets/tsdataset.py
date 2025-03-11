@@ -147,7 +147,7 @@ class TSDataset:
         self._df = self._raw_df.copy(deep=True)
 
         self.hierarchical_structure = hierarchical_structure
-        self.current_df_level: Optional[str] = self._get_dataframe_level(df=self._df)
+        self._current_df_level: Optional[str] = self._get_dataframe_level(df=self._df)
         self.current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
@@ -157,7 +157,7 @@ class TSDataset:
             self._regressors = copy(self._known_future)
 
             self.current_df_exog_level = self._get_dataframe_level(df=self._df_exog)
-            if self.current_df_level == self.current_df_exog_level:
+            if self._current_df_level == self.current_df_exog_level:
                 self._df = self._merge_exog(df=self._df)
         else:
             self._known_future = self._check_known_future(known_future, df_exog)
@@ -1973,3 +1973,15 @@ class TSDataset:
             String frequency of timestamp
         """
         return self._freq
+
+    @property
+    def current_df_level(self) -> Optional[str]:
+        """Return current level of DataFrame in hierarchical structure.
+
+        Returns
+        -------
+        :
+            String level of DataFrame
+        """
+        return self._current_df_level
+
