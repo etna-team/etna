@@ -1308,7 +1308,7 @@ class TSDataset:
         ValueError:
             If there are duplicate features in the dataset (columns with the same name)
         """
-        df = df_update.loc[self._df.index.min(): self._df.index.max()]
+        df = df_update.loc[self._df.index.min() : self._df.index.max()]
 
         if not df.index.equals(self._df.index):
             raise ValueError("Non matching timestamps detected when attempted to update the dataset!")
@@ -1948,7 +1948,7 @@ class TSDataset:
         return len(self.timestamps), len(self.segments), len(self.features)
 
     @property
-    def known_future(self) -> List[Optional[str]]:
+    def known_future(self) -> List[str]:
         """Return columns that are regressors.
 
         Returns
@@ -1960,12 +1960,7 @@ class TSDataset:
 
     @property
     def freq(self) -> Optional[str]:
-        """Return frequency of timestamp, possible values:
-
-        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
-          for datetime timestamp
-
-        - None for integer timestamp
+        """Return frequency of timestamp.
 
         Returns
         -------

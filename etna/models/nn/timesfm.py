@@ -359,7 +359,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             predictions = TSDataset.to_dataset(predictions)
             future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.loc[
                 :, pd.IndexSlice[:, "target"]
-                                                               ].values  # .values is needed to cast predictions type of initial target type in ts
+            ].values  # .values is needed to cast predictions type of initial target type in ts
         return future_ts
 
     @staticmethod
