@@ -2116,7 +2116,9 @@ def test_features(ts_name, expected_features, request):
 def test_error_set_read_only_known_future(df_and_regressors):
     df, df_exog, regressors = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=regressors)
-    with pytest.raises(AttributeError, match="can't set attribute"):
+    with pytest.raises(
+        AttributeError, match="can't set attribute|property 'known_future' of 'TSDataset' object has no setter"
+    ):
         ts.known_future = ["exog_1"]
 
 
@@ -2131,5 +2133,5 @@ def test_not_equal_updated_known_futures(df_and_regressors):
 def test_error_set_freq(df_and_regressors):
     df, _, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D")
-    with pytest.raises(AttributeError, match="can't set attribute"):
+    with pytest.raises(AttributeError, match="can't set attribute|property 'freq' of 'TSDataset' object has no setter"):
         ts.freq = "H"

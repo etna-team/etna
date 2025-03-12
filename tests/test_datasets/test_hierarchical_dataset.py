@@ -523,12 +523,16 @@ def test_train_test_split_pass_hierarchy_to_output(simple_hierarchical_ts):
 def test_error_set_current_df_level(market_level_df, hierarchical_structure):
     df = market_level_df
     ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
-    with pytest.raises(AttributeError, match="can't set attribute"):
+    with pytest.raises(
+        AttributeError, match="can't set attribute|property 'current_df_level' of 'TSDataset' object has no setter"
+    ):
         ts.current_df_level = "market_2"
 
 
 def test_error_set_current_df_exog_level(product_level_df, market_level_df_exog, hierarchical_structure):
     df, df_exog = product_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
-    with pytest.raises(AttributeError, match="can't set attribute"):
-        ts.current_df_level = "market_2"
+    with pytest.raises(
+        AttributeError, match="can't set attribute|property 'current_df_exog_level' of 'TSDataset' object has no setter"
+    ):
+        ts.current_df_exog_level = "market_2"

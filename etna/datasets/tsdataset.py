@@ -1976,7 +1976,7 @@ class TSDataset:
         Returns
         -------
         str or None
-            Level of dataframe.
+            Level of dataframe
         """
         return self._current_df_level
 
@@ -1987,6 +1987,6 @@ class TSDataset:
         Returns
         -------
         str or None
-            Level of dataframe with exogenous data.
+            Level of dataframe with exogenous data
         """
         return self._current_df_exog_level
