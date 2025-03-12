@@ -363,7 +363,9 @@ def test_ts_begin_nan_smooth_1(ts_begin_nan, expected_ts_begin_nan_smooth_1):
     )
     mean_encoder.fit_transform(ts_begin_nan)
     assert_frame_equal(
-        ts_begin_nan._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_ts_begin_nan_smooth_1._df, atol=0.01
+        ts_begin_nan._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
+        expected_ts_begin_nan_smooth_1._df,
+        atol=0.01,
     )
 
 
@@ -377,7 +379,9 @@ def test_ts_begin_nan_smooth_2(ts_begin_nan, expected_ts_begin_nan_smooth_2):
     )
     mean_encoder.fit_transform(ts_begin_nan)
     assert_frame_equal(
-        ts_begin_nan._dfloc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_ts_begin_nan_smooth_2._df, atol=0.01
+        ts_begin_nan._dfloc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
+        expected_ts_begin_nan_smooth_2._df,
+        atol=0.01,
     )
 
 
