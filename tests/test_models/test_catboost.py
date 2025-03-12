@@ -205,8 +205,8 @@ def test_prediction_decomposition_with_shuffled_columns(
     ts_with_features, model, train_order=("target", "cat_exog", "exog"), test_order=("target", "exog", "cat_exog")
 ):
     train, test = ts_with_features.train_test_split(test_size=10)
-    train._df = train.loc[pd.IndexSlice[:], pd.IndexSlice[:, train_order]]
-    test._df = test.loc[pd.IndexSlice[:], pd.IndexSlice[:, test_order]]
+    train._df = train._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, train_order]]
+    test._df = test._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, test_order]]
     assert_prediction_components_are_present(model=model, train=train, test=test)
 
 

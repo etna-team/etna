@@ -74,7 +74,7 @@ class TestForecastInSampleFullNoTarget:
 
         # forecasting
         forecast_ts.transform(transforms)
-        forecast_ts.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
+        forecast_ts._df.loc[:, pd.IndexSlice[:, "target"]] = np.NaN
         prediction_size = len(forecast_ts.timestamps)
         forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)
 
@@ -390,7 +390,7 @@ class TestForecastInSampleSuffixNoTarget:
 
         # forecasting
         forecast_ts.transform(transforms)
-        forecast_ts.loc[forecast_ts.timestamps[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
+        forecast_ts._df.loc[forecast_ts.timestamps[num_skip_points] :, pd.IndexSlice[:, "target"]] = np.NaN
         prediction_size = len(forecast_ts.timestamps) - num_skip_points
         forecast_ts._df = forecast_ts._df.iloc[(num_skip_points - model.context_size) :]
         forecast_ts = make_forecast(model=model, ts=forecast_ts, prediction_size=prediction_size)

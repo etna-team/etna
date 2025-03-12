@@ -79,8 +79,8 @@ def tsdataset_with_quantiles_and_lower_upper_borders(example_df):
 @pytest.fixture
 def tsdataset_with_quantiles_missing_values(tsdataset_with_zero_width_quantiles):
     _, true_ts = tsdataset_with_zero_width_quantiles
-    true_ts.loc["2020-01-31":, pd.IndexSlice[:, "target_0.025"]] = np.NaN
-    true_ts.loc[:"2020-01-02", pd.IndexSlice[:, "target_0.975"]] = np.NaN
+    true_ts._df.loc["2020-01-31":, pd.IndexSlice[:, "target_0.025"]] = np.NaN
+    true_ts._df.loc[:"2020-01-02", pd.IndexSlice[:, "target_0.975"]] = np.NaN
 
     forecast_ts = deepcopy(true_ts)
     forecast_ts._df.fillna(0, inplace=True)
@@ -91,8 +91,8 @@ def tsdataset_with_quantiles_missing_values(tsdataset_with_zero_width_quantiles)
 @pytest.fixture
 def tsdataset_with_borders_missing_values(tsdataset_with_lower_upper_borders):
     _, true_ts = tsdataset_with_lower_upper_borders
-    true_ts.loc["2020-01-31":, pd.IndexSlice[:, "target_lower"]] = np.NaN
-    true_ts.loc[:"2020-01-02", pd.IndexSlice[:, "target_upper"]] = np.NaN
+    true_ts._df.loc["2020-01-31":, pd.IndexSlice[:, "target_lower"]] = np.NaN
+    true_ts._df.loc[:"2020-01-02", pd.IndexSlice[:, "target_upper"]] = np.NaN
 
     forecast_ts = deepcopy(true_ts)
     forecast_ts._df.fillna(0, inplace=True)
@@ -103,8 +103,8 @@ def tsdataset_with_borders_missing_values(tsdataset_with_lower_upper_borders):
 @pytest.fixture
 def tsdataset_with_intervals_and_missing_values(tsdataset_with_quantiles_and_lower_upper_borders):
     _, true_ts = tsdataset_with_quantiles_and_lower_upper_borders
-    true_ts.loc["2020-01-31":, pd.IndexSlice[:, "target"]] = np.NaN
-    true_ts.loc[:"2020-01-02", pd.IndexSlice[:, "target"]] = np.NaN
+    true_ts._df.loc["2020-01-31":, pd.IndexSlice[:, "target"]] = np.NaN
+    true_ts._df.loc[:"2020-01-02", pd.IndexSlice[:, "target"]] = np.NaN
 
     forecast_ts = deepcopy(true_ts)
     forecast_ts._df.fillna(0, inplace=True)
@@ -115,7 +115,7 @@ def tsdataset_with_intervals_and_missing_values(tsdataset_with_quantiles_and_low
 @pytest.fixture
 def tsdataset_with_intervals_and_missing_segment(tsdataset_with_quantiles_and_lower_upper_borders):
     _, true_ts = tsdataset_with_quantiles_and_lower_upper_borders
-    true_ts.loc[:, pd.IndexSlice["segment_1", "target"]] = np.NaN
+    true_ts._df.loc[:, pd.IndexSlice["segment_1", "target"]] = np.NaN
 
     forecast_ts = deepcopy(true_ts)
     forecast_ts._df.fillna(0, inplace=True)

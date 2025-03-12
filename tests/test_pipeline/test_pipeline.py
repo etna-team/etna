@@ -314,7 +314,7 @@ def test_forecast_prediction_interval_not_builtin(example_tsds, model):
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds, model):
-    example_tsds.loc[example_tsds.timestamps[-2], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds._df.loc[example_tsds.timestamps[-2], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -325,7 +325,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds
 @pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
-    example_tsds.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds._df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -339,7 +339,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, 
 @pytest.mark.parametrize("model", (MovingAverageModel(),))
 @pytest.mark.parametrize("stride", (1, 4, 6))
 def test_add_forecast_borders_overlapping_timestamps(example_tsds, model, stride):
-    example_tsds.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds._df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)

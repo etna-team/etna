@@ -411,9 +411,9 @@ def test_metric_values_with_changed_segment_order(metric_class, train_test_dfs):
     segments = np.array(forecast_df.segments)
 
     forecast_segment_order = segments[[3, 2, 0, 1, 4]]
-    forecast_df_new._df = forecast_df_new.loc[:, pd.IndexSlice[forecast_segment_order, :]]
+    forecast_df_new._df = forecast_df_new._df.loc[:, pd.IndexSlice[forecast_segment_order, :]]
     true_segment_order = segments[[4, 1, 3, 2, 0]]
-    true_df_new._df = true_df_new.loc[:, pd.IndexSlice[true_segment_order, :]]
+    true_df_new._df = true_df_new._df.loc[:, pd.IndexSlice[true_segment_order, :]]
 
     metric = metric_class(mode="per-segment")
     metrics_initial = metric(y_pred=forecast_df, y_true=true_df)

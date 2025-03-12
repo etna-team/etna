@@ -106,7 +106,7 @@ def periodic_ts(periodic_dfs):
 
 @pytest.fixture()
 def small_periodic_ts(periodic_ts):
-    df = periodic_ts[0].loc[:, pd.IndexSlice["segment_1", :]].iloc[-10:]
+    df = periodic_ts[0]._df.loc[:, pd.IndexSlice["segment_1", :]].iloc[-10:]
     ts = TSDataset(df, freq="D")
     return ts
 

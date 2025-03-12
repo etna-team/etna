@@ -180,11 +180,11 @@ def check_inverse_transform_inplace_filled_test(
     # make predictions by hand taking into account the nature of ts_nans
     future_ts = ts_train.make_future(20, transforms=[transform])
     if order == 1:
-        future_ts.loc[:, pd.IndexSlice["1", "target"]] = 1 * period
-        future_ts.loc[:, pd.IndexSlice["2", "target"]] = 2 * period
+        future_ts._df.loc[:, pd.IndexSlice["1", "target"]] = 1 * period
+        future_ts._df.loc[:, pd.IndexSlice["2", "target"]] = 2 * period
     elif order >= 2:
-        future_ts.loc[:, pd.IndexSlice["1", "target"]] = 0
-        future_ts.loc[:, pd.IndexSlice["2", "target"]] = 0
+        future_ts._df.loc[:, pd.IndexSlice["1", "target"]] = 0
+        future_ts._df.loc[:, pd.IndexSlice["2", "target"]] = 0
     else:
         assert_never(order)
 
