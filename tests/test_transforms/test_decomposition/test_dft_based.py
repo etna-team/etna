@@ -236,7 +236,7 @@ def test_simple_pipeline_backtest(ts_with_exogs, in_column, horizon):
     _, forecast, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)
 
     assert len(forecast) == horizon * 3
-    assert np.sum(forecast._df.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
+    assert np.sum(forecast.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
 
 
 @pytest.mark.parametrize(
