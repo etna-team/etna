@@ -254,7 +254,7 @@ def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_te
 
     assert isinstance(value, dict)
     segments = set(forecast_df.segments)
-    empty_segment = true_df.seqments[0]
+    empty_segment = true_df.segments[0]
     assert value.keys() == segments
     for cur_segment, cur_value in value.items():
         if cur_segment == empty_segment:

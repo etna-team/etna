@@ -197,7 +197,9 @@ def test_double_apply_add_columns_transform(remove_features_df):
     transform = SimpleAddColumnTransform(required_features=["target"])
     ts_transformed = transform.fit_transform(ts=ts)
     ts_transformed = transform.transform(ts=ts_transformed)
-    assert ts_transformed.features == ["exog_1", "regressor_test", "target", "target_0.01"] * 3
+    assert (
+        ts_transformed.features * ts_transformed.size()[1] == ["exog_1", "regressor_test", "target", "target_0.01"] * 3
+    )
 
 
 @pytest.fixture

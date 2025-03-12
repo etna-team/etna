@@ -456,7 +456,7 @@ class TSDataset:
         self._check_endings(warning=True)
         df = self._expand_index(df=self._raw_df, freq=self.freq, future_steps=future_steps)
 
-        if self._df_exog is not None and self.current_df_level == self._current_df_exog_level:
+        if self._df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df=df)
 
             # check if we have enough values in regressors
@@ -1630,6 +1630,7 @@ class TSDataset:
         pd.Dataframe
             is_null dataframe
         """
+        # TODO: We need to rework this documentation, because self.df is protected now
         return self._df.isnull()
 
     def head(self, n_rows: int = 5) -> pd.DataFrame:
