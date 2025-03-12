@@ -461,10 +461,10 @@ class TSDataset:
 
             # check if we have enough values in regressors
             # TODO: check performance
-            if self._known_future:
+            if self.known_future:
                 future_index = df.index.difference(self.timestamps)
                 for segment in self.segments:
-                    regressors_index = self._df_exog.loc[:, pd.IndexSlice[segment, self._known_future]].index
+                    regressors_index = self._df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
                     if not np.all(future_index.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
@@ -500,7 +500,7 @@ class TSDataset:
         future_ts = TSDataset(df=future_dataset, freq=self.freq, hierarchical_structure=self.hierarchical_structure)
 
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        future_ts._known_future = deepcopy(self._known_future)
+        future_ts._known_future = deepcopy(self.known_future)
         future_ts._regressors = deepcopy(self.regressors)
         if self._df_exog is not None:
             future_ts._df_exog = self._df_exog.copy(deep=True)
@@ -600,14 +600,14 @@ class TSDataset:
 
     def _check_regressors(self, df: pd.DataFrame):
         """Check that regressors begin not later than in ``df`` and end later than in ``df``."""
-        if len(self._known_future) == 0:
+        if len(self.known_future) == 0:
             return
 
         segments = set(df.columns.get_level_values("segment"))
 
         target_min, target_max = self._get_min_max_valid_timestamp(df=df, segments=segments)
         exog_series_min, exog_series_max = self._get_min_max_valid_timestamp(
-            df=self._df_exog, segments=segments, regressors=self._known_future
+            df=self._df_exog, segments=segments, regressors=self.known_future
         )
 
         for i, segment in enumerate(segments):
@@ -641,7 +641,7 @@ class TSDataset:
 
     def _check_endings(self, warning=False):
         """Check that all targets ends at the same timestamp."""
-        max_index = self._df.index.max()
+        max_index = self.timestamps.max()
         if np.any(pd.isna(self._df.loc[max_index, pd.IndexSlice[:, "target"]])):
             if warning:
                 warnings.warn(
@@ -809,8 +809,8 @@ class TSDataset:
         start = _check_timestamp_param(param=start, param_name="start", freq=self.freq)
         end = _check_timestamp_param(param=end, param_name="end", freq=self.freq)
 
-        start = self._df.index.min() if start is None else start
-        end = self._df.index.max() if end is None else end
+        start = self.timestamps.min() if start is None else start
+        end = self.timestamps.max() if end is None else end
 
         figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
         _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, squeeze=False)
@@ -1134,23 +1134,23 @@ class TSDataset:
 
         if test_end is None:
             if test_start is not None and test_size is not None:
-                test_start_idx = self._df.index.get_loc(test_start)
+                test_start_idx = self.timestamps.get_loc(test_start)
                 if test_start_idx + test_size > len(self._df.index):
                     raise ValueError(
                         f"test_size is {test_size}, but only {len(self._df.index) - test_start_idx} available with your test_start"
                     )
                 test_end_defined = self._df.index[test_start_idx + test_size]
             elif test_size is not None and train_end is not None:
-                test_start_idx = self._df.index.get_loc(train_end)
+                test_start_idx = self.timestamps.get_loc(train_end)
                 test_start = self._df.index[test_start_idx + 1]
                 test_end_defined = self._df.index[test_start_idx + test_size]
             else:
-                test_end_defined = self._df.index.max()
+                test_end_defined = self.timestamps.max()
         else:
             test_end_defined = test_end
 
         if train_start is None:
-            train_start_defined = self._df.index.min()
+            train_start_defined = self.timestamps.min()
         else:
             train_start_defined = train_start
 
@@ -1159,25 +1159,25 @@ class TSDataset:
 
         if test_size is None:
             if train_end is None:
-                test_start_idx = self._df.index.get_loc(test_start)
+                test_start_idx = self.timestamps.get_loc(test_start)
                 train_end_defined = self._df.index[test_start_idx - 1]
             else:
                 train_end_defined = train_end
 
             if test_start is None:
-                train_end_idx = self._df.index.get_loc(train_end)
+                train_end_idx = self.timestamps.get_loc(train_end)
                 test_start_defined = self._df.index[train_end_idx + 1]
             else:
                 test_start_defined = test_start
         else:
             if test_start is None:
-                test_start_idx = self._df.index.get_loc(test_end_defined)
+                test_start_idx = self.timestamps.get_loc(test_end_defined)
                 test_start_defined = self._df.index[test_start_idx - test_size + 1]
             else:
                 test_start_defined = test_start
 
             if train_end is None:
-                test_start_idx = self._df.index.get_loc(test_start_defined)
+                test_start_idx = self.timestamps.get_loc(test_start_defined)
                 train_end_defined = self._df.index[test_start_idx - 1]
             else:
                 train_end_defined = train_end
@@ -1259,10 +1259,10 @@ class TSDataset:
             train_start, train_end, test_start, test_end, test_size
         )
 
-        if test_end_defined > self._df.index.max():
-            warnings.warn(f"Max timestamp in df is {self._df.index.max()}.")
-        if train_start_defined < self._df.index.min():
-            warnings.warn(f"Min timestamp in df is {self._df.index.min()}.")
+        if test_end_defined > self.timestamps.max():
+            warnings.warn(f"Max timestamp in df is {self.timestamps.max()}.")
+        if train_start_defined < self.timestamps.min():
+            warnings.warn(f"Min timestamp in df is {self.timestamps.min()}.")
 
         self_df = self._df
         self_raw_df = self._raw_df
@@ -1308,7 +1308,7 @@ class TSDataset:
         ValueError:
             If there are duplicate features in the dataset (columns with the same name)
         """
-        df = df_update.loc[self._df.index.min() : self._df.index.max()]
+        df = df_update.loc[self.timestamps.min() : self.timestamps.max()]
 
         if not df.index.equals(self._df.index):
             raise ValueError("Non matching timestamps detected when attempted to update the dataset!")
@@ -1348,7 +1348,7 @@ class TSDataset:
         """
         _check_features_in_segments(columns=df_update.columns, segments=self.segments)
 
-        self._df = pd.concat((self._df, df_update.loc[: self._df.index.max()]), axis=1).sort_index(axis=1)
+        self._df = pd.concat((self._df, df_update.loc[: self.timestamps.max()]), axis=1).sort_index(axis=1)
         if update_exog:
             if self._df_exog is None:
                 self._df_exog = df_update
@@ -1479,7 +1479,7 @@ class TSDataset:
             df=target_level_df,
             freq=self.freq,
             df_exog=self._df_exog,
-            known_future=self._known_future,
+            known_future=self.known_future,
             hierarchical_structure=self.hierarchical_structure,
         )
 
@@ -1693,7 +1693,7 @@ class TSDataset:
             "num_segments": len(self.segments),
             "num_exogs": len(exogs),
             "num_regressors": len(self.regressors),
-            "num_known_future": len(self._known_future),
+            "num_known_future": len(self.known_future),
             "freq": self.freq,
         }
 
@@ -1949,7 +1949,7 @@ class TSDataset:
 
     @property
     def known_future(self) -> List[str]:
-        """Return columns that are regressors.
+        """Return columns in ``df_exog`` are initially regressors.
 
         Returns
         -------

@@ -402,7 +402,7 @@ class _DummyMetric(Metric):
         return False
 
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
-        segments = set(y_true._df.columns.get_level_values("segment"))
+        segments = set(y_true.segments)
         metrics_per_segment: Dict[str, Optional[float]] = {}
         for segment in segments:
             metrics_per_segment[segment] = 0.0

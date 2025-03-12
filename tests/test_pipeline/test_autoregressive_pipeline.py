@@ -195,7 +195,7 @@ def test_forecast_multi_step(example_tsds, horizon, step):
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast()
 
-    assert forecast_pipeline._df.shape[0] == horizon
+    assert forecast_pipeline.size()[0] == horizon
 
 
 def test_forecast_prediction_interval_interface(example_tsds):

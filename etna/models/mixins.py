@@ -582,7 +582,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        horizon = len(ts._df)
+        horizon = ts.size()[0]
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         # TODO: make it work with prediction intervals and context
         y = prediction_method(self=self._base_model, df=x, **kwargs).reshape(-1, horizon).T

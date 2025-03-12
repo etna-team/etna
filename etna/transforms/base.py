@@ -120,9 +120,7 @@ class Transform(SaveMixin, BaseMixin):
         columns_before = set(df.columns.get_level_values("feature"))
         df_transformed = self._transform(df=df)
 
-        updated_columns = set(df_transformed.columns.get_level_values("feature")) & set(
-            ts._df.columns.get_level_values("feature")
-        )
+        updated_columns = set(df_transformed.columns.get_level_values("feature")) & set(ts.features)
 
         ts = self._update_dataset(ts=ts, columns_before=columns_before | updated_columns, df_transformed=df_transformed)
         return ts

@@ -82,7 +82,7 @@ def constant_ts(size=40) -> TSDataset:
 
 def test_catboost_multi_segment_forecast(constant_ts):
     train, test = constant_ts
-    horizon = len(test._df)
+    horizon = test.size()[0]
 
     lags = LagTransform(in_column="target", lags=[10, 11, 12])
     train.fit_transform([lags])

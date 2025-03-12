@@ -1139,7 +1139,7 @@ def test_make_future_small_horizon():
     ts = TSDataset(df, freq="D")
     train = TSDataset(ts[: ts.timestamps[10], :, :], freq="D")
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
-        assert len(train.make_future(1)._df) == 1
+        assert train.make_future(1).size()[0] == 1
 
 
 def test_make_future_with_regressors(df_and_regressors):
@@ -1232,7 +1232,7 @@ def test_check_regressors_pass_empty(df_and_regressors):
 def test_getitem_only_date(tsdf_with_exog):
     df_date_only = tsdf_with_exog["2021-02-01"]
     assert df_date_only.name == pd.Timestamp("2021-02-01")
-    pd.testing.assert_series_equal(tsdf_with_exog.loc["2021-02-01"], df_date_only)
+    pd.testing.assert_series_equal(tsdf_with_exog._df.loc["2021-02-01"], df_date_only)
 
 
 def test_getitem_slice_date(tsdf_with_exog):
@@ -1495,7 +1495,7 @@ def test_to_dataset_not_modify_dataframe():
 @pytest.mark.parametrize("start_idx,end_idx", [(1, None), (None, 1), (1, 2), (1, -1)])
 def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
-    assert ts_slice._known_future == tsdf_with_exog._known_future
+    assert ts_slice.known_future == tsdf_with_exog.known_future
     assert ts_slice.regressors == tsdf_with_exog.regressors
     pd.testing.assert_frame_equal(ts_slice._df, tsdf_with_exog._df.iloc[start_idx:end_idx])
     pd.testing.assert_frame_equal(ts_slice._df_exog, tsdf_with_exog._df_exog)
@@ -1944,7 +1944,7 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
     expected_df_exog = TSDataset.to_dataset(timestamp_df)
     pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
-    assert original_timestamp_name in ts._known_future
+    assert original_timestamp_name in ts.known_future
     assert ts.freq is None
 
 
@@ -1996,7 +1996,7 @@ def test_create_from_misaligned_with_exog(
     pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     expected_known_future = sorted(set(known_future).union([original_timestamp_name]))
-    assert ts._known_future == expected_known_future
+    assert ts.known_future == expected_known_future
 
     assert ts.freq is None
 
@@ -2046,7 +2046,7 @@ def test_create_from_misaligned_with_exog_all(
     expected_df_exog = TSDataset.to_dataset(expected_df_exog)
     pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
-    assert ts._known_future == expected_known_future
+    assert ts.known_future == expected_known_future
     assert ts.freq is None
 
 

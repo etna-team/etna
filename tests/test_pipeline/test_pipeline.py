@@ -1111,7 +1111,7 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
     pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
     pipeline.fit(ts_with_nans_in_tails)
     forecast = pipeline.forecast()
-    assert len(forecast._df) == 5
+    assert forecast.size()[0] == 5
 
 
 @pytest.mark.parametrize(

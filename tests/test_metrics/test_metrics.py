@@ -110,7 +110,7 @@ def test_metrics_per_segment(metric_class, train_test_dfs):
     metric = metric_class(mode=MetricAggregationMode.per_segment)
     value = metric(y_true=true_df, y_pred=forecast_df)
     assert isinstance(value, dict)
-    for segment in forecast_df._df.columns.get_level_values("segment").unique():
+    for segment in forecast_df.segments:
         assert segment in value
 
 
@@ -224,7 +224,7 @@ def test_invalid_single_nan_ignore(metric, train_test_dfs):
     true_df._df.iloc[0, 0] = np.NaN
     value = metric(y_true=true_df, y_pred=forecast_df)
     assert isinstance(value, dict)
-    segments = set(forecast_df._df.columns.get_level_values("segment").unique().tolist())
+    segments = set(forecast_df.segments)
     assert value.keys() == segments
     assert all(isinstance(cur_value, float) for cur_value in value.values())
 
@@ -253,8 +253,8 @@ def test_invalid_segment_nans_ignore_per_segment(metric, expected_type, train_te
     value = metric(y_true=true_df, y_pred=forecast_df)
 
     assert isinstance(value, dict)
-    segments = set(forecast_df._df.columns.get_level_values("segment").unique().tolist())
-    empty_segment = true_df._df.columns.get_level_values("segment").unique()[0]
+    segments = set(forecast_df.segments)
+    empty_segment = true_df.seqments[0]
     assert value.keys() == segments
     for cur_segment, cur_value in value.items():
         if cur_segment == empty_segment:

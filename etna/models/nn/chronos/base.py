@@ -229,7 +229,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
             )  # shape [prediction_length, segments * n_quantiles]
             quantile_columns = [f"target_{quantile:.4g}" for quantile in quantiles]
             columns = pd.MultiIndex.from_product([ts.segments, quantile_columns], names=["segment", "feature"])
-            quantiles_df = pd.DataFrame(quantiles_predicts[: len(ts._df)], columns=columns, index=future_ts._df.index)
+            quantiles_df = pd.DataFrame(quantiles_predicts[: ts.size()[0]], columns=columns, index=future_ts._df.index)
 
             future_ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
 

@@ -38,7 +38,7 @@ class ModelPipelinePredictMixin:
         df = deepcopy(ts._raw_df)
         df_exog = deepcopy(ts._df_exog)
         freq = deepcopy(ts.freq)
-        known_future = deepcopy(ts._known_future)
+        known_future = deepcopy(ts.known_future)
 
         df_to_transform = df.loc[:end_timestamp]
 

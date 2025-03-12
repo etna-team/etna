@@ -213,7 +213,7 @@ def test_forecast_interface(
     forecast = ensemble.forecast()
     features = set(forecast.columns.get_level_values("feature")) - {"target"}
     assert isinstance(forecast, TSDataset)
-    assert len(forecast._df) == HORIZON
+    assert forecast.size()[0] == HORIZON
     assert features == expected_features
 
 
@@ -264,7 +264,7 @@ def test_predict_interface(
     )
     features = set(prediction.columns.get_level_values("feature")) - {"target"}
     assert isinstance(prediction, TSDataset)
-    assert len(prediction._df) == end_idx - start_idx + 1
+    assert prediction.size()[0] == end_idx - start_idx + 1
     assert features == expected_features
 
 

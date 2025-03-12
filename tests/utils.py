@@ -30,7 +30,7 @@ def select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
     df_exog = ts._df_exog
     if df_exog is not None:
         df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
-    known_future = ts._known_future
+    known_future = ts.known_future
     freq = ts.freq
     subset_ts = TSDataset(df=df, df_exog=df_exog, known_future=known_future, freq=freq)
     return subset_ts
@@ -49,7 +49,7 @@ def convert_ts_to_int_timestamp(ts: TSDataset, shift=0):
     ts = TSDataset(
         df=df,
         df_exog=df_exog,
-        known_future=ts._known_future,
+        known_future=ts.known_future,
         freq=None,
         hierarchical_structure=ts.hierarchical_structure,
     )
@@ -72,7 +72,7 @@ def convert_ts_index_to_freq(ts: TSDataset, freq: str, shift=0):
     ts = TSDataset(
         df=df,
         df_exog=df_exog,
-        known_future=ts._known_future,
+        known_future=ts.known_future,
         freq=freq,
         hierarchical_structure=ts.hierarchical_structure,
     )

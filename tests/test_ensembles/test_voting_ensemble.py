@@ -113,7 +113,7 @@ def test_forecast_interface(example_tsds: TSDataset, catboost_pipeline: Pipeline
     ensemble.fit(ts=example_tsds)
     forecast = ensemble.forecast()
     assert isinstance(forecast, TSDataset)
-    assert len(forecast._df) == HORIZON
+    assert forecast.size()[0] == HORIZON
 
 
 def test_forecast_prediction_interval_interface(example_tsds, naive_pipeline_1, naive_pipeline_2):

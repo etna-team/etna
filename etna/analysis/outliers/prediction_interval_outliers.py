@@ -55,7 +55,7 @@ def _select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
     df_exog = ts._df_exog
     if df_exog is not None:
         df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
-    known_future = ts._known_future
+    known_future = ts.known_future
     freq = ts.freq
 
     if df_exog is not None:

@@ -196,8 +196,8 @@ class Metric(AbstractMetric, BaseMixin):
         ValueError:
             if there are mismatches in y_true and y_pred segments
         """
-        segments_true = set(y_true._df.columns.get_level_values("segment"))
-        segments_pred = set(y_pred._df.columns.get_level_values("segment"))
+        segments_true = set(y_true.segments)
+        segments_pred = set(y_pred.segments)
 
         pred_diff_true = segments_pred - segments_true
         true_diff_pred = segments_true - segments_pred
@@ -228,7 +228,7 @@ class Metric(AbstractMetric, BaseMixin):
         ValueError:
             if one of segments in y_true or y_pred doesn't contain 'target' column.
         """
-        segments = set(y_true._df.columns.get_level_values("segment"))
+        segments = set(y_true.segments)
 
         for segment in segments:
             for name, dataset in zip(("y_true", "y_pred"), (y_true, y_pred)):

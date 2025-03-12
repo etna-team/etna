@@ -1164,7 +1164,7 @@ class TestForecastMixedInOutSample:
         future_ts = ts.make_future(future_steps=future_prediction_size)
         future_df = future_ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
         df_full = pd.concat((df, future_df))
-        forecast_full_ts = TSDataset(df=df_full, df_exog=ts._df_exog, freq=ts.freq, known_future=ts._known_future)
+        forecast_full_ts = TSDataset(df=df_full, df_exog=ts._df_exog, freq=ts.freq, known_future=ts.known_future)
         forecast_full_ts.transform(transforms)
         forecast_full_ts._df = forecast_full_ts._df.iloc[(num_skip_points - model.context_size) :]
         full_prediction_size = len(forecast_full_ts.timestamps) - model.context_size
