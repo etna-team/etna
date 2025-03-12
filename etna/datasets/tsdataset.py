@@ -1135,15 +1135,15 @@ class TSDataset:
         if test_end is None:
             if test_start is not None and test_size is not None:
                 test_start_idx = self.timestamps.get_loc(test_start)
-                if test_start_idx + test_size > len(self._df.index):
+                if test_start_idx + test_size > self.size()[0]:
                     raise ValueError(
-                        f"test_size is {test_size}, but only {len(self._df.index) - test_start_idx} available with your test_start"
+                        f"test_size is {test_size}, but only {self.size()[0] - test_start_idx} available with your test_start"
                     )
-                test_end_defined = self._df.index[test_start_idx + test_size]
+                test_end_defined = self.timestamps[test_start_idx + test_size]
             elif test_size is not None and train_end is not None:
                 test_start_idx = self.timestamps.get_loc(train_end)
-                test_start = self._df.index[test_start_idx + 1]
-                test_end_defined = self._df.index[test_start_idx + test_size]
+                test_start = self.timestamps[test_start_idx + 1]
+                test_end_defined = self.timestamps[test_start_idx + test_size]
             else:
                 test_end_defined = self.timestamps.max()
         else:
@@ -1160,25 +1160,25 @@ class TSDataset:
         if test_size is None:
             if train_end is None:
                 test_start_idx = self.timestamps.get_loc(test_start)
-                train_end_defined = self._df.index[test_start_idx - 1]
+                train_end_defined = self.timestamps[test_start_idx - 1]
             else:
                 train_end_defined = train_end
 
             if test_start is None:
                 train_end_idx = self.timestamps.get_loc(train_end)
-                test_start_defined = self._df.index[train_end_idx + 1]
+                test_start_defined = self.timestamps[train_end_idx + 1]
             else:
                 test_start_defined = test_start
         else:
             if test_start is None:
                 test_start_idx = self.timestamps.get_loc(test_end_defined)
-                test_start_defined = self._df.index[test_start_idx - test_size + 1]
+                test_start_defined = self.timestamps[test_start_idx - test_size + 1]
             else:
                 test_start_defined = test_start
 
             if train_end is None:
                 test_start_idx = self.timestamps.get_loc(test_start_defined)
-                train_end_defined = self._df.index[test_start_idx - 1]
+                train_end_defined = self.timestamps[test_start_idx - 1]
             else:
                 train_end_defined = train_end
 
@@ -1310,7 +1310,7 @@ class TSDataset:
         """
         df = df_update.loc[self.timestamps.min() : self.timestamps.max()]
 
-        if not df.index.equals(self._df.index):
+        if not df.index.equals(self.timestamps):
             raise ValueError("Non matching timestamps detected when attempted to update the dataset!")
 
         if len(df.columns.difference(self._df.columns)) > 0:
@@ -1526,7 +1526,7 @@ class TSDataset:
         )
         self._df = (
             pd.concat((self._df, target_components_df), axis=1)
-            .loc[self._df.index]
+            .loc[self.timestamps]
             .sort_index(axis=1, level=("segment", "feature"))
         )
 
@@ -1577,7 +1577,7 @@ class TSDataset:
         )
         self._df = (
             pd.concat((self._df, prediction_intervals_df), axis=1)
-            .loc[self._df.index]
+            .loc[self.timestamps]
             .sort_index(axis=1, level=("segment", "feature"))
         )
 

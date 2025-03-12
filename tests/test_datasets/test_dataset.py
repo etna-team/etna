@@ -1542,7 +1542,7 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     def make_samples(df):
         return [{"target": df.target.values, "segment": df["segment"].values[0]}]
 
-    fill_na_idx = tsdf_with_exog._df.index[3]
+    fill_na_idx = tsdf_with_exog.timestamps[3]
     tsdf_with_exog.loc[:fill_na_idx, pd.IndexSlice["Moscow", "target"]] = np.nan
 
     torch_dataset = tsdf_with_exog.to_torch_dataset(make_samples, dropna=True)
