@@ -198,7 +198,7 @@ def test_double_apply_add_columns_transform(remove_features_df):
     ts_transformed = transform.fit_transform(ts=ts)
     ts_transformed = transform.transform(ts=ts_transformed)
     assert (
-        ts_transformed.columns.get_level_values("feature").tolist()
+        ts_transformed._df.columns.get_level_values("feature").tolist()
         == ["exog_1", "regressor_test", "target", "target_0.01"] * 3
     )
 

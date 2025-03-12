@@ -237,7 +237,7 @@ def test_forecast_columns_duplicates(market_level_constant_hierarchical_ts_w_exo
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast()
-    assert not any(forecast.columns.duplicated())
+    assert not any(forecast._df.columns.duplicated())
 
 
 @pytest.mark.parametrize(
@@ -252,7 +252,7 @@ def test_predict_columns_duplicates(market_level_constant_hierarchical_ts_w_exog
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
     pipeline.fit(ts=ts)
     forecast = pipeline.predict(ts=ts, start_timestamp=ts.timestamps[3])
-    assert not any(forecast.columns.duplicated())
+    assert not any(forecast._df.columns.duplicated())
 
 
 @pytest.mark.parametrize(
