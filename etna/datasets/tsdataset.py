@@ -1623,7 +1623,9 @@ class TSDataset:
         return self._df.loc
 
     def isnull(self) -> pd.DataFrame:
-        """Return dataframe in a wide format with flag that means if the correspondent object in TSDataset data is null.
+        """Return dataframe with flag that means if the correspondent element in wide representation of data is null.
+
+        Wide representation could be obtained by using ``self.to_pandas()``.
 
         Returns
         -------
