@@ -94,7 +94,7 @@ def test_fit(example_tsds, save_ts):
     transforms = [AddConstTransform(in_column="target", value=10, inplace=True), DateFlagsTransform()]
     pipeline = Pipeline(model=model, transforms=transforms, horizon=5)
     pipeline.fit(example_tsds, save_ts=save_ts)
-    pd.testing.assert_frame_equal(original_ts.df, example_tsds.df)
+    pd.testing.assert_frame_equal(original_ts._df, example_tsds._df)
 
 
 @pytest.mark.parametrize("save_ts", [False, True])
@@ -297,7 +297,7 @@ def test_forecast_prediction_interval_builtin(example_tsds, model):
     future = example_tsds.make_future(5)
     forecast_model = model.forecast(ts=future, prediction_interval=True, return_components=False)
 
-    assert forecast_model.df.equals(forecast_pipeline.df)
+    assert forecast_model._df.equals(forecast_pipeline._df)
 
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
@@ -314,7 +314,7 @@ def test_forecast_prediction_interval_not_builtin(example_tsds, model):
 
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds, model):
-    example_tsds.df.loc[example_tsds.timestamps[-2], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds._df.loc[example_tsds.timestamps[-2], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -325,7 +325,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds
 @pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
-    example_tsds.df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds._df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -339,7 +339,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, 
 @pytest.mark.parametrize("model", (MovingAverageModel(),))
 @pytest.mark.parametrize("stride", (1, 4, 6))
 def test_add_forecast_borders_overlapping_timestamps(example_tsds, model, stride):
-    example_tsds.df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
+    example_tsds._df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
 
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
@@ -358,7 +358,7 @@ def test_forecast_prediction_interval_correct_values(splited_piecewise_constant_
     pipeline = Pipeline(model=NaiveModel(lag=1), transforms=[], horizon=5)
     pipeline.fit(train)
     forecast = pipeline.forecast(prediction_interval=True)
-    assert np.allclose(forecast.df.values, test.df.values)
+    assert np.allclose(forecast._df.values, test._df.values)
 
 
 @pytest.mark.parametrize("quantiles_narrow,quantiles_wide", ([([0.2, 0.8], [0.025, 0.975])]))
@@ -1111,7 +1111,7 @@ def test_forecast_pipeline_with_nan_at_the_end(ts_with_nans_in_tails):
     pipeline = Pipeline(model=NaiveModel(), transforms=[TimeSeriesImputerTransform(strategy="forward_fill")], horizon=5)
     pipeline.fit(ts_with_nans_in_tails)
     forecast = pipeline.forecast()
-    assert len(forecast.df) == 5
+    assert forecast.size()[0] == 5
 
 
 @pytest.mark.parametrize(

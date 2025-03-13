@@ -81,7 +81,7 @@ def assert_pipeline_forecasts_without_self_ts(
 
 def assert_pipeline_forecasts_given_ts(pipeline: AbstractPipeline, ts: TSDataset, horizon: int) -> AbstractPipeline:
     fit_ts = deepcopy(ts)
-    fit_ts.df = fit_ts.df.iloc[:-horizon]
+    fit_ts._df = fit_ts._df.iloc[:-horizon]
     to_forecast_ts = deepcopy(ts)
 
     pipeline.fit(ts=fit_ts)
@@ -106,7 +106,7 @@ def assert_pipeline_forecasts_given_ts_with_prediction_intervals(
     pipeline: AbstractPipeline, ts: TSDataset, horizon: int, **forecast_params
 ) -> AbstractPipeline:
     fit_ts = deepcopy(ts)
-    fit_ts.df = fit_ts.df.iloc[:-horizon]
+    fit_ts._df = fit_ts._df.iloc[:-horizon]
     to_forecast_ts = deepcopy(ts)
 
     pipeline.fit(fit_ts)

@@ -327,7 +327,7 @@ def get_anomalies_hist(
     outliers_per_segment = {}
     segments = ts.segments
     for seg in segments:
-        segment_df = ts.df[seg].reset_index()
+        segment_df = ts._df[seg].reset_index()
         values = segment_df[in_column].values
 
         anomalies = hist(values, bins_number)

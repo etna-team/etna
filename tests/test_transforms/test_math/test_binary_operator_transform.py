@@ -89,14 +89,14 @@ def ts_two_segments(random_seed) -> TSDataset:
     ],
 )
 def test_simple_one_segment(ts_one_segment: TSDataset, operand, left_column, right_column, out_column):
-    left_vals = deepcopy(ts_one_segment.df["segment_0"][left_column].values)
-    right_vals = deepcopy(ts_one_segment.df["segment_0"][right_column].values)
+    left_vals = deepcopy(ts_one_segment._df["segment_0"][left_column].values)
+    right_vals = deepcopy(ts_one_segment._df["segment_0"][right_column].values)
     checker_vals = deepcopy(ops[operand](left_vals, right_vals))
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
     new_ts = transformer.fit_transform(ts=ts_one_segment)
-    new_ts_vals = new_ts.df["segment_0"][transformer.out_column].to_numpy()
+    new_ts_vals = new_ts._df["segment_0"][transformer.out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals, checker_vals)
     if out_column is None:
         assert transformer.out_column == left_column + operand + right_column
@@ -144,18 +144,18 @@ def test_simple_one_segment(ts_one_segment: TSDataset, operand, left_column, rig
     ],
 )
 def test_simple_two_segments(ts_two_segments: TSDataset, operand, left_column, right_column, out_column):
-    left_vals1 = deepcopy(ts_two_segments.df["segment_0"][left_column].values)
-    right_vals1 = deepcopy(ts_two_segments.df["segment_0"][right_column].values)
-    left_vals2 = deepcopy(ts_two_segments.df["segment_1"][left_column].values)
-    right_vals2 = deepcopy(ts_two_segments.df["segment_1"][right_column].values)
+    left_vals1 = deepcopy(ts_two_segments._df["segment_0"][left_column].values)
+    right_vals1 = deepcopy(ts_two_segments._df["segment_0"][right_column].values)
+    left_vals2 = deepcopy(ts_two_segments._df["segment_1"][left_column].values)
+    right_vals2 = deepcopy(ts_two_segments._df["segment_1"][right_column].values)
     checker_vals1 = ops[operand](left_vals1, right_vals1)
     checker_vals2 = ops[operand](left_vals2, right_vals2)
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
     new_ts = transformer.fit_transform(ts=ts_two_segments)
-    new_ts_vals1 = new_ts.df["segment_0"][transformer.out_column].to_numpy()
-    new_ts_vals2 = new_ts.df["segment_1"][transformer.out_column].to_numpy()
+    new_ts_vals1 = new_ts._df["segment_0"][transformer.out_column].to_numpy()
+    new_ts_vals2 = new_ts._df["segment_1"][transformer.out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals1, checker_vals1)
     numpy.testing.assert_array_almost_equal(new_ts_vals2, checker_vals2)
     if out_column is None:
@@ -184,13 +184,13 @@ def test_simple_two_segments(ts_two_segments: TSDataset, operand, left_column, r
     ],
 )
 def test_inverse_one_segment(ts_one_segment, operand, left_column, right_column, out_column):
-    target_vals = deepcopy(ts_one_segment.df["segment_0"][out_column].values)
+    target_vals = deepcopy(ts_one_segment._df["segment_0"][out_column].values)
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
     new_ts = transformer.fit_transform(ts=ts_one_segment)
     new_ts = transformer.inverse_transform(ts=new_ts)
-    new_ts_vals = new_ts.df["segment_0"][out_column].to_numpy()
+    new_ts_vals = new_ts._df["segment_0"][out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals, target_vals)
 
 
@@ -216,15 +216,15 @@ def test_inverse_one_segment(ts_one_segment, operand, left_column, right_column,
     ],
 )
 def test_inverse_two_segments(ts_two_segments, operand, left_column, right_column, out_column):
-    target_vals1 = deepcopy(ts_two_segments.df["segment_0"][out_column].values)
-    target_vals2 = deepcopy(ts_two_segments.df["segment_1"][out_column].values)
+    target_vals1 = deepcopy(ts_two_segments._df["segment_0"][out_column].values)
+    target_vals2 = deepcopy(ts_two_segments._df["segment_1"][out_column].values)
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
     new_ts = transformer.fit_transform(ts=ts_two_segments)
     new_ts = transformer.inverse_transform(ts=new_ts)
-    new_ts_vals1 = new_ts.df["segment_0"][out_column].to_numpy()
-    new_ts_vals2 = new_ts.df["segment_1"][out_column].to_numpy()
+    new_ts_vals1 = new_ts._df["segment_0"][out_column].to_numpy()
+    new_ts_vals2 = new_ts._df["segment_1"][out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals1, target_vals1)
     numpy.testing.assert_array_almost_equal(new_ts_vals2, target_vals2)
 
@@ -263,13 +263,13 @@ def test_inverse_failed_unsupported_operator(ts_one_segment, operand):
     ],
 )
 def test_inverse_failed_not_inplace(ts_one_segment, operand, left_column, right_column, out_column):
-    left_vals = deepcopy(ts_one_segment.df["segment_0"][left_column].values)
-    right_vals = deepcopy(ts_one_segment.df["segment_0"][right_column].values)
+    left_vals = deepcopy(ts_one_segment._df["segment_0"][left_column].values)
+    right_vals = deepcopy(ts_one_segment._df["segment_0"][right_column].values)
     checker_vals = deepcopy(ops[operand](left_vals, right_vals))
     transformer = binary_operator.BinaryOperationTransform(
         left_column=left_column, right_column=right_column, operator=operand, out_column=out_column
     )
     new_ts = transformer.fit_transform(ts=ts_one_segment)
     new_ts = transformer.inverse_transform(ts=new_ts)
-    new_ts_vals = new_ts.df["segment_0"][out_column].to_numpy()
+    new_ts_vals = new_ts._df["segment_0"][out_column].to_numpy()
     numpy.testing.assert_array_almost_equal(new_ts_vals, checker_vals)

@@ -118,8 +118,8 @@ def test_reconcile(hierarchical_ts, source_level, target_level, mapping_matrix, 
     assert obtained_ts.current_df_level == expected_ts.current_df_level
     assert obtained_ts.known_future == expected_ts.known_future
     assert obtained_ts.regressors == expected_ts.regressors
-    pd.testing.assert_frame_equal(obtained_ts.df, expected_ts.df)
-    pd.testing.assert_frame_equal(obtained_ts.df_exog, expected_ts.df_exog)
+    pd.testing.assert_frame_equal(obtained_ts._df, expected_ts._df)
+    pd.testing.assert_frame_equal(obtained_ts._df_exog, expected_ts._df_exog)
 
 
 @pytest.mark.parametrize(
@@ -141,5 +141,5 @@ def test_reconcile_with_target_components(
     assert obtained_ts.known_future == expected_ts.known_future
     assert obtained_ts.regressors == expected_ts.regressors
     pd.testing.assert_frame_equal(obtained_ts.get_target_components(), expected_ts.get_target_components())
-    pd.testing.assert_frame_equal(obtained_ts.df, expected_ts.df)
-    pd.testing.assert_frame_equal(obtained_ts.df_exog, expected_ts.df_exog)
+    pd.testing.assert_frame_equal(obtained_ts._df, expected_ts._df)
+    pd.testing.assert_frame_equal(obtained_ts._df_exog, expected_ts._df_exog)

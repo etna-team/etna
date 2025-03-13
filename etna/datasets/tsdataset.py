@@ -81,7 +81,7 @@ class TSDataset:
     >>> df_regressors.columns = ["timestamp"] + [f"regressor_{i}" for i in range(5)]
     >>> df_regressors["segment"] = "segment_0"
     >>> tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")
-    >>> tsdataset.df.head(5)
+    >>> tsdataset.head(5)
     segment      segment_0
     feature    regressor_0 regressor_1 regressor_2 regressor_3 regressor_4 target
     timestamp
@@ -96,7 +96,7 @@ class TSDataset:
     >>> df = generate_hierarchical_df(periods=100, n_segments=[2, 4], start_time="2021-01-01",)
     >>> df, hierarchical_structure = TSDataset.to_hierarchical_dataset(df=df, level_columns=["level_0", "level_1"])
     >>> tsdataset = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
-    >>> tsdataset.df.head(5)
+    >>> tsdataset.head(5)
     segment    l0s0_l1s3 l0s1_l1s0 l0s1_l1s1 l0s1_l1s2
     feature       target    target    target    target
     timestamp
@@ -141,32 +141,32 @@ class TSDataset:
         hierarchical_structure:
             Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
-        self.freq = freq
-        self.df_exog = None
-        self.raw_df = self._prepare_df(df=df, freq=freq)
-        self.df = self.raw_df.copy(deep=True)
+        self._freq = freq
+        self._df_exog = None
+        self._raw_df = self._prepare_df(df=df, freq=freq)
+        self._df = self._raw_df.copy(deep=True)
 
         self.hierarchical_structure = hierarchical_structure
-        self.current_df_level: Optional[str] = self._get_dataframe_level(df=self.df)
-        self.current_df_exog_level: Optional[str] = None
+        self._current_df_level: Optional[str] = self._get_dataframe_level(df=self._df)
+        self._current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
-            self.df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
+            self._df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
 
-            self.known_future = self._check_known_future(known_future, self.df_exog)
-            self._regressors = copy(self.known_future)
+            self._known_future = self._check_known_future(known_future, self._df_exog)
+            self._regressors = copy(self._known_future)
 
-            self.current_df_exog_level = self._get_dataframe_level(df=self.df_exog)
-            if self.current_df_level == self.current_df_exog_level:
-                self.df = self._merge_exog(df=self.df)
+            self._current_df_exog_level = self._get_dataframe_level(df=self._df_exog)
+            if self._current_df_level == self._current_df_exog_level:
+                self._df = self._merge_exog(df=self._df)
         else:
-            self.known_future = self._check_known_future(known_future, df_exog)
-            self._regressors = copy(self.known_future)
+            self._known_future = self._check_known_future(known_future, df_exog)
+            self._regressors = copy(self._known_future)
 
         self._target_components_names: Tuple[str, ...] = tuple()
         self._prediction_intervals_names: Tuple[str, ...] = tuple()
 
-        self.df = self.df.sort_index(axis=1, level=("segment", "feature"))
+        self._df = self._df.sort_index(axis=1, level=("segment", "feature"))
 
     @classmethod
     def create_from_misaligned(
@@ -381,20 +381,20 @@ class TSDataset:
         return df_exog
 
     def __repr__(self):
-        return self.df.__repr__()
+        return self._df.__repr__()
 
     def _repr_html_(self):
-        return self.df._repr_html_()
+        return self._df._repr_html_()
 
     def __getitem__(self, item):
         if isinstance(item, slice) or isinstance(item, str):
-            df = self.df.loc[self.idx[item]]
+            df = self._df.loc[self.idx[item]]
         elif len(item) == 2 and item[0] is Ellipsis:
-            df = self.df.loc[self.idx[:], self.idx[:, item[1]]]
+            df = self._df.loc[self.idx[:], self.idx[:, item[1]]]
         elif len(item) == 2 and item[1] is Ellipsis:
-            df = self.df.loc[self.idx[item[0]]]
+            df = self._df.loc[self.idx[item[0]]]
         else:
-            df = self.df.loc[self.idx[item[0]], self.idx[item[1], item[2]]]
+            df = self._df.loc[self.idx[item[0]], self.idx[item[1], item[2]]]
         first_valid_idx = df.first_valid_index()
         df = df.loc[first_valid_idx:]
         return df
@@ -454,9 +454,9 @@ class TSDataset:
         2021-07-04          33          38    NaN          73          78    NaN
         """
         self._check_endings(warning=True)
-        df = self._expand_index(df=self.raw_df, freq=self.freq, future_steps=future_steps)
+        df = self._expand_index(df=self._raw_df, freq=self.freq, future_steps=future_steps)
 
-        if self.df_exog is not None and self.current_df_level == self.current_df_exog_level:
+        if self._df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df=df)
 
             # check if we have enough values in regressors
@@ -464,7 +464,7 @@ class TSDataset:
             if self.known_future:
                 future_index = df.index.difference(self.timestamps)
                 for segment in self.segments:
-                    regressors_index = self.df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
+                    regressors_index = self._df_exog.loc[:, pd.IndexSlice[segment, self.known_future]].index
                     if not np.all(future_index.isin(regressors_index)):
                         warnings.warn(
                             f"Some regressors don't have enough values in segment {segment}, "
@@ -500,10 +500,10 @@ class TSDataset:
         future_ts = TSDataset(df=future_dataset, freq=self.freq, hierarchical_structure=self.hierarchical_structure)
 
         # can't put known_future into constructor, _check_known_future fails with df_exog=None
-        future_ts.known_future = deepcopy(self.known_future)
+        future_ts._known_future = deepcopy(self.known_future)
         future_ts._regressors = deepcopy(self.regressors)
-        if self.df_exog is not None:
-            future_ts.df_exog = self.df_exog.copy(deep=True)
+        if self._df_exog is not None:
+            future_ts._df_exog = self._df_exog.copy(deep=True)
         return future_ts
 
     def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
@@ -521,23 +521,23 @@ class TSDataset:
         :
             TSDataset based on indexing slice.
         """
-        self_df = self.df
-        self_raw_df = self.raw_df
+        self_df = self._df
+        self_raw_df = self._raw_df
 
         try:
             # we do this to avoid redundant copying of data
-            self.df = None
-            self.raw_df = None
+            self._df = None
+            self._raw_df = None
 
             ts_slice = deepcopy(self)
-            ts_slice.df = _slice_index_wide_dataframe(df=self_df, start=start_idx, stop=end_idx, label_indexing=False)
-            ts_slice.raw_df = _slice_index_wide_dataframe(
+            ts_slice._df = _slice_index_wide_dataframe(df=self_df, start=start_idx, stop=end_idx, label_indexing=False)
+            ts_slice._raw_df = _slice_index_wide_dataframe(
                 df=self_raw_df, start=start_idx, stop=end_idx, label_indexing=False
             )
 
         finally:
-            self.df = self_df
-            self.raw_df = self_raw_df
+            self._df = self_df
+            self._raw_df = self_raw_df
 
         return ts_slice
 
@@ -607,7 +607,7 @@ class TSDataset:
 
         target_min, target_max = self._get_min_max_valid_timestamp(df=df, segments=segments)
         exog_series_min, exog_series_max = self._get_min_max_valid_timestamp(
-            df=self.df_exog, segments=segments, regressors=self.known_future
+            df=self._df_exog, segments=segments, regressors=self.known_future
         )
 
         for i, segment in enumerate(segments):
@@ -625,13 +625,13 @@ class TSDataset:
                 )
 
     def _merge_exog(self, df: pd.DataFrame) -> pd.DataFrame:
-        if self.df_exog is None:
+        if self._df_exog is None:
             raise ValueError("Something went wrong, Trying to merge df_exog which is None!")
 
         # TODO: this check could probably be skipped at make_future
         self._check_regressors(df=df)
 
-        df = df.merge(self.df_exog, how="left", left_index=True, right_index=True)
+        df = df.merge(self._df_exog, how="left", left_index=True, right_index=True)
 
         df.sort_index(axis=1, level=(0, 1), inplace=True)
 
@@ -641,8 +641,8 @@ class TSDataset:
 
     def _check_endings(self, warning=False):
         """Check that all targets ends at the same timestamp."""
-        max_index = self.df.index.max()
-        if np.any(pd.isna(self.df.loc[max_index, pd.IndexSlice[:, "target"]])):
+        max_index = self.timestamps.max()
+        if np.any(pd.isna(self._df.loc[max_index, pd.IndexSlice[:, "target"]])):
             if warning:
                 warnings.warn(
                     "Segments contains NaNs in the last timestamps. "
@@ -702,7 +702,7 @@ class TSDataset:
         >>> ts.segments
         ['segment_0', 'segment_1']
         """
-        return self.df.columns.get_level_values("segment").unique().tolist()
+        return self._df.columns.get_level_values("segment").unique().tolist()
 
     @property
     def regressors(self) -> List[str]:
@@ -743,7 +743,7 @@ class TSDataset:
         :
             List of features.
         """
-        return self.df.xs(self.segments[0], axis=1).columns.tolist()
+        return self._df.xs(self.segments[0], axis=1).columns.tolist()
 
     @property
     def target_components_names(self) -> Tuple[str, ...]:
@@ -809,8 +809,8 @@ class TSDataset:
         start = _check_timestamp_param(param=start, param_name="start", freq=self.freq)
         end = _check_timestamp_param(param=end, param_name="end", freq=self.freq)
 
-        start = self.df.index.min() if start is None else start
-        end = self.df.index.max() if end is None else end
+        start = self.timestamps.min() if start is None else start
+        end = self.timestamps.max() if end is None else end
 
         figsize = (figsize[0] * columns_num, figsize[1] * rows_num)
         _, ax = plt.subplots(rows_num, columns_num, figsize=figsize, squeeze=False)
@@ -950,11 +950,11 @@ class TSDataset:
         if not flatten:
             if isinstance(features, str):
                 if features == "all":
-                    return self.df.copy()
+                    return self._df.copy()
                 raise ValueError("The only possible literal is 'all'")
             segments = self.segments
-            return self.df.loc[:, self.idx[segments, features]].copy()
-        return self.to_flatten(self.df, features=features)
+            return self._df.loc[:, self.idx[segments, features]].copy()
+        return self.to_flatten(self._df, features=features)
 
     @staticmethod
     def to_dataset(df: pd.DataFrame) -> pd.DataFrame:
@@ -1134,23 +1134,23 @@ class TSDataset:
 
         if test_end is None:
             if test_start is not None and test_size is not None:
-                test_start_idx = self.df.index.get_loc(test_start)
-                if test_start_idx + test_size > len(self.df.index):
+                test_start_idx = self.timestamps.get_loc(test_start)
+                if test_start_idx + test_size > self.size()[0]:
                     raise ValueError(
-                        f"test_size is {test_size}, but only {len(self.df.index) - test_start_idx} available with your test_start"
+                        f"test_size is {test_size}, but only {self.size()[0] - test_start_idx} available with your test_start"
                     )
-                test_end_defined = self.df.index[test_start_idx + test_size]
+                test_end_defined = self.timestamps[test_start_idx + test_size]
             elif test_size is not None and train_end is not None:
-                test_start_idx = self.df.index.get_loc(train_end)
-                test_start = self.df.index[test_start_idx + 1]
-                test_end_defined = self.df.index[test_start_idx + test_size]
+                test_start_idx = self.timestamps.get_loc(train_end)
+                test_start = self.timestamps[test_start_idx + 1]
+                test_end_defined = self.timestamps[test_start_idx + test_size]
             else:
-                test_end_defined = self.df.index.max()
+                test_end_defined = self.timestamps.max()
         else:
             test_end_defined = test_end
 
         if train_start is None:
-            train_start_defined = self.df.index.min()
+            train_start_defined = self.timestamps.min()
         else:
             train_start_defined = train_start
 
@@ -1159,26 +1159,26 @@ class TSDataset:
 
         if test_size is None:
             if train_end is None:
-                test_start_idx = self.df.index.get_loc(test_start)
-                train_end_defined = self.df.index[test_start_idx - 1]
+                test_start_idx = self.timestamps.get_loc(test_start)
+                train_end_defined = self.timestamps[test_start_idx - 1]
             else:
                 train_end_defined = train_end
 
             if test_start is None:
-                train_end_idx = self.df.index.get_loc(train_end)
-                test_start_defined = self.df.index[train_end_idx + 1]
+                train_end_idx = self.timestamps.get_loc(train_end)
+                test_start_defined = self.timestamps[train_end_idx + 1]
             else:
                 test_start_defined = test_start
         else:
             if test_start is None:
-                test_start_idx = self.df.index.get_loc(test_end_defined)
-                test_start_defined = self.df.index[test_start_idx - test_size + 1]
+                test_start_idx = self.timestamps.get_loc(test_end_defined)
+                test_start_defined = self.timestamps[test_start_idx - test_size + 1]
             else:
                 test_start_defined = test_start
 
             if train_end is None:
-                test_start_idx = self.df.index.get_loc(test_start_defined)
-                train_end_defined = self.df.index[test_start_idx - 1]
+                test_start_idx = self.timestamps.get_loc(test_start_defined)
+                train_end_defined = self.timestamps[test_start_idx - 1]
             else:
                 train_end_defined = train_end
 
@@ -1236,7 +1236,7 @@ class TSDataset:
         ...     train_start="2021-01-01", train_end="2021-02-01",
         ...     test_start="2021-02-02", test_end="2021-02-07"
         ... )
-        >>> train_ts.df.tail(5)
+        >>> train_ts.tail(5)
         segment    segment_0 segment_1 segment_2
         feature       target    target    target
         timestamp
@@ -1245,7 +1245,7 @@ class TSDataset:
         2021-01-30     -1.80      1.69      0.61
         2021-01-31     -2.49      1.51      0.85
         2021-02-01     -2.89      0.91      1.06
-        >>> test_ts.df.head(5)
+        >>> test_ts.head(5)
         segment    segment_0 segment_1 segment_2
         feature       target    target    target
         timestamp
@@ -1259,31 +1259,31 @@ class TSDataset:
             train_start, train_end, test_start, test_end, test_size
         )
 
-        if test_end_defined > self.df.index.max():
-            warnings.warn(f"Max timestamp in df is {self.df.index.max()}.")
-        if train_start_defined < self.df.index.min():
-            warnings.warn(f"Min timestamp in df is {self.df.index.min()}.")
+        if test_end_defined > self.timestamps.max():
+            warnings.warn(f"Max timestamp in df is {self.timestamps.max()}.")
+        if train_start_defined < self.timestamps.min():
+            warnings.warn(f"Min timestamp in df is {self.timestamps.min()}.")
 
-        self_df = self.df
-        self_raw_df = self.raw_df
+        self_df = self._df
+        self_raw_df = self._raw_df
         try:
             # we do this to avoid redundant copying of data
-            self.df = None
-            self.raw_df = None
+            self._df = None
+            self._raw_df = None
 
             train = deepcopy(self)
-            train.df = _slice_index_wide_dataframe(df=self_df, start=train_start_defined, stop=train_end_defined)
-            train.raw_df = _slice_index_wide_dataframe(
+            train._df = _slice_index_wide_dataframe(df=self_df, start=train_start_defined, stop=train_end_defined)
+            train._raw_df = _slice_index_wide_dataframe(
                 df=self_raw_df, start=train_start_defined, stop=train_end_defined
             )
 
             test = deepcopy(self)
-            test.df = _slice_index_wide_dataframe(df=self_df, start=test_start_defined, stop=test_end_defined)
-            test.raw_df = _slice_index_wide_dataframe(df=self_raw_df, start=train_start_defined, stop=test_end_defined)
+            test._df = _slice_index_wide_dataframe(df=self_df, start=test_start_defined, stop=test_end_defined)
+            test._raw_df = _slice_index_wide_dataframe(df=self_raw_df, start=train_start_defined, stop=test_end_defined)
 
         finally:
-            self.df = self_df
-            self.raw_df = self_raw_df
+            self._df = self_df
+            self._raw_df = self_raw_df
 
         return train, test
 
@@ -1308,26 +1308,26 @@ class TSDataset:
         ValueError:
             If there are duplicate features in the dataset (columns with the same name)
         """
-        df = df_update.loc[self.df.index.min() : self.df.index.max()]
+        df = df_update.loc[self.timestamps.min() : self.timestamps.max()]
 
-        if not df.index.equals(self.df.index):
+        if not df.index.equals(self.timestamps):
             raise ValueError("Non matching timestamps detected when attempted to update the dataset!")
 
-        if len(df.columns.difference(self.df.columns)) > 0:
+        if len(df.columns.difference(self._df.columns)) > 0:
             raise ValueError("Some columns in the dataframe for update are not presented in the dataset!")
 
         _check_features_in_segments(columns=df.columns, segments=self.segments)
 
         try:
-            column_idx = self.df.columns.get_indexer(df.columns)
+            column_idx = self._df.columns.get_indexer(df.columns)
 
         # some older pandas versions <1.3 throw `ValueError`
         except (pd.errors.InvalidIndexError, ValueError):
             raise ValueError("The dataset features set contains duplicates!")
 
         original_types = df.dtypes.to_dict()
-        self.df.iloc[:, column_idx] = df
-        self.df = self.df.astype(original_types)
+        self._df.iloc[:, column_idx] = df
+        self._df = self._df.astype(original_types)
 
     def add_features_from_pandas(
         self, df_update: pd.DataFrame, update_exog: bool = False, regressors: Optional[List[str]] = None
@@ -1348,12 +1348,12 @@ class TSDataset:
         """
         _check_features_in_segments(columns=df_update.columns, segments=self.segments)
 
-        self.df = pd.concat((self.df, df_update.loc[: self.df.index.max()]), axis=1).sort_index(axis=1)
+        self._df = pd.concat((self._df, df_update.loc[: self.timestamps.max()]), axis=1).sort_index(axis=1)
         if update_exog:
-            if self.df_exog is None:
-                self.df_exog = df_update
+            if self._df_exog is None:
+                self._df_exog = df_update
             else:
-                self.df_exog = pd.concat((self.df_exog, df_update), axis=1).sort_index(axis=1)
+                self._df_exog = pd.concat((self._df_exog, df_update), axis=1).sort_index(axis=1)
         if regressors is not None:
             self._regressors = list(set(self._regressors) | set(regressors))
 
@@ -1390,9 +1390,9 @@ class TSDataset:
         if "target" in features_set:
             raise ValueError(f"Target can't be dropped from the dataset!")
 
-        dfs = [("df", self.df)]
+        dfs = [("df", self._df)]
         if drop_from_exog:
-            dfs.append(("df_exog", self.df_exog))
+            dfs.append(("df_exog", self._df_exog))
 
         for name, df in dfs:
             columns_in_df = df.columns.get_level_values("feature")
@@ -1413,7 +1413,7 @@ class TSDataset:
         :
             timestamp index of TSDataset
         """
-        return self.df.index.copy()
+        return self._df.index.copy()
 
     def level_names(self) -> Optional[List[str]]:
         """Return names of the levels in the hierarchical structure."""
@@ -1478,7 +1478,7 @@ class TSDataset:
         ts = TSDataset(
             df=target_level_df,
             freq=self.freq,
-            df_exog=self.df_exog,
+            df_exog=self._df_exog,
             known_future=self.known_future,
             hierarchical_structure=self.hierarchical_structure,
         )
@@ -1524,9 +1524,9 @@ class TSDataset:
         self._target_components_names = tuple(
             sorted(target_components_df[self.segments[0]].columns.get_level_values("feature"))
         )
-        self.df = (
-            pd.concat((self.df, target_components_df), axis=1)
-            .loc[self.df.index]
+        self._df = (
+            pd.concat((self._df, target_components_df), axis=1)
+            .loc[self.timestamps]
             .sort_index(axis=1, level=("segment", "feature"))
         )
 
@@ -1545,7 +1545,7 @@ class TSDataset:
     def drop_target_components(self):
         """Drop target components from dataset."""
         if len(self.target_components_names) > 0:  # for pandas >=1.1, <1.2
-            self.df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
+            self._df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
             self._target_components_names = ()
 
     def add_prediction_intervals(self, prediction_intervals_df: pd.DataFrame):
@@ -1575,9 +1575,9 @@ class TSDataset:
         self._prediction_intervals_names = tuple(
             sorted(prediction_intervals_df[self.segments[0]].columns.get_level_values("feature"))
         )
-        self.df = (
-            pd.concat((self.df, prediction_intervals_df), axis=1)
-            .loc[self.df.index]
+        self._df = (
+            pd.concat((self._df, prediction_intervals_df), axis=1)
+            .loc[self.timestamps]
             .sort_index(axis=1, level=("segment", "feature"))
         )
 
@@ -1597,7 +1597,7 @@ class TSDataset:
     def drop_prediction_intervals(self):
         """Drop prediction intervals from dataset."""
         if len(self.prediction_intervals_names) > 0:  # for pandas >=1.1, <1.2
-            self.df.drop(columns=list(self.prediction_intervals_names), level="feature", inplace=True)
+            self._df.drop(columns=list(self.prediction_intervals_names), level="feature", inplace=True)
             self._prediction_intervals_names = tuple()
 
     @property
@@ -1609,7 +1609,7 @@ class TSDataset:
         pd.core.indexes.multi.MultiIndex
             multiindex of dataframe with target and features.
         """
-        return self.df.columns
+        return self._df.columns
 
     @property
     def loc(self) -> pd.core.indexing._LocIndexer:
@@ -1620,17 +1620,19 @@ class TSDataset:
         pd.core.indexing._LocIndexer
             dataframe with self.df.loc[...]
         """
-        return self.df.loc
+        return self._df.loc
 
     def isnull(self) -> pd.DataFrame:
-        """Return dataframe with flag that means if the correspondent object in ``self.df`` is null.
+        """Return dataframe with flag that means if the correspondent element in wide representation of data is null.
+
+        Wide representation could be obtained by using ``self.to_pandas()``.
 
         Returns
         -------
         pd.Dataframe
             is_null dataframe
         """
-        return self.df.isnull()
+        return self._df.isnull()
 
     def head(self, n_rows: int = 5) -> pd.DataFrame:
         """Return the first ``n_rows`` rows.
@@ -1654,7 +1656,7 @@ class TSDataset:
         pd.DataFrame
             the first ``n_rows`` rows or 5 by default.
         """
-        return self.df.head(n_rows)
+        return self._df.head(n_rows)
 
     def tail(self, n_rows: int = 5) -> pd.DataFrame:
         """Return the last ``n_rows`` rows.
@@ -1679,7 +1681,7 @@ class TSDataset:
             the last ``n_rows`` rows or 5 by default.
 
         """
-        return self.df.tail(n_rows)
+        return self._df.tail(n_rows)
 
     def _gather_common_data(self) -> Dict[str, Any]:
         """Gather information about dataset in general."""
@@ -1709,7 +1711,7 @@ class TSDataset:
             segments_index = segments
             segments = segments
 
-        df = self.df.loc[:, (segments_index, "target")]
+        df = self._df.loc[:, (segments_index, "target")]
 
         num_timestamps = df.shape[0]
         not_na = ~np.isnan(df.values)
@@ -1946,3 +1948,47 @@ class TSDataset:
             Tuple of TSDataset sizes
         """
         return len(self.timestamps), len(self.segments), len(self.features)
+
+    @property
+    def known_future(self) -> List[str]:
+        """Return columns in ``df_exog`` that are initially regressors.
+
+        Returns
+        -------
+        :
+            List of regressor columns
+        """
+        return self._known_future.copy()
+
+    @property
+    def freq(self) -> Optional[str]:
+        """Return frequency of timestamp.
+
+        Returns
+        -------
+        str or None
+            Frequency of timestamp.
+        """
+        return self._freq
+
+    @property
+    def current_df_level(self) -> Optional[str]:
+        """Return current level of dataframe in hierarchical structure.
+
+        Returns
+        -------
+        str or None
+            Level of dataframe
+        """
+        return self._current_df_level
+
+    @property
+    def current_df_exog_level(self) -> Optional[str]:
+        """Return current level of dataframe with exogenous data in hierarchical structure.
+
+        Returns
+        -------
+        str or None
+            Level of dataframe with exogenous data
+        """
+        return self._current_df_exog_level

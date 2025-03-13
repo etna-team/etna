@@ -107,7 +107,7 @@ class ModelDecomposeTransform(IrreversibleTransform):
         if self.in_column not in ts.features:
             raise KeyError(f"Column {self.in_column} is not found in features!")
 
-        df = ts.df.loc[:, pd.IndexSlice[:, self.in_column]]
+        df = ts._df.loc[:, pd.IndexSlice[:, self.in_column]]
         df = df.rename(columns={self.in_column: "target"}, level="feature")
 
         return TSDataset(df=df, freq=ts.freq)
@@ -165,7 +165,7 @@ class ModelDecomposeTransform(IrreversibleTransform):
         ts_max_timestamp = decompose_ts.timestamps.max()
         if ts_max_timestamp > self._last_timestamp:
             future_steps = determine_num_steps(self._last_timestamp, ts_max_timestamp, freq=decompose_ts.freq)
-            decompose_ts.df = decompose_ts.df.loc[: self._last_timestamp]
+            decompose_ts._df = decompose_ts._df.loc[: self._last_timestamp]
 
         target = decompose_ts[..., "target"].droplevel("feature", axis=1)
 
@@ -193,7 +193,7 @@ class ModelDecomposeTransform(IrreversibleTransform):
         if future_steps > 0:
             components_df = TSDataset._expand_index(df=components_df, future_steps=future_steps, freq=decompose_ts.freq)
 
-        columns_before = set(ts.df.columns.get_level_values("feature"))
+        columns_before = set(ts.features)
         columns_before &= set(components_df.columns.get_level_values("feature"))
         self._update_dataset(ts=ts, columns_before=columns_before, df_transformed=components_df)
 

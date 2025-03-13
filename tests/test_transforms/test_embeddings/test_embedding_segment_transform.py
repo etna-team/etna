@@ -85,11 +85,11 @@ def test_make_future(example_tsds, embedding_model):
     )
     emb_transform.fit(example_tsds)
 
-    make_future_df = example_tsds.make_future(5, transforms=[emb_transform]).df
+    make_future_df = example_tsds.make_future(5, transforms=[emb_transform])._df
     values_make_future = make_future_df.loc[:, pd.IndexSlice[:, emb_transform._get_out_columns()]].values[0]
 
     example_tsds.transform([emb_transform])
-    ts_df = example_tsds.df
+    ts_df = example_tsds._df
     values_ts = ts_df.loc[:, pd.IndexSlice[:, emb_transform._get_out_columns()]].values[0]
 
     assert np.array_equal(values_make_future, values_ts)
@@ -168,7 +168,7 @@ def test_transform_format(
     transform.fit_transform(ts=ts_with_exog_nan_begin)
     obtained_columns = set(ts_with_exog_nan_begin.columns.get_level_values("feature"))
     embedding_columns = transform.get_regressors_info()
-    embeddings = ts_with_exog_nan_begin.df.loc[:, pd.IndexSlice[:, embedding_columns]].values
+    embeddings = ts_with_exog_nan_begin._df.loc[:, pd.IndexSlice[:, embedding_columns]].values
     assert sorted(obtained_columns) == sorted(expected_columns)
     assert np.all(embeddings == embeddings[0, :], axis=0).all()
 

@@ -237,7 +237,7 @@ def test_forecast_columns_duplicates(market_level_constant_hierarchical_ts_w_exo
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
     pipeline.fit(ts=ts)
     forecast = pipeline.forecast()
-    assert not any(forecast.df.columns.duplicated())
+    assert not any(forecast._df.columns.duplicated())
 
 
 @pytest.mark.parametrize(
@@ -252,7 +252,7 @@ def test_predict_columns_duplicates(market_level_constant_hierarchical_ts_w_exog
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=NaiveModel(), transforms=[], horizon=1)
     pipeline.fit(ts=ts)
     forecast = pipeline.predict(ts=ts, start_timestamp=ts.timestamps[3])
-    assert not any(forecast.df.columns.duplicated())
+    assert not any(forecast._df.columns.duplicated())
 
 
 @pytest.mark.parametrize(
@@ -787,4 +787,4 @@ def test_make_hierarchical_dataset(ts_name, hierarchical_structure, request):
     assert new_ts.hierarchical_structure is hierarchical_structure  # checking reference to structure
     assert new_ts.target_components_names == ts.target_components_names
     assert new_ts.prediction_intervals_names == ts.prediction_intervals_names
-    pd.testing.assert_frame_equal(new_ts.df, ts.df)
+    pd.testing.assert_frame_equal(new_ts._df, ts._df)

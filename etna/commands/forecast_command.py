@@ -59,7 +59,7 @@ def filter_forecast(forecast_ts: TSDataset, forecast_params: Dict[str, Any]) -> 
         forecast_start_timestamp = _check_timestamp_param(
             param=forecast_params["start_timestamp"], param_name="start_timestamp", freq=forecast_ts.freq
         )
-        forecast_ts.df = forecast_ts.df.loc[forecast_start_timestamp:, :]
+        forecast_ts._df = forecast_ts._df.loc[forecast_start_timestamp:, :]
 
     return forecast_ts
 

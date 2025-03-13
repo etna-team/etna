@@ -30,7 +30,7 @@ def test_create_holidays_df_str_non_existing_country(simple_tsdf):
 
 def test_create_holidays_df_str(simple_tsdf):
     df = _create_holidays_df("RU", simple_tsdf.timestamps, as_is=False)
-    assert len(df) == len(simple_tsdf.df)
+    assert len(df) == simple_tsdf.size()[0]
     assert all(df.dtypes == bool)
 
 

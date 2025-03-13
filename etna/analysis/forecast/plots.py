@@ -282,7 +282,7 @@ def plot_backtest(
     folds = sorted(set(fold_numbers))
 
     # prepare dataframes
-    df = ts.df
+    df = ts._df
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]
@@ -399,7 +399,7 @@ def plot_backtest_interactive(
     folds = sorted(set(fold_numbers))
 
     # prepare dataframes
-    df = ts.df
+    df = ts._df
     forecast_start = forecast_df.index.min()
     history_df = df[df.index < forecast_start]
     backtest_df = df[df.index >= forecast_start]

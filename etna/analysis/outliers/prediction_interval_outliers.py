@@ -50,9 +50,9 @@ def _select_segments_subset(ts: TSDataset, segments: List[str]) -> TSDataset:
     result: TSDataset
         dataset with selected column.
     """
-    df = ts.df.loc[:, pd.IndexSlice[segments, :]].copy()
+    df = ts._df.loc[:, pd.IndexSlice[segments, :]].copy()
     df = df.dropna()
-    df_exog = ts.df_exog
+    df_exog = ts._df_exog
     if df_exog is not None:
         df_exog = df_exog.loc[:, pd.IndexSlice[segments, :]].copy()
     known_future = ts.known_future

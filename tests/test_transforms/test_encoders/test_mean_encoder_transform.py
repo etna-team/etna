@@ -281,7 +281,7 @@ def test_transform_micro_category_expected(category_ts, expected_micro_category_
     )
     mean_encoder.fit_transform(category_ts)
     assert_frame_equal(
-        category_ts.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_category_ts.df, atol=0.01
+        category_ts._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_category_ts._df, atol=0.01
     )
 
 
@@ -295,7 +295,7 @@ def test_transform_micro_global_mean_expected(category_ts, expected_micro_global
     )
     mean_encoder.fit_transform(category_ts)
     assert_frame_equal(
-        category_ts.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_global_mean_ts.df
+        category_ts._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_global_mean_ts._df
     )
 
 
@@ -311,7 +311,7 @@ def test_transform_micro_make_future_expected(category_ts, expected_micro_catego
     future = category_ts.make_future(future_steps=2, transforms=[mean_encoder])
 
     assert_frame_equal(
-        future.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_category_make_future_ts.df
+        future._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_micro_category_make_future_ts._df
     )
 
 
@@ -321,7 +321,7 @@ def test_transform_macro_category_expected(category_ts, expected_macro_category_
     )
     mean_encoder.fit_transform(category_ts)
     assert_frame_equal(
-        category_ts.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_macro_category_ts.df, atol=0.01
+        category_ts._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_macro_category_ts._df, atol=0.01
     )
 
 
@@ -335,7 +335,7 @@ def test_transform_macro_global_mean_expected(category_ts, expected_macro_global
     )
     mean_encoder.fit_transform(category_ts)
     assert_frame_equal(
-        category_ts.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_macro_global_mean_ts.df, atol=0.02
+        category_ts._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_macro_global_mean_ts._df, atol=0.02
     )
 
 
@@ -347,8 +347,8 @@ def test_transform_macro_make_future_expected(category_ts, expected_macro_catego
     future = category_ts.make_future(future_steps=2, transforms=[mean_encoder])
 
     assert_frame_equal(
-        future.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
-        expected_macro_category_make_future_ts.df,
+        future._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
+        expected_macro_category_make_future_ts._df,
         atol=0.01,
     )
 
@@ -363,7 +363,9 @@ def test_ts_begin_nan_smooth_1(ts_begin_nan, expected_ts_begin_nan_smooth_1):
     )
     mean_encoder.fit_transform(ts_begin_nan)
     assert_frame_equal(
-        ts_begin_nan.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_ts_begin_nan_smooth_1.df, atol=0.01
+        ts_begin_nan._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
+        expected_ts_begin_nan_smooth_1._df,
+        atol=0.01,
     )
 
 
@@ -377,7 +379,9 @@ def test_ts_begin_nan_smooth_2(ts_begin_nan, expected_ts_begin_nan_smooth_2):
     )
     mean_encoder.fit_transform(ts_begin_nan)
     assert_frame_equal(
-        ts_begin_nan.df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]], expected_ts_begin_nan_smooth_2.df, atol=0.01
+        ts_begin_nan._df.loc[:, pd.IndexSlice[:, "mean_encoded_regressor"]],
+        expected_ts_begin_nan_smooth_2._df,
+        atol=0.01,
     )
 
 
@@ -391,8 +395,8 @@ def test_mean_segment_encoder(mean_segment_encoder_ts, expected_mean_segment_enc
     )
     mean_encoder.fit_transform(mean_segment_encoder_ts)
     assert_frame_equal(
-        mean_segment_encoder_ts.df.loc[:, pd.IndexSlice[:, "segment_mean"]],
-        expected_mean_segment_encoder_ts.df.loc[:, pd.IndexSlice[:, "segment_mean"]],
+        mean_segment_encoder_ts._df.loc[:, pd.IndexSlice[:, "segment_mean"]],
+        expected_mean_segment_encoder_ts._df.loc[:, pd.IndexSlice[:, "segment_mean"]],
         atol=0.01,
     )
 
@@ -407,8 +411,8 @@ def test_multiple_nan_target_category_ts(multiple_nan_target_category_ts, expect
     )
     mean_encoder.fit_transform(multiple_nan_target_category_ts)
     assert_frame_equal(
-        multiple_nan_target_category_ts.df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
-        expected_multiple_nan_target_category_ts.df,
+        multiple_nan_target_category_ts._df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
+        expected_multiple_nan_target_category_ts._df,
         atol=0.01,
     )
 
@@ -425,8 +429,8 @@ def test_multiple_nan_target_two_segments_ts(
     )
     mean_encoder.fit_transform(multiple_nan_target_two_segments_ts)
     assert_frame_equal(
-        multiple_nan_target_two_segments_ts.df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
-        expected_multiple_nan_target_two_segments_ts.df,
+        multiple_nan_target_two_segments_ts._df.loc[:, pd.IndexSlice[:, "regressor_mean"]],
+        expected_multiple_nan_target_two_segments_ts._df,
         atol=0.01,
     )
 

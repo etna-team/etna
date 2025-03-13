@@ -402,7 +402,7 @@ class _DummyMetric(Metric):
         return False
 
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
-        segments = set(y_true.df.columns.get_level_values("segment"))
+        segments = set(y_true.segments)
         metrics_per_segment: Dict[str, Optional[float]] = {}
         for segment in segments:
             metrics_per_segment[segment] = 0.0
@@ -692,7 +692,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         """Check all segments have enough timestamps to validate forecaster with given number of splits."""
         min_required_length = horizon + (n_folds - 1) * stride
 
-        df = ts.df.loc[:, pd.IndexSlice[:, "target"]]
+        df = ts._df.loc[:, pd.IndexSlice[:, "target"]]
         num_timestamps = df.shape[0]
         not_na = ~np.isnan(df.values)
         min_idx = np.argmax(not_na, axis=0)
@@ -829,8 +829,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 fold[f"{stage_name}_timerange"]["start"] = stage_ts.timestamps.min()
                 fold[f"{stage_name}_timerange"]["end"] = stage_ts.timestamps.max()
 
-            forecast.df = forecast.df.loc[mask.target_timestamps]
-            test.df = test.df.loc[mask.target_timestamps]
+            forecast._df = forecast._df.loc[mask.target_timestamps]
+            test._df = test._df.loc[mask.target_timestamps]
 
             fold["forecast"] = forecast
             fold["metrics"] = deepcopy(pipeline._compute_metrics(metrics=metrics, y_true=test, y_pred=forecast))
@@ -883,7 +883,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         for fold_number, fold_info in self._folds.items():
             forecast_ts = fold_info["forecast"]
             segments = forecast_ts.segments
-            forecast = forecast_ts.df
+            forecast = forecast_ts._df
             fold_number_df = pd.DataFrame(
                 np.tile(fold_number, (forecast.index.shape[0], len(segments))),
                 columns=pd.MultiIndex.from_product([segments, [self._fold_column]], names=("segment", "feature")),

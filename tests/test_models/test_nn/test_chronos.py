@@ -172,7 +172,7 @@ def test_forecast(ts_increasing_integers, expected_ts_increasing_integers, model
     pipeline = Pipeline(model=model, horizon=1)
     pipeline.fit(ts_increasing_integers)
     forecast = pipeline.forecast()
-    assert_frame_equal(forecast.df, expected_ts_increasing_integers.df, atol=2)
+    assert_frame_equal(forecast._df, expected_ts_increasing_integers._df, atol=2)
 
 
 @pytest.mark.parametrize(

@@ -43,16 +43,16 @@ def _get_borders_ts(
     end = _check_timestamp_param(param=end, param_name="end", freq=ts.freq)
 
     if start is not None:
-        start_idx = ts.df.index.get_loc(start)
+        start_idx = ts.timestamps.get_loc(start)
     else:
         start_idx = 0
 
     if end is not None:
-        end_idx = ts.df.index.get_loc(end)
+        end_idx = ts.timestamps.get_loc(end)
     else:
-        end_idx = len(ts.df.index) - 1
+        end_idx = ts.size()[0] - 1
 
     if start_idx >= end_idx:
         raise ValueError("Parameter 'end' must be greater than 'start'!")
 
-    return ts.df.index[start_idx], ts.df.index[end_idx]
+    return ts.timestamps[start_idx], ts.timestamps[end_idx]

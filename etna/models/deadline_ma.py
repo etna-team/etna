@@ -310,7 +310,7 @@ class DeadlineMovingAverageModel(
         new_df, target_components_df = self._forecast(
             df=df, prediction_size=prediction_size, return_components=return_components
         )
-        ts.df = new_df
+        ts._df = new_df
 
         if return_components:
             ts.add_target_components(target_components_df=target_components_df)
@@ -384,7 +384,7 @@ class DeadlineMovingAverageModel(
         new_df, target_components_df = self._predict(
             df=df, prediction_size=prediction_size, return_components=return_components
         )
-        ts.df = new_df
+        ts._df = new_df
 
         if return_components:
             ts.add_target_components(target_components_df=target_components_df)

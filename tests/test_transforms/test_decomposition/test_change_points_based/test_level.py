@@ -48,8 +48,8 @@ def test_level_transform(ts_with_local_levels: TSDataset):
         per_interval_model=MeanPerIntervalModel(),
     )
     ts_with_local_levels.fit_transform(transforms=[transform])
-    np.allclose(ts_with_local_levels.df.mean().values, 0)
-    assert np.all(x < 3 for x in ts_with_local_levels.df.std().values)
+    np.allclose(ts_with_local_levels._df.mean().values, 0)
+    assert np.all(x < 3 for x in ts_with_local_levels._df.std().values)
 
 
 def test_level_transform_inverse_transform(ts_with_local_levels: TSDataset):
@@ -61,7 +61,7 @@ def test_level_transform_inverse_transform(ts_with_local_levels: TSDataset):
     )
     ts_with_local_levels.fit_transform(transforms=[transform])
     ts_with_local_levels.inverse_transform(transforms=[transform])
-    np.testing.assert_array_almost_equal(ts_with_local_levels.df, original_ts.df)
+    np.testing.assert_array_almost_equal(ts_with_local_levels._df, original_ts._df)
 
 
 def test_save_load(ts_with_local_levels):

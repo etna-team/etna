@@ -137,7 +137,7 @@ def test_fit_request_correct_columns(required_features):
 )
 def test_transform_request_correct_columns(remove_columns_ts, required_features):
     ts, _ = remove_columns_ts
-    ts.to_pandas = Mock(return_value=ts.df)
+    ts.to_pandas = Mock(return_value=ts._df)
 
     transform = TransformMock(required_features=required_features)
     transform._update_dataset = Mock()
@@ -153,13 +153,13 @@ def test_transform_request_correct_columns(remove_columns_ts, required_features)
 def test_transform_request_update_dataset(remove_columns_ts, required_features):
     ts, _ = remove_columns_ts
     columns_before = set(ts.features)
-    ts.to_pandas = Mock(return_value=ts.df)
+    ts.to_pandas = Mock(return_value=ts._df)
 
     transform = TransformMock(required_features=required_features)
     transform._update_dataset = Mock()
 
     transform.transform(ts=ts)
-    transform._update_dataset.assert_called_with(ts=ts, columns_before=columns_before, df_transformed=ts.df)
+    transform._update_dataset.assert_called_with(ts=ts, columns_before=columns_before, df_transformed=ts._df)
 
 
 @pytest.mark.parametrize(
@@ -177,7 +177,7 @@ def test_inverse_transform_add_target_quantiles(remove_columns_ts, in_column, ex
 def test_inverse_transform_request_update_dataset(remove_columns_ts):
     ts, _ = remove_columns_ts
     columns_before = set(ts.features)
-    ts.to_pandas = Mock(return_value=ts.df)
+    ts.to_pandas = Mock(return_value=ts._df)
 
     transform = ReversibleTransformMock(required_features="all")
     transform._inverse_transform = Mock()
@@ -198,8 +198,7 @@ def test_double_apply_add_columns_transform(remove_features_df):
     ts_transformed = transform.fit_transform(ts=ts)
     ts_transformed = transform.transform(ts=ts_transformed)
     assert (
-        ts_transformed.df.columns.get_level_values("feature").tolist()
-        == ["exog_1", "regressor_test", "target", "target_0.01"] * 3
+        ts_transformed.features * ts_transformed.size()[1] == ["exog_1", "regressor_test", "target", "target_0.01"] * 3
     )
 
 

@@ -71,8 +71,8 @@ def test_predict_mixin_create_ts(
     assert created_ts.timestamps[0] == expected_start_timestamp
     assert created_ts.timestamps[-1] == end_timestamp
     assert created_ts.regressors == ts.regressors
-    expected_df = ts.df.loc[expected_start_timestamp:end_timestamp]
-    pd.testing.assert_frame_equal(created_ts.df, expected_df, check_categorical=False)
+    expected_df = ts._df.loc[expected_start_timestamp:end_timestamp]
+    pd.testing.assert_frame_equal(created_ts._df, expected_df, check_categorical=False)
 
 
 @pytest.mark.parametrize(

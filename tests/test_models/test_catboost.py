@@ -82,7 +82,7 @@ def constant_ts(size=40) -> TSDataset:
 
 def test_catboost_multi_segment_forecast(constant_ts):
     train, test = constant_ts
-    horizon = len(test.df)
+    horizon = test.size()[0]
 
     lags = LagTransform(in_column="target", lags=[10, 11, 12])
     train.fit_transform([lags])
@@ -205,8 +205,8 @@ def test_prediction_decomposition_with_shuffled_columns(
     ts_with_features, model, train_order=("target", "cat_exog", "exog"), test_order=("target", "exog", "cat_exog")
 ):
     train, test = ts_with_features.train_test_split(test_size=10)
-    train.df = train.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, train_order]]
-    test.df = test.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, test_order]]
+    train._df = train._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, train_order]]
+    test._df = test._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, test_order]]
     assert_prediction_components_are_present(model=model, train=train, test=test)
 
 

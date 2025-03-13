@@ -129,7 +129,7 @@ def _get_df_wide(freq: Optional[str], random_seed: int) -> pd.DataFrame:
     df_exog_wide = TSDataset.to_dataset(df_exog)
 
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=freq)
-    df = ts.df
+    df = ts._df
 
     # make some reorderings for checking corner cases
     df = df.loc[:, pd.IndexSlice[["segment_2", "segment_0", "segment_1"], ["target", "exog_2", "exog_1", "exog_0"]]]
@@ -301,7 +301,7 @@ def test_get_level_dataframe_segm_errors(
 
     with pytest.raises(ValueError, match=message):
         get_level_dataframe(
-            df=ts.df,
+            df=ts._df,
             mapping_matrix=mapping_matrix,
             source_level_segments=source_level_segments,
             target_level_segments=target_level_segments,

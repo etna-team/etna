@@ -44,8 +44,8 @@ def tsdf_with_exog(random_seed) -> TSDataset:
 
 @pytest.fixture
 def tsdf_int_with_exog(tsdf_with_exog) -> TSDataset:
-    df = tsdf_with_exog.raw_df
-    df_exog = tsdf_with_exog.df_exog
+    df = tsdf_with_exog._raw_df
+    df_exog = tsdf_with_exog._df_exog
     ref_point = pd.Timestamp("2021-01-01")
     df.index = pd.Index((df.index - ref_point).days, name=df.index.name)
     df_exog.index = pd.Index((df_exog.index - ref_point).days, name=df_exog.index.name)
@@ -155,7 +155,7 @@ def df_updated_add_feature() -> pd.DataFrame:
     df_2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "new_column": 200, "segment": "2"})
     df_2.loc[:4, "target"] = None
     df = pd.concat([df_1, df_2], ignore_index=True)
-    df = TSDataset(df=TSDataset.to_dataset(df), freq="D").df
+    df = TSDataset(df=TSDataset.to_dataset(df), freq="D")._df
     return df
 
 
@@ -165,7 +165,7 @@ def df_updated_update_feature() -> pd.DataFrame:
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
     df_2 = pd.DataFrame({"timestamp": timestamp, "target": 200, "segment": "2"})
     df = pd.concat([df_1, df_2], ignore_index=True)
-    df = TSDataset(df=TSDataset.to_dataset(df), freq="D").df
+    df = TSDataset(df=TSDataset.to_dataset(df), freq="D")._df
     return df
 
 
@@ -184,7 +184,7 @@ def df_exog_updated_add_feature() -> pd.DataFrame:
     df_2.iloc[:31, df_2.columns.get_loc("new_column")] = None
     df_exog = pd.concat([df_1, df_2], ignore_index=True)
     df_exog = TSDataset.to_dataset(df_exog)
-    df_exog = TSDataset(df=df_exog, freq="D").df
+    df_exog = TSDataset(df=df_exog, freq="D")._df
     return df_exog
 
 
@@ -745,10 +745,10 @@ def test_train_test_split(ts_name, borders, true_borders, request):
     )
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    pd.testing.assert_frame_equal(train.df, ts.df.loc[train_start_true:train_end_true])
-    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
-    pd.testing.assert_frame_equal(test.df, ts.df.loc[test_start_true:test_end_true])
-    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
+    pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
 @pytest.mark.parametrize(
@@ -770,10 +770,10 @@ def test_train_test_split_with_test_size(ts_name, test_size, true_borders, reque
     train, test = ts.train_test_split(test_size=test_size)
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    pd.testing.assert_frame_equal(train.df, ts.df.loc[train_start_true:train_end_true])
-    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
-    pd.testing.assert_frame_equal(test.df, ts.df.loc[test_start_true:test_end_true])
-    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
+    pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
 @pytest.mark.filterwarnings("ignore: test_size, test_start and test_end cannot be")
@@ -853,10 +853,10 @@ def test_train_test_split_both(ts_name, test_size, borders, true_borders, reques
     )
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    pd.testing.assert_frame_equal(train.df, ts.df.loc[train_start_true:train_end_true])
-    pd.testing.assert_frame_equal(train.df_exog, ts.df_exog)
-    pd.testing.assert_frame_equal(test.df, ts.df.loc[test_start_true:test_end_true])
-    pd.testing.assert_frame_equal(test.df_exog, ts.df_exog)
+    pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
+    pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
 @pytest.mark.parametrize(
@@ -1139,7 +1139,7 @@ def test_make_future_small_horizon():
     ts = TSDataset(df, freq="D")
     train = TSDataset(ts[: ts.timestamps[10], :, :], freq="D")
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
-        assert len(train.make_future(1).df) == 1
+        assert train.make_future(1).size()[0] == 1
 
 
 def test_make_future_with_regressors(df_and_regressors):
@@ -1189,7 +1189,7 @@ def test_make_future_warn_not_enough_regressors(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
-        ts.make_future(ts.df_exog.shape[0] + 100)
+        ts.make_future(ts._df_exog.shape[0] + 100)
 
 
 @pytest.mark.parametrize("exog_starts_later,exog_ends_earlier", ((True, False), (False, True), (True, True)))
@@ -1232,32 +1232,32 @@ def test_check_regressors_pass_empty(df_and_regressors):
 def test_getitem_only_date(tsdf_with_exog):
     df_date_only = tsdf_with_exog["2021-02-01"]
     assert df_date_only.name == pd.Timestamp("2021-02-01")
-    pd.testing.assert_series_equal(tsdf_with_exog.df.loc["2021-02-01"], df_date_only)
+    pd.testing.assert_series_equal(tsdf_with_exog._df.loc["2021-02-01"], df_date_only)
 
 
 def test_getitem_slice_date(tsdf_with_exog):
     df_slice = tsdf_with_exog["2021-02-01":"2021-02-03"]
     expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
     pd.testing.assert_index_equal(df_slice.index, expected_index)
-    pd.testing.assert_frame_equal(tsdf_with_exog.df.loc["2021-02-01":"2021-02-03"], df_slice)
+    pd.testing.assert_frame_equal(tsdf_with_exog._df.loc["2021-02-01":"2021-02-03"], df_slice)
 
 
 def test_getitem_second_ellipsis(tsdf_with_exog):
     df_slice = tsdf_with_exog["2021-02-01":"2021-02-03", ...]
     expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
     pd.testing.assert_index_equal(df_slice.index, expected_index)
-    pd.testing.assert_frame_equal(tsdf_with_exog.df.loc["2021-02-01":"2021-02-03"], df_slice)
+    pd.testing.assert_frame_equal(tsdf_with_exog._df.loc["2021-02-01":"2021-02-03"], df_slice)
 
 
 def test_getitem_first_ellipsis(tsdf_with_exog):
     df_slice = tsdf_with_exog[..., "target"]
-    df_expected = tsdf_with_exog.df.loc[:, [["Moscow", "target"], ["Omsk", "target"]]]
+    df_expected = tsdf_with_exog._df.loc[:, [["Moscow", "target"], ["Omsk", "target"]]]
     pd.testing.assert_frame_equal(df_expected, df_slice)
 
 
 def test_getitem_all_indexes(tsdf_with_exog):
     df_slice = tsdf_with_exog[:, :, :]
-    df_expected = tsdf_with_exog.df
+    df_expected = tsdf_with_exog._df
     pd.testing.assert_frame_equal(df_expected, df_slice)
 
 
@@ -1276,11 +1276,11 @@ def test_finding_regressors_unmarked(df_and_regressors):
 
 
 def test_head_default(tsdf_with_exog):
-    assert np.all(tsdf_with_exog.head() == tsdf_with_exog.df.head())
+    assert np.all(tsdf_with_exog.head() == tsdf_with_exog._df.head())
 
 
 def test_tail_default(tsdf_with_exog):
-    np.all(tsdf_with_exog.tail() == tsdf_with_exog.df.tail())
+    np.all(tsdf_with_exog.tail() == tsdf_with_exog._df.tail())
 
 
 def test_right_format_sorting():
@@ -1362,7 +1362,7 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
 def test_to_flatten_correct_columns(df_and_regressors, features, expected_columns):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
-    flattened_df = ts.to_flatten(ts.df, features=features)
+    flattened_df = ts.to_flatten(ts._df, features=features)
     assert sorted(flattened_df.columns) == sorted(expected_columns)
 
 
@@ -1370,7 +1370,7 @@ def test_to_flatten_raise_error_incorrect_literal(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     with pytest.raises(ValueError, match="The only possible literal is 'all'"):
-        _ = ts.to_flatten(ts.df, features="incorrect")
+        _ = ts.to_flatten(ts._df, features="incorrect")
 
 
 def test_to_pandas_simple_int_timestamp():
@@ -1497,8 +1497,8 @@ def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
     assert ts_slice.known_future == tsdf_with_exog.known_future
     assert ts_slice.regressors == tsdf_with_exog.regressors
-    pd.testing.assert_frame_equal(ts_slice.df, tsdf_with_exog.df.iloc[start_idx:end_idx])
-    pd.testing.assert_frame_equal(ts_slice.df_exog, tsdf_with_exog.df_exog)
+    pd.testing.assert_frame_equal(ts_slice._df, tsdf_with_exog._df.iloc[start_idx:end_idx])
+    pd.testing.assert_frame_equal(ts_slice._df_exog, tsdf_with_exog._df_exog)
 
 
 def test_tsdataset_idx_slice_pass_target_components_to_output(ts_with_target_components):
@@ -1531,10 +1531,10 @@ def test_to_torch_dataset_without_drop(tsdf_with_exog):
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
         torch_dataset[0]["target"],
-        tsdf_with_exog.df.loc[:, pd.IndexSlice["Moscow", "target"]].values.astype(np.float32),
+        tsdf_with_exog._df.loc[:, pd.IndexSlice["Moscow", "target"]].values.astype(np.float32),
     )
     np.testing.assert_array_equal(
-        torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
+        torch_dataset[1]["target"], tsdf_with_exog._df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
     )
 
 
@@ -1542,19 +1542,19 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     def make_samples(df):
         return [{"target": df.target.values, "segment": df["segment"].values[0]}]
 
-    fill_na_idx = tsdf_with_exog.df.index[3]
-    tsdf_with_exog.df.loc[:fill_na_idx, pd.IndexSlice["Moscow", "target"]] = np.nan
+    fill_na_idx = tsdf_with_exog.timestamps[3]
+    tsdf_with_exog._df.loc[:fill_na_idx, pd.IndexSlice["Moscow", "target"]] = np.nan
 
     torch_dataset = tsdf_with_exog.to_torch_dataset(make_samples, dropna=True)
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
         torch_dataset[0]["target"],
-        tsdf_with_exog.df.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values.astype(
+        tsdf_with_exog._df.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values.astype(
             np.float32
         ),
     )
     np.testing.assert_array_equal(
-        torch_dataset[1]["target"], tsdf_with_exog.df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
+        torch_dataset[1]["target"], tsdf_with_exog._df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
     )
 
 
@@ -1562,14 +1562,14 @@ def test_add_features_from_pandas_update_df(df_and_regressors, df_update_add_fea
     df, _, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D")
     ts.add_features_from_pandas(df_update=df_update_add_feature, update_exog=False)
-    pd.testing.assert_frame_equal(ts.df, df_updated_add_feature)
+    pd.testing.assert_frame_equal(ts._df, df_updated_add_feature)
 
 
 def test_add_features_from_pandas_update_df_exog(df_and_regressors, df_update_add_feature, df_exog_updated_add_feature):
     df, df_exog, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D", df_exog=df_exog)
     ts.add_features_from_pandas(df_update=df_update_add_feature, update_exog=True)
-    pd.testing.assert_frame_equal(ts.df_exog, df_exog_updated_add_feature)
+    pd.testing.assert_frame_equal(ts._df_exog, df_exog_updated_add_feature)
 
 
 @pytest.mark.parametrize(
@@ -1640,7 +1640,7 @@ def test_update_features_from_pandas_duplicate_columns_error(df_and_regressors, 
     df, _, _ = df_and_regressors
     df_exog = df.rename(columns={"target": "new"}, level=1)
     ts = TSDataset(df=df, df_exog=df_exog, freq="D")
-    ts.df = pd.concat([ts.df, df_exog], axis=1)
+    ts._df = pd.concat([ts._df, df_exog], axis=1)
 
     with pytest.raises(ValueError, match="The dataset features set contains duplicates!"):
         ts.update_features_from_pandas(df_update=df_update_update_feature)
@@ -1650,7 +1650,7 @@ def test_update_features_from_pandas(df_and_regressors, df_update_update_feature
     df, _, _ = df_and_regressors
     ts = TSDataset(df=df, freq="D")
     ts.update_features_from_pandas(df_update=df_update_update_feature)
-    pd.testing.assert_frame_equal(ts.df, df_updated_update_feature)
+    pd.testing.assert_frame_equal(ts._df, df_updated_update_feature)
 
 
 @pytest.mark.filterwarnings("ignore: Features {'out_of_dataset_column'} are not present in")
@@ -1681,7 +1681,7 @@ def test_drop_features(df_and_regressors, features, drop_from_exog, df_expected_
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=drop_from_exog)
-    df_columns, df_exog_columns = ts.to_flatten(ts.df).columns, ts.to_flatten(ts.df_exog).columns
+    df_columns, df_exog_columns = ts.to_flatten(ts._df).columns, ts.to_flatten(ts._df_exog).columns
     assert sorted(df_columns) == sorted(df_expected_columns)
     assert sorted(df_exog_columns) == sorted(df_exog_expected_columns)
 
@@ -1932,7 +1932,7 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
 
     alignment = infer_alignment(df)
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
-    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+    pd.testing.assert_frame_equal(ts._raw_df, expected_raw_df)
 
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,
@@ -1942,7 +1942,7 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
         timestamp_name=original_timestamp_name,
     )
     expected_df_exog = TSDataset.to_dataset(timestamp_df)
-    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+    pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     assert original_timestamp_name in ts.known_future
     assert ts.freq is None
@@ -1980,7 +1980,7 @@ def test_create_from_misaligned_with_exog(
 
     alignment = infer_alignment(df)
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
-    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+    pd.testing.assert_frame_equal(ts._raw_df, expected_raw_df)
 
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,
@@ -1993,7 +1993,7 @@ def test_create_from_misaligned_with_exog(
     expected_df_exog = pd.merge(expected_df_exog, timestamp_df, how="outer", on=["timestamp", "segment"])
     expected_df_exog = TSDataset.to_dataset(expected_df_exog)
 
-    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+    pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     expected_known_future = sorted(set(known_future).union([original_timestamp_name]))
     assert ts.known_future == expected_known_future
@@ -2030,7 +2030,7 @@ def test_create_from_misaligned_with_exog_all(
 
     alignment = infer_alignment(df)
     expected_raw_df = TSDataset.to_dataset(apply_alignment(df=df, alignment=alignment))
-    pd.testing.assert_frame_equal(ts.raw_df, expected_raw_df)
+    pd.testing.assert_frame_equal(ts._raw_df, expected_raw_df)
 
     timestamp_df = make_timestamp_df_from_alignment(
         alignment=alignment,
@@ -2044,7 +2044,7 @@ def test_create_from_misaligned_with_exog_all(
     expected_df_exog = pd.merge(expected_df_exog, timestamp_df, how="outer", on=["timestamp", "segment"])
 
     expected_df_exog = TSDataset.to_dataset(expected_df_exog)
-    pd.testing.assert_frame_equal(ts.df_exog, expected_df_exog)
+    pd.testing.assert_frame_equal(ts._df_exog, expected_df_exog)
 
     assert ts.known_future == expected_known_future
     assert ts.freq is None
@@ -2111,3 +2111,27 @@ def test_features(ts_name, expected_features, request):
     ts = request.getfixturevalue(ts_name)
     features = ts.features
     assert sorted(features) == sorted(expected_features)
+
+
+def test_error_set_read_only_known_future(df_and_regressors):
+    df, df_exog, regressors = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=regressors)
+    with pytest.raises(
+        AttributeError, match="can't set attribute|property 'known_future' of 'TSDataset' object has no setter"
+    ):
+        ts.known_future = ["exog_1"]
+
+
+def test_not_equal_updated_known_futures(df_and_regressors):
+    df, df_exog, regressors = df_and_regressors
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=regressors)
+    new_known_future = ts.known_future
+    new_known_future.append("new_regressor")
+    assert ts.known_future != new_known_future
+
+
+def test_error_set_freq(df_and_regressors):
+    df, _, _ = df_and_regressors
+    ts = TSDataset(df=df, freq="D")
+    with pytest.raises(AttributeError, match="can't set attribute|property 'freq' of 'TSDataset' object has no setter"):
+        ts.freq = "H"

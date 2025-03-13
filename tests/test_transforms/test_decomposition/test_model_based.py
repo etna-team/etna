@@ -60,8 +60,8 @@ def test_prepare_ts_in_column_target(ts_with_exogs):
     prepared_ts = transform._prepare_ts(ts=ts)
 
     assert prepared_ts is not ts
-    assert prepared_ts.df_exog is None
-    pd.testing.assert_frame_equal(prepared_ts.df, ts[..., "target"])
+    assert prepared_ts._df_exog is None
+    pd.testing.assert_frame_equal(prepared_ts._df, ts[..., "target"])
 
 
 @pytest.mark.parametrize(
@@ -80,9 +80,9 @@ def test_prepare_ts_in_column_feature(ts_name, in_column, request):
 
     assert prepared_ts is not ts
     assert "feature" not in prepared_ts.features
-    assert prepared_ts.df_exog is None
+    assert prepared_ts._df_exog is None
     pd.testing.assert_frame_equal(
-        prepared_ts.df, ts[..., in_column].rename({in_column: "target"}, axis=1, level="feature")
+        prepared_ts._df, ts[..., in_column].rename({in_column: "target"}, axis=1, level="feature")
     )
 
 
@@ -248,7 +248,7 @@ def test_pipeline_models(ts_name, in_column, decompose_model, forecast_model, re
     forecast = pipeline.forecast()
 
     assert forecast.size()[0] == 3
-    assert np.sum(forecast.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
+    assert np.sum(forecast._df.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
 
 
 @pytest.mark.parametrize(
@@ -277,7 +277,7 @@ def test_decompose_models(ts_with_exogs, decompose_model):
     forecast = pipeline.forecast()
 
     assert forecast.size()[0] == 3
-    assert np.sum(forecast.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
+    assert np.sum(forecast._df.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
 
 
 @pytest.mark.parametrize("answer", ({"1": ["2021-01-11"], "2": ["2021-01-27"]},))
@@ -335,8 +335,8 @@ def test_stride_transform(forward_stride_datasets, decompose_model, context_size
     transform.fit(train)
     transformed = transform.transform(test)
 
-    assert not transformed.df.iloc[context_size:10].isna().any().any()
-    assert transformed.df.iloc[10:].isna().all().any()
+    assert not transformed._df.iloc[context_size:10].isna().any().any()
+    assert transformed._df.iloc[10:].isna().all().any()
 
 
 @pytest.mark.parametrize("features_to_ignore", (["target"], ["regressor_1"], ["target", "regressor_1"]))

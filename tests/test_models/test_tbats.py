@@ -106,7 +106,7 @@ def periodic_ts(periodic_dfs):
 
 @pytest.fixture()
 def small_periodic_ts(periodic_ts):
-    df = periodic_ts[0].df.loc[:, pd.IndexSlice["segment_1", :]].iloc[-10:]
+    df = periodic_ts[0]._df.loc[:, pd.IndexSlice["segment_1", :]].iloc[-10:]
     ts = TSDataset(df, freq="D")
     return ts
 
@@ -222,7 +222,7 @@ def test_decompose_not_fitted(small_periodic_ts, method):
 
     method_to_call = getattr(model, method)
     with pytest.raises(ValueError, match="Model is not fitted!"):
-        method_to_call(df=small_periodic_ts.df)
+        method_to_call(df=small_periodic_ts._df)
 
 
 @pytest.mark.parametrize(

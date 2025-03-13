@@ -263,7 +263,7 @@ def test_pipeline_parameter_k(ts_name, in_column, forecast_model, k, request):
     forecast = pipeline.forecast()
 
     assert forecast.size()[0] == 3
-    assert np.sum(forecast.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
+    assert np.sum(forecast._df.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0
 
 
 @pytest.mark.parametrize("answer", ({"1": ["2021-01-11"], "2": ["2021-01-09"]},))
@@ -309,8 +309,8 @@ def test_stride_transform(forward_stride_datasets, k):
     transform.fit(train)
     transformed = transform.transform(test)
 
-    assert not transformed.df.iloc[:10].isna().any().any()
-    assert transformed.df.iloc[10:].isna().all().any()
+    assert not transformed._df.iloc[:10].isna().any().any()
+    assert transformed._df.iloc[10:].isna().all().any()
 
 
 def test_repetitive_fit_transform(ts_with_exogs):

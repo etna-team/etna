@@ -70,7 +70,7 @@ def fake_forecast(ts: TSDataset, prediction_size: Optional[int] = None, return_c
     if prediction_size is not None:
         df = df.iloc[-prediction_size:]
 
-    ts.df = df
+    ts._df = df
 
     return TSDataset(df=df, freq=ts.freq)
 
@@ -151,7 +151,7 @@ def test_forecast_columns(example_reg_tsds):
 
     # check regressor values
     assert forecast_pipeline[:, :, "regressor_exog_weekend"].equals(
-        original_ts.df_exog.loc[forecast_pipeline.timestamps, pd.IndexSlice[:, "regressor_exog_weekend"]]
+        original_ts._df_exog.loc[forecast_pipeline.timestamps, pd.IndexSlice[:, "regressor_exog_weekend"]]
     )
 
 
@@ -195,7 +195,7 @@ def test_forecast_multi_step(example_tsds, horizon, step):
     pipeline.fit(example_tsds)
     forecast_pipeline = pipeline.forecast()
 
-    assert forecast_pipeline.df.shape[0] == horizon
+    assert forecast_pipeline.size()[0] == horizon
 
 
 def test_forecast_prediction_interval_interface(example_tsds):

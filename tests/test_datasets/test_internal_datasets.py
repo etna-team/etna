@@ -68,7 +68,7 @@ def test_load_all_parts():
         shutil.rmtree(dataset_path)
     ts_train, ts_test, ts_full = load_dataset("custom_internal_dataset", parts=("train", "test", "full"))
     shutil.rmtree(dataset_path)
-    assert ts_train.df.shape[0] + ts_test.df.shape[0] == ts_full.df.shape[0]
+    assert ts_train.size()[0] + ts_test.size()[0] == ts_full.size()[0]
 
 
 def test_not_present_part():
@@ -281,14 +281,14 @@ def test_dataset_statistics(
     dataset_name, expected_shape, expected_min_timestamp, expected_max_timestamp, dataset_parts
 ):
     ts_full = load_dataset(dataset_name, parts="full", rebuild_dataset=True)
-    assert ts_full.df.shape == expected_shape
+    assert (ts_full.size()[0], ts_full.size()[1] * ts_full.size()[2]) == expected_shape
     assert ts_full.timestamps.min() == expected_min_timestamp
     assert ts_full.timestamps.max() == expected_max_timestamp
 
     if dataset_parts:
         ts_parts = load_dataset(dataset_name, parts=dataset_parts)
-        parts_rows = sum([ts.df.shape[0] for ts in ts_parts])
-        assert ts_full.df.shape[0] == parts_rows
+        parts_rows = sum([ts.size()[0] for ts in ts_parts])
+        assert ts_full.size()[0] == parts_rows
 
 
 @pytest.mark.parametrize(
@@ -364,11 +364,11 @@ def test_df_exog_statistics(
 ):
     ts_parts = load_dataset(dataset_name, parts=dataset_parts)
     for i, part in enumerate(ts_parts):
-        assert part.df_exog.shape == expected_df_exog_shapes[i]
+        assert part._df_exog.shape == expected_df_exog_shapes[i]
     for i, part in enumerate(ts_parts):
-        assert (part.df_exog.index.min(), part.df_exog.index.max()) == expected_df_exog_timestamps[i]
+        assert (part._df_exog.index.min(), part._df_exog.index.max()) == expected_df_exog_timestamps[i]
     for i, part in enumerate(ts_parts):
-        exog_col_type = part.df_exog.dtypes.iloc[0]
+        exog_col_type = part._df_exog.dtypes.iloc[0]
         assert pd.api.types.is_datetime64_dtype(exog_col_type)
 
 

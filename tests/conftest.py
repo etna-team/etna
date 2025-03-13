@@ -261,7 +261,7 @@ def outliers_tsds():
 
 @pytest.fixture()
 def outliers_tsds_without_missing(outliers_tsds):
-    tsds = TSDataset(df=outliers_tsds[..., "target"].dropna(), freq="1d", df_exog=outliers_tsds.df_exog.dropna())
+    tsds = TSDataset(df=outliers_tsds[..., "target"].dropna(), freq="1d", df_exog=outliers_tsds._df_exog.dropna())
     return tsds
 
 

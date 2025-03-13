@@ -15,7 +15,7 @@ from tests.test_transforms.utils import assert_sampling_is_valid
 def ts_check_event_transform_expected_binary_pre_2_post_2(ts_check_event_transform) -> TSDataset:
     periods_exog = 10
     df = ts_check_event_transform.to_pandas(features=["target"])
-    df_exog = ts_check_event_transform.df_exog
+    df_exog = ts_check_event_transform._df_exog
 
     holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
     holiday.drop(columns=["target"], inplace=True)
@@ -31,7 +31,7 @@ def ts_check_event_transform_expected_binary_pre_2_post_2(ts_check_event_transfo
 def ts_check_event_transform_expected_binary_pre_1_post_1(ts_check_event_transform) -> TSDataset:
     periods_exog = 10
     df = ts_check_event_transform.to_pandas(features=["target"])
-    df_exog = ts_check_event_transform.df_exog
+    df_exog = ts_check_event_transform._df_exog
 
     holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
     holiday.drop(columns=["target"], inplace=True)
@@ -47,7 +47,7 @@ def ts_check_event_transform_expected_binary_pre_1_post_1(ts_check_event_transfo
 def ts_check_event_transform_expected_distance_pre_3_post_3(ts_check_event_transform) -> TSDataset:
     periods_exog = 10
     df = ts_check_event_transform.to_pandas(features=["target"])
-    df_exog = ts_check_event_transform.df_exog
+    df_exog = ts_check_event_transform._df_exog
 
     holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
     holiday.drop(columns=["target"], inplace=True)

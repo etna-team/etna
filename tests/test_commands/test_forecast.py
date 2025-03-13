@@ -286,7 +286,7 @@ def test_filter_forecast_fail_wrong_type(forecast_params, tsdataset_name, reques
 def test_filter_forecast(forecast_params, tsdataset_name, expected, request):
     tsdataset = request.getfixturevalue(tsdataset_name)
     result = filter_forecast(forecast_ts=tsdataset, forecast_params=forecast_params)
-    assert result.df.index.min() == expected
+    assert result.timestamps.min() == expected
 
 
 @pytest.mark.parametrize(

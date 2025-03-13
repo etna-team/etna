@@ -415,7 +415,7 @@ def test_get_level_dataset(hierarchical_structure_name, source_df_name, target_l
     assert target_ts.hierarchical_structure == estimated_target_ts.hierarchical_structure
     assert target_ts.current_df_level == estimated_target_ts.current_df_level
 
-    pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
+    pd.testing.assert_frame_equal(target_ts._df, estimated_target_ts._df)
 
 
 @pytest.mark.parametrize(
@@ -450,7 +450,7 @@ def test_get_level_dataset_with_exog(
     estimated_target_ts = source_ts.get_level_dataset(target_level)
 
     assert target_ts.current_df_exog_level == estimated_target_ts.current_df_exog_level
-    pd.testing.assert_frame_equal(target_ts.df, estimated_target_ts.df)
+    pd.testing.assert_frame_equal(target_ts._df, estimated_target_ts._df)
 
 
 def test_get_level_dataset_no_hierarchy_error(market_level_df):
@@ -518,3 +518,21 @@ def test_train_test_split_pass_hierarchy_to_output(simple_hierarchical_ts):
     assert test.hierarchical_structure.level_structure == simple_hierarchical_ts.hierarchical_structure.level_structure
     assert train.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names
     assert test.hierarchical_structure.level_names == simple_hierarchical_ts.hierarchical_structure.level_names
+
+
+def test_error_set_current_df_level(market_level_df, hierarchical_structure):
+    df = market_level_df
+    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    with pytest.raises(
+        AttributeError, match="can't set attribute|property 'current_df_level' of 'TSDataset' object has no setter"
+    ):
+        ts.current_df_level = "market_2"
+
+
+def test_error_set_current_df_exog_level(product_level_df, market_level_df_exog, hierarchical_structure):
+    df, df_exog = product_level_df, market_level_df_exog
+    ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+    with pytest.raises(
+        AttributeError, match="can't set attribute|property 'current_df_exog_level' of 'TSDataset' object has no setter"
+    ):
+        ts.current_df_exog_level = "market_2"

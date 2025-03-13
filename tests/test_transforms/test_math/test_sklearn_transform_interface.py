@@ -223,7 +223,7 @@ def test_generated_column_names(transform_constructor, in_column, multicolumn_ts
 def test_all_columns(transform_constructor, multicolumn_ts):
     """Test that transform can process all columns using None value for in_column."""
     transform = transform_constructor(in_column=None, out_column=None, inplace=False)
-    initial_df = multicolumn_ts.df.copy()
+    initial_df = multicolumn_ts.to_pandas()
     transformed_df = transform.fit_transform(multicolumn_ts).to_pandas()
 
     new_columns = extract_new_features_columns(transformed_df, initial_df)

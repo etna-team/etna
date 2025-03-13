@@ -67,7 +67,7 @@ def plot_trend(
         segments = ts.segments
 
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
-    df = ts.df
+    df = ts._df
 
     if not isinstance(trend_transform, list):
         trend_transform = [trend_transform]

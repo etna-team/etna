@@ -104,7 +104,7 @@ class BaseReconciliator(ABC, BaseMixin):
         ts_reconciled = TSDataset(
             df=df_reconciled,
             freq=ts.freq,
-            df_exog=ts.df_exog,
+            df_exog=ts._df_exog,
             known_future=ts.known_future,
             hierarchical_structure=ts.hierarchical_structure,
         )

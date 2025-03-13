@@ -43,7 +43,7 @@ def get_anomalies_median(
     for seg in segments:
         anomalies: List[int] = []
 
-        segment_df = ts.df[seg].reset_index()
+        segment_df = ts._df[seg].reset_index()
         values = segment_df[in_column].values
 
         n_iter = math.ceil(len(values) / window_size)

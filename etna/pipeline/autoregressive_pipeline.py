@@ -142,7 +142,7 @@ class AutoRegressivePipeline(
             current_ts = TSDataset(
                 df=prediction_df.iloc[:current_idx_border],
                 freq=ts.freq,
-                df_exog=ts.df_exog,
+                df_exog=ts._df_exog,
                 known_future=ts.known_future,
                 hierarchical_structure=ts.hierarchical_structure,
             )
@@ -180,7 +180,7 @@ class AutoRegressivePipeline(
         prediction_ts = TSDataset(
             df=prediction_df,
             freq=ts.freq,
-            df_exog=ts.df_exog,
+            df_exog=ts._df_exog,
             known_future=ts.known_future,
             hierarchical_structure=ts.hierarchical_structure,
         )
@@ -188,8 +188,8 @@ class AutoRegressivePipeline(
         prediction_ts.inverse_transform(self.transforms)
 
         # cut only last timestamps from result dataset
-        prediction_ts.df = prediction_ts.df.tail(self.horizon)
-        prediction_ts.raw_df = prediction_ts.raw_df.tail(self.horizon)
+        prediction_ts._df = prediction_ts._df.tail(self.horizon)
+        prediction_ts._raw_df = prediction_ts._raw_df.tail(self.horizon)
 
         if return_components:
             target_components_df = pd.concat(target_components_dfs)

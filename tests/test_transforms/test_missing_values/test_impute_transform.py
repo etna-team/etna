@@ -18,12 +18,12 @@ def ts_nans_beginning(example_reg_tsds):
     ts = deepcopy(example_reg_tsds)
 
     # nans at the beginning (shouldn't be filled)
-    ts.loc[ts.timestamps[:5], pd.IndexSlice["segment_1", "target"]] = np.NaN
+    ts._df.loc[ts.timestamps[:5], pd.IndexSlice["segment_1", "target"]] = np.NaN
 
     # nans in the middle (should be filled)
-    ts.loc[ts.timestamps[8], pd.IndexSlice["segment_1", "target"]] = np.NaN
-    ts.loc[ts.timestamps[10], pd.IndexSlice["segment_2", "target"]] = np.NaN
-    ts.loc[ts.timestamps[40], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    ts._df.loc[ts.timestamps[8], pd.IndexSlice["segment_1", "target"]] = np.NaN
+    ts._df.loc[ts.timestamps[10], pd.IndexSlice["segment_2", "target"]] = np.NaN
+    ts._df.loc[ts.timestamps[40], pd.IndexSlice["segment_2", "target"]] = np.NaN
     return ts
 
 
@@ -105,7 +105,7 @@ def test_one_missing_value_mean(ts_with_missing_value_x_index):
     """Check that imputer with mean-strategy works correctly in case of one missing value in data."""
     ts, segment, idx = ts_with_missing_value_x_index
     imputer = TimeSeriesImputerTransform(in_column="target", strategy="mean")
-    expected_value = ts.df.loc[:, pd.IndexSlice[segment, "target"]].mean()
+    expected_value = ts._df.loc[:, pd.IndexSlice[segment, "target"]].mean()
     result = imputer.fit_transform(ts).to_pandas().loc[:, pd.IndexSlice[segment, "target"]]
     assert result.loc[idx] == expected_value
     assert not result.isna().any()
@@ -116,7 +116,7 @@ def test_range_missing_mean(ts_with_missing_range_x_index):
     ts, segment, rng = ts_with_missing_range_x_index
     imputer = TimeSeriesImputerTransform(in_column="target", strategy="mean")
     result = imputer.fit_transform(ts).to_pandas().loc[:, pd.IndexSlice[segment, "target"]]
-    expected_value = ts.df.loc[:, pd.IndexSlice[segment, "target"]].mean()
+    expected_value = ts._df.loc[:, pd.IndexSlice[segment, "target"]].mean()
     expected_series = pd.Series(index=rng, data=[expected_value for _ in rng], name="target")
     np.testing.assert_array_almost_equal(result.loc[rng].reset_index(drop=True), expected_series)
     assert not result.isna().any()
@@ -130,7 +130,7 @@ def test_one_missing_value_forward_fill(ts_with_missing_value_x_index):
 
     timestamps = np.array(sorted(ts.timestamps))
     timestamp_idx = np.where(timestamps == idx)[0][0]
-    expected_value = ts.df.loc[timestamps[timestamp_idx - 1], pd.IndexSlice[segment, "target"]]
+    expected_value = ts._df.loc[timestamps[timestamp_idx - 1], pd.IndexSlice[segment, "target"]]
     assert result.loc[idx] == expected_value
     assert not result.isna().any()
 
@@ -144,7 +144,7 @@ def test_range_missing_forward_fill(ts_with_missing_range_x_index):
     timestamps = np.array(sorted(ts.timestamps))
     rng = [pd.Timestamp(x) for x in rng]
     timestamp_idx = min(np.where([x in rng for x in timestamps])[0])
-    expected_value = ts.df.loc[timestamps[timestamp_idx - 1], pd.IndexSlice[segment, "target"]]
+    expected_value = ts._df.loc[timestamps[timestamp_idx - 1], pd.IndexSlice[segment, "target"]]
     expected_series = pd.Series(index=rng, data=[expected_value for _ in rng], name="target")
     np.testing.assert_array_almost_equal(result.loc[rng], expected_series)
     assert not result.isna().any()
@@ -158,9 +158,9 @@ def test_one_missing_value_running_mean(ts_with_missing_value_x_index, window: i
     timestamp_idx = np.where(timestamps == idx)[0][0]
     imputer = TimeSeriesImputerTransform(in_column="target", strategy="running_mean", window=window)
     if window == -1:
-        expected_value = ts.df.loc[: timestamps[timestamp_idx - 1], pd.IndexSlice[segment, "target"]].mean()
+        expected_value = ts._df.loc[: timestamps[timestamp_idx - 1], pd.IndexSlice[segment, "target"]].mean()
     else:
-        expected_value = ts.df.loc[
+        expected_value = ts._df.loc[
             timestamps[timestamp_idx - window] : timestamps[timestamp_idx - 1], pd.IndexSlice[segment, "target"]
         ].mean()
     result = imputer.fit_transform(ts).to_pandas().loc[:, pd.IndexSlice[segment, "target"]]
@@ -208,7 +208,7 @@ def sample_ts():
 def ts_to_fill(sample_ts):
     """TSDataset with nans to fill with imputer."""
     ts = deepcopy(sample_ts)
-    ts.df.loc[["2020-01-01", "2020-01-03", "2020-01-08", "2020-01-09"], pd.IndexSlice[:, "target"]] = np.NaN
+    ts._df.loc[["2020-01-01", "2020-01-03", "2020-01-08", "2020-01-09"], pd.IndexSlice[:, "target"]] = np.NaN
     return ts
 
 
@@ -252,7 +252,7 @@ def test_missing_values_seasonal(ts_to_fill, window: int, seasonality: int, expe
         in_column="target", strategy="seasonal", window=window, seasonality=seasonality, default_value=None
     )
     imputer.fit_transform(ts)
-    result = ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
+    result = ts._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
 
     np.testing.assert_array_equal(result, expected)
 
@@ -297,7 +297,7 @@ def test_missing_values_seasonal_nonautoreg(ts_to_fill, window: int, seasonality
         in_column="target", strategy="seasonal_nonautoreg", window=window, seasonality=seasonality, default_value=None
     )
     imputer.fit_transform(ts)
-    result = ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
+    result = ts._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
 
     np.testing.assert_array_equal(result, expected)
 
@@ -320,7 +320,7 @@ def test_default_value(ts_to_fill, window: int, seasonality: int, default_value:
         in_column="target", strategy="seasonal", window=window, seasonality=seasonality, default_value=default_value
     )
     imputer.fit_transform(ts)
-    result = ts.df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
+    result = ts._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].values
 
     np.testing.assert_array_equal(result, expected)
 

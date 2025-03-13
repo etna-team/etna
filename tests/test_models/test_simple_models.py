@@ -113,7 +113,7 @@ def test_sma_model_forecast_fail_nans_in_context(simple_tsdf):
     sma_model = SeasonalMovingAverageModel(window=2, seasonality=2)
     sma_model.fit(simple_tsdf)
     future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=sma_model.context_size)
-    future_ts.df.iloc[1, 0] = np.NaN
+    future_ts._df.iloc[1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a forecast context"):
         _ = sma_model.forecast(future_ts, prediction_size=7)
 
@@ -121,7 +121,7 @@ def test_sma_model_forecast_fail_nans_in_context(simple_tsdf):
 def test_sma_model_predict_fail_nans_in_context(simple_tsdf):
     sma_model = SeasonalMovingAverageModel(window=2, seasonality=7)
     sma_model.fit(simple_tsdf)
-    simple_tsdf.df.iloc[-1, 0] = np.NaN
+    simple_tsdf._df.iloc[-1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a target column"):
         _ = sma_model.predict(simple_tsdf, prediction_size=7)
 
@@ -231,7 +231,7 @@ def test_deadline_model_forecast_fail_nans_in_context(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1)
     model.fit(simple_tsdf)
     future_ts = simple_tsdf.make_future(future_steps=7, tail_steps=model.context_size)
-    future_ts.df.iloc[1, 0] = np.NaN
+    future_ts._df.iloc[1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a forecast context"):
         _ = model.forecast(future_ts, prediction_size=7)
 
@@ -239,7 +239,7 @@ def test_deadline_model_forecast_fail_nans_in_context(simple_tsdf):
 def test_deadline_model_predict_fail_nans_in_context(simple_tsdf):
     model = DeadlineMovingAverageModel(window=1)
     model.fit(simple_tsdf)
-    simple_tsdf.df.iloc[-1, 0] = np.NaN
+    simple_tsdf._df.iloc[-1, 0] = np.NaN
     with pytest.raises(ValueError, match="There are NaNs in a target column"):
         _ = model.predict(simple_tsdf, prediction_size=7)
 
@@ -751,7 +751,7 @@ def test_deadline_model_forecast_correct_with_big_horizons(two_month_ts):
             [47.75],
         ]
     )
-    assert np.all(res.df.values == expected)
+    assert np.all(res._df.values == expected)
 
 
 @pytest.mark.parametrize(
@@ -864,7 +864,7 @@ def test_deadline_ma_predict_components_correct(
     long_periodic_ts, method_name, out_of_sample_pred, window=1, seasonality="month", horizon=32
 ):
     """Testing that correct lag used as a component."""
-    predict_lags = long_periodic_ts.df.values[-63:-32]
+    predict_lags = long_periodic_ts._df.values[-63:-32]
 
     model = DeadlineMovingAverageModel(window=window, seasonality=seasonality)
     model.fit(long_periodic_ts)
