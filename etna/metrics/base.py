@@ -232,7 +232,7 @@ class Metric(AbstractMetric, BaseMixin):
 
         for segment in segments:
             for name, dataset in zip(("y_true", "y_pred"), (y_true, y_pred)):
-                if (segment, "target") not in dataset.columns:
+                if (segment, "target") not in dataset._df.columns:
                     raise ValueError(
                         f"All the segments in {name} should contain 'target' column. Segment {segment} doesn't."
                     )

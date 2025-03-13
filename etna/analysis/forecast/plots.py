@@ -951,7 +951,6 @@ def plot_forecast_decomposition(
 
     column_names = set(forecast_ts.features)
     components = list(match_target_components(column_names))
-    skip_first_component = test_ts is None
 
     if len(components) == 0:
         raise ValueError("No components were detected in the provided `forecast_ts`.")
@@ -969,6 +968,8 @@ def plot_forecast_decomposition(
 
     i = 0
     for segment in segments:
+        skip_first_component = test_ts is None
+
         if test_ts is not None:
             segment_test_df = test_ts[:, segment, :][segment]
         else:

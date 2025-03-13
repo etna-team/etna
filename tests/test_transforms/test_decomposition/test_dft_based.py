@@ -317,12 +317,12 @@ def test_repetitive_fit_transform(ts_with_exogs):
     transform = FourierDecomposeTransform(in_column="target", k=3)
 
     ts_with_exogs = transform.fit_transform(ts_with_exogs)
-    columns_before = ts_with_exogs.columns.tolist()
+    columns_before = ts_with_exogs._df.columns.tolist()
 
     ts_with_exogs = transform.inverse_transform(ts_with_exogs)
 
     transform = FourierDecomposeTransform(in_column="target", k=3)
 
     ts_with_exogs = transform.fit_transform(ts_with_exogs)
-    columns_after = ts_with_exogs.columns.tolist()
+    columns_after = ts_with_exogs._df.columns.tolist()
     assert columns_before == columns_after

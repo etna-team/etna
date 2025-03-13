@@ -603,7 +603,7 @@ def test_gale_shapley_transform_fit_transform(ts_with_large_regressors_number: T
         relevance_table=StatisticsRelevanceTable(), top_k=5, use_rank=False
     )
     transformed = transform.fit_transform(ts)
-    assert set(transformed.columns.get_level_values("feature")) == {
+    assert set(transformed.features) == {
         "target",
         "regressor_1",
         "regressor_2",

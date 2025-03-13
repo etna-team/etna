@@ -341,8 +341,8 @@ def test_metrics_values(metric_class, metric_fn, train_test_dfs):
     metric_values = metric(y_pred=forecast_df, y_true=true_df)
     for segment, value in metric_values.items():
         true_metric_value = metric_fn(
-            y_true=true_df.loc[:, pd.IndexSlice[segment, "target"]],
-            y_pred=forecast_df.loc[:, pd.IndexSlice[segment, "target"]],
+            y_true=true_df._df.loc[:, pd.IndexSlice[segment, "target"]],
+            y_pred=forecast_df._df.loc[:, pd.IndexSlice[segment, "target"]],
         )
         assert value == true_metric_value
 

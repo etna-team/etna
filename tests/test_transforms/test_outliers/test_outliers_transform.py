@@ -107,9 +107,9 @@ def outliers_solid_tsds_non_regressor_holiday(outliers_solid_tsds):
 def test_interface(transform_constructor, constructor_kwargs, outliers_solid_tsds: TSDataset, in_column):
     """Checks outliers transforms doesn't change structure of dataframe."""
     transform = transform_constructor(in_column=in_column, **constructor_kwargs)
-    start_columns = outliers_solid_tsds.columns
+    start_columns = outliers_solid_tsds._df.columns
     outliers_solid_tsds = transform.fit_transform(ts=outliers_solid_tsds)
-    assert np.all(start_columns == outliers_solid_tsds.columns)
+    assert np.all(start_columns == outliers_solid_tsds._df.columns)
 
 
 @pytest.mark.parametrize("in_column", ["target", "exog"])

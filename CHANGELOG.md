@@ -75,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove argument `verbose` from `SimpleImputerSubsegment` ([#599](https://github.com/etna-team/etna/pull/599))
 - **Breaking:** Remove attributes `df`, `raw_df`, `df_exog` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/630))
 - **Breaking:** Remove attributes `known_future`, `freq`, `current_df_level` and `current_df_exog_level` from `TSDataset`, and make them properties ([#630](https://github.com/etna-team/etna/pull/630))
+- **Breaking:** Remove properties `columns` and `loc` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/631))
 
 ## [2.10.0] - 2025-01-09
 ### Added

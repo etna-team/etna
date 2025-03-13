@@ -37,7 +37,7 @@ class _IntervalsMetricMixin:
                 raise ValueError("Provided intervals borders names must be in dataset!")
 
             else:
-                missing_per_segment = ts.loc[:, pd.IndexSlice[:, list(borders_set)]].isna().any()
+                missing_per_segment = ts._df.loc[:, pd.IndexSlice[:, list(borders_set)]].isna().any()
                 if missing_per_segment.any():
                     raise ValueError(
                         "Provided intervals borders contain missing values! "
@@ -49,7 +49,7 @@ class _IntervalsMetricMixin:
                 raise ValueError("All quantiles must be presented in the dataset!")
 
             else:
-                missing_per_segment = ts.loc[:, pd.IndexSlice[:, list(quantiles_set)]].isna().any()
+                missing_per_segment = ts._df.loc[:, pd.IndexSlice[:, list(quantiles_set)]].isna().any()
                 if missing_per_segment.any():
                     raise ValueError(
                         "Quantiles contain missing values! "
