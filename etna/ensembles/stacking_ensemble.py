@@ -223,12 +223,13 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             return x, None
 
     def _process_forecasts(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
-        forecasts = [forecast._df for forecast in forecasts]
-        ts = self._make_same_level(ts=ts, forecasts=forecasts)
+        forecasts_df: List[pd.DataFrame]
+        forecasts_df = [forecast._df for forecast in forecasts]
+        ts = self._make_same_level(ts=ts, forecasts=forecasts_df)
 
-        x, _ = self._make_features(ts=ts, forecasts=forecasts, train=False)
+        x, _ = self._make_features(ts=ts, forecasts=forecasts_df, train=False)
         y = self.final_model.predict(x)
-        num_segments = len(forecasts[0].columns.get_level_values("segment").unique())
+        num_segments = len(forecasts_df[0].columns.get_level_values("segment").unique())
         y = y.reshape(num_segments, -1).T
         num_timestamps = y.shape[0]
 
@@ -238,7 +239,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         x.loc[:, "timestamp"] = x.index.values
         df_exog = TSDataset.to_dataset(x)
 
-        df = forecasts[0].loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].copy()
+        df = forecasts_df[0].loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]].copy()
         df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = np.NAN
 
         result = TSDataset(df=df, freq=ts.freq, df_exog=df_exog, hierarchical_structure=ts.hierarchical_structure)
