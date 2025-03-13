@@ -1950,7 +1950,7 @@ class TSDataset:
 
     @property
     def known_future(self) -> List[str]:
-        """Return columns in ``df_exog`` are initially regressors.
+        """Return columns in ``df_exog`` that are initially regressors.
 
         Returns
         -------

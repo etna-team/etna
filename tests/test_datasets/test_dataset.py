@@ -1239,19 +1239,19 @@ def test_getitem_slice_date(tsdf_with_exog):
     df_slice = tsdf_with_exog["2021-02-01":"2021-02-03"]
     expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
     pd.testing.assert_index_equal(df_slice.index, expected_index)
-    pd.testing.assert_frame_equal(tsdf_with_exog.loc["2021-02-01":"2021-02-03"], df_slice)
+    pd.testing.assert_frame_equal(tsdf_with_exog._df.loc["2021-02-01":"2021-02-03"], df_slice)
 
 
 def test_getitem_second_ellipsis(tsdf_with_exog):
     df_slice = tsdf_with_exog["2021-02-01":"2021-02-03", ...]
     expected_index = pd.DatetimeIndex(pd.date_range("2021-02-01", "2021-02-03"), name="timestamp")
     pd.testing.assert_index_equal(df_slice.index, expected_index)
-    pd.testing.assert_frame_equal(tsdf_with_exog.loc["2021-02-01":"2021-02-03"], df_slice)
+    pd.testing.assert_frame_equal(tsdf_with_exog._df.loc["2021-02-01":"2021-02-03"], df_slice)
 
 
 def test_getitem_first_ellipsis(tsdf_with_exog):
     df_slice = tsdf_with_exog[..., "target"]
-    df_expected = tsdf_with_exog.loc[:, [["Moscow", "target"], ["Omsk", "target"]]]
+    df_expected = tsdf_with_exog._df.loc[:, [["Moscow", "target"], ["Omsk", "target"]]]
     pd.testing.assert_frame_equal(df_expected, df_slice)
 
 
@@ -1531,10 +1531,10 @@ def test_to_torch_dataset_without_drop(tsdf_with_exog):
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
         torch_dataset[0]["target"],
-        tsdf_with_exog.loc[:, pd.IndexSlice["Moscow", "target"]].values.astype(np.float32),
+        tsdf_with_exog._df.loc[:, pd.IndexSlice["Moscow", "target"]].values.astype(np.float32),
     )
     np.testing.assert_array_equal(
-        torch_dataset[1]["target"], tsdf_with_exog.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
+        torch_dataset[1]["target"], tsdf_with_exog._df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
     )
 
 
@@ -1543,18 +1543,18 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
         return [{"target": df.target.values, "segment": df["segment"].values[0]}]
 
     fill_na_idx = tsdf_with_exog.timestamps[3]
-    tsdf_with_exog.loc[:fill_na_idx, pd.IndexSlice["Moscow", "target"]] = np.nan
+    tsdf_with_exog._df.loc[:fill_na_idx, pd.IndexSlice["Moscow", "target"]] = np.nan
 
     torch_dataset = tsdf_with_exog.to_torch_dataset(make_samples, dropna=True)
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
         torch_dataset[0]["target"],
-        tsdf_with_exog.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values.astype(
+        tsdf_with_exog._df.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values.astype(
             np.float32
         ),
     )
     np.testing.assert_array_equal(
-        torch_dataset[1]["target"], tsdf_with_exog.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
+        torch_dataset[1]["target"], tsdf_with_exog._df.loc[:, pd.IndexSlice["Omsk", "target"]].values.astype(np.float32)
     )
 
 
