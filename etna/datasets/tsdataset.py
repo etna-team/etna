@@ -1623,14 +1623,13 @@ class TSDataset:
         return self._df.loc
 
     def isnull(self) -> pd.DataFrame:
-        """Return dataframe with flag that means if the correspondent object in ``self.df`` is null.
+        """Return dataframe with flag that means if the correspondent object in TSDataset data is null.
 
         Returns
         -------
         pd.Dataframe
             is_null dataframe
         """
-        # TODO: We need to rework this documentation, because self.df is protected now
         return self._df.isnull()
 
     def head(self, n_rows: int = 5) -> pd.DataFrame:
