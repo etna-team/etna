@@ -558,8 +558,7 @@ def test_create_segment_conversion_during_init(df_segments_int):
     with pytest.warns(UserWarning, match="Segment values doesn't have string type"):
         ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
 
-    assert np.all(ts.segments == ["1", "2"])
-    assert len(ts.segments) * len(ts.features) == 4
+    assert np.all(ts._df.columns.get_level_values("segment") == ["1", "1", "2", "2"])
 
 
 def test_create_from_long_format_with_exog():

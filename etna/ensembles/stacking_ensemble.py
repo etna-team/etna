@@ -223,8 +223,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             return x, None
 
     def _process_forecasts(self, ts: TSDataset, forecasts: List[TSDataset]) -> TSDataset:
-        forecasts_df: List[pd.DataFrame]
-        forecasts_df = [forecast._df for forecast in forecasts]
+        forecasts_df: List[pd.DataFrame] = [forecast._df for forecast in forecasts]
         ts = self._make_same_level(ts=ts, forecasts=forecasts_df)
 
         x, _ = self._make_features(ts=ts, forecasts=forecasts_df, train=False)
