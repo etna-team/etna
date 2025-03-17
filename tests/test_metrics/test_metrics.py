@@ -143,7 +143,7 @@ def test_invalid_segments(metric_class, two_dfs_with_different_segments_sets):
 def test_invalid_target_columns(metric_class, train_test_dfs):
     """Check metrics behavior in case of no target column in segment"""
     forecast_df, true_df = train_test_dfs
-    forecast_df._df.columns = forecast_df._df.columns.set_levels(["not_target"], level='feature')
+    forecast_df._df.columns = forecast_df._df.columns.set_levels(["not_target"], level="feature")
     metric = metric_class()
     with pytest.raises(ValueError, match="y_pred should contain 'target' feature."):
         _ = metric(y_true=true_df, y_pred=forecast_df)
