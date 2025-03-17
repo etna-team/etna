@@ -1,9 +1,16 @@
 name: Build and push docker image from trunk
 
+#on:
+#  push:
+#    branches:
+#      - master
+
 on:
   push:
     branches:
       - master
+  pull_request:
+    types: [opened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
