@@ -46,7 +46,7 @@ jobs:
           echo "etna[all] @ git+https://github.com/${{ github.repository }}.git@${{ github.sha }}" > requirements.txt
           poetry export -E "all jupyter" --without-hashes --format=requirements.txt >> requirements.txt
           cat requirements.txt
-          docker build . --tag image
+          docker build . --progress=plain --tag image
 #      - name: Log into registry
 #        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 #      - name: Push image
