@@ -214,7 +214,7 @@ class Metric(AbstractMetric, BaseMixin):
 
     @staticmethod
     def _validate_target_columns(y_true: TSDataset, y_pred: TSDataset):
-        """Check that all the segments from ``y_true`` and ``y_pred`` has 'target' column.
+        """Check that ``y_true`` and ``y_pred`` has 'target' feature.
 
         Parameters
         ----------
@@ -226,16 +226,13 @@ class Metric(AbstractMetric, BaseMixin):
         Raises
         ------
         ValueError:
-            if one of segments in y_true or y_pred doesn't contain 'target' column.
+            if y_true or y_pred doesn't contain 'target' feature.
         """
-        segments = set(y_true.segments)
-
-        for segment in segments:
-            for name, dataset in zip(("y_true", "y_pred"), (y_true, y_pred)):
-                if "target" not in dataset.features:
-                    raise ValueError(
-                        f"All the segments in {name} should contain 'target' column. Segment {segment} doesn't."
-                    )
+        for name, dataset in zip(("y_true", "y_pred"), (y_true, y_pred)):
+            if "target" not in dataset.features:
+                raise ValueError(
+                    f"{name} should contain 'target' feature."
+                )
 
     @staticmethod
     def _validate_index(y_true: TSDataset, y_pred: TSDataset):
