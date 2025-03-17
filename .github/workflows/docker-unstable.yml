@@ -1,16 +1,9 @@
 name: Build and push docker image from trunk
 
-#on:
-#  push:
-#    branches:
-#      - master
-
 on:
   push:
     branches:
       - master
-  pull_request:
-    types: [opened, synchronize]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -37,9 +30,6 @@ jobs:
           version: 1.7.1
           virtualenvs-create: true
           virtualenvs-in-project: true
-#      - name: Install dependencies
-#        run: |
-#          poetry install -E all -vv
       - name: Build image
         run: |
           cd $( dirname ${{ matrix.dockerfile.path }})
@@ -47,14 +37,13 @@ jobs:
           poetry export -E "all jupyter" --without-hashes --format=requirements.txt >> requirements.txt
           cat requirements.txt
           docker build . --progress=plain --tag image
-          docker history image
-#      - name: Log into registry
-#        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-#      - name: Push image
-#        run: |
-#          IMAGE_ID=ghcr.io/${{ github.repository }}/${{ matrix.dockerfile.name }}
-#          VERSION=latest
-#          echo IMAGE_ID=$IMAGE_ID
-#          echo VERSION=$VERSION
-#          docker tag image $IMAGE_ID:$VERSION
-#          docker push $IMAGE_ID:$VERSION
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository }}/${{ matrix.dockerfile.name }}
+          VERSION=latest
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          docker tag image $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
