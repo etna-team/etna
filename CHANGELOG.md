@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix method `TSDataset.tsdataset_idx_slice` to not lose hierarchical structure ([#618](https://github.com/etna-team/etna/pull/618))
 - Fix colors of lines in `plot_forecast_decomposition` ([#617](https://github.com/etna-team/etna/pull/617))
 - Fix typing for `dtype` parameter of `Chronos`-based models ([#623](https://github.com/etna-team/etna/pull/623))
+- Fix `No space left on device error` during building docker images ([#620](https://github.com/etna-team/etna/pull/620))
 
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
