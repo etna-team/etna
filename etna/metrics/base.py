@@ -230,9 +230,7 @@ class Metric(AbstractMetric, BaseMixin):
         """
         for name, dataset in zip(("y_true", "y_pred"), (y_true, y_pred)):
             if "target" not in dataset.features:
-                raise ValueError(
-                    f"{name} should contain 'target' feature."
-                )
+                raise ValueError(f"{name} should contain 'target' feature.")
 
     @staticmethod
     def _validate_index(y_true: TSDataset, y_pred: TSDataset):
