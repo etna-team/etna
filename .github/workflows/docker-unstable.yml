@@ -47,6 +47,7 @@ jobs:
           poetry export -E "all jupyter" --without-hashes --format=requirements.txt >> requirements.txt
           cat requirements.txt
           docker build . --progress=plain --tag image
+          docker history image
 #      - name: Log into registry
 #        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 #      - name: Push image
