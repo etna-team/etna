@@ -147,7 +147,7 @@ def test_invalid_target_columns(metric_class, train_test_dfs):
     columns[0] = ("segment_1", "not_target")
     forecast_df._df.columns = pd.MultiIndex.from_tuples(columns, names=["segment", "feature"])
     metric = metric_class()
-    with pytest.raises(ValueError, match="All the segments in .* should contain 'target' column"):
+    with pytest.raises(ValueError, match="y_pred should contain 'target' feature."):
         _ = metric(y_true=true_df, y_pred=forecast_df)
 
 
