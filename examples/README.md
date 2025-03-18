@@ -198,7 +198,7 @@ We have prepared a set of tutorials for an easy introduction:
 - Estimating intervals using builtin method
     - Accessing prediction intervals in `TSDataset`
     - Computing interval metrics
-- Estimating prediction intervals using `experimental.prediction_intervals` module
+- Estimating prediction intervals using `prediction_intervals` module
     - `NaiveVariancePredictionIntervals`
     - `ConformalPredictionIntervals`
     - `EmpiricalPredictionIntervals`
