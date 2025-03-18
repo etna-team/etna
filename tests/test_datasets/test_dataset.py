@@ -558,7 +558,7 @@ def test_create_segment_conversion_during_init(df_segments_int):
     with pytest.warns(UserWarning, match="Segment values doesn't have string type"):
         ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
 
-    assert np.all(ts.columns.get_level_values("segment") == ["1", "1", "2", "2"])
+    assert np.all(ts._df.columns.get_level_values("segment") == ["1", "1", "2", "2"])
 
 
 def test_create_from_long_format_with_exog():
@@ -745,9 +745,9 @@ def test_train_test_split(ts_name, borders, true_borders, request):
     )
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train._df, ts._df.loc[train_start_true:train_end_true])
     pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
-    pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test._df, ts._df.loc[test_start_true:test_end_true])
     pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
@@ -770,9 +770,9 @@ def test_train_test_split_with_test_size(ts_name, test_size, true_borders, reque
     train, test = ts.train_test_split(test_size=test_size)
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train._df, ts._df.loc[train_start_true:train_end_true])
     pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
-    pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test._df, ts._df.loc[test_start_true:test_end_true])
     pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
@@ -853,9 +853,9 @@ def test_train_test_split_both(ts_name, test_size, borders, true_borders, reques
     )
     assert isinstance(train, TSDataset)
     assert isinstance(test, TSDataset)
-    pd.testing.assert_frame_equal(train._df, ts.loc[train_start_true:train_end_true])
+    pd.testing.assert_frame_equal(train._df, ts._df.loc[train_start_true:train_end_true])
     pd.testing.assert_frame_equal(train._df_exog, ts._df_exog)
-    pd.testing.assert_frame_equal(test._df, ts.loc[test_start_true:test_end_true])
+    pd.testing.assert_frame_equal(test._df, ts._df.loc[test_start_true:test_end_true])
     pd.testing.assert_frame_equal(test._df_exog, ts._df_exog)
 
 
@@ -1102,7 +1102,7 @@ def test_make_future_datetime_timestamp():
     ts = TSDataset(TSDataset.to_dataset(df), freq="D")
     ts_future = ts.make_future(10)
     assert np.all(ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq="D"))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
+    assert set(ts_future.features) == {"target"}
 
 
 def test_make_future_int_timestamp():
@@ -1111,21 +1111,21 @@ def test_make_future_int_timestamp():
     ts = TSDataset(TSDataset.to_dataset(df), freq=freq)
     ts_future = ts.make_future(10)
     assert np.all(ts_future.timestamps == np.arange(ts.timestamps.max() + 1, ts.timestamps.max() + 10 + 1))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target"}
+    assert set(ts_future.features) == {"target"}
 
 
 def test_make_future_with_exog_datetime_timestamp(tsdf_with_exog):
     ts = tsdf_with_exog
     ts_future = ts.make_future(10)
     assert np.all(ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq="D"))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+    assert set(ts_future.features) == {"target", "exog"}
 
 
 def test_make_future_with_exog_int_timestamp(tsdf_int_with_exog):
     ts = tsdf_int_with_exog
     ts_future = ts.make_future(10)
     assert np.all(ts_future.timestamps == np.arange(ts.timestamps.max() + 1, ts.timestamps.max() + 10 + 1))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target", "exog"}
+    assert set(ts_future.features) == {"target", "exog"}
 
 
 def test_make_future_small_horizon():
@@ -1147,7 +1147,7 @@ def test_make_future_with_regressors(df_and_regressors):
     ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
     ts_future = ts.make_future(10)
     assert np.all(ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq="D"))
-    assert set(ts_future.columns.get_level_values("feature")) == {"target", "regressor_1", "regressor_2"}
+    assert set(ts_future.features) == {"target", "regressor_1", "regressor_2"}
 
 
 @pytest.mark.parametrize("tail_steps", [11, 0])

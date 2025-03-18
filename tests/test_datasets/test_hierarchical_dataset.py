@@ -281,7 +281,7 @@ def test_make_future_df_same_level_df_exog(
     df, df_exog = market_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     future = ts.make_future(future_steps=4)
-    future_columns = set(future.columns.get_level_values("feature"))
+    future_columns = set(future.features)
     assert future_columns == expected_columns
 
 
@@ -291,7 +291,7 @@ def test_make_future_df_different_level_df_exog(
     df, df_exog = product_level_df, market_level_df_exog
     ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     future = ts.make_future(future_steps=4)
-    future_columns = set(future.columns.get_level_values("feature"))
+    future_columns = set(future.features)
     assert future_columns == expected_columns
 
 

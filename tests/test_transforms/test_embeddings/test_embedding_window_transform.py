@@ -146,7 +146,7 @@ def test_transform_format(
         out_column="embedding_window",
     )
     transform.fit_transform(ts=ts_with_exog_nan_begin)
-    obtained_columns = set(ts_with_exog_nan_begin.columns.get_level_values("feature"))
+    obtained_columns = set(ts_with_exog_nan_begin.features)
     embedding_columns = ["embedding_window_0", "embedding_window_1", "embedding_window_2"]
     embeddings = ts_with_exog_nan_begin._df.loc[:, pd.IndexSlice[:, embedding_columns]].values
     assert sorted(obtained_columns) == sorted(expected_columns)

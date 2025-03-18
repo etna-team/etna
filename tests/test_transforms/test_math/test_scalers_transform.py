@@ -126,7 +126,7 @@ def test_dummy_inverse_transform_one_column(normal_distributed_ts, scaler, mode)
 def test_inverse_transform_not_inplace(normal_distributed_ts, scaler, mode):
     """Check that inversed values the same for not inplace version."""
     not_inplace_scaler = scaler(inplace=False, mode=mode)
-    columns_to_compare = normal_distributed_ts.columns
+    columns_to_compare = normal_distributed_ts._df.columns
     original_df = normal_distributed_ts.to_pandas()
     transformed_ts = not_inplace_scaler.fit_transform(ts=normal_distributed_ts)
     inverse_transformed_df = not_inplace_scaler.inverse_transform(transformed_ts).to_pandas()
