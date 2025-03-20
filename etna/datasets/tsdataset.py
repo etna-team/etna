@@ -113,7 +113,7 @@ class TSDataset:
     def __init__(
         self,
         df: pd.DataFrame,
-        freq: Optional[str],
+        freq: Union[pd.DateOffset, str, None],
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
         hierarchical_structure: Optional[HierarchicalStructure] = None,
@@ -128,6 +128,8 @@ class TSDataset:
         freq:
             frequency of timestamp in df, possible values:
 
+            - :py:class:`pandas.DateOffset` object for datetime timestamp
+
             - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
               for datetime timestamp
 
@@ -141,9 +143,12 @@ class TSDataset:
         hierarchical_structure:
             Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
-        self._freq = freq
+        # TODO: проверить падение на invalid frequency
+        # TODO: разобраться с DateOffset vs BaseOffset
+        self._freq: Optional[pd.DateOffset] = pd.tseries.frequencies.to_offset(freq)
+
         self._df_exog = None
-        self._raw_df = self._prepare_df(df=df, freq=freq)
+        self._raw_df = self._prepare_df(df=df, freq_offset=self.freq_offset)
         self._df = self._raw_df.copy(deep=True)
 
         self.hierarchical_structure = hierarchical_structure
@@ -151,7 +156,7 @@ class TSDataset:
         self._current_df_exog_level: Optional[str] = None
 
         if df_exog is not None:
-            self._df_exog = self._prepare_df_exog(df_exog=df_exog, freq=freq)
+            self._df_exog = self._prepare_df_exog(df_exog=df_exog, freq_offset=self.freq_offset)
 
             self._known_future = self._check_known_future(known_future, self._df_exog)
             self._regressors = copy(self._known_future)
@@ -172,7 +177,7 @@ class TSDataset:
     def create_from_misaligned(
         cls,
         df: pd.DataFrame,
-        freq: Optional[str],
+        freq: Union[pd.DateOffset, str, None],
         df_exog: Optional[pd.DataFrame] = None,
         known_future: Union[Literal["all"], Sequence] = (),
         future_steps: int = 1,
@@ -195,6 +200,8 @@ class TSDataset:
             it is expected that ``df`` has feature named "target"
         freq:
             frequency of timestamp in df, possible values:
+
+            - :py:class:`pandas.DateOffset` object for datetime timestamp
 
             - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
               for datetime timestamp
@@ -316,16 +323,16 @@ class TSDataset:
         return df
 
     @staticmethod
-    def _cast_index_to_datetime(df: pd.DataFrame, freq: str) -> pd.DataFrame:
+    def _cast_index_to_datetime(df: pd.DataFrame, freq_offset: pd.DateOffset) -> pd.DataFrame:
         if pd.api.types.is_numeric_dtype(df.index):
             warnings.warn(
-                f"Timestamp contains numeric values, and given freq is {freq}. Timestamp will be converted to datetime."
+                f"Timestamp contains numeric values, and given freq is {freq_offset.freqstr}. Timestamp will be converted to datetime."
             )
         df.index = pd.to_datetime(df.index)
         return df
 
     @classmethod
-    def _prepare_df(cls, df: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
+    def _prepare_df(cls, df: pd.DataFrame, freq_offset: Optional[pd.DateOffset]) -> pd.DataFrame:
         df_format = DataFrameFormat.determine(df)
         if df_format is DataFrameFormat.long:
             df = cls.to_dataset(df)
@@ -337,7 +344,7 @@ class TSDataset:
         cls._cast_segment_to_str(df)
 
         # handle freq
-        if freq is None:
+        if freq_offset is None:
             if not pd.api.types.is_integer_dtype(df.index.dtype):
                 raise ValueError("You set wrong freq. Data contains datetime index, not integer.")
 
@@ -347,26 +354,26 @@ class TSDataset:
             df.index.name = index_name
 
         else:
-            cls._cast_index_to_datetime(df, freq)
+            cls._cast_index_to_datetime(df, freq_offset)
             try:
                 inferred_freq = pd.infer_freq(df.index)
             except ValueError:
                 warnings.warn("TSDataset freq can't be inferred")
                 inferred_freq = None
 
-            if inferred_freq is not None and inferred_freq != freq:
+            if inferred_freq is not None and inferred_freq != freq_offset.freqstr:
                 warnings.warn(
-                    f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {freq}"
+                    f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {freq_offset.freqstr}"
                 )
 
-            new_index = pd.date_range(start=df.index.min(), end=df.index.max(), freq=freq)
+            new_index = pd.date_range(start=df.index.min(), end=df.index.max(), freq=freq_offset)
             new_index.name = df.index.name  # type: ignore
             df = df.reindex(new_index, copy=False)
 
         return df
 
     @classmethod
-    def _prepare_df_exog(cls, df_exog: pd.DataFrame, freq: Optional[str]) -> pd.DataFrame:
+    def _prepare_df_exog(cls, df_exog: pd.DataFrame, freq_offset: Optional[pd.DateOffset]) -> pd.DataFrame:
         df_format = DataFrameFormat.determine(df_exog)
         if df_format is DataFrameFormat.long:
             df_exog = cls.to_dataset(df_exog)
@@ -375,8 +382,8 @@ class TSDataset:
             df_exog = df_exog.copy(deep=True)
 
         df_exog = cls._cast_segment_to_str(df=df_exog)
-        if freq is not None:
-            cls._cast_index_to_datetime(df_exog, freq)
+        if freq_offset is not None:
+            cls._cast_index_to_datetime(df_exog, freq_offset)
 
         return df_exog
 
@@ -400,8 +407,8 @@ class TSDataset:
         return df
 
     @staticmethod
-    def _expand_index(df: pd.DataFrame, freq: Optional[str], future_steps: int) -> pd.DataFrame:
-        to_add_index = timestamp_range(start=df.index[-1], periods=future_steps + 1, freq=freq)[1:]
+    def _expand_index(df: pd.DataFrame, freq_offset: Optional[pd.DateOffset], future_steps: int) -> pd.DataFrame:
+        to_add_index = timestamp_range(start=df.index[-1], periods=future_steps + 1, freq=freq_offset)[1:]
         new_index = df.index.append(to_add_index)
         index_name = df.index.name
         df = df.reindex(new_index)
@@ -454,7 +461,7 @@ class TSDataset:
         2021-07-04          33          38    NaN          73          78    NaN
         """
         self._check_endings(warning=True)
-        df = self._expand_index(df=self._raw_df, freq=self.freq, future_steps=future_steps)
+        df = self._expand_index(df=self._raw_df, freq_offset=self.freq_offset, future_steps=future_steps)
 
         if self._df_exog is not None and self.current_df_level == self.current_df_exog_level:
             df = self._merge_exog(df=df)
@@ -1938,14 +1945,30 @@ class TSDataset:
         """
         return self._known_future.copy()
 
+    # TODO: обновить тесты
     @property
     def freq(self) -> Optional[str]:
-        """Return frequency of timestamp.
+        """Return string frequency of timestamp.
 
         Returns
         -------
         str or None
-            Frequency of timestamp.
+            String frequency of timestamp.
+        """
+        if self._freq is None:
+            return None
+        else:
+            return self._freq.freqstr
+
+    # TODO: обновить тесты
+    @property
+    def freq_offset(self) -> Optional[pd.DateOffset]:
+        """Return offset frequency of timestamp.
+
+        Returns
+        -------
+        BaseOffset or None
+            Offset frequency of timestamp.
         """
         return self._freq
 

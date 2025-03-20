@@ -191,7 +191,9 @@ class ModelDecomposeTransform(IrreversibleTransform):
         components_df.rename(columns=rename, level="feature", inplace=True)
 
         if future_steps > 0:
-            components_df = TSDataset._expand_index(df=components_df, future_steps=future_steps, freq=decompose_ts.freq)
+            components_df = TSDataset._expand_index(
+                df=components_df, future_steps=future_steps, freq_offset=decompose_ts.freq_offset
+            )
 
         columns_before = set(ts.features)
         columns_before &= set(components_df.columns.get_level_values("feature"))

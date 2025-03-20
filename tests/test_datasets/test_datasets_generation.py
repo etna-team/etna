@@ -127,9 +127,11 @@ def test_generate_ar_df_values():
     )
 
     assert len(ar_df) == 2 * periods
-    assert ar_df.iat[0, 2] == random_numbers[0, 0]
-    assert ar_df.iat[1, 2] == ar_coef[0] * ar_df.iat[0, 2] + random_numbers[0, 1]
-    assert ar_df.iat[2, 2] == ar_coef[1] * ar_df.iat[0, 2] + ar_coef[0] * ar_df.iat[1, 2] + random_numbers[0, 2]
+    np.testing.assert_allclose(ar_df.iat[0, 2], random_numbers[0, 0])
+    np.testing.assert_allclose(ar_df.iat[1, 2], ar_coef[0] * ar_df.iat[0, 2] + random_numbers[0, 1])
+    np.testing.assert_allclose(
+        ar_df.iat[2, 2], ar_coef[1] * ar_df.iat[0, 2] + ar_coef[0] * ar_df.iat[1, 2] + random_numbers[0, 2]
+    )
 
 
 @pytest.mark.parametrize("add_noise, checker", [(False, check_equals), (True, check_not_equal_within_3_sigma)])

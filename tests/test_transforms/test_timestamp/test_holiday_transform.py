@@ -242,25 +242,53 @@ def two_segments_simple_ts_minute(simple_constant_df_minute):
 
 
 @pytest.mark.parametrize(
-    "freq, timestamp, expected_result",
+    "freq_offset, timestamp, expected_result",
     (
-        ("Y", pd.Timestamp("2000-12-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
-        ("YS", pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
-        ("A-OCT", pd.Timestamp("2000-10-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
-        ("AS-OCT", pd.Timestamp("2000-10-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
-        ("Q", pd.Timestamp("2000-12-31"), [pd.Timestamp("2000-10-01"), pd.Timestamp("2000-12-31")]),
-        ("QS", pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-03-31")]),
-        ("Q-NOV", pd.Timestamp("2000-11-30"), [pd.Timestamp("2000-09-01"), pd.Timestamp("2000-11-30")]),
-        ("QS-NOV", pd.Timestamp("2000-11-01"), [pd.Timestamp("2000-11-01"), pd.Timestamp("2001-01-31")]),
-        ("M", pd.Timestamp("2000-01-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-01-31")]),
-        ("MS", pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-01-31")]),
-        ("W", pd.Timestamp("2000-12-03"), [pd.Timestamp("2000-11-27"), pd.Timestamp("2000-12-03")]),
-        ("W-THU", pd.Timestamp("2000-11-30"), [pd.Timestamp("2000-11-27"), pd.Timestamp("2000-12-03")]),
+        (pd.offsets.YearEnd(), pd.Timestamp("2000-12-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+        (pd.offsets.YearBegin(), pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")]),
+        (
+            pd.offsets.YearEnd(month=10),
+            pd.Timestamp("2000-10-31"),
+            [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")],
+        ),
+        (
+            pd.offsets.YearBegin(month=10),
+            pd.Timestamp("2000-10-01"),
+            [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-12-31")],
+        ),
+        (pd.offsets.QuarterEnd(), pd.Timestamp("2000-12-31"), [pd.Timestamp("2000-10-01"), pd.Timestamp("2000-12-31")]),
+        (
+            pd.offsets.QuarterBegin(startingMonth=1),
+            pd.Timestamp("2000-01-01"),
+            [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-03-31")],
+        ),
+        (
+            pd.offsets.QuarterEnd(startingMonth=11),
+            pd.Timestamp("2000-11-30"),
+            [pd.Timestamp("2000-09-01"), pd.Timestamp("2000-11-30")],
+        ),
+        (
+            pd.offsets.QuarterBegin(startingMonth=11),
+            pd.Timestamp("2000-11-01"),
+            [pd.Timestamp("2000-11-01"), pd.Timestamp("2001-01-31")],
+        ),
+        (pd.offsets.MonthEnd(), pd.Timestamp("2000-01-31"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-01-31")]),
+        (pd.offsets.MonthBegin(), pd.Timestamp("2000-01-01"), [pd.Timestamp("2000-01-01"), pd.Timestamp("2000-01-31")]),
+        (
+            pd.offsets.Week(weekday=6),
+            pd.Timestamp("2000-12-03"),
+            [pd.Timestamp("2000-11-27"), pd.Timestamp("2000-12-03")],
+        ),
+        (
+            pd.offsets.Week(weekday=3),
+            pd.Timestamp("2000-11-30"),
+            [pd.Timestamp("2000-11-27"), pd.Timestamp("2000-12-03")],
+        ),
     ),
 )
-def test_define_period_end(freq, timestamp, expected_result):
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), timestamp, freq))[0] == expected_result[0]
-    assert (define_period(pd.tseries.frequencies.to_offset(freq), timestamp, freq))[1] == expected_result[1]
+def test_define_period_end(freq_offset, timestamp, expected_result):
+    assert (define_period(freq_offset, timestamp))[0] == expected_result[0]
+    assert (define_period(freq_offset, timestamp))[1] == expected_result[1]
 
 
 def test_fit_days_count_fail_int_index(two_segments_w_mon_int_timestamp):

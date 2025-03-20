@@ -131,7 +131,7 @@ class FourierTransform(IrreversibleTransform):
         self.in_column = in_column
 
         self._reference_timestamp: Union[pd.Timestamp, int, None] = None
-        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
+        self._freq_offset: Optional[pd.DateOffset] = _DEFAULT_FREQ  # type: ignore
 
         if self.in_column is None:
             self.in_column_regressor: Optional[bool] = True
@@ -182,7 +182,7 @@ class FourierTransform(IrreversibleTransform):
             if external timestamp doesn't have the same frequency for all segments
         """
         if self.in_column is None:
-            self._freq = ts.freq
+            self._freq_offset = ts.freq_offset
             self.in_column_regressor = True
         else:
             self.in_column_regressor = self.in_column in ts.regressors
@@ -217,7 +217,7 @@ class FourierTransform(IrreversibleTransform):
                 f"Discovered frequencies: {freq_values}"
             )
 
-    def _infer_external_freq(self, df: pd.DataFrame) -> Optional[str]:
+    def _infer_external_freq(self, df: pd.DataFrame) -> Optional[pd.DateOffset]:
         df = df.droplevel("feature", axis=1)
 
         # here we are assuming that every segment has the same timestamp dtype
@@ -228,8 +228,9 @@ class FourierTransform(IrreversibleTransform):
         sample_segment = df.columns[0]
         sample_timestamps = df[sample_segment]
         sample_timestamps = sample_timestamps.loc[sample_timestamps.first_valid_index() :]
-        result = determine_freq(sample_timestamps)
-        return result
+        freq_str = determine_freq(sample_timestamps)
+        freq_offset = pd.tseries.frequencies.to_offset(freq_str)
+        return freq_offset
 
     def _infer_external_reference_timestamp(self, df: pd.DataFrame) -> Union[pd.Timestamp, int]:
         # here we are assuming that every segment has the same timestamp dtype
@@ -266,7 +267,7 @@ class FourierTransform(IrreversibleTransform):
             self._reference_timestamp = df.index[0]
         else:
             self._validate_external_timestamps(df)
-            self._freq = self._infer_external_freq(df)
+            self._freq_offset = self._infer_external_freq(df)
             self._reference_timestamp = self._infer_external_reference_timestamp(df)
         return self
 
@@ -290,14 +291,18 @@ class FourierTransform(IrreversibleTransform):
         return features
 
     def _convert_regular_timestamps_datetime_to_numeric(
-        self, timestamps: pd.Series, reference_timestamp: pd.Timestamp, freq: Optional[str]
+        self, timestamps: pd.Series, reference_timestamp: pd.Timestamp, freq_offset: Optional[pd.DateOffset]
     ) -> pd.Series:
         # we should always align timestamps to some fixed point
         end_timestamp = timestamps.iloc[-1]
         if end_timestamp >= reference_timestamp:
-            end_idx = determine_num_steps(start_timestamp=reference_timestamp, end_timestamp=end_timestamp, freq=freq)
+            end_idx = determine_num_steps(
+                start_timestamp=reference_timestamp, end_timestamp=end_timestamp, freq=freq_offset
+            )
         else:
-            end_idx = -determine_num_steps(start_timestamp=end_timestamp, end_timestamp=reference_timestamp, freq=freq)
+            end_idx = -determine_num_steps(
+                start_timestamp=end_timestamp, end_timestamp=reference_timestamp, freq=freq_offset
+            )
 
         numeric_timestamp = pd.Series(np.arange(end_idx - len(timestamps) + 1, end_idx + 1))
 
@@ -325,7 +330,7 @@ class FourierTransform(IrreversibleTransform):
         ValueError
             if external timestamp doesn't have the same frequency for all segments
         """
-        if self._freq is _DEFAULT_FREQ:
+        if self._freq_offset is _DEFAULT_FREQ:
             raise ValueError("The transform isn't fitted!")
 
         if self.in_column is None:
@@ -333,7 +338,9 @@ class FourierTransform(IrreversibleTransform):
                 timestamps = df.index.to_series()
             else:
                 timestamps = self._convert_regular_timestamps_datetime_to_numeric(
-                    timestamps=df.index.to_series(), reference_timestamp=self._reference_timestamp, freq=self._freq
+                    timestamps=df.index.to_series(),
+                    reference_timestamp=self._reference_timestamp,
+                    freq_offset=self._freq_offset,
                 )
             features = self._compute_features(timestamps=timestamps)
             features.index = df.index
@@ -353,7 +360,7 @@ class FourierTransform(IrreversibleTransform):
                     int_segment = self._convert_regular_timestamps_datetime_to_numeric(
                         timestamps=segment_timestamps,
                         reference_timestamp=self._reference_timestamp,
-                        freq=self._freq,
+                        freq_offset=self._freq_offset,
                     )
                     int_values.append(int_segment)
 

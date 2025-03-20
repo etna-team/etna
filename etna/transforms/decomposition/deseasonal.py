@@ -49,7 +49,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         self.period = period
         self.model = DeseasonalModel(model)
         self._seasonal: Optional[pd.Series] = None
-        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
+        self._freq_offset: Optional[pd.DateOffset] = _DEFAULT_FREQ  # type: ignore
 
     def _roll_seasonal(self, x: pd.Series) -> np.ndarray:
         """
@@ -69,12 +69,16 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
             raise ValueError("Transform is not fitted! Fit the Transform before calling.")
         if self._seasonal.index[0] <= x.index[0]:
             shift = (
-                -determine_num_steps(start_timestamp=self._seasonal.index[0], end_timestamp=x.index[0], freq=self._freq)
+                -determine_num_steps(
+                    start_timestamp=self._seasonal.index[0], end_timestamp=x.index[0], freq=self._freq_offset
+                )
                 % self.period
             )
         else:
             shift = (
-                determine_num_steps(start_timestamp=x.index[0], end_timestamp=self._seasonal.index[0], freq=self._freq)
+                determine_num_steps(
+                    start_timestamp=x.index[0], end_timestamp=self._seasonal.index[0], freq=self._freq_offset
+                )
                 % self.period
             )
         return np.resize(np.roll(self._seasonal, shift=shift), x.shape[0])
@@ -98,7 +102,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         ValueError:
             if input column contains NaNs in the middle of the series
         """
-        self._freq = determine_freq(df.index)
+        self._freq_offset = pd.tseries.frequencies.to_offset(determine_freq(df.index))
 
         df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():
