@@ -177,8 +177,8 @@ def forecast(
     if raw_output:
         (flatten.to_csv(output_path, index=False))
     else:
-        quantile_columns = [column for column in flatten.columns if column.startswith("target_0.")]
-        (flatten[["timestamp", "segment", "target"] + quantile_columns].to_csv(output_path, index=False))
+        intervals_columns = list(forecast.prediction_intervals_names)
+        (flatten[["timestamp", "segment", "target"] + intervals_columns].to_csv(output_path, index=False))
 
 
 if __name__ == "__main__":
