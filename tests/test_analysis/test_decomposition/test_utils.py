@@ -31,59 +31,59 @@ def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values
 
 
 @pytest.mark.parametrize(
-    "timestamp, freq, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names",
+    "timestamp, freq_offset, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names",
     [
         (
-            pd.date_range(start="2020-01-01", periods=5, freq="D").to_series(),
-            "D",
+            pd.date_range(start="2020-01-01", periods=5, freq=pd.offsets.Day()).to_series(),
+            pd.offsets.Day(),
             3,
             ["1", "1", "1", "2", "2"],
             [0, 1, 2, 0, 1],
             ["0", "1", "2", "0", "1"],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=6, freq="15T").to_series(),
-            "15T",
+            pd.date_range(start="2020-01-01", periods=6, freq=pd.offsets.Minute(n=15)).to_series(),
+            pd.offsets.Minute(n=15),
             "hour",
             ["2020-01-01 00"] * 4 + ["2020-01-01 01"] * 2,
             [0, 1, 2, 3, 0, 1],
             ["0", "1", "2", "3", "0", "1"],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=26, freq="H").to_series(),
-            "H",
+            pd.date_range(start="2020-01-01", periods=26, freq=pd.offsets.Hour()).to_series(),
+            pd.offsets.Hour(),
             "day",
             ["2020-01-01"] * 24 + ["2020-01-02"] * 2,
             [i % 24 for i in range(26)],
             [str(i % 24) for i in range(26)],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=10, freq="D").to_series(),
-            "D",
+            pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.Day()).to_series(),
+            pd.offsets.Day(),
             "week",
             ["2020-00"] * 5 + ["2020-01"] * 5,
             [2, 3, 4, 5, 6, 0, 1, 2, 3, 4],
             ["Wed", "Thu", "Fri", "Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
         ),
         (
-            pd.date_range(start="2020-01-03", periods=40, freq="D").to_series(),
-            "D",
+            pd.date_range(start="2020-01-03", periods=40, freq=pd.offsets.Day()).to_series(),
+            pd.offsets.Day(),
             "month",
             ["2020-Jan"] * 29 + ["2020-Feb"] * 11,
             list(range(3, 32)) + list(range(1, 12)),
             [str(i) for i in range(3, 32)] + [str(i) for i in range(1, 12)],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=14, freq="M").to_series(),
-            "M",
+            pd.date_range(start="2020-01-01", periods=14, freq=pd.offsets.MonthEnd()).to_series(),
+            pd.offsets.MonthEnd(),
             "quarter",
             ["2020-1"] * 3 + ["2020-2"] * 3 + ["2020-3"] * 3 + ["2020-4"] * 3 + ["2021-1"] * 2,
             [i % 3 for i in range(14)],
             [str(i % 3) for i in range(14)],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=14, freq="M").to_series(),
-            "M",
+            pd.date_range(start="2020-01-01", periods=14, freq=pd.offsets.MonthEnd()).to_series(),
+            pd.offsets.MonthEnd(),
             "year",
             ["2020"] * 12 + ["2021"] * 2,
             [i % 12 + 1 for i in range(14)],
@@ -99,46 +99,48 @@ def test_get_labels_names_linear_coeffs(example_tsdf, poly_degree, expect_values
         ),
     ],
 )
-def test_seasonal_split(timestamp, freq, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names):
-    cycle_df = _seasonal_split(timestamp=timestamp, freq=freq, cycle=cycle)
+def test_seasonal_split(
+    timestamp, freq_offset, cycle, expected_cycle_names, expected_in_cycle_nums, expected_in_cycle_names
+):
+    cycle_df = _seasonal_split(timestamp=timestamp, freq_offset=freq_offset, cycle=cycle)
     assert cycle_df["cycle_name"].tolist() == expected_cycle_names
     assert cycle_df["in_cycle_num"].tolist() == expected_in_cycle_nums
     assert cycle_df["in_cycle_name"].tolist() == expected_in_cycle_names
 
 
 @pytest.mark.parametrize(
-    "timestamp, values, resample_freq, aggregation, expected_timestamp, expected_values",
+    "timestamp, values, resample_freq_offset, aggregation, expected_timestamp, expected_values",
     [
         (
-            pd.date_range(start="2020-01-01", periods=14, freq="Q"),
+            pd.date_range(start="2020-01-01", periods=14, freq=pd.offsets.QuarterEnd()),
             [np.NaN, np.NaN, np.NaN, np.NaN, np.NaN, 10, 16, 10, 5, 7, 5, 7, 3, 3],
-            "Y",
+            pd.offsets.YearEnd(),
             "sum",
-            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            pd.date_range(start="2020-01-01", periods=4, freq=pd.offsets.YearEnd()),
             [np.NaN, 36.0, 24.0, 6.0],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=14, freq="Q"),
+            pd.date_range(start="2020-01-01", periods=14, freq=pd.offsets.QuarterEnd()),
             [np.NaN, np.NaN, np.NaN, np.NaN, np.NaN, 10, 16, 10, 5, 7, 5, 7, 3, 3],
-            "Y",
+            pd.offsets.YearEnd(),
             "mean",
-            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            pd.date_range(start="2020-01-01", periods=4, freq=pd.offsets.YearEnd()),
             [np.NaN, 12.0, 6.0, 3.0],
         ),
         (
-            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            pd.date_range(start="2020-01-01", periods=4, freq=pd.offsets.YearEnd()),
             [np.NaN, 12.0, 6.0, 3.0],
-            "Q",
+            pd.offsets.QuarterEnd(),
             "mean",
-            pd.date_range(start="2020-01-01", periods=4, freq="Y"),
+            pd.date_range(start="2020-01-01", periods=4, freq=pd.offsets.YearEnd()),
             [np.NaN, 12.0, 6.0, 3.0],
         ),
     ],
 )
-def test_resample(timestamp, values, resample_freq, aggregation, expected_timestamp, expected_values):
+def test_resample(timestamp, values, resample_freq_offset, aggregation, expected_timestamp, expected_values):
     df = pd.DataFrame({"timestamp": timestamp.tolist(), "target": values, "segment": len(timestamp) * ["segment_0"]})
     df_wide = TSDataset.to_dataset(df)
-    df_resampled = _resample(df=df_wide, freq=resample_freq, aggregation=aggregation)
+    df_resampled = _resample(df=df_wide, freq_offset=resample_freq_offset, aggregation=aggregation)
     assert df_resampled.index.tolist() == expected_timestamp.tolist()
     assert (
         df_resampled.loc[:, pd.IndexSlice["segment_0", "target"]]
