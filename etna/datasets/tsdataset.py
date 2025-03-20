@@ -17,7 +17,6 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
-from deprecated import deprecated
 from matplotlib import pyplot as plt
 from typing_extensions import Literal
 
@@ -413,7 +412,7 @@ class TSDataset:
     ) -> "TSDataset":
         """Return new TSDataset with features extended into the future.
 
-        The result dataset doesn't contain quantiles and target components.
+        The result dataset doesn't contain prediction intervals and target components.
 
         Parameters
         ----------
@@ -749,15 +748,6 @@ class TSDataset:
     def target_components_names(self) -> Tuple[str, ...]:
         """Get tuple with target components names. Components sum up to target. Return the empty tuple in case of components absence."""
         return self._target_components_names
-
-    @property
-    @deprecated(
-        reason="Usage of this property may mislead while accessing prediction intervals, so it will be removed. Use `prediction_intervals_names` property to access intervals names!",
-        version="3.0",
-    )
-    def target_quantiles_names(self) -> Tuple[str, ...]:
-        """Get tuple with target quantiles names. Return the empty tuple in case of quantile absence."""
-        return self._prediction_intervals_names
 
     @property
     def prediction_intervals_names(self) -> Tuple[str, ...]:
