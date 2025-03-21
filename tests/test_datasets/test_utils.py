@@ -19,7 +19,6 @@ from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import infer_alignment
 from etna.datasets.utils import inverse_transform_target_components
 from etna.datasets.utils import make_timestamp_df_from_alignment
-from etna.datasets.utils import match_target_components
 from etna.datasets.utils import set_columns_wide
 from etna.datasets.utils import timestamp_range
 
@@ -306,22 +305,6 @@ def test_get_level_dataframe_segm_errors(
             source_level_segments=source_level_segments,
             target_level_segments=target_level_segments,
         )
-
-
-@pytest.mark.parametrize(
-    "features,answer",
-    (
-        (set(), set()),
-        ({"a", "b"}, set()),
-        (
-            {"target_component_a", "a", "b", "target_component_c", "target", "target_0.95"},
-            {"target_component_a", "target_component_c"},
-        ),
-    ),
-)
-def test_match_target_components(features, answer):
-    components = match_target_components(features)
-    assert components == answer
 
 
 @pytest.fixture

@@ -32,7 +32,6 @@ from etna.analysis.forecast.utils import _select_prediction_intervals_names
 from etna.analysis.forecast.utils import _validate_intersecting_segments
 from etna.analysis.forecast.utils import get_residuals
 from etna.analysis.utils import _prepare_axes
-from etna.datasets.utils import match_target_components
 from etna.datasets.utils import timestamp_range
 
 if TYPE_CHECKING:
@@ -950,7 +949,7 @@ def plot_forecast_decomposition(
         segments = forecast_ts.segments
 
     column_names = set(forecast_ts.features)
-    components = list(match_target_components(column_names))
+    components = set(filter(lambda f: f.startswith("target_component_"), column_names))
 
     if len(components) == 0:
         raise ValueError("No components were detected in the provided `forecast_ts`.")
