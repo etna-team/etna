@@ -257,9 +257,10 @@ def test_fit_with_tuning(
 
 
 def test_summary(
-    trials,
+    trials_with_pipelines,
     auto=MagicMock(),
 ):
+    trials, pipelines = trials_with_pipelines
     pool_trials = trials[:3]
     tune_trials_0 = trials[3:6]
     tune_trials_1 = trials[6:]
@@ -268,10 +269,10 @@ def test_summary(
     auto._make_pool_summary = partial(Auto._make_pool_summary, self=auto)  # essential for summary
 
     tune_0 = MagicMock()
-    tune_0.pipeline = pool_trials[0].user_attrs["pipeline"]
+    tune_0.pipeline = pipelines[0]
     tune_0._init_optuna.return_value.study.get_trials.return_value = tune_trials_0
     tune_1 = MagicMock()
-    tune_1.pipeline = pool_trials[1].user_attrs["pipeline"]
+    tune_1.pipeline = pipelines[1]
     tune_1._init_optuna.return_value.study.get_trials.return_value = tune_trials_1
     auto._init_tuners.return_value = [tune_0, tune_1]
     auto._make_tune_summary = partial(Auto._make_tune_summary, self=auto)  # essential for summary
@@ -285,7 +286,7 @@ def test_summary(
 
 @pytest.mark.parametrize("k, expected_k", [(1, 1), (2, 2), (3, 3), (20, 10)])
 def test_top_k(
-    trials,
+    trials_with_pipelines,
     k,
     expected_k,
     auto=MagicMock(),
@@ -294,18 +295,22 @@ def test_top_k(
     auto.metric_aggregation = "median"
     auto.target_metric.greater_is_better = False
 
+    trials, pipelines = trials_with_pipelines
     pool_trials = trials[:3]
     tune_trials_0 = trials[3:6]
     tune_trials_1 = trials[6:]
 
     auto._pool_optuna.study.get_trials.return_value = pool_trials
+    auto._pool_optuna.study.sampler.configs_hash = {
+        trial.user_attrs["hash"]: pipeline.to_dict() for trial, pipeline in zip(pool_trials, pipelines)
+    }
     auto._make_pool_summary = partial(Auto._make_pool_summary, self=auto)  # essential for summary
 
     tune_0 = MagicMock()
-    tune_0.pipeline = pool_trials[0].user_attrs["pipeline"]
+    tune_0.pipeline = pipelines[0]
     tune_0._init_optuna.return_value.study.get_trials.return_value = tune_trials_0
     tune_1 = MagicMock()
-    tune_1.pipeline = pool_trials[1].user_attrs["pipeline"]
+    tune_1.pipeline = pipelines[1]
     tune_1._init_optuna.return_value.study.get_trials.return_value = tune_trials_1
     auto._init_tuners.return_value = [tune_0, tune_1]
     auto._make_tune_summary = partial(Auto._make_tune_summary, self=auto)  # essential for summary

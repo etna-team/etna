@@ -78,7 +78,6 @@ class ConfigSampler(BaseSampler):
 
         pipeline = self.configs_hash[hash_to_sample]
         study._storage.set_trial_user_attr(trial._trial_id, "hash", hash_to_sample)
-        study._storage.set_trial_user_attr(trial._trial_id, "pipeline", pipeline)
         return pipeline
 
     def after_trial(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> None:  # noqa: D102
