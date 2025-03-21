@@ -387,7 +387,6 @@ def inverse_transform_target_components(
     return inverse_transformed_target_components_df
 
 
-# TODO: обновить тесты
 def _check_timestamp_param(
     param: Union[pd.Timestamp, int, str, None], param_name: str, freq: Union[pd.DateOffset, str, None]
 ) -> Union[pd.Timestamp, int, None]:
@@ -411,7 +410,6 @@ def _check_timestamp_param(
         return new_param
 
 
-# TODO: обновить тесты
 def determine_num_steps(
     start_timestamp: Union[pd.Timestamp, int],
     end_timestamp: Union[pd.Timestamp, int],
@@ -484,7 +482,6 @@ def determine_num_steps(
             cur_timestamp = timestamps[-1]
 
 
-# TODO: мб надо что-то тут обновить
 def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
     """Determine data frequency using provided timestamps.
 
@@ -526,7 +523,6 @@ def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
         return freq
 
 
-# TODO: обновить тесты
 def timestamp_range(
     start: Union[pd.Timestamp, int, str, None] = None,
     end: Union[pd.Timestamp, int, str, None] = None,
@@ -685,7 +681,6 @@ def apply_alignment(
     return result
 
 
-# TODO: обновить тесты
 def make_timestamp_df_from_alignment(
     alignment: Union[Dict[str, pd.Timestamp], Dict[str, int]],
     start: Optional[int] = None,

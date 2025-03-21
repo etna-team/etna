@@ -23,7 +23,6 @@ def _create_timestamp(
     return timestamp_range(start=start_time, periods=periods, freq=freq)
 
 
-# TODO: обновить тесты
 def generate_ar_df(
     periods: int,
     start_time: Optional[Union[pd.Timestamp, int, str]] = None,
