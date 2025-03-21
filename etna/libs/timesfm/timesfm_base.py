@@ -211,14 +211,25 @@ def freq_map(freq: Optional[str]):
       warnings.warn("Frequency is None. Mapping it to 0, that can be not optimal. Better to set it to known frequency")
       return 0
   freq = str.upper(freq)
-  if freq.endswith(("H", "T", "MIN", "D", "B", "U", "S")):
-    return 0
-  elif freq.endswith(("W", "M", "MS")):
-    return 1
-  elif freq.endswith(("Y", "Q", "A")):
-    return 2
+  freq_offset = pd.tseries.frequencies.to_offset(freq)
+  freq_offset_type = type(freq_offset)
+  freq_mapping = {
+      pd.offsets.Hour: 0,
+      pd.offsets.Minute: 0,
+      pd.offsets.Day: 0,
+      pd.offsets.BDay: 0,
+      pd.offsets.Micro: 0,
+      pd.offsets.Second: 0,
+      pd.offsets.Week: 1,
+      pd.offsets.MonthEnd: 1,
+      pd.offsets.MonthBegin: 1,
+      pd.offsets.QuarterEnd: 1,
+      pd.offsets.YearEnd: 1,
+  }
+  if freq_offset_type in freq_mapping:
+      return freq_mapping[freq_offset_type]
   else:
-    raise ValueError(f"Invalid frequency: {freq}")
+      raise ValueError(f"Invalid frequency: {freq}")
 
 
 def strip_leading_nans(arr):

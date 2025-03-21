@@ -302,7 +302,7 @@ def test_save_mixin_save(example_tsds, tmp_path):
 
     # check that we didn't break dummy object itself
     assert dummy.a == initial_dummy.a
-    assert pickle.dumps(dummy.ts) == pickle.dumps(initial_dummy.ts)
+    assert pickle.dumps(dummy.ts._df) == pickle.dumps(initial_dummy.ts._df)
     assert pickle.dumps(dummy.model) == pickle.dumps(initial_dummy.model)
     assert pickle.dumps(dummy.transforms) == pickle.dumps(initial_transforms)
 

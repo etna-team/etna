@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import List
 from typing import Optional
-from typing import cast
 
 import holidays
 import numpy as np
@@ -23,20 +22,22 @@ from etna.transforms.base import IrreversibleTransform
 _DEFAULT_FREQ = object()
 
 
-def define_period(offset: pd.tseries.offsets.BaseOffset, dt: pd.Timestamp, freq: str):
+def define_period(offset: pd.DateOffset, dt: pd.Timestamp):
     """Define start_date and end_date of period using dataset frequency."""
+    offset_week = pd.offsets.Week(weekday=6)
+    offset_year = pd.offsets.YearEnd()
     if isinstance(offset, Week) and offset.weekday == 6:
-        start_date = dt - pd.tseries.frequencies.to_offset("W") + pd.Timedelta(days=1)
+        start_date = dt - offset_week + pd.Timedelta(days=1)
         end_date = dt
-    elif isinstance(offset, Week):
-        start_date = dt - pd.tseries.frequencies.to_offset("W") + pd.Timedelta(days=1)
-        end_date = dt + pd.tseries.frequencies.to_offset("W")
+    elif isinstance(offset, Week) and offset.weekday is not None:
+        start_date = dt - offset_week + pd.Timedelta(days=1)
+        end_date = dt + offset_week
     elif isinstance(offset, YearEnd) and offset.month == 12:
-        start_date = dt - pd.tseries.frequencies.to_offset("Y") + pd.Timedelta(days=1)
+        start_date = dt - offset_year + pd.Timedelta(days=1)
         end_date = dt
     elif isinstance(offset, (YearBegin, YearEnd)):
-        start_date = dt - pd.tseries.frequencies.to_offset("Y") + pd.Timedelta(days=1)
-        end_date = dt + pd.tseries.frequencies.to_offset("Y")
+        start_date = dt - offset_year + pd.Timedelta(days=1)
+        end_date = dt + offset_year
     elif isinstance(offset, (MonthEnd, QuarterEnd, YearEnd)):
         start_date = dt - offset + pd.Timedelta(days=1)
         end_date = dt
@@ -45,7 +46,7 @@ def define_period(offset: pd.tseries.offsets.BaseOffset, dt: pd.Timestamp, freq:
         end_date = dt + offset - pd.Timedelta(days=1)
     else:
         raise ValueError(
-            f"Days_count mode works only with weekly, monthly, quarterly or yearly data. You have freq={freq}"
+            f"Days_count mode works only with weekly, monthly, quarterly or yearly data. You have freq={offset.freqstr}"
         )
     return start_date, end_date
 
@@ -122,7 +123,7 @@ class HolidayTransform(IrreversibleTransform):
         self.iso_code = iso_code
         self.mode = mode
         self._mode = HolidayTransformMode(mode)
-        self._freq: str = _DEFAULT_FREQ  # type: ignore
+        self._freq_offset: pd.DateOffset = _DEFAULT_FREQ  # type: ignore
         self.holidays = holidays.country_holidays(iso_code, language="en_US")
         self.out_column = out_column
         self.in_column = in_column
@@ -166,10 +167,10 @@ class HolidayTransform(IrreversibleTransform):
             if self._mode is HolidayTransformMode.days_count:
                 if ts.freq is None:
                     raise ValueError("Transform can't work with integer index, parameter in_column should be set!")
-                self._freq = ts.freq
+                self._freq_offset = ts.freq_offset
             else:
                 # set some value that doesn't really matter
-                self._freq = object()  # type: ignore
+                self._freq_offset = object()  # type: ignore
             self.in_column_regressor = True
         else:
             self.in_column_regressor = self.in_column in ts.regressors
@@ -207,15 +208,15 @@ class HolidayTransform(IrreversibleTransform):
                 f"Discovered frequencies: {freq_values}"
             )
 
-    def _infer_external_freq(self, df: pd.DataFrame) -> str:
+    def _infer_external_freq(self, df: pd.DataFrame) -> pd.DateOffset:
         df = df.droplevel("feature", axis=1)
         # here we are assuming that every segment has the same timestamp freq
         sample_segment = df.columns[0]
         sample_timestamps = df[sample_segment]
         sample_timestamps = sample_timestamps.loc[sample_timestamps.first_valid_index() :]
-        result = determine_freq(sample_timestamps)
-        result = cast(str, result)  # we can't get None here, because we checked dtype
-        return result
+        freq_str = determine_freq(sample_timestamps)
+        freq_offset = pd.tseries.frequencies.to_offset(freq_str)
+        return freq_offset
 
     def _fit(self, df: pd.DataFrame) -> "HolidayTransform":
         """Fit the transform.
@@ -242,10 +243,10 @@ class HolidayTransform(IrreversibleTransform):
         if self.in_column is not None:
             self._validate_external_timestamps(df)
             if self._mode is HolidayTransformMode.days_count:
-                self._freq = self._infer_external_freq(df)
+                self._freq_offset = self._infer_external_freq(df)
             else:
                 # set some value that doesn't really matter
-                self._freq = object()  # type: ignore
+                self._freq_offset = object()  # type: ignore
         return self
 
     def _compute_feature(self, timestamps: pd.Series) -> pd.Series:
@@ -254,14 +255,13 @@ class HolidayTransform(IrreversibleTransform):
             dtype = "category"
 
         if self._mode is HolidayTransformMode.days_count:
-            date_offset = pd.tseries.frequencies.to_offset(self._freq)
             values = []
             for dt in timestamps:
                 if dt is pd.NaT:
                     values.append(np.NAN)
                 else:
-                    start_date, end_date = define_period(date_offset, pd.Timestamp(dt), self._freq)
-                    date_range = pd.date_range(start=start_date, end=end_date, freq="D")
+                    start_date, end_date = define_period(offset=self._freq_offset, dt=pd.Timestamp(dt))
+                    date_range = pd.date_range(start=start_date, end=end_date, freq=pd.offsets.Day())
                     count_holidays = sum(1 for d in date_range if d in self.holidays)
                     holidays_freq = count_holidays / date_range.size
                     values.append(holidays_freq)
@@ -311,7 +311,7 @@ class HolidayTransform(IrreversibleTransform):
         ValueError
             if in ``days_count`` mode external timestamp doesn't have the same frequency for all segments
         """
-        if self._freq is _DEFAULT_FREQ:
+        if self._freq_offset is _DEFAULT_FREQ:
             raise ValueError("Transform is not fitted")
 
         out_column = self._get_column_name()

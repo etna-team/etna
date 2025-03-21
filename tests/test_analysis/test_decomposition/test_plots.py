@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 from ruptures.detection import Binseg
 from sklearn.linear_model import LinearRegression
@@ -44,8 +45,10 @@ def test_plot_stl(example_tsdf, period):
         ("D", "week", {}),
         ("D", "month", {}),
         ("D", "year", {}),
+        (pd.offsets.Day(), "year", {}),
         ("M", "year", dict(aggregation="sum")),
         ("M", "year", dict(aggregation="mean")),
+        (pd.offsets.MonthEnd(), "year", dict(aggregation="mean")),
     ],
 )
 def test_dummy_seasonal_plot(freq, cycle, additional_params, ts_with_different_series_length):

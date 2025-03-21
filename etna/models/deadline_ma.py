@@ -27,6 +27,7 @@ class SeasonalityMode(str, Enum):
         )
 
 
+# TODO: обновить тесты
 class DeadlineMovingAverageModel(
     NonPredictionIntervalContextRequiredAbstractModel,
 ):
@@ -53,12 +54,12 @@ class DeadlineMovingAverageModel(
         """
         self.window = window
         self.seasonality = SeasonalityMode(seasonality)
-        self._freqs_available = {"H", "D"}
-        self._freq: Optional[str] = None
+        self._freqs_available = {pd.offsets.Hour(), pd.offsets.Day()}
+        self._freq_offset: Optional[str] = None
 
     def _validate_fitted(self):
         """Check if model is fitted."""
-        if self._freq is None:
+        if self._freq_offset is None:
             raise ValueError("Model is not fitted! Fit the model before trying the find out context size!")
 
     @property
@@ -74,7 +75,7 @@ class DeadlineMovingAverageModel(
         else:
             assert_never(self.seasonality)
 
-        if self._freq == "H":
+        if self._freq_offset == pd.offsets.Hour():
             cur_value *= 24
 
         cur_value *= self.window
@@ -113,13 +114,12 @@ class DeadlineMovingAverageModel(
         :
             Model after fit
         """
-        # we make a normalization to treat "1d" like "D"
-        freq = pd.tseries.frequencies.to_offset(ts.freq).freqstr
-        if freq not in self._freqs_available:
-            raise ValueError(f"Freq {freq} is not supported! Use daily or hourly frequency!")
+        freq_offset = ts.freq_offset
+        if freq_offset not in self._freqs_available:
+            raise ValueError(f"Freq {ts.freq} is not supported! Use daily or hourly frequency!")
 
         self._check_not_used_columns(ts)
-        self._freq = freq
+        self._freq_offset = freq_offset
         return self
 
     @staticmethod
@@ -256,7 +256,7 @@ class DeadlineMovingAverageModel(
             raise ValueError("There are NaNs in a forecast context, forecast method requires context to be filled!")
 
         num_segments = history.shape[1]
-        index = pd.date_range(start=context_beginning, end=df.index[-1], freq=self._freq)
+        index = pd.date_range(start=context_beginning, end=df.index[-1], freq=self._freq_offset)
         result_template = np.append(history.values, np.zeros((prediction_size, num_segments)), axis=0)
         result_template = pd.DataFrame(result_template, index=index, columns=history.columns)
         result_values = self._make_predictions(
@@ -331,7 +331,9 @@ class DeadlineMovingAverageModel(
             raise ValueError("There are NaNs in a target column, predict method requires target to be filled!")
 
         num_segments = context.shape[1]
-        index = pd.date_range(start=df.index[-prediction_size], end=df.index[-1], freq=self._freq, name=df.index.name)
+        index = pd.date_range(
+            start=df.index[-prediction_size], end=df.index[-1], freq=self._freq_offset, name=df.index.name
+        )
         result_template = pd.DataFrame(np.zeros((prediction_size, num_segments)), index=index, columns=context.columns)
         result_values = self._make_predictions(
             result_template=result_template, context=context, prediction_size=prediction_size

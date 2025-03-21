@@ -247,11 +247,9 @@ def get_m4_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     ----------
     .. [1] https://github.com/Mcompetitions/M4-methods
     """
-    get_freq = {"Hourly": "H", "Daily": "D", "Weekly": "W-MON", "Monthly": "M", "Quarterly": "QS-OCT", "Yearly": "D"}
     url_data = (
         "https://raw.githubusercontent.com/Mcompetitions/M4-methods/6c1067e5a57161249b17289a565178dc7a3fb3ca/Dataset/"
     )
-    freq = get_freq[dataset_freq]
 
     dataset_dir.mkdir(exist_ok=True, parents=True)
 
@@ -364,7 +362,9 @@ def get_traffic_2008_dataset(dataset_dir: Path, dataset_freq: str) -> None:
         date(2009, 2, 16),
     ] + [date(2008, 3, 8), date(2009, 3, 9)]
 
-    dates_df = pd.DataFrame({"timestamp": pd.date_range("2008-01-01 00:00:00", "2009-03-30 23:50:00", freq="10T")})
+    dates_df = pd.DataFrame(
+        {"timestamp": pd.date_range("2008-01-01 00:00:00", "2009-03-30 23:50:00", freq=pd.offsets.Minute(n=10))}
+    )
     dates_df["dt"] = dates_df["timestamp"].dt.date
     dates_df_cropped = dates_df[~dates_df["dt"].isin(drop_days)]
     dates_df = dates_df.drop(["dt"], axis=1)
@@ -434,7 +434,7 @@ def get_traffic_2015_dataset(dataset_dir: Path) -> None:
     dataset_dir.mkdir(exist_ok=True, parents=True)
 
     data = pd.read_csv(url, header=None)
-    timestamps = pd.date_range("2015-01-01", freq="H", periods=data.shape[0])
+    timestamps = pd.date_range("2015-01-01", freq=pd.offsets.Hour(), periods=data.shape[0])
     data["timestamp"] = timestamps
     data = data.melt("timestamp", var_name="segment", value_name="target")
 
@@ -569,7 +569,11 @@ def get_tourism_dataset(dataset_dir: Path, dataset_freq: str) -> None:
     ----------
     .. [1] https://robjhyndman.com/publications/the-tourism-forecasting-competition/
     """
-    get_freq = {"monthly": "MS", "quarterly": "Q-DEC", "yearly": "A-DEC"}
+    get_freq = {
+        "monthly": pd.offsets.MonthBegin(),
+        "quarterly": pd.offsets.QuarterEnd(startingMonth=12),
+        "yearly": pd.offsets.YearEnd(),
+    }
     start_index_target_rows = {"monthly": 3, "quarterly": 3, "yearly": 2}
     freq = get_freq[dataset_freq]
     target_index = start_index_target_rows[dataset_freq]
@@ -811,7 +815,7 @@ def list_datasets() -> List[str]:
 datasets_dict: Dict[str, Dict] = {
     "electricity_15T": {
         "get_dataset_function": get_electricity_dataset_15t,
-        "freq": "15T",
+        "freq": pd.offsets.Minute(n=15),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "a3148ff2119a29f9d4c5f33bb0f7897d",
@@ -924,7 +928,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "traffic_2008_10T": {
         "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="10T"),
-        "freq": "10T",
+        "freq": pd.offsets.Minute(n=10),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "f22f77c170e698f4f51231b24e5bc9f0",
@@ -934,7 +938,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "traffic_2008_hourly": {
         "get_dataset_function": partial(get_traffic_2008_dataset, dataset_freq="hourly"),
-        "freq": "H",
+        "freq": pd.offsets.Hour(),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "161748edc508b4e206344fcbb984bf9a",
@@ -944,7 +948,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "traffic_2015_hourly": {
         "get_dataset_function": get_traffic_2015_dataset,
-        "freq": "H",
+        "freq": pd.offsets.Hour(),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "838f0b7b012cf0bf3427fb5b1a4c053f",
@@ -987,7 +991,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "weather_10T": {
         "get_dataset_function": get_weather_dataset,
-        "freq": "10T",
+        "freq": pd.offsets.Minute(n=10),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "70ffe726161c200ae785643b38e33a11",
@@ -997,7 +1001,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "ETTm1": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm1"),
-        "freq": "15T",
+        "freq": pd.offsets.Minute(n=15),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "ea71e6ca40d872916ae62d6182004a22",
@@ -1007,7 +1011,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "ETTm2": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTm2"),
-        "freq": "15T",
+        "freq": pd.offsets.Minute(n=15),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "e7012a0ff1847bf35050f67ddf843ce6",
@@ -1017,7 +1021,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "ETTh1": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh1"),
-        "freq": "H",
+        "freq": pd.offsets.Hour(),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "c86c169fd7031c49aab23baf0e0ded5e",
@@ -1027,7 +1031,7 @@ datasets_dict: Dict[str, Dict] = {
     },
     "ETTh2": {
         "get_dataset_function": partial(get_ett_dataset, dataset_type="ETTh2"),
-        "freq": "H",
+        "freq": pd.offsets.Hour(),
         "parts": ("train", "test", "full"),
         "hash": {
             "train": "58606e10507b32963a1cca89716f68a2",
@@ -1037,13 +1041,13 @@ datasets_dict: Dict[str, Dict] = {
     },
     "IHEPC_T": {
         "get_dataset_function": get_ihepc_dataset,
-        "freq": "T",
+        "freq": pd.offsets.Minute(),
         "parts": ("full",),
         "hash": {"full": "8909138462ea130b9809907e947ffae6"},
     },
     "australian_wine_sales_monthly": {
         "get_dataset_function": get_australian_wine_sales_dataset,
-        "freq": "MS",
+        "freq": pd.offsets.MonthBegin(),
         "parts": ("full",),
         "hash": {"full": "2dd34b5306d5e5372727e4d610b713be"},
     },

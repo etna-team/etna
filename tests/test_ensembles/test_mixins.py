@@ -71,7 +71,7 @@ def test_save_mixin_save(example_tsds, tmp_path):
 
     # basic check that we didn't break dummy object itself
     assert dummy.a == initial_dummy.a
-    assert pickle.dumps(dummy.ts) == pickle.dumps(initial_dummy.ts)
+    assert pickle.dumps(dummy.ts._df) == pickle.dumps(initial_dummy.ts._df)
     assert len(dummy.pipelines) == len(initial_dummy.pipelines)
 
 

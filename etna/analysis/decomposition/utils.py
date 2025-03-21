@@ -148,27 +148,29 @@ def _get_seasonal_in_cycle_num(
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
-    freq: Optional[str],
+    freq_offset: Optional[pd.DateOffset],
 ) -> pd.Series:
     """Get number for each point within cycle in a series of timestamps."""
-    cycle_functions: Dict[Tuple[SeasonalPlotCycle, str], Callable[[pd.Series], pd.Series]] = {
-        (SeasonalPlotCycle.hour, "T"): lambda x: x.dt.minute,
-        (SeasonalPlotCycle.day, "H"): lambda x: x.dt.hour,
-        (SeasonalPlotCycle.week, "D"): lambda x: x.dt.weekday,
-        (SeasonalPlotCycle.month, "D"): lambda x: x.dt.day,
-        (SeasonalPlotCycle.quarter, "D"): lambda x: (x - pd.PeriodIndex(x, freq="Q").start_time).dt.days,
-        (SeasonalPlotCycle.year, "D"): lambda x: x.dt.dayofyear,
-        (SeasonalPlotCycle.year, "Q"): lambda x: x.dt.quarter,
-        (SeasonalPlotCycle.year, "QS"): lambda x: x.dt.quarter,
-        (SeasonalPlotCycle.year, "M"): lambda x: x.dt.month,
-        (SeasonalPlotCycle.year, "MS"): lambda x: x.dt.month,
+    cycle_functions: Dict[Tuple[SeasonalPlotCycle, pd.DateOffset], Callable[[pd.Series], pd.Series]] = {
+        (SeasonalPlotCycle.hour, pd.offsets.Minute()): lambda x: x.dt.minute,
+        (SeasonalPlotCycle.day, pd.offsets.Hour()): lambda x: x.dt.hour,
+        (SeasonalPlotCycle.week, pd.offsets.Day()): lambda x: x.dt.weekday,
+        (SeasonalPlotCycle.month, pd.offsets.Day()): lambda x: x.dt.day,
+        (SeasonalPlotCycle.quarter, pd.offsets.Day()): lambda x: (
+            x - pd.PeriodIndex(x, freq=pd.offsets.QuarterEnd()).start_time
+        ).dt.days,
+        (SeasonalPlotCycle.year, pd.offsets.Day()): lambda x: x.dt.dayofyear,
+        (SeasonalPlotCycle.year, pd.offsets.QuarterEnd()): lambda x: x.dt.quarter,
+        (SeasonalPlotCycle.year, pd.offsets.QuarterBegin()): lambda x: x.dt.quarter,
+        (SeasonalPlotCycle.year, pd.offsets.MonthEnd()): lambda x: x.dt.month,
+        (SeasonalPlotCycle.year, pd.offsets.MonthBegin()): lambda x: x.dt.month,
     }
 
     if isinstance(cycle, int):
         pass
     else:
-        freq = cast(str, freq)
-        key = (SeasonalPlotCycle(cycle), freq)
+        freq_offset = cast(pd.DateOffset, freq_offset)
+        key = (SeasonalPlotCycle(cycle), freq_offset)
         if key in cycle_functions:
             return cycle_functions[key](timestamp)
 
@@ -183,18 +185,18 @@ def _get_seasonal_in_cycle_name(
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
-    freq: Optional[str],
+    freq_offset: Optional[pd.DateOffset],
 ) -> pd.Series:
     """Get unique name for each point within the cycle in a series of timestamps."""
     if isinstance(cycle, int):
         pass
     elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.week:
-        freq = cast(str, freq)
-        if freq == "D":
+        freq_offset = cast(pd.DateOffset, freq_offset)
+        if freq_offset == pd.offsets.Day():
             return timestamp.dt.strftime("%a")
     elif SeasonalPlotCycle(cycle) == SeasonalPlotCycle.year:
-        freq = cast(str, freq)
-        if freq == "M" or freq == "MS":
+        freq_offset = cast(pd.DateOffset, freq_offset)
+        if freq_offset == pd.offsets.MonthEnd() or freq_offset == pd.offsets.MonthBegin():
             return timestamp.dt.strftime("%b")
 
     # in all other cases we can use numbers from cycle_num
@@ -203,7 +205,7 @@ def _get_seasonal_in_cycle_name(
 
 def _seasonal_split(
     timestamp: pd.Series,
-    freq: Optional[str],
+    freq_offset: Optional[pd.DateOffset],
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
@@ -214,8 +216,8 @@ def _seasonal_split(
     ----------
     timestamp:
         series with timestamps
-    freq:
-        frequency of dataframe
+    freq_offset:
+        frequency offset of dataframe
     cycle:
         period of seasonality to capture (see :py:class:`~etna.analysis.decomposition.utils.SeasonalPlotCycle`)
 
@@ -227,22 +229,24 @@ def _seasonal_split(
     cycles_df = pd.DataFrame({"timestamp": timestamp.tolist()})
     cycles_df["cycle_name"] = _get_seasonal_cycle_name(timestamp=cycles_df["timestamp"], cycle=cycle)
     cycles_df["in_cycle_num"] = _get_seasonal_in_cycle_num(
-        timestamp=cycles_df["timestamp"], cycle_name=cycles_df["cycle_name"], cycle=cycle, freq=freq
+        timestamp=cycles_df["timestamp"], cycle_name=cycles_df["cycle_name"], cycle=cycle, freq_offset=freq_offset
     )
     cycles_df["in_cycle_name"] = _get_seasonal_in_cycle_name(
-        timestamp=cycles_df["timestamp"], in_cycle_num=cycles_df["in_cycle_num"], cycle=cycle, freq=freq
+        timestamp=cycles_df["timestamp"], in_cycle_num=cycles_df["in_cycle_num"], cycle=cycle, freq_offset=freq_offset
     )
     return cycles_df
 
 
-def _resample(df: pd.DataFrame, freq: str, aggregation: Union[Literal["sum"], Literal["mean"]]) -> pd.DataFrame:
+def _resample(
+    df: pd.DataFrame, freq_offset: pd.DateOffset, aggregation: Union[Literal["sum"], Literal["mean"]]
+) -> pd.DataFrame:
     from etna.datasets import TSDataset
 
     agg_enum = SeasonalPlotAggregation(aggregation)
     df_flat = TSDataset.to_flatten(df)
     df_flat = (
         df_flat.set_index("timestamp")
-        .groupby(["segment", pd.Grouper(freq=freq)])
+        .groupby(["segment", pd.Grouper(freq=freq_offset)])
         .agg(agg_enum.get_function())
         .reset_index()
     )
@@ -252,7 +256,7 @@ def _resample(df: pd.DataFrame, freq: str, aggregation: Union[Literal["sum"], Li
 
 def _prepare_seasonal_plot_df(
     ts: "TSDataset",
-    freq: Optional[str],
+    freq_offset: Optional[pd.DateOffset],
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ],
@@ -271,13 +275,13 @@ def _prepare_seasonal_plot_df(
     df = df[(~df.isna()).sum(axis=1) > 0]
 
     # make resampling if necessary
-    if ts.freq != freq:
-        if ts.freq is None:
+    if ts.freq_offset != freq_offset:
+        if ts.freq_offset is None:
             raise ValueError("Resampling isn't supported for data with integer timestamp!")
-        elif freq is None:
+        elif freq_offset is None:
             raise ValueError("Value None for freq parameter isn't supported for data with datetime timestamp!")
 
-        df = _resample(df=df, freq=freq, aggregation=aggregation)
+        df = _resample(df=df, freq_offset=freq_offset, aggregation=aggregation)
 
     # process alignment
     if isinstance(cycle, int):
@@ -287,10 +291,10 @@ def _prepare_seasonal_plot_df(
         alignment_enum = SeasonalPlotAlignment(alignment)
         # if we want to align by the first value, then we should append NaNs to timestamp
         if alignment_enum is SeasonalPlotAlignment.first:
-            to_add_index = timestamp_range(start=timestamp[-1], periods=num_to_add + 1, freq=freq)[1:]
+            to_add_index = timestamp_range(start=timestamp[-1], periods=num_to_add + 1, freq=freq_offset)[1:]
         # if we want to align by the last value, then we should prepend NaNs to timestamp
         elif alignment_enum is SeasonalPlotAlignment.last:
-            to_add_index = timestamp_range(end=timestamp[0], periods=num_to_add + 1, freq=freq)[:-1]
+            to_add_index = timestamp_range(end=timestamp[0], periods=num_to_add + 1, freq=freq_offset)[:-1]
         else:
             assert_never(alignment_enum)
 
@@ -299,7 +303,7 @@ def _prepare_seasonal_plot_df(
         df = df.reindex(new_index)
         df.index.name = index_name
 
-    elif freq is None:
+    elif freq_offset is None:
         raise ValueError("Setting non-integer cycle isn't supported for data with integer timestamp!")
 
     return df

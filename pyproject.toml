@@ -258,7 +258,8 @@ filterwarnings = [
     "ignore: Could not infer format, so each element will be parsed individually",
     "ignore: datetime.datetime.utcfromtimestamp.* is deprecated and scheduled for removal in a future version", # python 3.12
     "ignore: os.fork.* was called", # os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
-    "ignore: The 'train_dataloader' does not have many workers which may be a bottleneck" # lightning
+    "ignore: The 'train_dataloader' does not have many workers which may be a bottleneck", # lightning
+    "ignore: Unverified HTTPS request is being made"
 ]
 markers = [
     "smoke"
