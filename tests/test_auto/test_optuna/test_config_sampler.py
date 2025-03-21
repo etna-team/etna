@@ -38,7 +38,7 @@ def test_config_sampler_one_thread(objective, config_sampler, expected_pipeline=
 
     study = optuna.create_study(sampler=config_sampler)
     study.optimize(objective, n_trials=100)
-    assert study.best_trial.user_attrs["pipeline"] == expected_pipeline
+    assert study.sampler.configs_hash[study.best_trial.user_attrs["hash"]] == expected_pipeline
     assert len(study.trials) == len(config_sampler.configs)
 
 
@@ -49,7 +49,7 @@ def test_config_sampler_multithread_without_trials_count_check(
     study = optuna.create_study(sampler=config_sampler, storage=sqlite_storage)
     Parallel(n_jobs=n_jobs)(delayed(study.optimize)(objective) for _ in range(n_jobs))
 
-    assert study.best_trial.user_attrs["pipeline"] == expected_pipeline
+    assert study.sampler.configs_hash[study.best_trial.user_attrs["hash"]] == expected_pipeline
 
 
 @pytest.mark.skip(reason="The number of trials is non-deterministic")
