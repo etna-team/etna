@@ -223,8 +223,8 @@ def freq_map(freq: Optional[str]):
       pd.offsets.Week: 1,
       pd.offsets.MonthEnd: 1,
       pd.offsets.MonthBegin: 1,
-      pd.offsets.QuarterEnd: 1,
-      pd.offsets.YearEnd: 1,
+      pd.offsets.QuarterEnd: 2,
+      pd.offsets.YearEnd: 2,
   }
   if freq_offset_type in freq_mapping:
       return freq_mapping[freq_offset_type]
