@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Python versions 3.11 and 3.12 ([#599](https://github.com/etna-team/etna/pull/599))
 - Add the ability to train DL models (except `TFTModel` and `DeepStateModel`) on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - Add warning if training DL models on MPS [#621](https://github.com/etna-team/etna/pull/621)
-- Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `etna.dataset.utils`, `etna.dataset.generation`, `etna.analysis`
+- Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `etna.dataset.utils`, `etna.dataset.generation`, `etna.analysis` ([#635](https://github.com/etna-team/etna/pull/635))
 - 
 - 
 - 
