@@ -948,8 +948,7 @@ def plot_forecast_decomposition(
     if segments is None:
         segments = forecast_ts.segments
 
-    column_names = set(forecast_ts.features)
-    components = set(filter(lambda f: f.startswith("target_component_"), column_names))
+    components = forecast_ts.target_components_names
 
     if len(components) == 0:
         raise ValueError("No components were detected in the provided `forecast_ts`.")
