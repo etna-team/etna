@@ -467,20 +467,37 @@ def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq
 
 
 @pytest.mark.parametrize(
-    "timestamps,answer",
+    "timestamps,freq_format,answer",
     (
-        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "M"),
-        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "W-SUN"),
-        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "D"),
-        (pd.Series(np.arange(10)), None),
-        (pd.Series(np.arange(5, 15)), None),
-        (pd.Series(np.arange(1)), None),
+        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "str", "M"),
+        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "offset", pd.offsets.MonthEnd()),
+        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "str", "W-SUN"),
+        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "offset", pd.offsets.Week(weekday=6)),
+        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "str", "D"),
+        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "offset", pd.offsets.Day()),
+        (pd.Series(np.arange(10)), "str", None),
+        (pd.Series(np.arange(10)), "offset", None),
+        (pd.Series(np.arange(5, 15)), "str", None),
+        (pd.Series(np.arange(1)), "str", None),
     ),
 )
-def test_determine_freq(timestamps, answer):
-    assert determine_freq(timestamps=timestamps) == answer
+def test_determine_freq(timestamps, freq_format, answer):
+    assert determine_freq(timestamps=timestamps, freq_format=freq_format) == answer
 
 
+@pytest.mark.parametrize(
+    "timestamps",
+    (
+        pd.date_range(start="2020-01-01", periods=3, freq="D"),
+        pd.Series(np.arange(10)),
+    ),
+)
+def test_determine_freq_fail_wrong_freq_format(timestamps):
+    with pytest.raises(NotImplementedError, match="unknown is not a valid"):
+        _ = determine_freq(timestamps=timestamps, freq_format="unknown")
+
+
+@pytest.mark.parametrize("freq_format", ["str", "offset"])
 @pytest.mark.parametrize(
     "timestamps",
     (
@@ -488,11 +505,12 @@ def test_determine_freq(timestamps, answer):
         pd.to_datetime(pd.Series(["2020-02-15", "2020-01-22", "2020-01-23"])),
     ),
 )
-def test_determine_freq_fail_cant_determine(timestamps):
+def test_determine_freq_fail_cant_determine(timestamps, freq_format):
     with pytest.raises(ValueError, match="Can't determine frequency of a given dataframe"):
-        _ = determine_freq(timestamps=timestamps)
+        _ = determine_freq(timestamps=timestamps, freq_format=freq_format)
 
 
+@pytest.mark.parametrize("freq_format", ["str", "offset"])
 @pytest.mark.parametrize(
     "timestamps",
     (
@@ -501,9 +519,9 @@ def test_determine_freq_fail_cant_determine(timestamps):
         pd.Series([3, 4, 6]),
     ),
 )
-def test_determine_freq_fail_int_gaps(timestamps):
+def test_determine_freq_fail_int_gaps(timestamps, freq_format):
     with pytest.raises(ValueError, match="Integer timestamp isn't ordered and doesn't contain all the values"):
-        _ = determine_freq(timestamps=timestamps)
+        _ = determine_freq(timestamps=timestamps, freq_format=freq_format)
 
 
 @pytest.mark.parametrize(

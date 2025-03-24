@@ -102,7 +102,7 @@ class _OneSegmentDeseasonalityTransform(OneSegmentTransform):
         ValueError:
             if input column contains NaNs in the middle of the series
         """
-        self._freq_offset = pd.tseries.frequencies.to_offset(determine_freq(df.index))
+        self._freq_offset = determine_freq(df.index, freq_format="offset")
 
         df = df.loc[df[self.in_column].first_valid_index() : df[self.in_column].last_valid_index()]
         if df[self.in_column].isnull().values.any():

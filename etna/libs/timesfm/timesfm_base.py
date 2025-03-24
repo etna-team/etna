@@ -166,6 +166,7 @@
 
 # Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/c9a582506b7588a39bc11b38b17c0020e5942629/src/timesfm/timesfm_base.py)
 # replace print with logging
+# rework freq_map to handle new pandas freq names
 
 import warnings
 

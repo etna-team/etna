@@ -107,7 +107,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
 
         self._first_train_timestamp = df.index.min()
-        self._freq_offset = pd.tseries.frequencies.to_offset(determine_freq(df.index))
+        self._freq_offset = determine_freq(df.index, freq_format="offset")
 
         endog = df[self.in_column]
         if pd.api.types.is_integer_dtype(df.index):

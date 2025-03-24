@@ -27,7 +27,6 @@ class SeasonalityMode(str, Enum):
         )
 
 
-# TODO: обновить тесты
 class DeadlineMovingAverageModel(
     NonPredictionIntervalContextRequiredAbstractModel,
 ):

@@ -14,6 +14,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
+from typing_extensions import assert_never
 
 from etna import SETTINGS
 
@@ -144,7 +145,7 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
     ValueError:
         if segments list is empty
     ValueError:
-        if incorrect strategy is given
+        if incorrect format is given
     ValueError:
         if dataframe doesn't contain "timestamp" column
 
@@ -482,26 +483,55 @@ def determine_num_steps(
             cur_timestamp = timestamps[-1]
 
 
-def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
+class FreqFormat(str, Enum):
+    """Enum for freq format for ``determine_freq``."""
+
+    str = "str"
+    offset = "offset"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} values allowed"
+        )
+
+
+def determine_freq(
+    timestamps: Union[pd.Series, pd.Index], freq_format: str = FreqFormat.str
+) -> Union[pd.DateOffset, str, None]:
     """Determine data frequency using provided timestamps.
+
+    For integer timestamp the value ``None`` is returned.
 
     Parameters
     ----------
     timestamps:
         timeline to determine frequency
+    freq_format:
+        type of result, possible values:
+
+        - "str" - frequency string result or ``None``
+
+        - "offset" - :py:class:`pandas.DateOffset` result or ``None``
 
     Returns
     -------
     :
-        pandas frequency string
+        pandas frequency string or offset depending on ``freq_format`` for datetime timestamp
+        and ``None`` for int timestamp
 
     Raises
     ------
+    ValueError:
+        if incorrect freq_format is given
     ValueError:
         unable do determine frequency of data
     ValueError:
         integer timestamp isn't ordered and doesn't contain all the values from min to max
     """
+    # check format
+    freq_format_enum = FreqFormat(freq_format)
+
     # check integer timestamp
     if pd.api.types.is_integer_dtype(timestamps):
         diffs = np.diff(timestamps)[1:]
@@ -520,7 +550,12 @@ def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
         if freq is None:
             raise ValueError("Can't determine frequency of a given dataframe")
 
-        return freq
+        if freq_format_enum is FreqFormat.str:
+            return freq
+        elif freq_format_enum is FreqFormat.offset:
+            return pd.tseries.frequencies.to_offset(freq)  # type: ignore
+        else:
+            assert_never(freq_format_enum)
 
 
 def timestamp_range(

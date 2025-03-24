@@ -2185,9 +2185,7 @@ def test_error_set_freq(df_and_regressors):
 )
 def test_freq_with_datetime_timestamp(freq, freq_str, freq_offset):
     df = generate_ar_df(periods=10, freq=freq, n_segments=3)
-    df_wide = TSDataset.to_dataset(df)
-    df_wide.index.freq = freq
-    ts = TSDataset(df=df_wide, freq=freq)
+    ts = TSDataset(df=df, freq=freq)
 
     assert ts.freq == freq_str
     assert ts.freq_offset == freq_offset
@@ -2195,8 +2193,7 @@ def test_freq_with_datetime_timestamp(freq, freq_str, freq_offset):
 
 def test_freq_with_int_timestamp():
     df = generate_ar_df(periods=10, freq=None, n_segments=3)
-    df_wide = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df_wide, freq=None)
+    ts = TSDataset(df=df, freq=None)
 
     assert ts.freq is None
     assert ts.freq_offset is None

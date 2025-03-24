@@ -214,8 +214,7 @@ class HolidayTransform(IrreversibleTransform):
         sample_segment = df.columns[0]
         sample_timestamps = df[sample_segment]
         sample_timestamps = sample_timestamps.loc[sample_timestamps.first_valid_index() :]
-        freq_str = determine_freq(sample_timestamps)
-        freq_offset = pd.tseries.frequencies.to_offset(freq_str)
+        freq_offset = determine_freq(sample_timestamps, freq_format="offset")
         return freq_offset
 
     def _fit(self, df: pd.DataFrame) -> "HolidayTransform":

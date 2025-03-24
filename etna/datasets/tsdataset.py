@@ -1944,7 +1944,6 @@ class TSDataset:
         """
         return self._known_future.copy()
 
-    # TODO: обновить тесты
     @property
     def freq(self) -> Optional[str]:
         """Return string frequency of timestamp.
@@ -1959,7 +1958,6 @@ class TSDataset:
         else:
             return self._freq.freqstr
 
-    # TODO: обновить тесты
     @property
     def freq_offset(self) -> Optional[pd.DateOffset]:
         """Return offset frequency of timestamp.
