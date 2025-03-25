@@ -143,7 +143,6 @@ class TSDataset:
         hierarchical_structure:
             Structure of the levels in the hierarchy. If None, there is no hierarchical structure in the dataset.
         """
-        # TODO: разобраться с DateOffset vs BaseOffset
         self._freq: Optional[pd.DateOffset] = pd.tseries.frequencies.to_offset(freq)
 
         self._df_exog = None
