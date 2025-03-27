@@ -113,7 +113,6 @@ def _stl_decompose(
         if freq is None:
             raise ValueError("Series must have inferable frequency to autodetect period for STL!")
 
-        # TODO: could break on new pandas frequencies
         period = freq_to_period(freq)
 
     stl_res = STL(endog=series, period=period, **kwargs).fit()

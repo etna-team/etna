@@ -359,7 +359,8 @@ class TSDataset:
                 warnings.warn("TSDataset freq can't be inferred")
                 inferred_freq = None
 
-            if inferred_freq is not None and inferred_freq != freq_offset.freqstr:
+            inferred_freq_offset = pd.tseries.frequencies.to_offset(inferred_freq)
+            if inferred_freq_offset is not None and inferred_freq_offset != freq_offset:
                 warnings.warn(
                     f"You probably set wrong freq. Discovered freq in you data is {inferred_freq}, you set {freq_offset.freqstr}"
                 )
