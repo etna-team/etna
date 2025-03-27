@@ -368,8 +368,8 @@ def ts_after_transform(example_tsds):
     return ts
 
 
-def test_create_ts_with_datetime_timestamp():
-    freq = "D"
+@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+def test_create_ts_with_datetime_timestamp(freq):
     df = generate_ar_df(periods=10, freq=freq, n_segments=3)
     df_wide = TSDataset.to_dataset(df)
     df_wide.index.freq = freq
@@ -400,8 +400,8 @@ def test_create_ts_with_int_timestamp_with_freq():
     assert ts.timestamps.dtype == "datetime64[ns]"
 
 
-def test_create_ts_with_exog_datetime_timestamp():
-    freq = "D"
+@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+def test_create_ts_with_exog_datetime_timestamp(freq):
     df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
     df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
     df_exog.rename(columns={"target": "exog"}, inplace=True)
@@ -522,15 +522,16 @@ def test_create_ts_missing_int_timestamp():
     pd.testing.assert_frame_equal(ts.to_pandas(), expected_df)
 
 
-def test_create_ts_with_int_timestamp_fail_datetime():
-    df = generate_ar_df(periods=10, freq="D", n_segments=3)
+@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+def test_create_ts_with_int_timestamp_fail_datetime(freq):
+    df = generate_ar_df(periods=10, freq=freq, n_segments=3)
     df_wide = TSDataset.to_dataset(df)
     with pytest.raises(ValueError, match="You set wrong freq"):
         _ = TSDataset(df=df_wide, freq=None)
 
 
 def test_create_datetime_conversion_during_init():
-    classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2)
+    classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2, freq="D")
     classic_df["categorical_column"] = [0] * 30 + [1] * 30
     classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
@@ -561,8 +562,8 @@ def test_create_segment_conversion_during_init(df_segments_int):
     assert np.all(ts._df.columns.get_level_values("segment") == ["1", "1", "2", "2"])
 
 
-def test_create_from_long_format_with_exog():
-    freq = "D"
+@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+def test_create_from_long_format_with_exog(freq):
     df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
     df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
     df_exog.rename(columns={"target": "exog"}, inplace=True)
@@ -577,10 +578,10 @@ def test_create_from_long_format_with_exog():
 
 
 @patch("etna.datasets.utils.DataFrameFormat.determine")
-def test_create_from_long_format_with_exog_calls_determine(determine_mock):
+@pytest.mark.parametrize("freq", ["D"])
+def test_create_from_long_format_with_exog_calls_determine(determine_mock, freq):
     determine_mock.side_effect = [DataFrameFormat.long, DataFrameFormat.long]
 
-    freq = "D"
     df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
     df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
     df_exog.rename(columns={"target": "exog"}, inplace=True)
@@ -1097,11 +1098,14 @@ def test_make_future_with_imputer(ts_diff_endings, ts_future):
     assert_frame_equal(future.to_pandas(), ts_future.to_pandas())
 
 
-def test_make_future_datetime_timestamp():
-    df = generate_ar_df(periods=20, freq="D", n_segments=2)
-    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+def test_make_future_datetime_timestamp(freq):
+    df = generate_ar_df(periods=20, freq=freq, n_segments=2)
+    ts = TSDataset(TSDataset.to_dataset(df), freq=freq)
     ts_future = ts.make_future(10)
-    assert np.all(ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert np.all(
+        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq=freq)
+    )
     assert set(ts_future.features) == {"target"}
 
 
@@ -1142,11 +1146,14 @@ def test_make_future_small_horizon():
         assert train.make_future(1).size()[0] == 1
 
 
-def test_make_future_with_regressors(df_and_regressors):
+@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+def test_make_future_with_regressors(df_and_regressors, freq):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=freq, known_future=known_future)
     ts_future = ts.make_future(10)
-    assert np.all(ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert np.all(
+        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq=freq)
+    )
     assert set(ts_future.features) == {"target", "regressor_1", "regressor_2"}
 
 
@@ -1916,8 +1923,10 @@ def test_check_timestamp_type_warning():
     "df_name, freq, original_timestamp_name, future_steps",
     [
         ("df_aligned_datetime", "D", "external_timestamp", 1),
+        ("df_aligned_datetime", pd.offsets.Day(), "external_timestamp", 1),
         ("df_aligned_int", None, "external_timestamp", 1),
         ("df_misaligned_datetime", "D", "external_timestamp", 1),
+        ("df_misaligned_datetime", pd.offsets.Day(), "external_timestamp", 1),
         ("df_misaligned_int", None, "external_timestamp", 1),
         ("df_misaligned_datetime", "D", "new_timestamp", 1),
         ("df_misaligned_datetime", "D", "external_timestamp", 3),
@@ -1952,11 +1961,22 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
     "df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps",
     [
         ("df_aligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_datetime", "df_exog_aligned_datetime", pd.offsets.Day(), ["exog_1"], "external_timestamp", 1),
         ("df_aligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_aligned_datetime", "df_exog_misaligned_datetime", pd.offsets.Day(), ["exog_1"], "external_timestamp", 1),
         ("df_aligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
         ("df_aligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
         ("df_misaligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        ("df_misaligned_datetime", "df_exog_aligned_datetime", pd.offsets.Day(), ["exog_1"], "external_timestamp", 1),
         ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        (
+            "df_misaligned_datetime",
+            "df_exog_misaligned_datetime",
+            pd.offsets.Day(),
+            ["exog_1"],
+            "external_timestamp",
+            1,
+        ),
         ("df_misaligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
         ("df_misaligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
         ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "new_timestamp", 1),
@@ -2012,6 +2032,14 @@ def test_create_from_misaligned_with_exog(
             1,
             ["exog_1", "exog_2", "external_timestamp"],
         ),
+        (
+            "df_misaligned_datetime",
+            "df_exog_all_misaligned_datetime",
+            pd.offsets.Day(),
+            "external_timestamp",
+            1,
+            ["exog_1", "exog_2", "external_timestamp"],
+        ),
     ],
 )
 def test_create_from_misaligned_with_exog_all(
@@ -2055,6 +2083,7 @@ def test_create_from_misaligned_with_exog_all(
     [
         ("df_misaligned_datetime", "D", "external_timestamp", 0),
         ("df_misaligned_datetime", "D", "external_timestamp", -3),
+        ("df_misaligned_datetime", pd.offsets.Day(), "external_timestamp", -3),
         ("df_misaligned_int", None, "external_timestamp", 0),
         ("df_misaligned_int", None, "external_timestamp", -3),
     ],
@@ -2135,3 +2164,36 @@ def test_error_set_freq(df_and_regressors):
     ts = TSDataset(df=df, freq="D")
     with pytest.raises(AttributeError, match="can't set attribute|property 'freq' of 'TSDataset' object has no setter"):
         ts.freq = "H"
+
+
+@pytest.mark.parametrize(
+    "freq, freq_str, freq_offset",
+    [
+        ("D", "D", pd.offsets.Day()),
+        (pd.offsets.Day(), "D", pd.offsets.Day()),
+        ("2D", "2D", pd.offsets.Day(n=2)),
+        (pd.offsets.Day(n=2), "2D", pd.offsets.Day(n=2)),
+        ("W", "W-SUN", pd.offsets.Week(weekday=6)),
+        (pd.offsets.Week(weekday=6), "W-SUN", pd.offsets.Week(weekday=6)),
+        (pd.offsets.Week(weekday=0), "W-MON", pd.offsets.Week(weekday=0)),
+        (pd.offsets.Week(), "W", pd.offsets.Week()),
+        ("M", "M", pd.offsets.MonthEnd()),
+        (pd.offsets.MonthEnd(), "M", pd.offsets.MonthEnd()),
+        ("MS", "MS", pd.offsets.MonthBegin()),
+        (pd.offsets.MonthBegin(), "MS", pd.offsets.MonthBegin()),
+    ],
+)
+def test_freq_with_datetime_timestamp(freq, freq_str, freq_offset):
+    df = generate_ar_df(periods=10, freq=freq, n_segments=3)
+    ts = TSDataset(df=df, freq=freq)
+
+    assert ts.freq == freq_str
+    assert ts.freq_offset == freq_offset
+
+
+def test_freq_with_int_timestamp():
+    df = generate_ar_df(periods=10, freq=None, n_segments=3)
+    ts = TSDataset(df=df, freq=None)
+
+    assert ts.freq is None
+    assert ts.freq_offset is None

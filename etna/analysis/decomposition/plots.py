@@ -373,7 +373,7 @@ def stl_plot(
 
 def seasonal_plot(
     ts: "TSDataset",
-    freq: Union[Optional[str], Literal["not_given"]] = "not_given",
+    freq: Union[pd.DateOffset, str, None, Literal["not_given"]] = "not_given",
     cycle: Union[
         Literal["hour"], Literal["day"], Literal["week"], Literal["month"], Literal["quarter"], Literal["year"], int
     ] = "year",
@@ -432,22 +432,26 @@ def seasonal_plot(
     """
     if plot_params is None:
         plot_params = {}
+
     if freq == "not_given":
-        freq = ts.freq
-        freq = cast(Optional[str], freq)
+        freq_offset = ts.freq_offset
+        freq_offset = cast(Optional[pd.DateOffset], freq_offset)
+    else:
+        freq_offset = pd.tseries.frequencies.to_offset(freq)
+
     if segments is None:
         segments = sorted(ts.segments)
 
     df = _prepare_seasonal_plot_df(
         ts=ts,
-        freq=freq,
+        freq_offset=freq_offset,
         cycle=cycle,
         alignment=alignment,
         aggregation=aggregation,
         in_column=in_column,
         segments=segments,
     )
-    seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq=freq, cycle=cycle)
+    seasonal_df = _seasonal_split(timestamp=df.index.to_series(), freq_offset=freq_offset, cycle=cycle)
 
     colors = plt.get_cmap(cmap)
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
