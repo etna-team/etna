@@ -14,6 +14,7 @@ from typing import cast
 import numpy as np
 import pandas as pd
 from scipy.sparse import csr_matrix
+from typing_extensions import assert_never
 
 from etna import SETTINGS
 
@@ -144,7 +145,7 @@ def duplicate_data(df: pd.DataFrame, segments: Sequence[str], format: str = Data
     ValueError:
         if segments list is empty
     ValueError:
-        if incorrect strategy is given
+        if incorrect format is given
     ValueError:
         if dataframe doesn't contain "timestamp" column
 
@@ -374,7 +375,7 @@ def inverse_transform_target_components(
 
 
 def _check_timestamp_param(
-    param: Union[pd.Timestamp, int, str, None], param_name: str, freq: Optional[str]
+    param: Union[pd.Timestamp, int, str, None], param_name: str, freq: Union[pd.DateOffset, str, None]
 ) -> Union[pd.Timestamp, int, None]:
     if param is None:
         return param
@@ -397,7 +398,9 @@ def _check_timestamp_param(
 
 
 def determine_num_steps(
-    start_timestamp: Union[pd.Timestamp, int], end_timestamp: Union[pd.Timestamp, int], freq: Optional[str]
+    start_timestamp: Union[pd.Timestamp, int],
+    end_timestamp: Union[pd.Timestamp, int],
+    freq: Union[pd.DateOffset, str, None],
 ) -> int:
     """Determine how many steps of ``freq`` should we make from ``start_timestamp`` to reach ``end_timestamp``.
 
@@ -409,6 +412,8 @@ def determine_num_steps(
         timestamp to end counting, should be not earlier than ``start_timestamp``
     freq:
         frequency of timestamps, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
 
         - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
 
@@ -430,6 +435,7 @@ def determine_num_steps(
     ValueError:
         End timestamp isn't reachable with a given frequency
     """
+    freq_offset: Optional[pd.DateOffset] = pd.tseries.frequencies.to_offset(freq)
     if start_timestamp > end_timestamp:
         raise ValueError("Start timestamp should be less or equal than end timestamp!")
 
@@ -442,7 +448,7 @@ def determine_num_steps(
         return end_timestamp - start_timestamp
     else:
         # check if start_timestamp is normalized
-        normalized_start_timestamp = pd.date_range(start=start_timestamp, periods=1, freq=freq)
+        normalized_start_timestamp = pd.date_range(start=start_timestamp, periods=1, freq=freq_offset)
         if normalized_start_timestamp != start_timestamp:
             raise ValueError(f"Start timestamp isn't correct according to given frequency: {freq}")
 
@@ -454,7 +460,7 @@ def determine_num_steps(
         cur_value = 1
         cur_timestamp = start_timestamp
         while True:
-            timestamps = pd.date_range(start=cur_timestamp, periods=2, freq=freq)
+            timestamps = pd.date_range(start=cur_timestamp, periods=2, freq=freq_offset)
             if timestamps[-1] == end_timestamp:
                 return cur_value
             elif timestamps[-1] > end_timestamp:
@@ -463,26 +469,55 @@ def determine_num_steps(
             cur_timestamp = timestamps[-1]
 
 
-def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
+class FreqFormat(str, Enum):
+    """Enum for freq format for ``determine_freq``."""
+
+    str = "str"
+    offset = "offset"
+
+    @classmethod
+    def _missing_(cls, value):
+        raise NotImplementedError(
+            f"{value} is not a valid {cls.__name__}. Only {', '.join([repr(m.value) for m in cls])} values allowed"
+        )
+
+
+def determine_freq(
+    timestamps: Union[pd.Series, pd.Index], freq_format: str = FreqFormat.str
+) -> Union[pd.DateOffset, str, None]:
     """Determine data frequency using provided timestamps.
+
+    For integer timestamp the value ``None`` is returned.
 
     Parameters
     ----------
     timestamps:
         timeline to determine frequency
+    freq_format:
+        type of result, possible values:
+
+        - "str" - frequency string result or ``None``
+
+        - "offset" - :py:class:`pandas.DateOffset` result or ``None``
 
     Returns
     -------
     :
-        pandas frequency string
+        pandas frequency string or offset depending on ``freq_format`` for datetime timestamp
+        and ``None`` for int timestamp
 
     Raises
     ------
+    ValueError:
+        if incorrect freq_format is given
     ValueError:
         unable do determine frequency of data
     ValueError:
         integer timestamp isn't ordered and doesn't contain all the values from min to max
     """
+    # check format
+    freq_format_enum = FreqFormat(freq_format)
+
     # check integer timestamp
     if pd.api.types.is_integer_dtype(timestamps):
         diffs = np.diff(timestamps)[1:]
@@ -501,14 +536,19 @@ def determine_freq(timestamps: Union[pd.Series, pd.Index]) -> Optional[str]:
         if freq is None:
             raise ValueError("Can't determine frequency of a given dataframe")
 
-        return freq
+        if freq_format_enum is FreqFormat.str:
+            return freq
+        elif freq_format_enum is FreqFormat.offset:
+            return pd.tseries.frequencies.to_offset(freq)  # type: ignore
+        else:
+            assert_never(freq_format_enum)
 
 
 def timestamp_range(
     start: Union[pd.Timestamp, int, str, None] = None,
     end: Union[pd.Timestamp, int, str, None] = None,
     periods: Optional[int] = None,
-    freq: Optional[str] = None,
+    freq: Union[pd.DateOffset, str, None] = None,
 ) -> pd.Index:
     """Create index with timestamps.
 
@@ -522,6 +562,8 @@ def timestamp_range(
         length of the index
     freq:
         frequency of timestamps, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
 
         - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
 
@@ -539,8 +581,9 @@ def timestamp_range(
     ValueError:
         Of the three parameters: start, end, periods, exactly two must be specified
     """
-    start = _check_timestamp_param(param=start, param_name="start", freq=freq)
-    end = _check_timestamp_param(param=end, param_name="end", freq=freq)
+    freq_offset: Optional[pd.DateOffset] = pd.tseries.frequencies.to_offset(freq)
+    start = _check_timestamp_param(param=start, param_name="start", freq=freq_offset)
+    end = _check_timestamp_param(param=end, param_name="end", freq=freq_offset)
 
     num_set = 0
     if start is not None:
@@ -559,7 +602,7 @@ def timestamp_range(
             periods = end - start + 1  # type: ignore
         return pd.Index(np.arange(start, start + periods))
     else:
-        return pd.date_range(start=start, end=end, periods=periods, freq=freq)
+        return pd.date_range(start=start, end=end, periods=periods, freq=freq_offset)
 
 
 def infer_alignment(df: pd.DataFrame) -> Union[Dict[str, pd.Timestamp], Dict[str, int]]:
@@ -664,7 +707,7 @@ def make_timestamp_df_from_alignment(
     start: Optional[int] = None,
     end: Optional[int] = None,
     periods: Optional[int] = None,
-    freq: Optional[str] = None,
+    freq: Union[pd.DateOffset, str, None] = None,
     timestamp_name: str = "external_timestamp",
 ):
     """Create a dataframe with timestamp according to a given alignment.
@@ -688,6 +731,8 @@ def make_timestamp_df_from_alignment(
         Number of periods to generate sequential integer timestamps.
     freq:
         Frequency of timestamps to generate, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
 
         - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
 

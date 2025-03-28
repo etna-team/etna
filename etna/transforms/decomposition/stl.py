@@ -86,7 +86,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
         self.stl_kwargs = stl_kwargs
         self.fit_results: Optional[STLForecastResults] = None
         self._first_train_timestamp: Union[pd.Timestamp, int, None] = None
-        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
+        self._freq_offset: Optional[pd.DateOffset] = _DEFAULT_FREQ  # type: ignore
 
     def fit(self, df: pd.DataFrame) -> "_OneSegmentSTLTransform":
         """
@@ -107,7 +107,7 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
             raise ValueError("The input column contains NaNs in the middle of the series! Try to use the imputer.")
 
         self._first_train_timestamp = df.index.min()
-        self._freq = determine_freq(df.index)
+        self._freq_offset = determine_freq(df.index, freq_format="offset")
 
         endog = df[self.in_column]
         if pd.api.types.is_integer_dtype(df.index):
@@ -137,10 +137,10 @@ class _OneSegmentSTLTransform(OneSegmentTransform):
             return pd.Series([], dtype=float)
 
         start_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
+            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq_offset
         )
         end_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
+            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq_offset
         )
 
         prediction = self.fit_results.get_prediction(start=start_idx, end=end_idx).predicted_mean.values

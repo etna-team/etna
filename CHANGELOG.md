@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Python versions 3.11 and 3.12 ([#599](https://github.com/etna-team/etna/pull/599))
 - Add the ability to train DL models (except `TFTModel` and `DeepStateModel`) on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - Add warning if training DL models on MPS [#621](https://github.com/etna-team/etna/pull/621)
-- 
+- Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `etna.dataset.utils`, `etna.dataset.generation`, `etna.analysis` ([#635](https://github.com/etna-team/etna/pull/635))
 - 
 - 
 - 
@@ -77,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove attributes `df`, `raw_df`, `df_exog` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/630))
 - **Breaking:** Remove attributes `known_future`, `freq`, `current_df_level` and `current_df_exog_level` from `TSDataset`, and make them properties ([#630](https://github.com/etna-team/etna/pull/630))
 - **Breaking:** Remove properties `columns` and `loc` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/631))
+- **Breaking:** Remove `match_target_components` ([#634](https://github.com/etna-team/etna/pull/634))
 
 ## [2.10.0] - 2025-01-09
 ### Added

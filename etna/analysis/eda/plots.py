@@ -606,7 +606,7 @@ def distribution_plot(
     segments: Optional[List[str]] = None,
     shift: int = 30,
     window: int = 30,
-    freq: Optional[Union[str, int]] = None,
+    freq: Union[pd.DateOffset, str, int, None] = None,
     n_rows: int = 10,
     figsize: Tuple[int, int] = (10, 5),
 ):
@@ -634,8 +634,8 @@ def distribution_plot(
     freq:
         how z-values should be grouped:
 
-        * frequency string for data with datetime timestamp, groups are formed by a given frequency,
-          default value is "1M"
+        * frequency for data with datetime timestamp, groups are formed by a given frequency,
+          default value is ``pd.offsets.MonthEnd()``
 
         * integer for data with integer timestamp, groups are formed by ``timestamp // freq``,
           default value is ``ts.timestamps.max() + 1``
@@ -666,7 +666,7 @@ def distribution_plot(
         grouped_data = df_full.groupby(df_full.timestamp // freq)
     else:
         if freq is None:
-            freq = "1M"
+            freq = pd.offsets.MonthEnd()
         grouped_data = df_full.groupby(df_full.timestamp.dt.to_period(freq))
 
     columns_num = min(2, len(grouped_data))

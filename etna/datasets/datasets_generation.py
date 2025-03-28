@@ -13,7 +13,7 @@ from etna.datasets.utils import timestamp_range
 
 
 def _create_timestamp(
-    start_time: Optional[Union[pd.Timestamp, int, str]], freq: Optional[str], periods: int
+    start_time: Optional[Union[pd.Timestamp, int, str]], freq: Union[pd.DateOffset, str, None], periods: int
 ) -> Sequence[Union[pd.Timestamp, int]]:
     if freq is None and start_time is None:
         start_time = 0
@@ -29,7 +29,7 @@ def generate_ar_df(
     ar_coef: Optional[list] = None,
     sigma: float = 1,
     n_segments: int = 1,
-    freq: Optional[str] = "D",
+    freq: Union[pd.DateOffset, str, None] = "D",
     random_seed: int = 1,
 ) -> pd.DataFrame:
     """
@@ -48,7 +48,13 @@ def generate_ar_df(
     n_segments:
         number of segments
     freq:
-        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
+        frequency of timestamps, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
     random_seed:
         random seed
 
@@ -76,7 +82,7 @@ def generate_periodic_df(
     scale: float = 10,
     period: int = 1,
     n_segments: int = 1,
-    freq: Optional[str] = "D",
+    freq: Union[pd.DateOffset, str, None] = "D",
     add_noise: bool = False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -97,7 +103,13 @@ def generate_periodic_df(
     n_segments:
         number of segments
     freq:
-        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
+        frequency of timestamps, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -129,7 +141,7 @@ def generate_const_df(
     start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     scale: float = 10,
     n_segments: int = 1,
-    freq: Optional[str] = "D",
+    freq: Union[pd.DateOffset, str, None] = "D",
     add_noise: bool = False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -148,7 +160,13 @@ def generate_const_df(
     n_segments:
         number of segments
     freq:
-        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
+        frequency of timestamps, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -178,7 +196,7 @@ def generate_from_patterns_df(
     periods: int,
     start_time: Optional[Union[pd.Timestamp, int, str]],
     patterns: List[List[float]],
-    freq: Optional[str] = "D",
+    freq: Union[pd.DateOffset, str, None] = "D",
     add_noise=False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -195,7 +213,13 @@ def generate_from_patterns_df(
     patterns:
         list of lists with patterns to be repeated
     freq:
-        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
+        frequency of timestamps, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
     add_noise:
         if True we add noise to final samples
     sigma:
@@ -225,7 +249,7 @@ def generate_from_patterns_df(
 def generate_hierarchical_df(
     periods: int,
     n_segments: List[int],
-    freq: Optional[str] = "D",
+    freq: Union[pd.DateOffset, str, None] = "D",
     start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     ar_coef: Optional[list] = None,
     sigma: float = 1,
@@ -246,7 +270,13 @@ def generate_hierarchical_df(
     n_segments:
         number of segments on each level.
     freq:
-        pandas frequency string for :py:func:`pandas.date_range` that is used to generate timestamp
+        frequency of timestamps, possible values:
+
+        - :py:class:`pandas.DateOffset` object for datetime timestamp
+
+        - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_ for datetime timestamp
+
+        - None for integer timestamp
     start_time:
         start timestamp
     ar_coef:

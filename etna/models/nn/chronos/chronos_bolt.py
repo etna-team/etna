@@ -82,7 +82,7 @@ class ChronosBoltModel(ChronosBaseModel):
             path_or_url=path_or_url,
             encoder_length=encoder_length,
             device=device,
-            dtype=dtype,  # type: ignore
+            dtype=self.dtype,
             cache_dir=cache_dir,
         )
 
