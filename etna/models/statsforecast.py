@@ -120,9 +120,39 @@ class _StatsForecastBaseAdapter(BaseAdapter):
 
         return self
 
-    def forecast(
-        self, df: pd.DataFrame, prediction_interval: bool = False, quantiles: Sequence[float] = ()
-    ) -> pd.DataFrame:
+    def _prepare_borders(self, df: pd.DataFrame, in_sample: bool) -> Tuple[int, int]:
+        """Determine start and end indexes for timestamps."""
+        start_timestamp = df["timestamp"].min()
+        end_timestamp = df["timestamp"].max()
+
+        if in_sample:
+            if start_timestamp < self._first_train_timestamp:
+                raise NotImplementedError(
+                    "This model can't make predict on past out-of-sample data! The data before training is given."
+                )
+
+            if end_timestamp > self._last_train_timestamp:
+                raise NotImplementedError(
+                    "This model can't make predict on future out-of-sample data! "
+                    "Use forecast method for this type of prediction."
+                )
+
+            first_timestamp = self._first_train_timestamp
+
+        else:
+            if start_timestamp < self._last_train_timestamp:
+                raise NotImplementedError(
+                    "This model can't make forecast on history data! Use method predict for in-sample prediction."
+                )
+
+            first_timestamp = self._last_train_timestamp
+
+        start_idx = determine_num_steps(start_timestamp=first_timestamp, end_timestamp=start_timestamp, freq=self._freq)
+        end_idx = determine_num_steps(start_timestamp=first_timestamp, end_timestamp=end_timestamp, freq=self._freq)
+
+        return start_idx, end_idx
+
+    def forecast(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute predictions on future data from a statsforecast model.
 
         This method only works on data that goes right after the train.
@@ -131,10 +161,6 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
-        prediction_interval:
-             If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution
 
         Returns
         -------
@@ -144,22 +170,7 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         if self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
-        start_timestamp = df["timestamp"].min()
-        end_timestamp = df["timestamp"].max()
-
-        if start_timestamp < self._last_train_timestamp:
-            raise NotImplementedError(
-                "This model can't make forecast on history data! Use method predict for in-sample prediction."
-            )
-
-        # determine index of start_timestamp if counting from last timestamp of train
-        start_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
-        )
-        # determine index of end_timestamp if counting from last timestamp of train
-        end_idx = determine_num_steps(
-            start_timestamp=self._last_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
-        )
+        start_idx, end_idx = self._prepare_borders(df=df, in_sample=False)
 
         if start_idx > 1:
             raise NotImplementedError(
@@ -167,35 +178,14 @@ class _StatsForecastBaseAdapter(BaseAdapter):
                 "You can only forecast from the next point after the last one in the training dataset."
             )
 
-        h = end_idx
         exog_data = self._select_regressors(df)
-        if prediction_interval and self._support_prediction_intervals:
-            levels = []
-            for quantile in quantiles:
-                width = abs(1 / 2 - quantile) * 2
-                level = int(width * 100)
-                levels.append(level)
 
-            # get unique levels to prevent strange behavior with stacking interval predictions
-            unique_levels = list(set(levels))
-            forecast = self._model.predict(h=h, X=exog_data, level=unique_levels)
-            y_pred = pd.DataFrame({"target": forecast["mean"]})
-
-            for quantile, level in zip(quantiles, levels):
-                if quantile < 1 / 2:
-                    series = forecast[f"lo-{level}"]
-                else:
-                    series = forecast[f"hi-{level}"]
-                y_pred[f"target_{quantile:.4g}"] = series
-        else:
-            forecast = self._model.predict(h=h, X=exog_data)
-            y_pred = pd.DataFrame({"target": forecast["mean"]})
+        forecast = self._model.predict(h=end_idx, X=exog_data)
+        y_pred = pd.DataFrame({"target": forecast["mean"]})
 
         return y_pred
 
-    def predict(
-        self, df: pd.DataFrame, prediction_interval: bool = False, quantiles: Sequence[float] = ()
-    ) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
         """Compute in-sample predictions from a statsforecast model.
 
         This method only works on train data.
@@ -204,8 +194,31 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
-        prediction_interval:
-            If True returns prediction interval for forecast
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        if self._freq is _DEFAULT_FREQ:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        start_idx, end_idx = self._prepare_borders(df=df, in_sample=True)
+
+        forecast = self._model.predict_in_sample()
+        y_pred = pd.DataFrame({"target": forecast["fitted"][start_idx : end_idx + 1]})
+
+        return y_pred
+
+    def forecast_intervals(self, df: pd.DataFrame, quantiles: Sequence[float]) -> pd.DataFrame:
+        """Compute prediction intervals on future data from a statsforecast model.
+
+        This method only works on data that goes right after the train.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
         quantiles:
             Levels of prediction distribution
 
@@ -217,50 +230,76 @@ class _StatsForecastBaseAdapter(BaseAdapter):
         if self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
-        start_timestamp = df["timestamp"].min()
-        end_timestamp = df["timestamp"].max()
+        start_idx, end_idx = self._prepare_borders(df=df, in_sample=False)
 
-        if start_timestamp < self._first_train_timestamp:
+        if start_idx > 1:
             raise NotImplementedError(
-                "This model can't make predict on past out-of-sample data! The data before training is given."
+                "This model can't make forecast on out-of-sample data that goes after training data with a gap! "
+                "You can only forecast from the next point after the last one in the training dataset."
             )
 
-        if end_timestamp > self._last_train_timestamp:
-            raise NotImplementedError(
-                "This model can't make predict on future out-of-sample data! "
-                "Use forecast method for this type of prediction."
-            )
+        levels = []
+        for quantile in quantiles:
+            width = abs(1 / 2 - quantile) * 2
+            level = int(width * 100)
+            levels.append(level)
 
-        # determine index of start_timestamp if counting from first timestamp of train
-        start_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=start_timestamp, freq=self._freq
-        )
-        # determine index of end_timestamp if counting from first timestamp of train
-        end_idx = determine_num_steps(
-            start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
-        )
+        # get unique levels to prevent strange behavior with stacking interval predictions
+        unique_levels = list(set(levels))
 
-        if prediction_interval and self._support_prediction_intervals:
-            levels = []
-            for quantile in quantiles:
-                width = abs(1 / 2 - quantile) * 2
-                level = int(width * 100)
-                levels.append(level)
+        exog_data = self._select_regressors(df)
+        forecast = self._model.predict(h=end_idx, X=exog_data, level=unique_levels)
 
-            # get unique levels to prevent strange behavior with stacking interval predictions
-            unique_levels = list(set(levels))
-            forecast = self._model.predict_in_sample(level=unique_levels)  # type: ignore
-            y_pred = pd.DataFrame({"target": forecast["fitted"][start_idx : end_idx + 1]})
+        y_pred = pd.DataFrame()
+        for quantile, level in zip(quantiles, levels):
+            if quantile < 1 / 2:
+                series = forecast[f"lo-{level}"]
+            else:
+                series = forecast[f"hi-{level}"]
+            y_pred[f"target_{quantile:.4g}"] = series
 
-            for quantile, level in zip(quantiles, levels):
-                if quantile < 1 / 2:
-                    series = forecast[f"fitted-lo-{level}"]
-                else:
-                    series = forecast[f"fitted-hi-{level}"]
-                y_pred[f"target_{quantile:.4g}"] = series[start_idx : end_idx + 1]
-        else:
-            forecast = self._model.predict_in_sample()
-            y_pred = pd.DataFrame({"target": forecast["fitted"][start_idx : end_idx + 1]})
+        return y_pred
+
+    def predict_intervals(self, df: pd.DataFrame, quantiles: Sequence[float]) -> pd.DataFrame:
+        """Compute in-sample prediction intervals from a statsforecast model.
+
+        This method only works on train data.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        if self._freq is _DEFAULT_FREQ:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        start_idx, end_idx = self._prepare_borders(df=df, in_sample=True)
+
+        levels = []
+        for quantile in quantiles:
+            width = abs(1 / 2 - quantile) * 2
+            level = int(width * 100)
+            levels.append(level)
+
+        # get unique levels to prevent strange behavior with stacking interval predictions
+        unique_levels = list(set(levels))
+
+        forecast = self._model.predict_in_sample(level=unique_levels)  # type: ignore
+
+        y_pred = pd.DataFrame()
+        for quantile, level in zip(quantiles, levels):
+            if quantile < 1 / 2:
+                series = forecast[f"fitted-lo-{level}"]
+            else:
+                series = forecast[f"fitted-hi-{level}"]
+            y_pred[f"target_{quantile:.4g}"] = series[start_idx : end_idx + 1]
 
         return y_pred
 
