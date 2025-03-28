@@ -1,4 +1,3 @@
-import re
 from collections import Counter
 from collections import defaultdict
 from enum import Enum
@@ -271,7 +270,6 @@ def set_columns_wide(
     df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
 
     return df_left
-
 
 
 def match_target_components(features: Set[str]) -> Set[str]:
