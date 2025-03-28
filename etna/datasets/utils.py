@@ -272,11 +272,6 @@ def set_columns_wide(
     return df_left
 
 
-def match_target_quantiles(features: Set[str]) -> Set[str]:
-    """Find quantiles in dataframe columns."""
-    pattern = re.compile(r"target_\d+\.\d+$")
-    return {i for i in list(features) if pattern.match(i) is not None}
-
 
 def match_target_components(features: Set[str]) -> Set[str]:
     """Find target components in a set of features."""
