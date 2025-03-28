@@ -19,7 +19,6 @@ from etna import SETTINGS
 from etna.core.mixins import BaseMixin
 from etna.core.mixins import SaveMixin
 from etna.datasets.tsdataset import TSDataset
-from etna.datasets.utils import match_target_quantiles
 from etna.models.decorators import log_decorator
 
 if SETTINGS.torch_required:
@@ -31,21 +30,50 @@ if SETTINGS.torch_required:
 class ModelForecastingMixin(ABC):
     """Base class for model mixins."""
 
+    def __init__(self, base_model: Any):
+        self._base_model = base_model
+
     @abstractmethod
-    def _forecast(self, **kwargs) -> TSDataset:
+    def _update_predictions_dataset(self, ts: TSDataset, result_df: pd.DataFrame, **kwargs) -> TSDataset:
         pass
 
     @abstractmethod
-    def _predict(self, **kwargs) -> TSDataset:
+    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
         pass
 
     @abstractmethod
-    def _forecast_components(self, **kwargs) -> pd.DataFrame:
+    def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
         pass
 
-    @abstractmethod
-    def _predict_components(self, **kwargs) -> pd.DataFrame:
-        pass
+    @log_decorator
+    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
+        if hasattr(self._base_model, "forecast"):
+            result_df = self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.forecast, **kwargs)
+        else:
+            result_df = self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
+
+        return self._update_predictions_dataset(ts=ts, result_df=result_df, **kwargs)
+
+    @log_decorator
+    def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
+        result_df = self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
+        return self._update_predictions_dataset(ts=ts, result_df=result_df, **kwargs)
+
+    @log_decorator
+    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        if hasattr(self._base_model, "forecast_components"):
+            return self._make_component_predictions(
+                ts=ts, prediction_method=self._base_model.__class__.forecast_components, **kwargs
+            )
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
+
+    @log_decorator
+    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        return self._make_component_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
+        )
 
     def _add_target_components(
         self, ts: TSDataset, predictions: TSDataset, components_prediction_method: Callable, return_components: bool
@@ -53,6 +81,43 @@ class ModelForecastingMixin(ABC):
         if return_components:
             target_components_df = components_prediction_method(ts=ts)
             predictions.add_target_components(target_components_df=target_components_df)
+
+
+class ModelPredictionIntervalsMixin(ABC):
+    """Base class for model mixins that able to compute prediction intervals."""
+
+    def __init__(self, base_model: Any):
+        self._base_model = base_model
+
+    @abstractmethod
+    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
+        pass
+
+    @log_decorator
+    def _forecast_intervals(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        if hasattr(self._base_model, "forecast_intervals"):
+            result_df = self._make_predictions(
+                ts=ts, prediction_method=self._base_model.__class__.forecast_intervals, **kwargs
+            )
+        else:
+            result_df = self._make_predictions(
+                ts=ts, prediction_method=self._base_model.__class__.predict_intervals, **kwargs
+            )
+
+        return result_df
+
+    @log_decorator
+    def _predict_intervals(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
+        result_df = self._make_predictions(
+            ts=ts, prediction_method=self._base_model.__class__.predict_intervals, **kwargs
+        )
+        return result_df
+
+    def _add_prediction_intervals(
+        self, ts: TSDataset, predictions: TSDataset, intervals_prediction_method: Callable, quantiles: Sequence[float]
+    ):
+        intervals_df = intervals_prediction_method(ts=ts, quantiles=quantiles)
+        predictions.add_prediction_intervals(prediction_intervals_df=intervals_df)
 
 
 class NonPredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
@@ -165,7 +230,7 @@ class NonPredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         return prediction
 
 
-class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
+class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin, ModelPredictionIntervalsMixin):
     """Mixin for models that support prediction intervals and don't need context for prediction."""
 
     def forecast(
@@ -193,7 +258,13 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        forecast = self._forecast(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        forecast = self._forecast(ts=ts)
+
+        if prediction_interval:
+            self._add_prediction_intervals(
+                ts=ts, predictions=forecast, intervals_prediction_method=self._forecast_intervals, quantiles=quantiles
+            )
+
         self._add_target_components(
             ts=ts,
             predictions=forecast,
@@ -227,7 +298,13 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        prediction = self._predict(ts=ts, prediction_interval=prediction_interval, quantiles=quantiles)
+        prediction = self._predict(ts=ts)
+
+        if prediction_interval:
+            self._add_prediction_intervals(
+                ts=ts, predictions=prediction, intervals_prediction_method=self._predict_intervals, quantiles=quantiles
+            )
+
         self._add_target_components(
             ts=ts,
             predictions=prediction,
@@ -237,7 +314,7 @@ class PredictionIntervalContextIgnorantModelMixin(ModelForecastingMixin):
         return prediction
 
 
-class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
+class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin, ModelPredictionIntervalsMixin):
     """Mixin for models that support prediction intervals and need context for prediction."""
 
     def forecast(
@@ -269,9 +346,13 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        forecast = self._forecast(
-            ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
-        )
+        forecast = self._forecast(ts=ts, prediction_size=prediction_size)
+
+        if prediction_interval:
+            self._add_prediction_intervals(
+                ts=ts, predictions=forecast, intervals_prediction_method=self._forecast_intervals, quantiles=quantiles
+            )
+
         self._add_target_components(
             ts=ts,
             predictions=forecast,
@@ -309,9 +390,13 @@ class PredictionIntervalContextRequiredModelMixin(ModelForecastingMixin):
         :
             Dataset with predictions
         """
-        prediction = self._predict(
-            ts=ts, prediction_size=prediction_size, prediction_interval=prediction_interval, quantiles=quantiles
-        )
+        prediction = self._predict(ts=ts, prediction_size=prediction_size)
+
+        if prediction_interval:
+            self._add_prediction_intervals(
+                ts=ts, predictions=prediction, intervals_prediction_method=self._predict_intervals, quantiles=quantiles
+            )
+
         self._add_target_components(
             ts=ts,
             predictions=prediction,
@@ -333,7 +418,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         base_model:
             Internal model which will be used to forecast segments, expected to have fit/predict interface
         """
-        self._base_model = base_model
+        super().__init__(base_model=base_model)
         self._models: Optional[Dict[str, Any]] = None
 
     @log_decorator
@@ -415,13 +500,13 @@ class PerSegmentModelMixin(ModelForecastingMixin):
             segment_predict["timestamp"] = dates
         return segment_predict
 
-    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> TSDataset:
+    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
         """Make predictions.
 
         Parameters
         ----------
         ts:
-            Dataframe with features
+            Dataset with features
         prediction_method:
             Method for making predictions
 
@@ -443,30 +528,26 @@ class PerSegmentModelMixin(ModelForecastingMixin):
             result_list.append(segment_predict)
 
         result_df = pd.concat(result_list, ignore_index=True)
-        result_df = result_df.set_index(["timestamp", "segment"])
-        df = ts.to_pandas(flatten=True)
-        df = df.set_index(["timestamp", "segment"])
+        result_df = TSDataset.to_dataset(df=result_df)
+        return result_df
+
+    def _update_predictions_dataset(self, ts: TSDataset, result_df: pd.DataFrame, **kwargs) -> TSDataset:
+        """Update the dataset from results."""
+        result_df = TSDataset.to_flatten(df=result_df).set_index(["timestamp", "segment"])
+        tsdf = ts.to_pandas(flatten=True)
+        tsdf = tsdf.set_index(["timestamp", "segment"])
         # clear values to be filled, otherwise during in-sample prediction new values won't be set
-        columns_to_clear = result_df.columns.intersection(df.columns)
-        df.loc[result_df.index, columns_to_clear] = np.NaN
-        df = df.combine_first(result_df).reset_index()
+        columns_to_clear = result_df.columns.intersection(tsdf.columns)
+        tsdf.loc[result_df.index, columns_to_clear] = np.NaN
+        tsdf = tsdf.combine_first(result_df).reset_index()
 
-        df = TSDataset.to_dataset(df)
-
-        quantile_columns = match_target_quantiles(df.columns.get_level_values("feature"))
-        if len(quantile_columns) > 0:
-            columns_list = list(quantile_columns)
-            quantile_df = df.loc[:, pd.IndexSlice[:, columns_list]]
-            df = df.drop(columns=columns_list, level="feature")
-
-        ts._df = df
-
-        if len(quantile_columns) > 0:
-            ts.add_prediction_intervals(prediction_intervals_df=quantile_df)
+        tsdf = TSDataset.to_dataset(tsdf)
+        ts._df = tsdf
 
         prediction_size = kwargs.get("prediction_size")
         if prediction_size is not None:
             ts._df = ts._df.iloc[-prediction_size:]
+
         return ts
 
     def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
@@ -484,50 +565,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         :
             DataFrame with predicted components
         """
-        features_df = ts.to_pandas()
-        result_list = list()
-
-        models = self._get_model()
-
-        for segment in ts.segments:
-            if segment not in models:
-                raise NotImplementedError("Per-segment models can't estimate prediction components on new segments!")
-
-            model = models[segment]
-            segment_predict = self._make_predictions_segment(
-                model=model, segment=segment, df=features_df, prediction_method=prediction_method, **kwargs
-            )
-            result_list.append(segment_predict)
-
-        target_components_df = pd.concat(result_list, ignore_index=True)
-        target_components_df = TSDataset.to_dataset(target_components_df)
-        return target_components_df
-
-    @log_decorator
-    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
-        if hasattr(self._base_model, "forecast"):
-            return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.forecast, **kwargs)
-        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
-
-    @log_decorator
-    def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
-        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
-
-    @log_decorator
-    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
-        if hasattr(self._base_model, "forecast_components"):
-            return self._make_component_predictions(
-                ts=ts, prediction_method=self._base_model.__class__.forecast_components, **kwargs
-            )
-        return self._make_component_predictions(
-            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
-        )
-
-    @log_decorator
-    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
-        return self._make_component_predictions(
-            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
-        )
+        return self._make_predictions(ts=ts, prediction_method=prediction_method, **kwargs)
 
 
 class MultiSegmentModelMixin(ModelForecastingMixin):
@@ -545,7 +583,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         base_model:
             Internal model which will be used to forecast segments, expected to have fit/predict interface
         """
-        self._base_model = base_model
+        super().__init__(base_model=base_model)
 
     @log_decorator
     def fit(self, ts: TSDataset) -> "MultiSegmentModelMixin":
@@ -567,7 +605,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         self._base_model.fit(df=df, regressors=ts.regressors)
         return self
 
-    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> TSDataset:
+    def _make_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
         """Make predictions.
 
         Parameters
@@ -586,7 +624,11 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         x = ts.to_pandas(flatten=True).drop(["segment"], axis=1)
         # TODO: make it work with prediction intervals and context
         y = prediction_method(self=self._base_model, df=x, **kwargs).reshape(-1, horizon).T
-        ts._df.loc[:, pd.IndexSlice[:, "target"]] = y
+        return y
+
+    def _update_predictions_dataset(self, ts: TSDataset, result_df: pd.DataFrame, **kwargs) -> TSDataset:
+        """Update the dataset from results."""
+        ts._df.loc[:, pd.IndexSlice[:, "target"]] = result_df
         return ts
 
     def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
@@ -613,32 +655,6 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
         target_components_df["timestamp"] = features_df["timestamp"]
         target_components_df = TSDataset.to_dataset(target_components_df)
         return target_components_df
-
-    @log_decorator
-    def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
-        if hasattr(self._base_model, "forecast"):
-            return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.forecast, **kwargs)
-        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
-
-    @log_decorator
-    def _predict(self, ts: TSDataset, **kwargs) -> TSDataset:
-        return self._make_predictions(ts=ts, prediction_method=self._base_model.__class__.predict, **kwargs)
-
-    @log_decorator
-    def _forecast_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
-        if hasattr(self._base_model, "forecast_components"):
-            return self._make_component_predictions(
-                ts=ts, prediction_method=self._base_model.__class__.forecast_components, **kwargs
-            )
-        return self._make_component_predictions(
-            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
-        )
-
-    @log_decorator
-    def _predict_components(self, ts: TSDataset, **kwargs) -> pd.DataFrame:
-        return self._make_component_predictions(
-            ts=ts, prediction_method=self._base_model.__class__.predict_components, **kwargs
-        )
 
     def get_model(self) -> Any:
         """Get internal model that is used inside etna class.

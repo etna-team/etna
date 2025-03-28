@@ -20,6 +20,7 @@ For more user-friendly manual please use :doc:`tutorials` section.
    api_reference/auto
    api_reference/reconciliation
    api_reference/clustering
+   api_reference/prediction_intervals
    api_reference/loggers
    api_reference/core
    api_reference/commands

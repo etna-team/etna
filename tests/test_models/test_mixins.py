@@ -62,7 +62,10 @@ class DummyForecastPredictAdapter(DummyPredictAdapter):
         return df
 
 
-class DummyModelBase:
+class DummyModelBase(PerSegmentModelMixin):
+    def __init__(self):
+        super().__init__(base_model=None)
+
     def _forecast(self, ts: TSDataset, **kwargs) -> TSDataset:
         ts._df.loc[pd.IndexSlice[:], pd.IndexSlice[:, "target"]] = 100
         return ts
@@ -134,8 +137,9 @@ def autoregression_base_model_mock():
         ("autoregression_base_model_mock", "_predict", "predict"),
     ],
 )
+@patch("etna.datasets.TSDataset.to_dataset")
 def test_calling_private_prediction(
-    base_model_name, called_method_name, expected_method_name, mixin_constructor, request
+    to_dataset_mock, base_model_name, called_method_name, expected_method_name, mixin_constructor, request
 ):
     base_model = request.getfixturevalue(base_model_name)
     ts = MagicMock()

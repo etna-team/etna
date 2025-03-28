@@ -75,15 +75,8 @@ class _SARIMAXBaseAdapter(BaseAdapter):
 
         return self
 
-    def _make_prediction(
-        self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float], dynamic: bool
-    ) -> pd.DataFrame:
-        """Make predictions taking into account ``dynamic`` parameter."""
-        if self._fit_results is None:
-            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
-
-        exog_future = self._select_regressors(df)
-
+    def _prepare_borders(self, df: pd.DataFrame) -> Tuple[int, int]:
+        """Determine start and end indexes for timestamps."""
         start_timestamp = df["timestamp"].min()
         end_timestamp = df["timestamp"].max()
         # determine index of start_timestamp if counting from first timestamp of train
@@ -94,41 +87,53 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         end_idx = determine_num_steps(
             start_timestamp=self._first_train_timestamp, end_timestamp=end_timestamp, freq=self._freq
         )
+        return start_idx, end_idx
 
-        if prediction_interval:
-            forecast, _ = seasonal_prediction_with_confidence(
-                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05, dynamic=dynamic
-            )
-            y_pred = pd.DataFrame({"mean": forecast})
-            for quantile in quantiles:
-                # set alpha in the way to get a desirable quantile
-                alpha = min(quantile * 2, (1 - quantile) * 2)
-                _, borders = seasonal_prediction_with_confidence(
-                    arima_res=self._fit_results,
-                    start=start_idx,
-                    end=end_idx,
-                    X=exog_future,
-                    alpha=alpha,
-                    dynamic=dynamic,
-                )
-                if quantile < 1 / 2:
-                    series = borders[:, 0]
-                else:
-                    series = borders[:, 1]
-                y_pred[f"mean_{quantile:.4g}"] = series
-        else:
-            forecast, _ = seasonal_prediction_with_confidence(
-                arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05, dynamic=dynamic
-            )
-            y_pred = pd.DataFrame({"mean": forecast})
+    def _make_prediction(self, df: pd.DataFrame, dynamic: bool) -> pd.DataFrame:
+        """Make predictions taking into account ``dynamic`` parameter."""
+        if self._fit_results is None:
+            raise ValueError("Model is not fitted! Fit the model before predicting!")
 
-        rename_dict = {
-            column: column.replace("mean", "target") for column in y_pred.columns if column.startswith("mean")
-        }
-        y_pred = y_pred.rename(rename_dict, axis=1)
+        exog_future = self._select_regressors(df)
+        start_idx, end_idx = self._prepare_borders(df=df)
+
+        forecast, _ = seasonal_prediction_with_confidence(
+            arima_res=self._fit_results, start=start_idx, end=end_idx, X=exog_future, alpha=0.05, dynamic=dynamic
+        )
+
+        y_pred = pd.DataFrame({"target": forecast})
         return y_pred
 
-    def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+    def _make_prediction_intervals(self, df: pd.DataFrame, quantiles: Sequence[float], dynamic: bool) -> pd.DataFrame:
+        """Make predictions taking into account ``dynamic`` parameter."""
+        if self._fit_results is None:
+            raise ValueError("Model is not fitted! Fit the model before predicting!")
+
+        exog_future = self._select_regressors(df)
+        start_idx, end_idx = self._prepare_borders(df=df)
+
+        quantiles_pred = {}
+        for quantile in quantiles:
+            # set alpha in the way to get a desirable quantile
+            alpha = min(quantile * 2, (1 - quantile) * 2)
+            _, borders = seasonal_prediction_with_confidence(
+                arima_res=self._fit_results,
+                start=start_idx,
+                end=end_idx,
+                X=exog_future,
+                alpha=alpha,
+                dynamic=dynamic,
+            )
+            if quantile < 1 / 2:
+                series = borders[:, 0]
+            else:
+                series = borders[:, 1]
+            quantiles_pred[f"target_{quantile:.4g}"] = series
+
+        y_pred = pd.DataFrame(data=quantiles_pred)
+        return y_pred
+
+    def forecast(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Compute autoregressive predictions from a SARIMAX model.
 
@@ -136,19 +141,15 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
-        prediction_interval:
-             If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution
 
         Returns
         -------
         :
             DataFrame with predictions
         """
-        return self._make_prediction(df=df, prediction_interval=prediction_interval, quantiles=quantiles, dynamic=True)
+        return self._make_prediction(df=df, dynamic=True)
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Compute predictions from a SARIMAX model and use true in-sample data as lags if possible.
 
@@ -156,8 +157,22 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
-        prediction_interval:
-            If True returns prediction interval for forecast
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        return self._make_prediction(df=df, dynamic=False)
+
+    def forecast_intervals(self, df: pd.DataFrame, quantiles: Sequence[float]) -> pd.DataFrame:
+        """
+        Compute autoregressive predictions intervals from a SARIMAX model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
         quantiles:
             Levels of prediction distribution
 
@@ -166,7 +181,25 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         :
             DataFrame with predictions
         """
-        return self._make_prediction(df=df, prediction_interval=prediction_interval, quantiles=quantiles, dynamic=False)
+        return self._make_prediction_intervals(df=df, quantiles=quantiles, dynamic=True)
+
+    def predict_intervals(self, df: pd.DataFrame, quantiles: Sequence[float]) -> pd.DataFrame:
+        """
+        Compute predictions intervals from a SARIMAX model and use true in-sample data as lags if possible.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        return self._make_prediction_intervals(df=df, quantiles=quantiles, dynamic=False)
 
     @abstractmethod
     def _get_fit_results(self, endog: pd.Series, exog: pd.DataFrame) -> SARIMAXResultsWrapper:

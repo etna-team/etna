@@ -316,7 +316,7 @@ def test_components_sum_up_to_target(
 
     pred_df = train if in_sample else test
 
-    pred = predict_method(df=pred_df, prediction_interval=False, quantiles=[])
+    pred = predict_method(df=pred_df)
     components = components_method(df=pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
@@ -331,7 +331,7 @@ def test_predict_components_of_subset_sum_up_to_target(dfs_w_exog):
     pred_df = train.iloc[5:-5]
 
     components = model.predict_components(df=pred_df)
-    pred = model.predict(df=pred_df, prediction_interval=False, quantiles=[])
+    pred = model.predict(df=pred_df)
 
     np.testing.assert_allclose(np.sum(components.values, axis=1), np.squeeze(pred))
 

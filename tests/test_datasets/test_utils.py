@@ -15,7 +15,6 @@ from etna.datasets.utils import apply_alignment
 from etna.datasets.utils import determine_freq
 from etna.datasets.utils import determine_num_steps
 from etna.datasets.utils import get_level_dataframe
-from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import infer_alignment
 from etna.datasets.utils import inverse_transform_target_components
 from etna.datasets.utils import make_timestamp_df_from_alignment
@@ -233,23 +232,6 @@ def test_set_columns_wide(
 
     # compare values
     pd.testing.assert_frame_equal(df_obtained, df_expected)
-
-
-@pytest.mark.parametrize("segments", (["s1"], ["s1", "s2"]))
-@pytest.mark.parametrize(
-    "columns,answer",
-    (
-        ({"a", "b"}, set()),
-        ({"a", "b", "target"}, {"target"}),
-        ({"a", "b", "target", "target_0.5"}, {"target", "target_0.5"}),
-        ({"a", "b", "target", "target_0.5", "target1"}, {"target", "target_0.5"}),
-        ({"target_component_a", "a", "b", "target_component_c", "target", "target_0.95"}, {"target", "target_0.95"}),
-    ),
-)
-def test_get_target_with_quantiles(segments, columns, answer):
-    columns = pd.MultiIndex.from_product([segments, columns], names=["segment", "feature"])
-    targets_names = get_target_with_quantiles(columns)
-    assert targets_names == answer
 
 
 @pytest.mark.parametrize(

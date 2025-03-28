@@ -1,4 +1,3 @@
-import re
 from collections import Counter
 from collections import defaultdict
 from enum import Enum
@@ -273,19 +272,9 @@ def set_columns_wide(
     return df_left
 
 
-def match_target_quantiles(features: Set[str]) -> Set[str]:
-    """Find quantiles in dataframe columns."""
-    pattern = re.compile(r"target_\d+\.\d+$")
-    return {i for i in list(features) if pattern.match(i) is not None}
-
-
-def get_target_with_quantiles(columns: pd.Index) -> Set[str]:
-    """Find "target" column and target quantiles among dataframe columns."""
-    column_names = set(columns.get_level_values(level="feature"))
-    target_columns = match_target_quantiles(column_names)
-    if "target" in column_names:
-        target_columns.add("target")
-    return target_columns
+def match_target_components(features: Set[str]) -> Set[str]:
+    """Find target components in a set of features."""
+    return set(filter(lambda f: f.startswith("target_component_"), features))
 
 
 def get_level_dataframe(
