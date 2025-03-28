@@ -18,7 +18,7 @@ from tests.utils import select_segments_subset
 
 @pytest.fixture
 def multicolumn_ts(random_seed):
-    df = generate_const_df(start_time="2020-01-01", periods=20, freq="D", scale=1.0, n_segments=3)
+    df = generate_const_df(start_time="2020-01-01", periods=20, freq=pd.offsets.Day(), scale=1.0, n_segments=3)
     df["target"] += np.random.uniform(0, 0.1, size=df.shape[0])
     df_exog = df.copy().rename(columns={"target": "exog_1"})
     for i in range(2, 6):
@@ -27,7 +27,7 @@ def multicolumn_ts(random_seed):
     df_formatted = TSDataset.to_dataset(df)
     df_exog_formatted = TSDataset.to_dataset(df_exog)
 
-    return TSDataset(df=df_formatted, df_exog=df_exog_formatted, freq="D")
+    return TSDataset(df=df_formatted, df_exog=df_exog_formatted, freq=pd.offsets.Day())
 
 
 def extract_new_features_columns(transformed_df: pd.DataFrame, initial_df: pd.DataFrame) -> List[str]:

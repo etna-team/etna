@@ -16,11 +16,11 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 @pytest.fixture
 def ts_non_negative():
     df = generate_ar_df(
-        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=3, random_seed=0, freq="D"
+        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=3, random_seed=0, freq=pd.offsets.Day()
     )
     df = TSDataset.to_dataset(df)
     df = df.apply(lambda x: np.abs(x))
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -39,7 +39,7 @@ def ts_range_const():
     )
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

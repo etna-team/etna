@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
@@ -9,12 +10,12 @@ from etna.datasets import generate_ar_df
 def ts_with_exogs() -> TSDataset:
     periods = 100
     periods_exog = periods + 10
-    df = generate_ar_df(start_time="2020-01-01", periods=periods, freq="D", n_segments=2)
-    df_exog = generate_ar_df(start_time="2020-01-01", periods=periods_exog, freq="D", n_segments=2, random_seed=2)
+    df = generate_ar_df(start_time="2020-01-01", periods=periods, freq=pd.offsets.Day(), n_segments=2)
+    df_exog = generate_ar_df(start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), n_segments=2, random_seed=2)
     df_exog.rename(columns={"target": "exog"}, inplace=True)
     df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 2)
 
-    ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
+    ts = TSDataset(df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return ts
 
 

@@ -25,7 +25,7 @@ from etna.datasets.utils import timestamp_range
 
 @pytest.fixture
 def df_exog_no_segments() -> pd.DataFrame:
-    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    timestamp = pd.date_range("2020-01-01", periods=100, freq=pd.offsets.Day())
     df = pd.DataFrame(
         {
             "timestamp": timestamp,
@@ -138,7 +138,7 @@ def _get_df_wide(freq: Optional[str], random_seed: int) -> pd.DataFrame:
 
 @pytest.fixture
 def df_left_datetime() -> pd.DataFrame:
-    return _get_df_wide(freq="D", random_seed=0)
+    return _get_df_wide(freq=pd.offsets.Day(), random_seed=0)
 
 
 @pytest.fixture
@@ -148,7 +148,7 @@ def df_left_int() -> pd.DataFrame:
 
 @pytest.fixture
 def df_right_datetime() -> pd.DataFrame:
-    return _get_df_wide(freq="D", random_seed=1)
+    return _get_df_wide(freq=pd.offsets.Day(), random_seed=1)
 
 
 @pytest.fixture
@@ -375,17 +375,17 @@ def test_inverse_transform_target_components(
 @pytest.mark.parametrize(
     "start_timestamp, end_timestamp, freq, answer",
     [
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02"), "D", 1),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-11"), "D", 10),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02"), pd.offsets.Day().freqstr, 1),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-11"), pd.offsets.Day().freqstr, 10),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-11"), pd.offsets.Day(), 10),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), "D", 0),
-        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-19"), "W-SUN", 2),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), pd.offsets.Day().freqstr, 0),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-19"), pd.offsets.Week(weekday=6).freqstr, 2),
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-19"), pd.offsets.Week(weekday=6), 2),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-15"), pd.offsets.Week(), 2),
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-01-16"), pd.offsets.Week(), 2),
-        (pd.Timestamp("2020-01-31"), pd.Timestamp("2021-02-28"), "M", 13),
+        (pd.Timestamp("2020-01-31"), pd.Timestamp("2021-02-28"), pd.offsets.MonthEnd().freqstr, 13),
         (pd.Timestamp("2020-01-31"), pd.Timestamp("2021-02-28"), pd.offsets.MonthEnd(), 13),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-01"), "MS", 17),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-01"), pd.offsets.MonthBegin().freqstr, 17),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-01"), pd.offsets.MonthBegin(), 17),
         (0, 0, None, 0),
         (0, 5, None, 5),
@@ -412,9 +412,9 @@ def test_determine_num_steps_fail_wrong_order(start_timestamp, end_timestamp, fr
 @pytest.mark.parametrize(
     "start_timestamp, end_timestamp, freq",
     [
-        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), "M"),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), pd.offsets.MonthEnd().freqstr),
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), pd.offsets.MonthEnd()),
-        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), "MS"),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), pd.offsets.MonthBegin().freqstr),
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), pd.offsets.MonthBegin()),
         (2.2, 5, None),
     ],
@@ -438,9 +438,9 @@ def test_determine_num_steps_fail_wrong_start(start_timestamp, end_timestamp, fr
 @pytest.mark.parametrize(
     "start_timestamp, end_timestamp, freq",
     [
-        (pd.Timestamp("2020-01-31"), pd.Timestamp("2020-06-05"), "M"),
+        (pd.Timestamp("2020-01-31"), pd.Timestamp("2020-06-05"), pd.offsets.MonthEnd().freqstr),
         (pd.Timestamp("2020-01-31"), pd.Timestamp("2020-06-05"), pd.offsets.MonthEnd()),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-06-05"), "MS"),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-06-05"), pd.offsets.MonthBegin().freqstr),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-06-05"), pd.offsets.MonthBegin()),
     ],
 )
@@ -452,12 +452,12 @@ def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq
 @pytest.mark.parametrize(
     "timestamps,freq_format,answer",
     (
-        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "str", "M"),
-        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "offset", pd.offsets.MonthEnd()),
-        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "str", "W-SUN"),
-        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "offset", pd.offsets.Week(weekday=6)),
-        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "str", "D"),
-        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "offset", pd.offsets.Day()),
+        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.MonthEnd()), "str", pd.offsets.MonthEnd().freqstr),
+        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.MonthEnd()), "offset", pd.offsets.MonthEnd()),
+        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Week(weekday=6)), "str", pd.offsets.Week(weekday=6).freqstr),
+        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Week(weekday=6)), "offset", pd.offsets.Week(weekday=6)),
+        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Day()), "str", pd.offsets.Day().freqstr),
+        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Day()), "offset", pd.offsets.Day()),
         (pd.Series(np.arange(10)), "str", None),
         (pd.Series(np.arange(10)), "offset", None),
         (pd.Series(np.arange(5, 15)), "str", None),
@@ -471,7 +471,7 @@ def test_determine_freq(timestamps, freq_format, answer):
 @pytest.mark.parametrize(
     "timestamps",
     (
-        pd.date_range(start="2020-01-01", periods=3, freq="D"),
+        pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Day()),
         pd.Series(np.arange(10)),
     ),
 )
@@ -510,18 +510,18 @@ def test_determine_freq_fail_int_gaps(timestamps, freq_format):
 @pytest.mark.parametrize(
     "start, end, periods, freq, expected_range",
     [
-        ("2020-01-01", "2020-01-10", None, "D", pd.date_range(start="2020-01-01", end="2020-01-10", freq="D")),
+        ("2020-01-01", "2020-01-10", None, "D", pd.date_range(start="2020-01-01", end="2020-01-10", freq=pd.offsets.Day())),
         (
             "2020-01-01",
             "2020-01-10",
             None,
             pd.offsets.Day(),
-            pd.date_range(start="2020-01-01", end="2020-01-10", freq="D"),
+            pd.date_range(start="2020-01-01", end="2020-01-10", freq=pd.offsets.Day()),
         ),
-        ("2020-01-01", None, 10, "D", pd.date_range(start="2020-01-01", periods=10, freq="D")),
-        (None, "2020-01-10", 10, "D", pd.date_range(end="2020-01-10", periods=10, freq="D")),
-        ("2020-01-01", None, 10, "MS", pd.date_range(start="2020-01-01", periods=10, freq="MS")),
-        ("2020-01-01", None, 10, pd.offsets.MonthBegin(), pd.date_range(start="2020-01-01", periods=10, freq="MS")),
+        ("2020-01-01", None, 10, pd.offsets.Day().freqstr, pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.Day())),
+        (None, "2020-01-10", 10, pd.offsets.Day().freqstr, pd.date_range(end="2020-01-10", periods=10, freq=pd.offsets.Day())),
+        ("2020-01-01", None, 10, pd.offsets.MonthBegin().freqstr, pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.MonthBegin())),
+        ("2020-01-01", None, 10, pd.offsets.MonthBegin(), pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.MonthBegin())),
         (10, 19, None, None, np.arange(10, 20)),
         (10, None, 10, None, np.arange(10, 20)),
         (None, 19, 10, None, np.arange(10, 20)),
@@ -538,12 +538,12 @@ def test_timestamp_range(start, end, periods, freq, expected_range):
         ("2020-01-01", "2020-01-10", None, None),
         ("2020-01-01", None, 10, None),
         (None, "2020-01-10", 10, None),
-        ("2020-01-01", 20, None, "D"),
+        ("2020-01-01", 20, None, pd.offsets.Day().freqstr),
         ("2020-01-01", 20, None, pd.offsets.Day()),
-        (10, "2020-01-10", None, "D"),
-        (10, 20, None, "D"),
-        (10, None, 10, "D"),
-        (None, 20, 10, "D"),
+        (10, "2020-01-10", None, pd.offsets.Day().freqstr),
+        (10, 20, None, pd.offsets.Day().freqstr),
+        (10, None, 10, pd.offsets.Day().freqstr),
+        (None, 20, 10, pd.offsets.Day().freqstr),
     ],
 )
 def test_timestamp_range_fail_type(start, end, periods, freq):
@@ -554,11 +554,11 @@ def test_timestamp_range_fail_type(start, end, periods, freq):
 @pytest.mark.parametrize(
     "start, end, periods, freq",
     [
-        ("2020-01-01", "2020-01-10", 10, "D"),
-        ("2020-01-01", None, None, "D"),
-        (None, "2020-01-10", None, "D"),
-        (None, None, 10, "D"),
-        (None, None, None, "D"),
+        ("2020-01-01", "2020-01-10", 10, pd.offsets.Day().freqstr),
+        ("2020-01-01", None, None, pd.offsets.Day().freqstr),
+        (None, "2020-01-10", None, pd.offsets.Day().freqstr),
+        (None, None, 10, pd.offsets.Day().freqstr),
+        (None, None, None, pd.offsets.Day().freqstr),
         (10, 19, 10, None),
         (10, None, None, None),
         (None, 19, None, None),
@@ -774,9 +774,9 @@ def test_apply_alignment_new_timestamps(df_name, alignment, expected_timestamps,
             0,
             9,
             None,
-            "D",
+            pd.offsets.Day().freqstr,
             "external_timestamp",
-            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+            timestamp_range(start="2020-01-01", periods=10, freq=pd.offsets.Day()),
         ),
         (
             {"segment_0": pd.Timestamp("2020-01-01")},
@@ -785,55 +785,55 @@ def test_apply_alignment_new_timestamps(df_name, alignment, expected_timestamps,
             None,
             pd.offsets.Day(),
             "external_timestamp",
-            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+            timestamp_range(start="2020-01-01", periods=10, freq=pd.offsets.Day()),
         ),
         (
             {"segment_0": pd.Timestamp("2020-01-01")},
             2,
             11,
             None,
-            "D",
+            pd.offsets.Day().freqstr,
             "external_timestamp",
-            timestamp_range(start="2020-01-03", periods=10, freq="D"),
+            timestamp_range(start="2020-01-03", periods=10, freq=pd.offsets.Day()),
         ),
         (
             {"segment_0": pd.Timestamp("2020-01-01")},
             -2,
             7,
             None,
-            "D",
+            pd.offsets.Day().freqstr,
             "external_timestamp",
-            timestamp_range(start="2019-12-30", periods=10, freq="D"),
+            timestamp_range(start="2019-12-30", periods=10, freq=pd.offsets.Day()),
         ),
         (
             {"segment_0": pd.Timestamp("2020-01-01")},
             0,
             None,
             10,
-            "D",
+            pd.offsets.Day().freqstr,
             "external_timestamp",
-            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+            timestamp_range(start="2020-01-01", periods=10, freq=pd.offsets.Day()),
         ),
         (
             {"segment_0": pd.Timestamp("2020-01-01")},
             None,
             9,
             10,
-            "D",
+            pd.offsets.Day().freqstr,
             "external_timestamp",
-            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+            timestamp_range(start="2020-01-01", periods=10, freq=pd.offsets.Day()),
         ),
         (
             {"segment_0": pd.Timestamp("2020-01-01"), "segment_1": pd.Timestamp("2020-01-03")},
             0,
             9,
             None,
-            "D",
+            pd.offsets.Day().freqstr,
             "external_timestamp",
             pd.concat(
                 [
-                    timestamp_range(start="2020-01-01", periods=10, freq="D").to_series(),
-                    timestamp_range(start="2020-01-03", periods=10, freq="D").to_series(),
+                    timestamp_range(start="2020-01-01", periods=10, freq=pd.offsets.Day()).to_series(),
+                    timestamp_range(start="2020-01-03", periods=10, freq=pd.offsets.Day()).to_series(),
                 ]
             ),
         ),
@@ -871,13 +871,13 @@ def test_make_timestamp_df_from_alignment_format(
 
 @pytest.fixture
 def example_long_df() -> pd.DataFrame:
-    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq=pd.offsets.Day())
     return df
 
 
 @pytest.fixture
 def example_long_df_exog() -> pd.DataFrame:
-    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq=pd.offsets.Day())
     df.rename(columns={"target": "exog_1"}, inplace=True)
     df["exog_2"] = df["exog_1"] + 1.5
     return df
@@ -885,21 +885,21 @@ def example_long_df_exog() -> pd.DataFrame:
 
 @pytest.fixture
 def example_long_df_no_timestamp() -> pd.DataFrame:
-    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq=pd.offsets.Day())
     df.rename(columns={"timestamp": "renamed_timestamp"}, inplace=True)
     return df
 
 
 @pytest.fixture
 def example_long_df_no_segment() -> pd.DataFrame:
-    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq=pd.offsets.Day())
     df.rename(columns={"segment": "renamed_segment"}, inplace=True)
     return df
 
 
 @pytest.fixture
 def example_long_df_no_features() -> pd.DataFrame:
-    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="D")
+    df = generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq=pd.offsets.Day())
     df.drop(columns=["target"], inplace=True)
     return df
 

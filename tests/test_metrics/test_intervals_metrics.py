@@ -12,9 +12,9 @@ from etna.metrics import Width
 
 def get_datasets_with_intervals(df, lower_name, upper_name):
     tsdf = TSDataset.to_dataset(df)
-    ts_train = TSDataset(df=tsdf, freq="H")
+    ts_train = TSDataset(df=tsdf, freq=pd.offsets.Hour())
 
-    ts_test = TSDataset(df=tsdf.copy(), freq="H")
+    ts_test = TSDataset(df=tsdf.copy(), freq=pd.offsets.Hour())
 
     intervals_df = df.rename({"target": lower_name}, axis=1)
     intervals_df[upper_name] = intervals_df[lower_name]
@@ -34,9 +34,9 @@ def get_datasets_with_intervals(df, lower_name, upper_name):
 @pytest.fixture
 def tsdataset_with_zero_width_quantiles(example_df):
     df = TSDataset.to_dataset(example_df)
-    ts_train = TSDataset(df, freq="H")
+    ts_train = TSDataset(df, freq=pd.offsets.Hour())
 
-    ts_test = TSDataset(df.copy(), freq="H")
+    ts_test = TSDataset(df.copy(), freq=pd.offsets.Hour())
 
     intervals_df = pd.concat(
         [

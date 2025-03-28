@@ -15,12 +15,12 @@ def ts_with_nans() -> TSDataset:
     df["target"] = tmp
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df=df)
-    ts = TSDataset(df, freq="H")
+    ts = TSDataset(df, freq=pd.offsets.Hour())
     return ts
 
 
 @pytest.fixture
 def simple_ar_df(random_seed):
-    df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=1, ar_coef=[2], freq="D")
+    df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=1, ar_coef=[2], freq=pd.offsets.Day())
     df_ts_format = TSDataset.to_dataset(df)["segment_0"]
     return df_ts_format

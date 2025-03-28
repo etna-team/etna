@@ -48,8 +48,8 @@ class DummyTransform(SklearnTransform):
 
 @pytest.fixture
 def normal_distributed_ts() -> TSDataset:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
+    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
+    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
     generator = np.random.RandomState(seed=1)
     df_1["segment"] = "Moscow"
     df_1["target"] = generator.normal(loc=0, scale=10, size=len(df_1))
@@ -59,7 +59,7 @@ def normal_distributed_ts() -> TSDataset:
     df_2["exog"] = generator.normal(loc=3, scale=1, size=len(df_2))
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df, freq="1d")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

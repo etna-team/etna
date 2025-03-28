@@ -24,7 +24,7 @@ def add_seasonality(series: pd.Series, period: int, magnitude: float) -> pd.Seri
 
 
 def get_one_df(period_1, period_2, magnitude_1, magnitude_2):
-    timestamp = pd.date_range(start="2020-01-01", end="2021-01-01", freq="D")
+    timestamp = pd.date_range(start="2020-01-01", end="2021-01-01", freq=pd.offsets.Day())
     df = pd.DataFrame({"timestamp": timestamp})
     target = 0
     indices = np.arange(timestamp.shape[0])
@@ -37,7 +37,7 @@ def get_one_df(period_1, period_2, magnitude_1, magnitude_2):
 
 @pytest.fixture
 def example_df():
-    return generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq="H")
+    return generate_ar_df(periods=10, start_time="2020-01-01", n_segments=2, freq=pd.offsets.Hour())
 
 
 @pytest.fixture
@@ -47,7 +47,7 @@ def example_ts(example_df):
     df["external_timestamp"] = df["timestamp"]
     df.drop(columns=["target"], inplace=True)
     df_exog_wide = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Hour())
     return ts
 
 
@@ -69,7 +69,7 @@ def example_ts_external_datetime_timestamp(example_df):
     df_exog.drop(columns=["target"], inplace=True)
     df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += pd.Timedelta("6H")
     df_exog_wide = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Hour())
     ts_int_index = convert_ts_to_int_timestamp(ts=ts, shift=10)
     return ts_int_index
 
@@ -90,7 +90,7 @@ def example_ts_external_datetime_timestamp_different_freq(example_ts_external_da
     df = ts._raw_df
     df_exog = ts._df_exog
     df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = pd.date_range(
-        start="2020-01-01", periods=len(df_exog), freq="D"
+        start="2020-01-01", periods=len(df_exog), freq=pd.offsets.Day()
     )
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
@@ -114,7 +114,7 @@ def example_ts_external_int_timestamp(example_df):
     df_exog.drop(columns=["target"], inplace=True)
     df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += 6
     df_exog_wide = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="H")
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Hour())
     ts_int_index = convert_ts_to_int_timestamp(ts=ts, shift=10)
     return ts_int_index
 
@@ -145,7 +145,7 @@ def ts_trend_seasonal(random_seed) -> TSDataset:
     df_2 = get_one_df(period_1=7, period_2=30.4, magnitude_1=1 / 2, magnitude_2=1 / 5)
     df_2["segment"] = "segment_2"
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
+    return TSDataset(TSDataset.to_dataset(classic_df), freq=pd.offsets.Day())
 
 
 @pytest.mark.parametrize("order, mods", [(None, [1, 2, 3, 4]), (2, None)])

@@ -216,7 +216,7 @@ class _HoltWintersAdapter(BaseAdapter):
         :
             Fitted model
         """
-        self._train_freq = determine_freq(timestamps=df["timestamp"])
+        self._train_freq = determine_freq(timestamps=df["timestamp"], freq_format="offset")
         self._check_not_used_columns(df)
         self._first_train_timestamp = df["timestamp"].min()
         self._last_train_timestamp = df["timestamp"].max()

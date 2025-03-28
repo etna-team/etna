@@ -34,7 +34,7 @@ from tests.utils import select_segments_subset
 
 
 def made_specific_ds(ts: TSDataset, add_error=True):
-    timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")
+    timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq=pd.offsets.Day())
     info_col1 = [1 if np.sin(i) > 0.5 else 0 for i in range(len(timestamp))]
     info_col2 = [1 if np.sin(i) > 0 else 0 for i in range(len(timestamp))]
 

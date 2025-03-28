@@ -31,7 +31,7 @@ def ts_with_exog_nan_begin() -> TSDataset:
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
 
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog)
     return ts
 
 
@@ -51,7 +51,7 @@ def ts_with_exog_nan_middle() -> TSDataset:
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
 
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog)
     return ts
 
 
@@ -66,7 +66,7 @@ def ts_with_exog_nan_end() -> TSDataset:
 
     df = TSDataset.to_dataset(df)
 
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 

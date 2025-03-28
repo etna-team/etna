@@ -44,7 +44,7 @@ def sinusoid_ts():
     )
     df = pd.concat((sinusoid_ts_1, sinusoid_ts_2))
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -100,14 +100,14 @@ def periodic_ts(periodic_dfs):
 
     df = pd.concat((ts_1, ts_2))
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts.train_test_split(test_size=horizon)
 
 
 @pytest.fixture()
 def small_periodic_ts(periodic_ts):
     df = periodic_ts[0]._df.loc[:, pd.IndexSlice["segment_1", :]].iloc[-10:]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

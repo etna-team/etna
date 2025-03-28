@@ -67,10 +67,10 @@ def remove_columns_ts(remove_features_df):
     df_exog = df.loc[:, pd.IndexSlice[:, "exog_1"]]
     intervals = df.loc[:, pd.IndexSlice[:, "target_0.01"]]
     df = df.drop(columns=["exog_1", "target_0.01"], level="feature")
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
     ts.add_prediction_intervals(prediction_intervals_df=intervals)
 
-    ts_transformed = TSDataset(df=df_transformed, freq="D")
+    ts_transformed = TSDataset(df=df_transformed, freq=pd.offsets.Day())
     return ts, ts_transformed
 
 
@@ -86,7 +86,7 @@ def test_required_features(required_features, expected_features):
 def test_update_dataset_remove_features(remove_features_df):
     df, df_transformed = remove_features_df
     columns_before = set(df.columns.get_level_values("feature"))
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts.drop_features = Mock()
     expected_features_to_remove = list(
         set(df.columns.get_level_values("feature")) - set(df_transformed.columns.get_level_values("feature"))
@@ -100,7 +100,7 @@ def test_update_dataset_remove_features(remove_features_df):
 def test_update_dataset_update_features(remove_features_df):
     df, df_transformed = remove_features_df
     columns_before = set(df.columns.get_level_values("feature"))
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts.update_features_from_pandas = Mock()
     transform = TransformMock(required_features=["target"])
 
@@ -111,7 +111,7 @@ def test_update_dataset_update_features(remove_features_df):
 def test_update_dataset_add_features(remove_features_df):
     df_transformed, df = remove_features_df
     columns_before = set(df.columns.get_level_values("feature"))
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts.add_features_from_pandas = Mock()
     transform = TransformMock(required_features=["target"])
 
@@ -192,7 +192,7 @@ def test_inverse_transform_request_update_dataset(remove_columns_ts):
 
 def test_double_apply_add_columns_transform(remove_features_df):
     df, _ = remove_features_df
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
 
     transform = SimpleAddColumnTransform(required_features=["target"])
     ts_transformed = transform.fit_transform(ts=ts)
@@ -245,7 +245,7 @@ def ts_with_target_components():
     df = TSDataset.to_dataset(df=df)
     components_df = TSDataset.to_dataset(df=components_df)
 
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts.add_target_components(target_components_df=components_df)
     return ts
 

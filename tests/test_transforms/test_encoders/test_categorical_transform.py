@@ -27,7 +27,7 @@ def get_two_ts_with_new_values(dtype: str = "int"):
     df_1 = pd.DataFrame(dct_1)
     df_1["regressor_0"] = df_1["regressor_0"].astype(dtype)
     df_1 = TSDataset.to_dataset(df_1)
-    ts_1 = TSDataset(df=df_1, freq="D")
+    ts_1 = TSDataset(df=df_1, freq=pd.offsets.Day())
 
     dct_2 = {
         "timestamp": list(pd.date_range(start="2021-01-01", end="2021-01-03")) * 2,
@@ -38,7 +38,7 @@ def get_two_ts_with_new_values(dtype: str = "int"):
     df_2 = pd.DataFrame(dct_2)
     df_2["regressor_0"] = df_2["regressor_0"].astype(dtype)
     df_2 = TSDataset.to_dataset(df_2)
-    ts_2 = TSDataset(df=df_2, freq="D")
+    ts_2 = TSDataset(df=df_2, freq=pd.offsets.Day())
 
     return ts_1, ts_2
 
@@ -63,7 +63,7 @@ def get_ts_for_ohe_encoding(dtype: str = "int"):
 
     df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     df_regressors = TSDataset.to_dataset(df_regressors)
-    tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future=regressor_cols)
+    tsdataset = TSDataset(df=df_to_forecast, freq=pd.offsets.Day(), df_exog=df_regressors, known_future=regressor_cols)
 
     answer_on_regressor_0 = tsdataset.to_pandas()["segment_0"]
     answer_on_regressor_0["test_0"] = answer_on_regressor_0["regressor_0"].apply(lambda x: int(int(x) == 5))
@@ -104,7 +104,7 @@ def get_ts_for_label_encoding(dtype: str = "int"):
 
     df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     df_regressors = TSDataset.to_dataset(df_regressors)
-    tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future=regressor_cols)
+    tsdataset = TSDataset(df=df_to_forecast, freq=pd.offsets.Day(), df_exog=df_regressors, known_future=regressor_cols)
 
     answer_on_regressor_0 = tsdataset.to_pandas()["segment_0"]
     answer_on_regressor_0["test"] = answer_on_regressor_0["regressor_0"].apply(lambda x: float(int(x) == 8))
@@ -135,7 +135,7 @@ def ts_for_naming():
     df_regressors["segment"] = "segment_0"
     df_to_forecast = TSDataset.to_dataset(df_to_forecast)
     df_regressors = TSDataset.to_dataset(df_regressors)
-    tsdataset = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future=["regressor_1"])
+    tsdataset = TSDataset(df=df_to_forecast, freq=pd.offsets.Day(), df_exog=df_regressors, known_future=["regressor_1"])
     return tsdataset
 
 
@@ -300,7 +300,7 @@ def ts_for_ohe_sanity():
         return x**2 + rng.normal(0, 0.01)
 
     df_to_forecast["segment_0", "target"] = df_regressors["segment_0"]["regressor_0"][:100].apply(f)
-    ts = TSDataset(df=df_to_forecast, freq="D", df_exog=df_regressors, known_future="all")
+    ts = TSDataset(df=df_to_forecast, freq=pd.offsets.Day(), df_exog=df_regressors, known_future="all")
     return ts
 
 

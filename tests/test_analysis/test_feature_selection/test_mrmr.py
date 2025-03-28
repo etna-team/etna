@@ -17,7 +17,7 @@ from etna.datasets.datasets_generation import generate_ar_df
 def df_with_regressors() -> Dict[str, pd.DataFrame]:
     num_segments = 3
     df = generate_ar_df(
-        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=num_segments, random_seed=0, freq="D"
+        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=num_segments, random_seed=0, freq=pd.offsets.Day()
     )
 
     example_segment = df["segment"].unique()[0]
@@ -27,7 +27,7 @@ def df_with_regressors() -> Dict[str, pd.DataFrame]:
     # useless regressors
     num_useless = 12
     df_regressors_useless = generate_ar_df(
-        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=num_useless, random_seed=1, freq="D"
+        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=num_useless, random_seed=1, freq=pd.offsets.Day()
     )
     for i, segment in enumerate(df_regressors_useless["segment"].unique()):
         regressor = df_regressors_useless[df_regressors_useless["segment"] == segment]["target"].values
@@ -57,7 +57,7 @@ def df_with_regressors() -> Dict[str, pd.DataFrame]:
 
     # construct TSDataset
     df = df[df["timestamp"] <= timestamp[200]]
-    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog_all_segments), freq="D")
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog_all_segments), freq=pd.offsets.Day())
     return {
         "df": ts.to_pandas(),
         "target": TSDataset.to_dataset(df),
@@ -107,14 +107,14 @@ def high_relevance_high_redundancy_problem(periods=10):
     relevance_table = pd.DataFrame(
         {"regressor_1": [1, 1], "regressor_2": [1, 1], "regressor_3": [1, 1]}, index=["segment_1", "segment_2"]
     )
-    regressors = generate_ar_df(periods=periods, n_segments=2, start_time="2000-01-01", freq="D", random_seed=1).rename(
+    regressors = generate_ar_df(periods=periods, n_segments=2, start_time="2000-01-01", freq=pd.offsets.Day(), random_seed=1).rename(
         columns={"target": "regressor_1"}
     )
     regressors["regressor_2"] = generate_ar_df(
-        periods=periods, n_segments=2, start_time="2000-01-01", freq="D", random_seed=1
+        periods=periods, n_segments=2, start_time="2000-01-01", freq=pd.offsets.Day(), random_seed=1
     )["target"]
     regressors["regressor_3"] = generate_ar_df(
-        periods=periods, n_segments=2, start_time="2000-01-01", freq="D", random_seed=2
+        periods=periods, n_segments=2, start_time="2000-01-01", freq=pd.offsets.Day(), random_seed=2
     )["target"]
     regressors = TSDataset.to_dataset(regressors)
     return {
@@ -129,14 +129,14 @@ def high_relevance_high_redundancy_problem_diff_starts(periods=10):
     relevance_table = pd.DataFrame(
         {"regressor_1": [1, 1], "regressor_2": [1, 1], "regressor_3": [1, 1]}, index=["segment_1", "segment_2"]
     )
-    regressors = generate_ar_df(periods=periods, n_segments=2, start_time="2000-01-04", freq="D", random_seed=1).rename(
+    regressors = generate_ar_df(periods=periods, n_segments=2, start_time="2000-01-04", freq=pd.offsets.Day(), random_seed=1).rename(
         columns={"target": "regressor_1"}
     )
     regressors["regressor_2"] = generate_ar_df(
-        periods=periods, n_segments=2, start_time="2000-01-01", freq="D", random_seed=1
+        periods=periods, n_segments=2, start_time="2000-01-01", freq=pd.offsets.Day(), random_seed=1
     )["target"]
     regressors["regressor_3"] = generate_ar_df(
-        periods=periods, n_segments=2, start_time="2000-01-07", freq="D", random_seed=2
+        periods=periods, n_segments=2, start_time="2000-01-07", freq=pd.offsets.Day(), random_seed=2
     )["target"]
     regressors = TSDataset.to_dataset(regressors)
     regressors.loc[regressors.index[:1], pd.IndexSlice[:, "regressor_1"]] = np.NaN

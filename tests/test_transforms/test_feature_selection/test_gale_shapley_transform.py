@@ -35,14 +35,14 @@ def ts_with_exog_galeshapley(random_seed) -> TSDataset:
 
     df = pd.concat([df_1, df_2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
     df = tsds.to_pandas(flatten=True)
     df_exog = df.copy().drop(columns=["target"])
     df_exog["weekday"] = df_exog["timestamp"].dt.weekday
     df_exog["monthday"] = df_exog["timestamp"].dt.day
     df_exog["month"] = df_exog["timestamp"].dt.month
     df_exog["year"] = df_exog["timestamp"].dt.year
-    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D")
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq=pd.offsets.Day())
     return ts
 
 
@@ -61,7 +61,7 @@ def ts_with_large_regressors_number(random_seed) -> TSDataset:
         tmp = generate_ar_df(periods=150, start_time="2020-01-01", n_segments=3, ar_coef=[1], random_seed=i)
         exog_df = exog_df.merge(tmp.rename({"target": f"regressor_{i + 1}"}, axis=1), on=["timestamp", "segment"])
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(exog_df), known_future="all")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day(), df_exog=TSDataset.to_dataset(exog_df), known_future="all")
     return ts
 
 

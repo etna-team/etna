@@ -104,14 +104,14 @@ def ts_all_missing_two_segments(ts_all_date_present_two_segments) -> TSDataset:
 def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
     df1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=48),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=48),
             "segment": "segment_2",
             "target": [1] + 23 * [0] + [1] + 23 * [0],
         }
@@ -120,14 +120,14 @@ def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
 
     df_exog1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=3),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Day(), periods=3),
             "segment": "segment_1",
             "regressor_exog": 2,
         }
     )
     df_exog2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=3),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Day(), periods=3),
             "segment": "segment_2",
             "regressor_exog": 40,
         }
@@ -147,7 +147,7 @@ def daily_exog_ts() -> Dict[str, Union[TSDataset, DistributionDict]]:
         }
     )
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Hour(), df_exog=TSDataset.to_dataset(df_exog), known_future="all")
     distribution = {"segment_1": target1, "segment_2": target2}
     return {"ts": ts, "distribution": distribution}
 
@@ -163,14 +163,14 @@ def daily_exog_ts_diff_endings(daily_exog_ts):
 def inplace_resampled_daily_exog_ts() -> TSDataset:
     df1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=48),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=48),
             "segment": "segment_2",
             "target": [1] + 23 * [0] + [1] + 23 * [0],
         }
@@ -179,21 +179,21 @@ def inplace_resampled_daily_exog_ts() -> TSDataset:
 
     df_exog1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=72),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=72),
             "segment": "segment_1",
             "regressor_exog": 2 / 24,
         }
     )
     df_exog2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=72),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=72),
             "segment": "segment_2",
             "regressor_exog": [40] + 23 * [0] + [40] + 23 * [0] + [40] + 23 * [0],
         }
     )
     df_exog = pd.concat([df_exog1, df_exog2], ignore_index=True)
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Hour(), df_exog=TSDataset.to_dataset(df_exog), known_future="all")
     return ts
 
 
@@ -201,14 +201,14 @@ def inplace_resampled_daily_exog_ts() -> TSDataset:
 def noninplace_resampled_daily_exog_ts() -> TSDataset:
     df1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=48),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=48),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=48),
             "segment": "segment_2",
             "target": [1] + 23 * [0] + [1] + 23 * [0],
         }
@@ -217,7 +217,7 @@ def noninplace_resampled_daily_exog_ts() -> TSDataset:
 
     df_exog1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=72),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=72),
             "segment": "segment_1",
             "regressor_exog": [2] + 23 * [np.NAN] + [2] + 23 * [np.NAN] + [2] + 23 * [np.NAN],
             "resampled_exog": 2 / 24,
@@ -225,7 +225,7 @@ def noninplace_resampled_daily_exog_ts() -> TSDataset:
     )
     df_exog2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="H", periods=72),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Hour(), periods=72),
             "segment": "segment_2",
             "regressor_exog": [40] + 23 * [np.NAN] + [40] + 23 * [np.NAN] + [40] + 23 * [np.NAN],
             "resampled_exog": [40] + 23 * [0] + [40] + 23 * [0] + [40] + 23 * [0],
@@ -233,7 +233,7 @@ def noninplace_resampled_daily_exog_ts() -> TSDataset:
     )
     df_exog = pd.concat([df_exog1, df_exog2], ignore_index=True)
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="H", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Hour(), df_exog=TSDataset.to_dataset(df_exog), known_future="all")
     return ts
 
 
@@ -242,14 +242,14 @@ def weekly_exog_same_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
     """Target and exog columns start on Monday."""
     df1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=14),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Day(), periods=14),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="D", periods=14),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Day(), periods=14),
             "segment": "segment_2",
             "target": [1] + 6 * [0] + [1] + 6 * [0],
         }
@@ -258,14 +258,14 @@ def weekly_exog_same_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
 
     df_exog1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="W", periods=3),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Week(weekday=6), periods=3),
             "segment": "segment_1",
             "regressor_exog": 2,
         }
     )
     df_exog2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="W", periods=3),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Week(weekday=6), periods=3),
             "segment": "segment_2",
             "regressor_exog": 40,
         }
@@ -285,7 +285,7 @@ def weekly_exog_same_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
         }
     )
     distribution = {"segment_1": target1, "segment_2": target2}
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day(), df_exog=TSDataset.to_dataset(df_exog), known_future="all")
 
     return {"ts": ts, "distribution": distribution}
 
@@ -295,14 +295,14 @@ def weekly_exog_diff_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
     """Target starts on Thursday and exog starts on Monday."""
     df1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-08", freq="D", periods=14),
+            "timestamp": pd.date_range(start="2020-01-08", freq=pd.offsets.Day(), periods=14),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-08", freq="D", periods=14),
+            "timestamp": pd.date_range(start="2020-01-08", freq=pd.offsets.Day(), periods=14),
             "segment": "segment_2",
             "target": [1] + 6 * [0] + [1] + 6 * [0],
         }
@@ -311,14 +311,14 @@ def weekly_exog_diff_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
 
     df_exog1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="W", periods=4),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Week(weekday=6), periods=4),
             "segment": "segment_1",
             "regressor_exog": 2,
         }
     )
     df_exog2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-05", freq="W", periods=4),
+            "timestamp": pd.date_range(start="2020-01-05", freq=pd.offsets.Week(weekday=6), periods=4),
             "segment": "segment_2",
             "regressor_exog": 40,
         }
@@ -338,7 +338,7 @@ def weekly_exog_diff_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
         }
     )
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day(), df_exog=TSDataset.to_dataset(df_exog), known_future="all")
     distribution = {"segment_1": target1, "segment_2": target2}
     return {"ts": ts, "distribution": distribution}
 
@@ -347,14 +347,14 @@ def weekly_exog_diff_start_ts() -> Dict[str, Union[TSDataset, DistributionDict]]
 def incompatible_freq_ts() -> TSDataset:
     df1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-01", freq="7T", periods=20),
+            "timestamp": pd.date_range(start="2020-01-01", freq=pd.offsets.Minute(7), periods=20),
             "segment": "segment_1",
             "target": 1,
         }
     )
     df2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-01", freq="7T", periods=20),
+            "timestamp": pd.date_range(start="2020-01-01", freq=pd.offsets.Minute(7), periods=20),
             "segment": "segment_2",
             "target": 2,
         }
@@ -363,19 +363,19 @@ def incompatible_freq_ts() -> TSDataset:
 
     df_exog1 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-01", freq="H", periods=3),
+            "timestamp": pd.date_range(start="2020-01-01", freq=pd.offsets.Hour(), periods=3),
             "segment": "segment_1",
             "exog": 2,
         }
     )
     df_exog2 = pd.DataFrame(
         {
-            "timestamp": pd.date_range(start="2020-01-01", freq="H", periods=3),
+            "timestamp": pd.date_range(start="2020-01-01", freq=pd.offsets.Hour(), periods=3),
             "segment": "segment_2",
             "exog": 40,
         }
     )
     df_exog = pd.concat([df_exog1, df_exog2], ignore_index=True)
 
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="7T", df_exog=TSDataset.to_dataset(df_exog))
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Minute(7), df_exog=TSDataset.to_dataset(df_exog))
     return ts

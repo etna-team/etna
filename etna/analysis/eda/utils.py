@@ -97,7 +97,7 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is
         ds = holidays[holidays["holiday"] == name]["ds"]
         dt = [ds]
         if "upper_window" in holidays.columns:
-            periods = holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0]
+            periods = int(holidays[holidays["holiday"] == name]["upper_window"].fillna(0).tolist()[0])
             if periods < 0:
                 raise ValueError("Upper windows should be non-negative.")
 
@@ -111,7 +111,7 @@ def _create_holidays_df_dataframe(holidays: pd.DataFrame, index: pd.Index, as_is
                 ds_add = ds + bound
                 dt.append(ds_add)
         if "lower_window" in holidays.columns:
-            periods = holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0]
+            periods = int(holidays[holidays["holiday"] == name]["lower_window"].fillna(0).tolist()[0])
             if periods > 0:
                 raise ValueError("Lower windows should be non-positive.")
 

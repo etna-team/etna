@@ -16,7 +16,7 @@ def ts_with_features():
     df = generate_ar_df(n_segments=2, periods=5, start_time="2000-01-01")
     df["target"] = [np.NAN, np.NAN, 1, 20, 3] + [np.NAN, 10, np.NAN, 300, 40]
     df["exog_1"] = [1.0] * 5 + [2.0] * 5
-    ts = TSDataset(df=df.drop(columns=["exog_1"]), freq="D", df_exog=df.drop(columns=["target"]))
+    ts = TSDataset(df=df.drop(columns=["exog_1"]), freq=pd.offsets.Day(), df_exog=df.drop(columns=["target"]))
     return ts
 
 
@@ -30,7 +30,7 @@ def df_segment_0():
             "exog_1": [1.0, 1.0, 1.0],
         }
     )
-    df = TSDataset(df=df, freq="D")._df["segment_0"].dropna()
+    df = TSDataset(df=df, freq=pd.offsets.Day())._df["segment_0"].dropna()
     return df
 
 
@@ -44,7 +44,7 @@ def df_segment_1():
             "exog_1": [2.0, 2.0, 2.0],
         }
     )
-    df = TSDataset(df=df, freq="D")._df["segment_1"].dropna()
+    df = TSDataset(df=df, freq=pd.offsets.Day())._df["segment_1"].dropna()
     return df
 
 
@@ -138,20 +138,20 @@ def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_colu
             True,
             pd.Series(
                 data=[20.0],
-                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq=pd.offsets.Day()),
             ),
         ),
         (
             "target",
             False,
-            pd.Series(data=[], index=pd.DatetimeIndex([], freq="D"), dtype=float),
+            pd.Series(data=[], index=pd.DatetimeIndex([], freq=pd.offsets.Day()), dtype=float),
         ),
         (
             "exog_1",
             True,
             pd.Series(
                 data=[1.0],
-                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq=pd.offsets.Day()),
             ),
         ),
         (
@@ -159,7 +159,7 @@ def test_get_anomalies_isolation_forest_segment_index_only(df_segment_0, in_colu
             False,
             pd.Series(
                 data=[1.0],
-                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
+                index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq=pd.offsets.Day()),
             ),
         ),
     ],
@@ -201,7 +201,7 @@ def test_get_anomalies_isolation_forest_not_use_in_column(ts_with_features):
     expected_anomalies = {
         "segment_0": pd.Series(
             data=[1.0],
-            index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq="D"),
+            index=pd.DatetimeIndex([np.datetime64("2000-01-04")], dtype="datetime64[ns]", freq=pd.offsets.Day()),
         ),
         "segment_1": pd.Series(
             data=[2.0],

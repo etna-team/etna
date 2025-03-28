@@ -52,7 +52,7 @@ def df():
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="1d")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -72,7 +72,7 @@ def long_periodic_ts():
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
 
     return ts
 
@@ -205,8 +205,8 @@ def test_deadline_model_predict(simple_tsdf, model):
 
 
 def test_deadline_model_fit_fail_not_supported_freq():
-    df = generate_ar_df(start_time="2020-01-01", periods=100, freq="2D")
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="2D")
+    df = generate_ar_df(start_time="2020-01-01", periods=100, freq=pd.offsets.Day(2))
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day(2))
     model = DeadlineMovingAverageModel(window=1000)
     with pytest.raises(ValueError, match="Freq 2D is not supported"):
         model.fit(ts)
@@ -626,7 +626,7 @@ def big_ts() -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -648,7 +648,7 @@ def two_month_ts():
     df1["timestamp"] = pd.date_range(start="2020-01-01", periods=history)
 
     df = TSDataset.to_dataset(df1)
-    tsds = TSDataset(df, freq="1d")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
     return tsds
 
 

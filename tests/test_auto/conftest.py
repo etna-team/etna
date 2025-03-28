@@ -55,7 +55,7 @@ def ts_with_fold_missing_tail(random_seed) -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -75,7 +75,7 @@ def ts_with_fold_missing_middle(random_seed) -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -94,7 +94,7 @@ def ts_with_all_folds_missing_one_segment(random_seed) -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -114,7 +114,7 @@ def ts_with_all_folds_missing_all_segments(random_seed) -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -134,6 +134,6 @@ def ts_with_few_missing(random_seed) -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds

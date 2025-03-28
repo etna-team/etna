@@ -11,7 +11,7 @@ from tests.test_experimental.test_prediction_intervals.common import get_naive_p
 def constant_ts(size=30) -> TSDataset:
     segment_1 = [7] * size
     segment_2 = [50] * size
-    ts_range = list(pd.date_range("2023-01-01", freq="D", periods=size))
+    ts_range = list(pd.date_range("2023-01-01", freq=pd.offsets.Day(), periods=size))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
@@ -19,7 +19,7 @@ def constant_ts(size=30) -> TSDataset:
             "segment": ["segment_1"] * size + ["segment_2"] * size,
         }
     )
-    ts = TSDataset(TSDataset.to_dataset(df=df), freq="D")
+    ts = TSDataset(TSDataset.to_dataset(df=df), freq=pd.offsets.Day())
     return ts
 
 

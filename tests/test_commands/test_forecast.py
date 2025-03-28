@@ -202,14 +202,14 @@ def test_forecast_use_exog_correct(
 def ms_tsds():
     df = pd.DataFrame(
         {
-            "timestamp": list(pd.date_range("2023-01-01", periods=4, freq="MS")) * 2,
+            "timestamp": list(pd.date_range("2023-01-01", periods=4, freq=pd.offsets.MonthBegin())) * 2,
             "segment": ["A"] * 4 + ["B"] * 4,
             "target": list(3 * np.arange(1, 5)) * 2,
         }
     )
 
     df = TSDataset.to_dataset(df=df)
-    ts = TSDataset(df=df, freq="MS")
+    ts = TSDataset(df=df, freq=pd.offsets.MonthBegin())
     return ts
 
 

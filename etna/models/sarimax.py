@@ -71,7 +71,7 @@ class _SARIMAXBaseAdapter(BaseAdapter):
         exog_train = self._select_regressors(df)
         self._fit_results = self._get_fit_results(endog=df["target"], exog=exog_train)
 
-        self._freq = determine_freq(timestamps=df["timestamp"])
+        self._freq = determine_freq(timestamps=df["timestamp"], freq_format="offset")
 
         return self
 

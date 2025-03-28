@@ -40,14 +40,14 @@ def test_plot_stl(example_tsdf, period):
 @pytest.mark.parametrize(
     "freq, cycle, additional_params",
     [
-        ("D", 5, dict(alignment="first")),
-        ("D", 5, dict(alignment="last")),
-        ("D", "week", {}),
-        ("D", "month", {}),
-        ("D", "year", {}),
+        (pd.offsets.Day().freqstr, 5, dict(alignment="first")),
+        (pd.offsets.Day().freqstr, 5, dict(alignment="last")),
+        (pd.offsets.Day().freqstr, "week", {}),
+        (pd.offsets.Day().freqstr, "month", {}),
+        (pd.offsets.Day().freqstr, "year", {}),
         (pd.offsets.Day(), "year", {}),
-        ("M", "year", dict(aggregation="sum")),
-        ("M", "year", dict(aggregation="mean")),
+        (pd.offsets.MonthEnd().freqstr, "year", dict(aggregation="sum")),
+        (pd.offsets.MonthEnd().freqstr, "year", dict(aggregation="mean")),
         (pd.offsets.MonthEnd(), "year", dict(aggregation="mean")),
     ],
 )
@@ -107,7 +107,7 @@ def test_seasonal_plot_int_timestamp(alignment, example_tsdf_int_timestamp):
 
 def test_seasonal_plot_int_timestamp_fail_resample(example_tsdf_int_timestamp):
     with pytest.raises(ValueError, match="Resampling isn't supported for data with integer timestamp"):
-        seasonal_plot(ts=example_tsdf_int_timestamp, freq="D", cycle=10)
+        seasonal_plot(ts=example_tsdf_int_timestamp, freq=pd.offsets.Day(), cycle=10)
 
 
 def test_seasonal_plot_int_timestamp_fail_non_int_cycle(example_tsdf_int_timestamp):

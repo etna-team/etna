@@ -42,7 +42,7 @@ class _TBATSAdapter(BaseAdapter):
             )
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
-        self._freq = determine_freq(timestamps=df["timestamp"])
+        self._freq = determine_freq(timestamps=df["timestamp"], freq_format="offset")
         self._check_not_used_columns(df)
 
         target = df["target"]

@@ -52,4 +52,4 @@ def outliers_df_with_two_columns_int_timestamp(outliers_df_with_two_columns):
 
 @pytest.fixture
 def outliers_df_with_two_columns_minute_freq(outliers_df_with_two_columns):
-    return convert_ts_index_to_freq(ts=outliers_df_with_two_columns, freq="T")
+    return convert_ts_index_to_freq(ts=outliers_df_with_two_columns, freq=pd.offsets.Minute())

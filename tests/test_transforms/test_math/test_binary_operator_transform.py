@@ -28,22 +28,22 @@ ops = {
 @pytest.fixture
 def ts_one_segment(random_seed) -> TSDataset:
     """Generate dataset with non-positive target."""
-    df = generate_ar_df(start_time="2020-01-01", periods=100, freq="D", n_segments=1)
+    df = generate_ar_df(start_time="2020-01-01", periods=100, freq=pd.offsets.Day(), n_segments=1)
     df["feature"] = np.random.uniform(10, 0, size=100)
     df["target"] = np.random.uniform(10, 0, size=100)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
 @pytest.fixture
 def ts_two_segments(random_seed) -> TSDataset:
     """Generate dataset with non-positive target."""
-    df = generate_ar_df(start_time="2020-01-01", periods=100, freq="D", n_segments=2)
+    df = generate_ar_df(start_time="2020-01-01", periods=100, freq=pd.offsets.Day(), n_segments=2)
     df["feature"] = np.random.uniform(10, 0, size=200)
     df["target"] = np.random.uniform(10, 0, size=200)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

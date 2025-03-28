@@ -444,7 +444,7 @@ def test_metrics_greater_is_better(metric, greater_is_better):
 
 def test_multiple_calls():
     """Check that metric works correctly in case of multiple call."""
-    timerange = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=10, freq="1D")})
+    timerange = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", periods=10, freq=pd.offsets.Day())})
     timestamp_base = pd.concat((timerange, timerange), axis=0)
 
     test_df_1 = timestamp_base.copy()
@@ -482,10 +482,10 @@ def test_multiple_calls():
     forecast_df_2 = forecast_df_2.sort_index(axis=1)
     forecast_df_2.columns.names = ["segment", "feature"]
 
-    test_df_1 = TSDataset(test_df_1, freq="1D")
-    test_df_2 = TSDataset(test_df_2, freq="1D")
-    forecast_df_1 = TSDataset(forecast_df_1, freq="1D")
-    forecast_df_2 = TSDataset(forecast_df_2, freq="1D")
+    test_df_1 = TSDataset(test_df_1, freq=pd.offsets.Day())
+    test_df_2 = TSDataset(test_df_2, freq=pd.offsets.Day())
+    forecast_df_1 = TSDataset(forecast_df_1, freq=pd.offsets.Day())
+    forecast_df_2 = TSDataset(forecast_df_2, freq=pd.offsets.Day())
 
     metric = MAE(mode="per-segment")
     metric_value_1 = metric(y_true=test_df_1, y_pred=forecast_df_1)

@@ -11,7 +11,7 @@ from etna.datasets import TSDataset
 
 @pytest.fixture
 def residuals():
-    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    timestamp = pd.date_range("2020-01-01", periods=100, freq=pd.offsets.Day())
     df = pd.DataFrame(
         {
             "timestamp": timestamp.tolist() * 2,
@@ -20,7 +20,7 @@ def residuals():
         }
     )
     df_wide = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df_wide, freq="D")
+    ts = TSDataset(df=df_wide, freq=pd.offsets.Day())
 
     forecast_df = ts[timestamp[10:], :, :]
     forecast_df.loc[:, pd.IndexSlice["segment_0", "target"]] = -1
@@ -36,7 +36,7 @@ def residuals():
 @pytest.fixture
 def residuals_with_components(residuals):
     residuals_df, forecast_df, ts = residuals
-    df_wide = ts.to_pandas()
+    df_wide = ts.to_pandas().astype(float)
     df_component_1 = df_wide.rename(columns={"target": "component_1"}, level="feature")
     df_component_2 = df_wide.rename(columns={"target": "component_2"}, level="feature")
     df_component_1.loc[:, pd.IndexSlice[:, "component_1"]] *= 0.7
@@ -68,7 +68,7 @@ def test_get_residuals_with_components(residuals_with_components):
 def test_get_residuals_not_matching_lengths(residuals):
     """Test that get_residuals fails to find residuals correctly if ts hasn't answers."""
     residuals_df, forecast_df, ts = residuals
-    ts = TSDataset(df=ts[ts.timestamps[:-10], :, :], freq="D")
+    ts = TSDataset(df=ts[ts.timestamps[:-10], :, :], freq=pd.offsets.Day())
     with pytest.raises(KeyError):
         _ = get_residuals(forecast_df=forecast_df, ts=ts)
 
@@ -86,9 +86,9 @@ def test_get_residuals_not_matching_segments(residuals):
 @pytest.mark.parametrize(
     "fold_numbers",
     [
-        pd.Series([0, 0, 1, 1, 2, 2], index=pd.date_range("2020-01-01", periods=6, freq="D")),
-        pd.Series([0, 0, 1, 1, 2, 2], index=pd.date_range("2020-01-01", periods=6, freq="2D")),
-        pd.Series([2, 2, 0, 0, 1, 1], index=pd.date_range("2020-01-01", periods=6, freq="D")),
+        pd.Series([0, 0, 1, 1, 2, 2], index=pd.date_range("2020-01-01", periods=6, freq=pd.offsets.Day())),
+        pd.Series([0, 0, 1, 1, 2, 2], index=pd.date_range("2020-01-01", periods=6, freq=pd.offsets.Day(2))),
+        pd.Series([2, 2, 0, 0, 1, 1], index=pd.date_range("2020-01-01", periods=6, freq=pd.offsets.Day())),
         pd.Series(
             [0, 0, 1, 1],
             index=[
@@ -116,7 +116,7 @@ def test_validate_intersecting_segments_ok(fold_numbers):
                 pd.Timestamp("2020-01-02"),
             ],
         ),
-        pd.Series([0, 0, 1, 1, 0, 0], index=pd.date_range("2020-01-01", periods=6, freq="D")),
+        pd.Series([0, 0, 1, 1, 0, 0], index=pd.date_range("2020-01-01", periods=6, freq=pd.offsets.Day())),
         pd.Series(
             [0, 0, 1, 1],
             index=[

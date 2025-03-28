@@ -23,7 +23,7 @@ def outliers_tsds_with_external_timestamp(outliers_tsds) -> TSDataset:
     df_exog.drop(columns=["target"], inplace=True)
     df_wide = TSDataset.to_dataset(df.drop(columns=["exog"])).iloc[1:-1]
     df_exog_wide = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D", known_future=["external_timestamp"])
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Day(), known_future=["external_timestamp"])
     ts = convert_ts_to_int_timestamp(ts=ts, shift=10)
     return ts
 

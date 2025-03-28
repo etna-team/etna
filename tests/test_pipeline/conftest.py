@@ -59,7 +59,7 @@ def catboost_pipeline_big() -> Pipeline:
 def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset", "TSDataset"]:
     segment_1 = [7.0, 7.0, 3.0, 1.0]
     segment_2 = [40.0, 70.0, 20.0, 10.0]
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=n_repeats * len(segment_1)))
+    ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=n_repeats * len(segment_1)))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
@@ -92,7 +92,7 @@ def splited_piecewise_constant_ts(
     lower = [x - sigma_1 * quantile for x in segment_1] + [x - sigma_2 * quantile for x in segment_2]
     upper = [x + sigma_1 * quantile for x in segment_1] + [x + sigma_2 * quantile for x in segment_2]
 
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=len(segment_1)))
+    ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=len(segment_1)))
     lower_p = (1 - INTERVAL_WIDTH) / 2
     upper_p = (1 + INTERVAL_WIDTH) / 2
     df = pd.DataFrame(
@@ -118,7 +118,7 @@ def splited_piecewise_constant_ts(
 def constant_ts(size=40) -> TSDataset:
     segment_1 = [7] * size
     segment_2 = [50] * size
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=size))
+    ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=size))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
@@ -135,7 +135,7 @@ def constant_noisy_ts(size=40, use_noise=True) -> TSDataset:
     noise = RandomState(seed=42).normal(scale=3, size=size * 2)
     segment_1 = [7] * size
     segment_2 = [50] * size
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=size))
+    ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=size))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
@@ -162,13 +162,13 @@ def step_ts() -> Tuple[TSDataset, pd.DataFrame, pd.DataFrame]:
     start_value = 10.0
     add_value = 5.0
     segment = "segment_1"
-    timestamp = pd.date_range(start="2020-01-01", periods=train_size + n_folds * horizon, freq="D")
+    timestamp = pd.date_range(start="2020-01-01", periods=train_size + n_folds * horizon, freq=pd.offsets.Day())
     target = [start_value] * train_size
     for i in range(n_folds):
         target += [target[-1] + add_value] * horizon
 
     df = pd.DataFrame({"timestamp": timestamp, "target": target, "segment": segment})
-    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+    ts = TSDataset(TSDataset.to_dataset(df), freq=pd.offsets.Day())
 
     metrics_df = pd.DataFrame(
         {"segment": [segment, segment, segment], "MAE": [add_value, add_value, add_value], "fold_number": [0, 1, 2]}
@@ -202,7 +202,7 @@ def _get_simple_df() -> pd.DataFrame:
 def simple_ts() -> TSDataset:
     df = _get_simple_df()
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -211,7 +211,7 @@ def simple_ts_starting_with_nans_one_segment(simple_ts) -> TSDataset:
     df = _get_simple_df()
     df = TSDataset.to_dataset(df)
     df.iloc[:2, 0] = np.NaN
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -221,7 +221,7 @@ def simple_ts_starting_with_nans_all_segments(simple_ts) -> TSDataset:
     df = TSDataset.to_dataset(df)
     df.iloc[:2, 0] = np.NaN
     df.iloc[:3, 1] = np.NaN
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -232,7 +232,7 @@ def masked_ts() -> TSDataset:
     df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11
     df["target"] = [0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1] + [0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0]
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -243,7 +243,7 @@ def ts_process_fold_forecast() -> TSDataset:
     df["segment"] = ["segment_0"] * 11 + ["segment_1"] * 11
     df["target"] = [1, 2, 3, 4, 100, 6, 7, 100, 100, 100, 100] + [1, 2, 3, 4, 5, 6, 7, 8, 9, -6, 11]
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

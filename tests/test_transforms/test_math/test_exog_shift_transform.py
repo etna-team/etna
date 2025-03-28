@@ -9,7 +9,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import ExogShiftTransform
 
 
-def build_df_exog_with_nans(freq="D"):
+def build_df_exog_with_nans(freq=pd.offsets.Day()):
     df = pd.DataFrame(
         {
             "timestamp": list(pd.date_range("2023-01-01", periods=5, freq=freq)) * 2,
@@ -23,7 +23,7 @@ def build_df_exog_with_nans(freq="D"):
     return TSDataset.to_dataset(df=df)
 
 
-def build_ts_with_exogs(freq="D"):
+def build_ts_with_exogs(freq=pd.offsets.Day()):
     df = pd.DataFrame(
         {
             "timestamp": list(pd.date_range("2023-01-01", periods=4, freq=freq)) * 2,
@@ -39,17 +39,17 @@ def build_ts_with_exogs(freq="D"):
 
 @pytest.fixture()
 def df_exog_with_nans():
-    return build_df_exog_with_nans(freq="D")
+    return build_df_exog_with_nans(freq=pd.offsets.Day())
 
 
 @pytest.fixture()
 def ts_with_exogs():
-    return build_ts_with_exogs(freq="D")
+    return build_ts_with_exogs(freq=pd.offsets.Day())
 
 
 @pytest.fixture()
 def ts_with_exogs_ms_freq():
-    return build_ts_with_exogs(freq="MS")
+    return build_ts_with_exogs(freq=pd.offsets.MonthBegin())
 
 
 @pytest.mark.parametrize(

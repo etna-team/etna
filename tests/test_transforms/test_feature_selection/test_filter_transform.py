@@ -9,7 +9,7 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 @pytest.fixture
 def ts_with_features() -> TSDataset:
-    timestamp = pd.date_range("2020-01-01", periods=100, freq="D")
+    timestamp = pd.date_range("2020-01-01", periods=100, freq=pd.offsets.Day())
     df_1 = pd.DataFrame({"timestamp": timestamp, "segment": "segment_1", "target": 1})
     df_2 = pd.DataFrame({"timestamp": timestamp, "segment": "segment_2", "target": 2})
     df = TSDataset.to_dataset(pd.concat([df_1, df_2], ignore_index=False))
@@ -18,7 +18,7 @@ def ts_with_features() -> TSDataset:
     df_exog_2 = pd.DataFrame({"timestamp": timestamp, "segment": "segment_2", "exog_1": 3, "exog_2": 4})
     df_exog = TSDataset.to_dataset(pd.concat([df_exog_1, df_exog_2], ignore_index=False))
 
-    return TSDataset(df=df, df_exog=df_exog, freq="D")
+    return TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
 
 
 def test_set_only_include():

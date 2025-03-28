@@ -22,7 +22,7 @@ def test_mad_outliers_invalid_scale(outliers_df_with_two_columns):
             "outliers_df_with_two_columns_int_timestamp",
             "Series must have inferable frequency to autodetect period for STL!",
         ),
-        ("outliers_df_with_two_columns_minute_freq", "freq T not understood. Please report"),
+        ("outliers_df_with_two_columns_minute_freq", f"freq {pd.offsets.Minute().freqstr.upper()} not understood. Please report"),
     ),
 )
 def test_mad_outliers_stl_period_error(ts_name, error, request):

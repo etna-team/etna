@@ -124,7 +124,7 @@ def test_prediction_with_cap_floor():
             "floor": floor,
         }
     )
-    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq="D", known_future="all")
+    ts = TSDataset(df=TSDataset.to_dataset(df), df_exog=TSDataset.to_dataset(df_exog), freq=pd.offsets.Day(), known_future="all")
 
     model = ProphetModel(growth="logistic")
     pipeline = Pipeline(model=model, horizon=7)

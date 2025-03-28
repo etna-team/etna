@@ -31,7 +31,7 @@ def df_with_regressors(example_tsds) -> Tuple[pd.DataFrame, List[str]]:
 
 
 def linear_segments_by_parameters(alpha_values, intercept_values):
-    dates = pd.date_range(start="2020-02-01", freq="D", periods=210)
+    dates = pd.date_range(start="2020-02-01", freq=pd.offsets.Day(), periods=210)
     x = np.arange(210)
     train, test = [], []
     for i in range(3):
