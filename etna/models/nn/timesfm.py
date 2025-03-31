@@ -339,11 +339,6 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             )
             future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)
         else:
-            if ts.freq is None:
-                raise NotImplementedError(
-                    "Forecasting misaligned data with freq=None without exogenous features isn't currently implemented."
-                )
-
             target = TSDataset.to_flatten(df=target_df)
             target = target.rename(columns={"segment": "unique_id", "timestamp": "ds"})
 
