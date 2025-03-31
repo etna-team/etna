@@ -12,7 +12,9 @@ from etna.auto.utils import retry
 
 
 class ConfigSampler(BaseSampler):
-    """Optuna based sampler for greedy search over different configurations.
+    """Optuna based sampler for greedy search over various hashes of configs.
+
+     Mapping from hashes to configs is passed directly to objective.
 
     The core difference with :py:class:`optuna.samplers.GridSampler` is that we want to get current trial params
     (``params`` + ``relative_params``) in objective function.
@@ -20,7 +22,9 @@ class ConfigSampler(BaseSampler):
     which isn't suitable for this.
     """
 
-    def __init__(self, config_hashes: Set[str], random_generator: Optional[np.random.Generator] = None, retries: int = 10):
+    def __init__(
+        self, config_hashes: Set[str], random_generator: Optional[np.random.Generator] = None, retries: int = 10
+    ):
         """Init Config sampler.
 
         Parameters

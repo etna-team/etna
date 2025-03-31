@@ -65,12 +65,14 @@ def test_objective(
     metrics=[MAE(missing_mode="ignore")],
     backtest_params={},
     relative_params="hash",
-    config_mapping={"hash": {
-        "_target_": "etna.pipeline.Pipeline",
-        "horizon": 7,
-        "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
-        "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
-    }},
+    config_mapping={
+        "hash": {
+            "_target_": "etna.pipeline.Pipeline",
+            "horizon": 7,
+            "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
+            "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
+        }
+    },
 ):
     ts = request.getfixturevalue(ts_name)
     initializer = MagicMock(spec=_Initializer)
@@ -104,12 +106,14 @@ def test_objective_fail_none(
     initializer=MagicMock(spec=_Initializer),
     callback=MagicMock(spec=_Callback),
     relative_params="hash",
-    config_mapping={"hash": {
-        "_target_": "etna.pipeline.Pipeline",
-        "horizon": 7,
-        "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
-        "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
-    }},
+    config_mapping={
+        "hash": {
+            "_target_": "etna.pipeline.Pipeline",
+            "horizon": 7,
+            "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
+            "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
+        }
+    },
 ):
     ts = request.getfixturevalue(ts_name)
     trial = MagicMock(relative_params=relative_params)

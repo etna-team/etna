@@ -34,7 +34,9 @@ def sqlite_storage():
     os.unlink(storage_name)
 
 
-def test_config_sampler_one_thread(objective, config_sampler, expected_pipeline={"x": 2}, config_mapping={f"hash_{i}": {"x": i} for i in range(10)}):
+def test_config_sampler_one_thread(
+    objective, config_sampler, expected_pipeline={"x": 2}, config_mapping={f"hash_{i}": {"x": i} for i in range(10)}
+):
 
     study = optuna.create_study(sampler=config_sampler)
     study.optimize(objective, n_trials=100)
@@ -43,7 +45,12 @@ def test_config_sampler_one_thread(objective, config_sampler, expected_pipeline=
 
 
 def test_config_sampler_multithread_without_trials_count_check(
-    objective, config_sampler, sqlite_storage, n_jobs=4, expected_pipeline={"x": 2}, config_mapping={f"hash_{i}": {"x": i} for i in range(10)}
+    objective,
+    config_sampler,
+    sqlite_storage,
+    n_jobs=4,
+    expected_pipeline={"x": 2},
+    config_mapping={f"hash_{i}": {"x": i} for i in range(10)},
 ):
 
     study = optuna.create_study(sampler=config_sampler, storage=sqlite_storage)
