@@ -74,7 +74,7 @@ def dateflags_true_df() -> pd.DataFrame:
 
     flat_df = pd.concat(dataframes, ignore_index=True)
     result = TSDataset.to_dataset(flat_df)
-    result.index.freq = "3H"
+    result.index.freq = pd.offsets.Hour(3).freqstr
 
     return result
 

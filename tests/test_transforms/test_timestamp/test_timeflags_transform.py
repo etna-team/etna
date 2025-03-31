@@ -54,7 +54,7 @@ def timeflags_true_df() -> pd.DataFrame:
 
     flat_df = pd.concat(dataframes, ignore_index=True)
     result = TSDataset.to_dataset(flat_df)
-    result.index.freq = "5T"
+    result.index.freq = pd.offsets.Minute(5).freqstr
 
     return result
 

@@ -54,7 +54,7 @@ def example_ts(example_df):
 @pytest.fixture
 def example_ts_int_timestamp(example_df):
     df = example_df
-    df["timestamp"] = (df["timestamp"] - df["timestamp"].min()) // pd.Timedelta("1H")
+    df["timestamp"] = (df["timestamp"] - df["timestamp"].min()) // pd.Timedelta(hours=1)
     df_wide = TSDataset.to_dataset(example_df)
     ts = TSDataset(df=df_wide, freq=None)
     return ts
@@ -67,7 +67,7 @@ def example_ts_external_datetime_timestamp(example_df):
     df_exog = df.copy()
     df_exog["external_timestamp"] = df_exog["timestamp"]
     df_exog.drop(columns=["target"], inplace=True)
-    df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += pd.Timedelta("6H")
+    df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += pd.Timedelta(hours=6)
     df_exog_wide = TSDataset.to_dataset(df_exog)
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Hour())
     ts_int_index = convert_ts_to_int_timestamp(ts=ts, shift=10)
@@ -79,7 +79,7 @@ def example_ts_external_irregular_datetime_timestamp(example_ts_external_datetim
     ts = example_ts_external_datetime_timestamp
     df = ts._raw_df
     df_exog = ts._df_exog
-    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta("3H")
+    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta(hours=3)
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
 
@@ -110,7 +110,7 @@ def example_ts_external_datetime_timestamp_with_nans(example_ts_external_datetim
 def example_ts_external_int_timestamp(example_df):
     df_wide = TSDataset.to_dataset(example_df.copy())
     df_exog = example_df.copy()
-    df_exog["external_timestamp"] = (example_df["timestamp"] - example_df["timestamp"].min()) // pd.Timedelta("1H")
+    df_exog["external_timestamp"] = (example_df["timestamp"] - example_df["timestamp"].min()) // pd.Timedelta(hours=1)
     df_exog.drop(columns=["target"], inplace=True)
     df_exog.loc[df_exog["segment"] == "segment_1", "external_timestamp"] += 6
     df_exog_wide = TSDataset.to_dataset(df_exog)

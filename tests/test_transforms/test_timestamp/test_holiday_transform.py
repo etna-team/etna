@@ -166,7 +166,7 @@ def two_segments_w_mon_external_irregular_timestamp(two_segments_w_mon: TSDatase
     ts = two_segments_w_mon
     df = ts._raw_df
     df_exog = ts._df_exog
-    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta("3H")
+    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta(hours=3)
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
 
