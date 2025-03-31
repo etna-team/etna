@@ -437,9 +437,9 @@ class Auto(AutoBase):
         metric_aggregation: MetricAggregationStatistics,
         metrics: List[Metric],
         backtest_params: dict,
+        config_mapping: Dict[str, dict],
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
-        config_mapping: Optional[Dict[str, dict]] = None,
     ) -> Callable[[Trial], float]:
         """
         Optuna objective wrapper for the pool stage.
