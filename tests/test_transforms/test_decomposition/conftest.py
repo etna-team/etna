@@ -11,7 +11,9 @@ def ts_with_exogs() -> TSDataset:
     periods = 100
     periods_exog = periods + 10
     df = generate_ar_df(start_time="2020-01-01", periods=periods, freq=pd.offsets.Day(), n_segments=2)
-    df_exog = generate_ar_df(start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), n_segments=2, random_seed=2)
+    df_exog = generate_ar_df(
+        start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), n_segments=2, random_seed=2
+    )
     df_exog.rename(columns={"target": "exog"}, inplace=True)
     df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 2)
 

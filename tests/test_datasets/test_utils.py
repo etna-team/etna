@@ -452,10 +452,22 @@ def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq
 @pytest.mark.parametrize(
     "timestamps,freq_format,answer",
     (
-        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.MonthEnd()), "str", pd.offsets.MonthEnd().freqstr),
+        (
+            pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.MonthEnd()),
+            "str",
+            pd.offsets.MonthEnd().freqstr,
+        ),
         (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.MonthEnd()), "offset", pd.offsets.MonthEnd()),
-        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Week(weekday=6)), "str", pd.offsets.Week(weekday=6).freqstr),
-        (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Week(weekday=6)), "offset", pd.offsets.Week(weekday=6)),
+        (
+            pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Week(weekday=6)),
+            "str",
+            pd.offsets.Week(weekday=6).freqstr,
+        ),
+        (
+            pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Week(weekday=6)),
+            "offset",
+            pd.offsets.Week(weekday=6),
+        ),
         (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Day()), "str", pd.offsets.Day().freqstr),
         (pd.date_range(start="2020-01-01", periods=3, freq=pd.offsets.Day()), "offset", pd.offsets.Day()),
         (pd.Series(np.arange(10)), "str", None),
@@ -510,7 +522,13 @@ def test_determine_freq_fail_int_gaps(timestamps, freq_format):
 @pytest.mark.parametrize(
     "start, end, periods, freq, expected_range",
     [
-        ("2020-01-01", "2020-01-10", None, pd.offsets.Day().freqstr, pd.date_range(start="2020-01-01", end="2020-01-10", freq=pd.offsets.Day())),
+        (
+            "2020-01-01",
+            "2020-01-10",
+            None,
+            pd.offsets.Day().freqstr,
+            pd.date_range(start="2020-01-01", end="2020-01-10", freq=pd.offsets.Day()),
+        ),
         (
             "2020-01-01",
             "2020-01-10",
@@ -518,10 +536,34 @@ def test_determine_freq_fail_int_gaps(timestamps, freq_format):
             pd.offsets.Day(),
             pd.date_range(start="2020-01-01", end="2020-01-10", freq=pd.offsets.Day()),
         ),
-        ("2020-01-01", None, 10, pd.offsets.Day().freqstr, pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.Day())),
-        (None, "2020-01-10", 10, pd.offsets.Day().freqstr, pd.date_range(end="2020-01-10", periods=10, freq=pd.offsets.Day())),
-        ("2020-01-01", None, 10, pd.offsets.MonthBegin().freqstr, pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.MonthBegin())),
-        ("2020-01-01", None, 10, pd.offsets.MonthBegin(), pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.MonthBegin())),
+        (
+            "2020-01-01",
+            None,
+            10,
+            pd.offsets.Day().freqstr,
+            pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.Day()),
+        ),
+        (
+            None,
+            "2020-01-10",
+            10,
+            pd.offsets.Day().freqstr,
+            pd.date_range(end="2020-01-10", periods=10, freq=pd.offsets.Day()),
+        ),
+        (
+            "2020-01-01",
+            None,
+            10,
+            pd.offsets.MonthBegin().freqstr,
+            pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.MonthBegin()),
+        ),
+        (
+            "2020-01-01",
+            None,
+            10,
+            pd.offsets.MonthBegin(),
+            pd.date_range(start="2020-01-01", periods=10, freq=pd.offsets.MonthBegin()),
+        ),
         (10, 19, None, None, np.arange(10, 20)),
         (10, None, 10, None, np.arange(10, 20)),
         (None, 19, 10, None, np.arange(10, 20)),

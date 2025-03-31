@@ -11,6 +11,8 @@ from statsmodels.tsa.arima_process import arma_generate_sample
 from etna.datasets.utils import _check_timestamp_param
 from etna.datasets.utils import timestamp_range
 
+_FREQ_DAY = pd.offsets.Day()
+
 
 def _create_timestamp(
     start_time: Optional[Union[pd.Timestamp, int, str]], freq: Union[pd.DateOffset, str, None], periods: int
@@ -29,7 +31,7 @@ def generate_ar_df(
     ar_coef: Optional[list] = None,
     sigma: float = 1,
     n_segments: int = 1,
-    freq: Union[pd.DateOffset, str, None] = pd.offsets.Day().freqstr,
+    freq: Union[pd.DateOffset, str, None] = _FREQ_DAY,
     random_seed: int = 1,
 ) -> pd.DataFrame:
     """
@@ -82,7 +84,7 @@ def generate_periodic_df(
     scale: float = 10,
     period: int = 1,
     n_segments: int = 1,
-    freq: Union[pd.DateOffset, str, None] = pd.offsets.Day().freqstr,
+    freq: Union[pd.DateOffset, str, None] = _FREQ_DAY,
     add_noise: bool = False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -141,7 +143,7 @@ def generate_const_df(
     start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     scale: float = 10,
     n_segments: int = 1,
-    freq: Union[pd.DateOffset, str, None] = pd.offsets.Day().freqstr,
+    freq: Union[pd.DateOffset, str, None] = _FREQ_DAY,
     add_noise: bool = False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -196,7 +198,7 @@ def generate_from_patterns_df(
     periods: int,
     start_time: Optional[Union[pd.Timestamp, int, str]],
     patterns: List[List[float]],
-    freq: Union[pd.DateOffset, str, None] = pd.offsets.Day().freqstr,
+    freq: Union[pd.DateOffset, str, None] = _FREQ_DAY,
     add_noise=False,
     sigma: float = 1,
     random_seed: int = 1,
@@ -249,7 +251,7 @@ def generate_from_patterns_df(
 def generate_hierarchical_df(
     periods: int,
     n_segments: List[int],
-    freq: Union[pd.DateOffset, str, None] = pd.offsets.Day().freqstr,
+    freq: Union[pd.DateOffset, str, None] = _FREQ_DAY,
     start_time: Optional[Union[pd.Timestamp, int, str]] = None,
     ar_coef: Optional[list] = None,
     sigma: float = 1,

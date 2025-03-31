@@ -83,7 +83,16 @@ def base_forecast_with_folds_estimation_omegaconf_path():
 def test_forecast(base_pipeline_yaml_path, base_timeseries_path):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
-    run(["etna", "forecast", str(base_pipeline_yaml_path), str(base_timeseries_path), pd.offsets.Day().freqstr, str(tmp_output_path)])
+    run(
+        [
+            "etna",
+            "forecast",
+            str(base_pipeline_yaml_path),
+            str(base_timeseries_path),
+            pd.offsets.Day().freqstr,
+            str(tmp_output_path),
+        ]
+    )
     df_output = pd.read_csv(tmp_output_path)
     assert len(df_output) == 2 * 4
 

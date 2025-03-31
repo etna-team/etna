@@ -106,7 +106,8 @@ def test_generate_from_patterns_df_start_time(start_time, expected_start_time, f
 
 @pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
 @pytest.mark.parametrize(
-    "start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, pd.offsets.Day().freqstr), (10, pd.offsets.Day())]
+    "start_time, freq",
+    [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, pd.offsets.Day().freqstr), (10, pd.offsets.Day())],
 )
 @pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
 def test_generate_method_timestamp_start_time_fail(generate_method, start_time, freq, periods, n_segments):
@@ -115,7 +116,8 @@ def test_generate_method_timestamp_start_time_fail(generate_method, start_time, 
 
 
 @pytest.mark.parametrize(
-    "start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, pd.offsets.Day().freqstr), (10, pd.offsets.Day())]
+    "start_time, freq",
+    [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, pd.offsets.Day().freqstr), (10, pd.offsets.Day())],
 )
 @pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
 def test_generate_from_patterns_df_start_time_fail(start_time, freq, periods, patterns):

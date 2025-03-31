@@ -145,7 +145,15 @@ def test_deadline_model_fit_with_exogs_warning(example_reg_tsds):
         (pd.offsets.Hour(), 31 * 24 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01 01:00")),
         (pd.offsets.Hour(), 31 * 24 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
         (pd.offsets.Hour(), (31 + 29) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
-        (pd.offsets.Hour(), (31 + 29 + 31) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
+        (
+            pd.offsets.Hour(),
+            (31 + 29 + 31) * 24 + 1,
+            "2020-01-01",
+            1,
+            SeasonalityMode.month,
+            3,
+            pd.Timestamp("2020-01-01"),
+        ),
         (pd.offsets.Day(), 366 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
         (pd.offsets.Day(), 366 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-02")),
         (pd.offsets.Day(), 366 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
@@ -155,7 +163,15 @@ def test_deadline_model_fit_with_exogs_warning(example_reg_tsds):
         (pd.offsets.Hour(), 366 * 24 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01 01:00")),
         (pd.offsets.Hour(), 366 * 24 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
         (pd.offsets.Hour(), (366 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
-        (pd.offsets.Hour(), (366 + 365 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
+        (
+            pd.offsets.Hour(),
+            (366 + 365 + 365) * 24 + 1,
+            "2020-01-01",
+            1,
+            SeasonalityMode.year,
+            3,
+            pd.Timestamp("2020-01-01"),
+        ),
     ],
 )
 def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size, seasonality, window, expected):

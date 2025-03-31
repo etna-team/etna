@@ -37,7 +37,10 @@ INIT_PARAMS_TEMPLATE = {
 @pytest.fixture
 def dateflags_true_df() -> pd.DataFrame:
     """Generate dataset with answers for DateFlagsTransform."""
-    dataframes = [pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq=pd.offsets.Hour(3))}) for _ in range(5)]
+    dataframes = [
+        pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq=pd.offsets.Hour(3))})
+        for _ in range(5)
+    ]
 
     out_column = "dateflag"
     for i in range(len(dataframes)):
@@ -79,7 +82,10 @@ def dateflags_true_df() -> pd.DataFrame:
 @pytest.fixture
 def train_ts() -> TSDataset:
     """Generate dataset without dateflags"""
-    dataframes = [pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq=pd.offsets.Hour(3))}) for i in range(5)]
+    dataframes = [
+        pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq=pd.offsets.Hour(3))})
+        for i in range(5)
+    ]
 
     for i in range(len(dataframes)):
         df = dataframes[i]

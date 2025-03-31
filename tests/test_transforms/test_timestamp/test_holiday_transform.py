@@ -32,7 +32,9 @@ def simple_constant_df_daily():
 
 @pytest.fixture()
 def simple_constant_df_day_15_min():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-12-11", freq=pd.DateOffset(days=1, minutes=15))})
+    df = pd.DataFrame(
+        {"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-12-11", freq=pd.DateOffset(days=1, minutes=15))}
+    )
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
@@ -113,7 +115,9 @@ def simple_constant_df_hour():
 
 @pytest.fixture()
 def simple_week_mon_df():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-05-12", freq=pd.offsets.Week(weekday=0))})
+    df = pd.DataFrame(
+        {"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-05-12", freq=pd.offsets.Week(weekday=0))}
+    )
     df["target"] = 7
     df.set_index("timestamp", inplace=True)
     return df
@@ -215,7 +219,9 @@ def two_segments_simple_ts_hour(simple_constant_df_hour: pd.DataFrame):
 
 @pytest.fixture()
 def simple_constant_df_minute():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-11-26 02:15", freq=pd.offsets.Minute(15))})
+    df = pd.DataFrame(
+        {"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-11-26 02:15", freq=pd.offsets.Minute(15))}
+    )
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df

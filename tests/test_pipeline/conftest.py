@@ -109,7 +109,9 @@ def splited_piecewise_constant_ts(
         df[lambda x: x.timestamp < ts_start],
         df[lambda x: x.timestamp >= ts_start],
     )
-    train = TSDataset(TSDataset.to_dataset(train.drop([f"target_{lower_p:.4g}", f"target_{upper_p:.4g}"], axis=1)), pd.offsets.Day())
+    train = TSDataset(
+        TSDataset.to_dataset(train.drop([f"target_{lower_p:.4g}", f"target_{upper_p:.4g}"], axis=1)), pd.offsets.Day()
+    )
     test = TSDataset(TSDataset.to_dataset(test), pd.offsets.Day())
     return train, test
 

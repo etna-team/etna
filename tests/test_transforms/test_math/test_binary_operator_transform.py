@@ -3,8 +3,8 @@ from copy import deepcopy
 
 import numpy as np
 import numpy.testing
-import pytest
 import pandas as pd
+import pytest
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df

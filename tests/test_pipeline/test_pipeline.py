@@ -57,10 +57,22 @@ DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 def ts_with_feature():
     periods = 100
     df = generate_ar_df(
-        start_time="2019-01-01", periods=periods, ar_coef=[1], sigma=1, n_segments=2, random_seed=0, freq=pd.offsets.Day()
+        start_time="2019-01-01",
+        periods=periods,
+        ar_coef=[1],
+        sigma=1,
+        n_segments=2,
+        random_seed=0,
+        freq=pd.offsets.Day(),
     )
     df_feature = generate_ar_df(
-        start_time="2019-01-01", periods=periods, ar_coef=[0.9], sigma=2, n_segments=2, random_seed=42, freq=pd.offsets.Day()
+        start_time="2019-01-01",
+        periods=periods,
+        ar_coef=[0.9],
+        sigma=2,
+        n_segments=2,
+        random_seed=42,
+        freq=pd.offsets.Day(),
     )
     df["feature_1"] = df_feature["target"].apply(lambda x: abs(x))
     df = TSDataset.to_dataset(df)

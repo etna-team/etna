@@ -48,7 +48,9 @@ def test_not_present_dataset():
 
 @pytest.mark.filterwarnings("ignore: Local hash and expected hash are different for")
 def test_load_custom_dataset():
-    update_dataset_dict(dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq=pd.offsets.Day())
+    update_dataset_dict(
+        dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq=pd.offsets.Day()
+    )
     dataset_path = _DOWNLOAD_PATH / "custom_internal_dataset"
     if dataset_path.exists():
         shutil.rmtree(dataset_path)
@@ -62,7 +64,9 @@ def test_load_custom_dataset():
 
 @pytest.mark.filterwarnings("ignore: Local hash and expected hash are different for")
 def test_load_all_parts():
-    update_dataset_dict(dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq=pd.offsets.Day())
+    update_dataset_dict(
+        dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq=pd.offsets.Day()
+    )
     dataset_path = _DOWNLOAD_PATH / "custom_internal_dataset"
     if dataset_path.exists():
         shutil.rmtree(dataset_path)
@@ -72,7 +76,9 @@ def test_load_all_parts():
 
 
 def test_not_present_part():
-    update_dataset_dict(dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq=pd.offsets.Day())
+    update_dataset_dict(
+        dataset_name="custom_internal_dataset", get_dataset_function=get_custom_dataset, freq=pd.offsets.Day()
+    )
     dataset_path = _DOWNLOAD_PATH / "custom_internal_dataset"
     if dataset_path.exists():
         shutil.rmtree(dataset_path)

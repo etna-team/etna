@@ -102,7 +102,10 @@ def ts_with_external_timestamp(regular_ts) -> TSDataset:
     df_exog["external_timestamp"] = df["timestamp"]
     df_exog.drop(columns=["target"], inplace=True)
     ts = TSDataset(
-        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq=pd.offsets.Day(), known_future="all"
+        df=TSDataset.to_dataset(df).iloc[1:-10],
+        df_exog=TSDataset.to_dataset(df_exog),
+        freq=pd.offsets.Day(),
+        known_future="all",
     )
     return ts
 
@@ -114,7 +117,10 @@ def ts_with_external_timestamp_one_month(regular_ts_one_month) -> TSDataset:
     df_exog["external_timestamp"] = df["timestamp"]
     df_exog.drop(columns=["target"], inplace=True)
     ts = TSDataset(
-        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq=pd.offsets.MonthEnd(), known_future="all"
+        df=TSDataset.to_dataset(df).iloc[1:-10],
+        df_exog=TSDataset.to_dataset(df_exog),
+        freq=pd.offsets.MonthEnd(),
+        known_future="all",
     )
     return ts
 
@@ -126,7 +132,10 @@ def ts_with_external_int_timestamp(regular_ts) -> TSDataset:
     df_exog["external_timestamp"] = np.arange(10, 110).tolist() * 3
     df_exog.drop(columns=["target"], inplace=True)
     ts = TSDataset(
-        df=TSDataset.to_dataset(df).iloc[1:-10], df_exog=TSDataset.to_dataset(df_exog), freq=pd.offsets.Day(), known_future="all"
+        df=TSDataset.to_dataset(df).iloc[1:-10],
+        df_exog=TSDataset.to_dataset(df_exog),
+        freq=pd.offsets.Day(),
+        known_future="all",
     )
     return ts
 
@@ -214,7 +223,9 @@ def ts_to_resample() -> TSDataset:
         }
     )
     df_exog = pd.concat([df_exog_1, df_exog_2, df_exog_3], ignore_index=True)
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Hour(), df_exog=TSDataset.to_dataset(df_exog), known_future="all")
+    ts = TSDataset(
+        df=TSDataset.to_dataset(df), freq=pd.offsets.Hour(), df_exog=TSDataset.to_dataset(df_exog), known_future="all"
+    )
     return ts
 
 

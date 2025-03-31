@@ -261,7 +261,9 @@ def outliers_tsds():
 
 @pytest.fixture()
 def outliers_tsds_without_missing(outliers_tsds):
-    tsds = TSDataset(df=outliers_tsds[..., "target"].dropna(), freq=pd.offsets.Day(), df_exog=outliers_tsds._df_exog.dropna())
+    tsds = TSDataset(
+        df=outliers_tsds[..., "target"].dropna(), freq=pd.offsets.Day(), df_exog=outliers_tsds._df_exog.dropna()
+    )
     return tsds
 
 
@@ -683,7 +685,9 @@ def product_level_simple_hierarchical_ts(product_level_df, hierarchical_structur
 
 @pytest.fixture
 def product_level_simple_hierarchical_ts_long_history(product_level_df_long_history, hierarchical_structure):
-    ts = TSDataset(df=product_level_df_long_history, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(
+        df=product_level_df_long_history, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure
+    )
     return ts
 
 
@@ -695,7 +699,9 @@ def simple_no_hierarchy_ts(market_level_df):
 
 @pytest.fixture
 def market_level_constant_hierarchical_ts(market_level_constant_hierarchical_df, hierarchical_structure):
-    ts = TSDataset(df=market_level_constant_hierarchical_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(
+        df=market_level_constant_hierarchical_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure
+    )
     return ts
 
 
@@ -900,7 +906,9 @@ def ts_with_binary_exog() -> TSDataset:
     periods = 100
     periods_exog = periods + 10
     df = generate_const_df(start_time="2020-01-01", periods=periods, freq=pd.offsets.Day(), scale=1, n_segments=3)
-    df_exog = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), scale=1, n_segments=3)
+    df_exog = generate_const_df(
+        start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), scale=1, n_segments=3
+    )
     df_exog.rename(columns={"target": "holiday"}, inplace=True)
     df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 3)
 

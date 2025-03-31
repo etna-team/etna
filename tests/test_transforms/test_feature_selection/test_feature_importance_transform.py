@@ -26,7 +26,13 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 def ts_with_regressors():
     num_segments = 3
     df = generate_ar_df(
-        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=num_segments, random_seed=0, freq=pd.offsets.Day()
+        start_time="2020-01-01",
+        periods=300,
+        ar_coef=[1],
+        sigma=1,
+        n_segments=num_segments,
+        random_seed=0,
+        freq=pd.offsets.Day(),
     )
 
     example_segment = df["segment"].unique()[0]
@@ -36,7 +42,13 @@ def ts_with_regressors():
     # useless regressors
     num_useless = 12
     df_regressors_useless = generate_ar_df(
-        start_time="2020-01-01", periods=300, ar_coef=[1], sigma=1, n_segments=num_useless, random_seed=1, freq=pd.offsets.Day()
+        start_time="2020-01-01",
+        periods=300,
+        ar_coef=[1],
+        sigma=1,
+        n_segments=num_useless,
+        random_seed=1,
+        freq=pd.offsets.Day(),
     )
     for i, segment in enumerate(df_regressors_useless["segment"].unique()):
         regressor = df_regressors_useless[df_regressors_useless["segment"] == segment]["target"].values
