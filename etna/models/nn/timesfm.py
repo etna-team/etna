@@ -31,8 +31,6 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
     This model is only for zero-shot forecasting: it doesn't support training on data during ``fit``.
 
-    This model doesn't support forecasting on misaligned data with `freq=None` without exogenous features.
-
     This model doesn't support NaN in the middle or at the end of target and exogenous features.
     Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill them.
 
@@ -252,8 +250,6 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             if dataset doesn't have any context timestamps.
         ValueError:
             if there are NaNs in the middle or end of the time series.
-        NotImplementedError:
-            if forecasting is done without exogenous features and dataset has None frequency.
         """
         if return_components:
             raise NotImplementedError("This mode isn't currently implemented!")
