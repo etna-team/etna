@@ -1,5 +1,4 @@
 from functools import partial
-from typing import List
 from typing import Optional
 from typing import Set
 
@@ -9,7 +8,6 @@ from optuna.study import Study
 from optuna.trial import FrozenTrial
 from optuna.trial import TrialState
 
-from etna.auto.utils import config_hash
 from etna.auto.utils import retry
 
 
@@ -22,20 +20,19 @@ class ConfigSampler(BaseSampler):
     which isn't suitable for this.
     """
 
-    def __init__(self, configs: List[dict], random_generator: Optional[np.random.Generator] = None, retries: int = 10):
+    def __init__(self, config_hashes: Set[str], random_generator: Optional[np.random.Generator] = None, retries: int = 10):
         """Init Config sampler.
 
         Parameters
         ----------
-        configs:
-            pool of configs to sample from
+        config_hashes:
+            set of config hashes to sample from
         random_generator:
             numpy generator to get reproducible samples
         retries:
             number of retries to get new sample from storage. It could be useful if storage is not reliable.
         """
-        self.configs = configs
-        self.configs_hash = {config_hash(config=config): config for config in self.configs}
+        self.config_hashes = config_hashes
         self._rng = random_generator
         self.retries = retries
 
@@ -47,7 +44,7 @@ class ConfigSampler(BaseSampler):
         """Infer relative search space. Not used."""
         return {}
 
-    def sample_relative(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> dict:
+    def sample_relative(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> str:
         """Sample configuration to test.
 
         Parameters
@@ -68,7 +65,7 @@ class ConfigSampler(BaseSampler):
             # This case may occur with distributed optimization or trial queue. If there is no
             # target grid, `ConfigSampler` evaluates a visited, duplicated point with the current
             # trial. After that, the optimization stops.
-            _to_sample = list(self.configs_hash)
+            _to_sample = list(self.config_hashes)
             idx = self.rng.choice(len(_to_sample))
             hash_to_sample = _to_sample[idx]
         else:
@@ -76,9 +73,8 @@ class ConfigSampler(BaseSampler):
             idx = self.rng.choice(len(_trials_to_sample))
             hash_to_sample = _trials_to_sample[idx]
 
-        pipeline = self.configs_hash[hash_to_sample]
         study._storage.set_trial_user_attr(trial._trial_id, "hash", hash_to_sample)
-        return pipeline
+        return hash_to_sample
 
     def after_trial(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> None:  # noqa: D102
         """Stop study if all configs have been tested.
@@ -135,13 +131,13 @@ class ConfigSampler(BaseSampler):
             else:
                 pass
 
-        unfinished_hash = set(self.configs_hash) - set(finished_trials_hash) - set(running_trials_hash)
+        unfinished_hash = set(self.config_hashes) - set(finished_trials_hash) - set(running_trials_hash)
 
         # If evaluations for all hashes have been started, return hashes that have not yet finished
         # because all hashes should be evaluated before stopping the optimization.
         # This logic is copied from `GridSampler`
         if len(unfinished_hash) == 0:
-            unfinished_hash = set(self.configs_hash) - set(finished_trials_hash)
+            unfinished_hash = set(self.config_hashes) - set(finished_trials_hash)
 
         return unfinished_hash
 
@@ -150,13 +146,3 @@ class ConfigSampler(BaseSampler):
         if self._rng is None:
             self._rng = np.random.default_rng()
         return self._rng
-
-    def get_config_by_hash(self, hash: str):
-        """Get config by hash.
-
-        Parameters
-        ----------
-        hash:
-            hash to get config for
-        """
-        return self.configs_hash[hash]

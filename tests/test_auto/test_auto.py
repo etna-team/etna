@@ -64,12 +64,13 @@ def test_objective(
     metric_aggregation: Literal["mean"] = "mean",
     metrics=[MAE(missing_mode="ignore")],
     backtest_params={},
-    relative_params={
+    relative_params="hash",
+    config_mapping={"hash": {
         "_target_": "etna.pipeline.Pipeline",
         "horizon": 7,
         "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
         "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
-    },
+    }},
 ):
     ts = request.getfixturevalue(ts_name)
     initializer = MagicMock(spec=_Initializer)
@@ -83,6 +84,7 @@ def test_objective(
         backtest_params=backtest_params,
         initializer=initializer,
         callback=callback,
+        config_mapping=config_mapping,
     )
     aggregated_metric = _objective(trial)
     assert isinstance(aggregated_metric, float)
@@ -101,12 +103,13 @@ def test_objective_fail_none(
     backtest_params={},
     initializer=MagicMock(spec=_Initializer),
     callback=MagicMock(spec=_Callback),
-    relative_params={
+    relative_params="hash",
+    config_mapping={"hash": {
         "_target_": "etna.pipeline.Pipeline",
         "horizon": 7,
         "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
         "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform"}],
-    },
+    }},
 ):
     ts = request.getfixturevalue(ts_name)
     trial = MagicMock(relative_params=relative_params)
@@ -118,6 +121,7 @@ def test_objective_fail_none(
         backtest_params=backtest_params,
         initializer=initializer,
         callback=callback,
+        config_mapping=config_mapping,
     )
 
     with pytest.raises(ValueError, match="Metric value is None"):
@@ -301,7 +305,7 @@ def test_top_k(
     tune_trials_1 = trials[6:]
 
     auto._pool_optuna.study.get_trials.return_value = pool_trials
-    auto._pool_optuna.study.sampler.configs_hash = {
+    auto._configs_mapping = {
         trial.user_attrs["hash"]: pipeline.to_dict() for trial, pipeline in zip(pool_trials, pipelines)
     }
     auto._make_pool_summary = partial(Auto._make_pool_summary, self=auto)  # essential for summary

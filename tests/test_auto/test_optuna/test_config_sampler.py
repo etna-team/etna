@@ -13,14 +13,14 @@ from etna.auto.optuna import ConfigSampler
 
 @pytest.fixture()
 def config_sampler():
-    return ConfigSampler(configs=[{"x": i} for i in range(10)])
+    return ConfigSampler(config_hashes={f"hash_{i}" for i in range(10)})
 
 
 @pytest.fixture()
-def objective():
+def objective(config_mapping={f"hash_{i}": {"x": i} for i in range(10)}):
     def objective(trial: optuna.trial.Trial):
         rng = SystemRandom()
-        config = {**trial.relative_params, **trial.params}
+        config = config_mapping[trial.relative_params]
         time.sleep(10 * rng.random())
         return (config["x"] - 2) ** 2
 
@@ -34,22 +34,22 @@ def sqlite_storage():
     os.unlink(storage_name)
 
 
-def test_config_sampler_one_thread(objective, config_sampler, expected_pipeline={"x": 2}):
+def test_config_sampler_one_thread(objective, config_sampler, expected_pipeline={"x": 2}, config_mapping={f"hash_{i}": {"x": i} for i in range(10)}):
 
     study = optuna.create_study(sampler=config_sampler)
     study.optimize(objective, n_trials=100)
-    assert study.sampler.configs_hash[study.best_trial.user_attrs["hash"]] == expected_pipeline
-    assert len(study.trials) == len(config_sampler.configs)
+    assert config_mapping[study.best_trial.user_attrs["hash"]] == expected_pipeline
+    assert len(study.trials) == len(config_sampler.config_hashes)
 
 
 def test_config_sampler_multithread_without_trials_count_check(
-    objective, config_sampler, sqlite_storage, n_jobs=4, expected_pipeline={"x": 2}
+    objective, config_sampler, sqlite_storage, n_jobs=4, expected_pipeline={"x": 2}, config_mapping={f"hash_{i}": {"x": i} for i in range(10)}
 ):
 
     study = optuna.create_study(sampler=config_sampler, storage=sqlite_storage)
     Parallel(n_jobs=n_jobs)(delayed(study.optimize)(objective) for _ in range(n_jobs))
 
-    assert study.sampler.configs_hash[study.best_trial.user_attrs["hash"]] == expected_pipeline
+    assert config_mapping[study.best_trial.user_attrs["hash"]] == expected_pipeline
 
 
 @pytest.mark.skip(reason="The number of trials is non-deterministic")
@@ -60,4 +60,4 @@ def test_config_sampler_multithread(objective, config_sampler, sqlite_storage, n
 
     assert study.best_trial.user_attrs["pipeline"] == expected_pipeline
     # TODO: this test case is non-deterministic
-    assert len(study.trials) == len(config_sampler.configs) + n_jobs - 1
+    assert len(study.trials) == len(config_sampler.config_hashes) + n_jobs - 1
