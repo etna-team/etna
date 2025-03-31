@@ -8,7 +8,7 @@ import pytest
 
 from etna.datasets import TSDataset
 
-frequencies = ["D", "15min"]
+frequencies = [pd.offsets.Day().freqstr, pd.offsets.Minute(15).freqstr]
 DistributionDict = Dict[str, pd.DataFrame]
 
 

@@ -32,8 +32,8 @@ def ts_dataset_weekly_function_with_horizon(weekly_period_df):
             weekly_period_df[lambda x: x.timestamp >= ts_start],
         )
 
-        ts_train = TSDataset(TSDataset.to_dataset(train), "D")
-        ts_test = TSDataset(TSDataset.to_dataset(test), "D")
+        ts_train = TSDataset(TSDataset.to_dataset(train), pd.offsets.Day())
+        ts_test = TSDataset(TSDataset.to_dataset(test), pd.offsets.Day())
         return ts_train, ts_test
 
     return wrapper

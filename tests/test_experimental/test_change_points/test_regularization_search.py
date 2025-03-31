@@ -1,5 +1,6 @@
 import pytest
 from ruptures import Binseg
+import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df

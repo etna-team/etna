@@ -23,7 +23,7 @@ def check_not_equal_within_3_sigma(generated_value, expected_value, sigma, **kwa
 
 
 @pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 @pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
 def test_generate_method_columns_set(generate_method, freq, periods, n_segments):
     expected_columns = {"timestamp", "segment", "target"}
@@ -31,7 +31,7 @@ def test_generate_method_columns_set(generate_method, freq, periods, n_segments)
     assert set(df.columns) == expected_columns
 
 
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 @pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
 def test_generate_from_patterns_df_columns_set(freq, periods, patterns):
     expected_columns = {"timestamp", "segment", "target"}
@@ -40,14 +40,14 @@ def test_generate_from_patterns_df_columns_set(freq, periods, patterns):
 
 
 @pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 @pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
 def test_generate_method_periods(generate_method, freq, periods, n_segments):
     df = generate_method(periods=periods, n_segments=n_segments, freq=freq)
     assert df["timestamp"].nunique() == periods
 
 
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 @pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
 def test_generate_from_patterns_df_periods(freq, periods, patterns):
     df = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=None)
@@ -55,14 +55,14 @@ def test_generate_from_patterns_df_periods(freq, periods, patterns):
 
 
 @pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 @pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
 def test_generate_method_segments(generate_method, freq, periods, n_segments):
     df = generate_method(periods=periods, n_segments=n_segments, freq=freq)
     assert df["segment"].nunique() == n_segments
 
 
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 @pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
 def test_generate_from_patterns_df_segments(freq, periods, patterns):
     df = generate_from_patterns_df(periods=periods, patterns=patterns, freq=freq, start_time=None)
@@ -75,9 +75,9 @@ def test_generate_from_patterns_df_segments(freq, periods, patterns):
     [
         (None, 0, None),
         (1, 1, None),
-        (None, pd.Timestamp("2000-01-01"), "D"),
-        ("2020-01-01", pd.Timestamp("2020-01-01"), "D"),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), "D"),
+        (None, pd.Timestamp("2000-01-01"), pd.offsets.Day().freqstr),
+        ("2020-01-01", pd.Timestamp("2020-01-01"), pd.offsets.Day().freqstr),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), pd.offsets.Day().freqstr),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), pd.offsets.Day()),
     ],
 )
@@ -92,9 +92,9 @@ def test_generate_method_start_time(generate_method, start_time, expected_start_
     [
         (None, 0, None),
         (1, 1, None),
-        (None, pd.Timestamp("2000-01-01"), "D"),
-        ("2020-01-01", pd.Timestamp("2020-01-01"), "D"),
-        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), "D"),
+        (None, pd.Timestamp("2000-01-01"), pd.offsets.Day().freqstr),
+        ("2020-01-01", pd.Timestamp("2020-01-01"), pd.offsets.Day().freqstr),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), pd.offsets.Day().freqstr),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), pd.offsets.Day()),
     ],
 )
@@ -106,7 +106,7 @@ def test_generate_from_patterns_df_start_time(start_time, expected_start_time, f
 
 @pytest.mark.parametrize("generate_method", [generate_ar_df, generate_periodic_df, generate_const_df])
 @pytest.mark.parametrize(
-    "start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, "D"), (10, pd.offsets.Day())]
+    "start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, pd.offsets.Day().freqstr), (10, pd.offsets.Day())]
 )
 @pytest.mark.parametrize("periods, n_segments", [(5, 1), (6, 2)])
 def test_generate_method_timestamp_start_time_fail(generate_method, start_time, freq, periods, n_segments):
@@ -115,7 +115,7 @@ def test_generate_method_timestamp_start_time_fail(generate_method, start_time, 
 
 
 @pytest.mark.parametrize(
-    "start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, "D"), (10, pd.offsets.Day())]
+    "start_time, freq", [("2020-01-01", None), (pd.Timestamp("2020-01-01"), None), (10, pd.offsets.Day().freqstr), (10, pd.offsets.Day())]
 )
 @pytest.mark.parametrize("periods, patterns", [(5, [[0, 1], [0, 2, 1]])])
 def test_generate_from_patterns_df_start_time_fail(start_time, freq, periods, patterns):
@@ -218,21 +218,21 @@ def test_generate_hierarchical_df_negative_size_error(n_segments):
         (4, [3, 3], {"target", "timestamp", "level_0", "level_1"}),
     ),
 )
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_generate_hierarchical_df_columns_set(periods, n_segments, expected_columns, freq):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments, freq=freq)
     assert expected_columns == set(hierarchical_df.columns)
 
 
 @pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_generate_hierarchical_df_periods(periods, n_segments, freq):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments, freq=freq)
     assert hierarchical_df["timestamp"].nunique() == periods
 
 
 @pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_generate_hierarchical_df_segments(periods, n_segments, freq):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments, freq=freq)
 
@@ -241,7 +241,7 @@ def test_generate_hierarchical_df_segments(periods, n_segments, freq):
 
 
 @pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_generate_hierarchical_df_segments_names(periods, n_segments, freq):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments, freq=freq)
 
@@ -251,7 +251,7 @@ def test_generate_hierarchical_df_segments_names(periods, n_segments, freq):
 
 
 @pytest.mark.parametrize("periods,n_segments", ((2, [1, 2]), (2, [2]), (4, [3, 4]), (4, [3, 3])))
-@pytest.mark.parametrize("freq", [None, "D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [None, pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_generate_hierarchical_df_convert_to_wide_format(periods, n_segments, freq):
     hierarchical_df = generate_hierarchical_df(periods=periods, n_segments=n_segments, freq=freq)
     level_names = [f"level_{idx}" for idx in range(len(n_segments))]

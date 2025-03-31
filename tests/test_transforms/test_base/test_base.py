@@ -271,7 +271,7 @@ def inverse_transformed_components_df():
     )
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
-    df.index.freq = "D"
+    df.index.freq = pd.offsets.Day()
     return df
 
 

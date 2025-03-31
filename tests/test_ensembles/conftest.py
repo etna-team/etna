@@ -237,8 +237,8 @@ def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset"
         df[lambda x: x.timestamp < ts_start],
         df[lambda x: x.timestamp >= ts_start],
     )
-    train = TSDataset(TSDataset.to_dataset(train), "D")
-    test = TSDataset(TSDataset.to_dataset(test), "D")
+    train = TSDataset(TSDataset.to_dataset(train), pd.offsets.Day())
+    test = TSDataset(TSDataset.to_dataset(test), pd.offsets.Day())
 
     return train, test
 

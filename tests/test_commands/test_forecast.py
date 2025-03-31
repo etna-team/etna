@@ -83,7 +83,7 @@ def base_forecast_with_folds_estimation_omegaconf_path():
 def test_forecast(base_pipeline_yaml_path, base_timeseries_path):
     tmp_output = NamedTemporaryFile("w")
     tmp_output_path = Path(tmp_output.name)
-    run(["etna", "forecast", str(base_pipeline_yaml_path), str(base_timeseries_path), "D", str(tmp_output_path)])
+    run(["etna", "forecast", str(base_pipeline_yaml_path), str(base_timeseries_path), pd.offsets.Day().freqstr, str(tmp_output_path)])
     df_output = pd.read_csv(tmp_output_path)
     assert len(df_output) == 2 * 4
 
@@ -119,7 +119,7 @@ def test_forecast_with_exog(pipeline_path_name, base_timeseries_path, base_times
             "forecast",
             str(pipeline_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_exog_path),
         ]
@@ -137,7 +137,7 @@ def test_forecast_omegaconf_with_exog(base_pipeline_omegaconf_path, base_timeser
             "forecast",
             str(base_pipeline_omegaconf_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_exog_path),
         ]
@@ -159,7 +159,7 @@ def test_forecast_with_predictive_intervals(
             "forecast",
             str(pipeline_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_exog_path),
             str(base_forecast_omegaconf_path),
@@ -189,7 +189,7 @@ def test_forecast_use_exog_correct(
             "forecast",
             str(model_pipeline),
             str(increasing_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(increasing_timeseries_exog_path),
         ]
@@ -334,7 +334,7 @@ def test_forecast_with_start_timestamp(
             "forecast",
             str(pipeline_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_exog_path),
             str(start_timestamp_forecast_omegaconf_path),
@@ -399,7 +399,7 @@ def test_forecast_with_estimate_n_folds(
             "forecast",
             str(pipeline_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_exog_path),
             str(base_forecast_with_folds_estimation_omegaconf_path),
@@ -426,7 +426,7 @@ def test_forecast_with_numeric_segments(
             "forecast",
             str(base_pipeline_yaml_path),
             str(base_timeseries_numeric_segments_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
         ],
     )
@@ -457,7 +457,7 @@ def test_forecast_with_numeric_segments_with_exog(
             "forecast",
             str(pipeline_path),
             str(base_timeseries_numeric_segments_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_numeric_segments_exog_path),
         ],

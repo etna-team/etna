@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.transforms.math import AddConstTransform

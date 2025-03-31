@@ -48,8 +48,8 @@ def linear_segments_by_parameters(alpha_values, intercept_values):
 
     train_df_all = pd.concat(train, ignore_index=True)
     test_df_all = pd.concat(test, ignore_index=True)
-    train_ts = TSDataset(TSDataset.to_dataset(train_df_all), "D")
-    test_ts = TSDataset(TSDataset.to_dataset(test_df_all), "D")
+    train_ts = TSDataset(TSDataset.to_dataset(train_df_all), pd.offsets.Day())
+    test_ts = TSDataset(TSDataset.to_dataset(test_df_all), pd.offsets.Day())
 
     return train_ts, test_ts
 

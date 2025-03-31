@@ -75,7 +75,7 @@ def constant_ts(size=40) -> TSDataset:
             "segment": [f"segment_{i+1}" for i in range(len(constants)) for _ in range(size)],
         }
     )
-    ts = TSDataset(TSDataset.to_dataset(df), "D")
+    ts = TSDataset(TSDataset.to_dataset(df), pd.offsets.Day())
     train, test = ts.train_test_split(test_size=5)
     return train, test
 

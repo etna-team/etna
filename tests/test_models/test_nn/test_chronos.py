@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from hydra_slayer import get_from_params
 from pandas.testing import assert_frame_equal
+import pandas as pd
 
 from etna.datasets import TSDataset
 from etna.datasets import generate_ar_df

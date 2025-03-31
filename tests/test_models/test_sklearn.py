@@ -1,5 +1,6 @@
 import pytest
 from sklearn.linear_model import LinearRegression
+import pandas as pd
 
 from etna.datasets.tsdataset import TSDataset
 from etna.models.sklearn import SklearnMultiSegmentModel

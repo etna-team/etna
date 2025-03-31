@@ -400,7 +400,7 @@ def test_determine_num_steps_ok(start_timestamp, end_timestamp, freq, answer):
 @pytest.mark.parametrize(
     "start_timestamp, end_timestamp, freq",
     [
-        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-01-01"), "D"),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-01-01"), pd.offsets.Day()),
         (5, 2, None),
     ],
 )
@@ -510,7 +510,7 @@ def test_determine_freq_fail_int_gaps(timestamps, freq_format):
 @pytest.mark.parametrize(
     "start, end, periods, freq, expected_range",
     [
-        ("2020-01-01", "2020-01-10", None, "D", pd.date_range(start="2020-01-01", end="2020-01-10", freq=pd.offsets.Day())),
+        ("2020-01-01", "2020-01-10", None, pd.offsets.Day().freqstr, pd.date_range(start="2020-01-01", end="2020-01-10", freq=pd.offsets.Day())),
         (
             "2020-01-01",
             "2020-01-10",

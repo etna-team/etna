@@ -72,8 +72,8 @@ def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset"
         df[lambda x: x.timestamp < ts_start],
         df[lambda x: x.timestamp >= ts_start],
     )
-    train = TSDataset(TSDataset.to_dataset(train), "D")
-    test = TSDataset(TSDataset.to_dataset(test), "D")
+    train = TSDataset(TSDataset.to_dataset(train), pd.offsets.Day())
+    test = TSDataset(TSDataset.to_dataset(test), pd.offsets.Day())
 
     return train, test
 
@@ -109,8 +109,8 @@ def splited_piecewise_constant_ts(
         df[lambda x: x.timestamp < ts_start],
         df[lambda x: x.timestamp >= ts_start],
     )
-    train = TSDataset(TSDataset.to_dataset(train.drop([f"target_{lower_p:.4g}", f"target_{upper_p:.4g}"], axis=1)), "D")
-    test = TSDataset(TSDataset.to_dataset(test), "D")
+    train = TSDataset(TSDataset.to_dataset(train.drop([f"target_{lower_p:.4g}", f"target_{upper_p:.4g}"], axis=1)), pd.offsets.Day())
+    test = TSDataset(TSDataset.to_dataset(test), pd.offsets.Day())
     return train, test
 
 
@@ -126,7 +126,7 @@ def constant_ts(size=40) -> TSDataset:
             "segment": ["segment_1"] * size + ["segment_2"] * size,
         }
     )
-    ts = TSDataset(TSDataset.to_dataset(df), "D")
+    ts = TSDataset(TSDataset.to_dataset(df), pd.offsets.Day())
     return ts
 
 
@@ -145,7 +145,7 @@ def constant_noisy_ts(size=40, use_noise=True) -> TSDataset:
     )
     if use_noise:
         df.loc[:, "target"] += noise
-    ts = TSDataset(TSDataset.to_dataset(df), "D")
+    ts = TSDataset(TSDataset.to_dataset(df), pd.offsets.Day())
     return ts
 
 

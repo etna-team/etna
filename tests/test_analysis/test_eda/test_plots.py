@@ -178,7 +178,7 @@ def test_plot_imputation_fail_incorrect_start_end_type(ts_name, params, match, r
         plot_imputation(ts=ts, imputer=imputer, **params)
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_distribution_plot_datetime_timestamp(example_tsdf, freq):
     distribution_plot(example_tsdf, freq=freq)
 
