@@ -801,7 +801,7 @@ class TimesFmBase:
       num_jobs: int = 1,
       normalize: bool = False,
       verbose: bool = True,
-  ) -> pd.DataFrame:
+  ) -> np.ndarray:
     """Forecasts on a list of time series.
 
     Args:
@@ -867,19 +867,5 @@ class TimesFmBase:
                                      window_size=window_size)
     if verbose:
       logging.info("Finished forecasting.")
-    fcst_df = make_future_dataframe(
-        uids=uids,
-        last_times=df_sorted.groupby("unique_id")["ds"].tail(1),
-        h=self.horizon_len,
-        freq=freq,
-    )
-    fcst_df[model_name] = full_forecast[:, 0:self.horizon_len, 0].reshape(-1, 1)
 
-    for i, q in enumerate(self.quantiles):
-      q_col = f"{model_name}-q-{q}"
-      fcst_df[q_col] = full_forecast[:, 0:self.horizon_len,
-                                     1 + i].reshape(-1, 1)
-      if q == 0.5:
-        fcst_df[model_name] = fcst_df[q_col]
-    logging.info("Finished creating output dataframe.")
-    return fcst_df
+    return full_forecast

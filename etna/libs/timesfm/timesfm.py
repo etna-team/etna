@@ -219,7 +219,7 @@ class TimesFmTorch(timesfm_base.TimesFmBase):
     if not os.path.exists(checkpoint_path):  # changed: make loading similar to chronos
       checkpoint_path = path.join(snapshot_download(checkpoint_path, cache_dir=checkpoint.local_dir), "torch_model.ckpt")
     self._model = ppd.PatchedTimeSeriesDecoder(self._model_config)
-    loaded_checkpoint = torch.load(checkpoint_path)  # changed: remove weights_only=True due to attribute absence in low torch versions
+    loaded_checkpoint = torch.load(checkpoint_path, weights_only=True)
     logging.info("Loading checkpoint from %s", checkpoint_path)
     self._model.load_state_dict(loaded_checkpoint)
     logging.info("Sending checkpoint to device %s", f"{self._device}")

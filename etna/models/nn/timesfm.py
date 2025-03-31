@@ -355,11 +355,9 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                 target, freq=ts.freq, value_name="target", normalize=self.normalize_target
             )
 
-            predictions = predictions.rename(columns={"unique_id": "segment", "ds": "timestamp", "timesfm": "target"})
-            predictions = TSDataset.to_dataset(predictions)
-            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.loc[
-                :, pd.IndexSlice[:, "target"]
-            ].values  # .values is needed to cast predictions type of initial target type in ts
+            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions[:, :, 5].swapaxes(
+                1, 0
+            )  # 5th index contains 0.5 quantile value
         return future_ts
 
     @staticmethod

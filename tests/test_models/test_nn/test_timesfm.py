@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +15,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import SegmentEncoderTransform
+from tests.utils import convert_ts_to_int_timestamp
 
 
 def generate_increasing_df():
@@ -139,6 +141,21 @@ def test_forecast(ts, expected_ts_increasing_integers, encoder_length, request):
     assert_frame_equal(forecast._df, expected_ts_increasing_integers._df, atol=1)
 
 
+def test_forecast_int_timestamp(ts_increasing_integers, expected_ts_increasing_integers):
+    warnings.filterwarnings("ignore", message="Frequency is None. Mapping it to 0, that can be not optimal.")
+
+    ts_increasing_integers_int_timestamp = convert_ts_to_int_timestamp(ts_increasing_integers)
+    expected_ts = convert_ts_to_int_timestamp(expected_ts_increasing_integers)
+
+    model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32)
+    pipeline = Pipeline(model=model, horizon=2)
+    pipeline.fit(ts_increasing_integers_int_timestamp)
+    forecast = pipeline.forecast()
+
+    forecast._df = forecast._df.reset_index(drop=True)
+    assert_frame_equal(forecast._df, expected_ts._df, atol=1, check_names=False)
+
+
 def test_forecast_failed_nan_middle_target(ts_nan_middle):
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=128)
     pipeline = Pipeline(model=model, horizon=2)
@@ -205,18 +222,6 @@ def test_forecast_exog_features_failed_exog_nan(ts, request):
     pipeline.fit(ts)
     with pytest.raises(
         ValueError, match="There are NaNs in the middle or at the end of exogenous features. Segments with NaNs:"
-    ):
-        _ = pipeline.forecast()
-
-
-@pytest.mark.smoke
-def test_forecast_only_target_failed_int_timestamps(example_tsds_int_timestamp):
-    model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32)
-    pipeline = Pipeline(model=model, horizon=1)
-    pipeline.fit(example_tsds_int_timestamp)
-    with pytest.raises(
-        NotImplementedError,
-        match="Forecasting misaligned data with freq=None without exogenous features isn't currently implemented.",
     ):
         _ = pipeline.forecast()
 
