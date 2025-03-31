@@ -11,7 +11,7 @@ from etna.datasets.utils import timestamp_range
 def select_observations(
     df: pd.DataFrame,
     timestamps: pd.Series,
-    freq: Optional[str],
+    freq: Union[pd.offsets.BaseOffset, str, None] = None,
     start: Optional[Union[pd.Timestamp, int, str]] = None,
     end: Optional[Union[pd.Timestamp, int, str]] = None,
     periods: Optional[int] = None,
@@ -26,6 +26,8 @@ def select_observations(
         series of timestamps to select
     freq:
         frequency of timestamp in df, possible values:
+
+        - :py:class:`pandas.offsets.BaseOffset` object for datetime timestamp
 
         - `pandas offset aliases <https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#offset-aliases>`_
           for datetime timestamp

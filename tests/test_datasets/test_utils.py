@@ -19,7 +19,6 @@ from etna.datasets.utils import get_target_with_quantiles
 from etna.datasets.utils import infer_alignment
 from etna.datasets.utils import inverse_transform_target_components
 from etna.datasets.utils import make_timestamp_df_from_alignment
-from etna.datasets.utils import match_target_components
 from etna.datasets.utils import set_columns_wide
 from etna.datasets.utils import timestamp_range
 
@@ -308,22 +307,6 @@ def test_get_level_dataframe_segm_errors(
         )
 
 
-@pytest.mark.parametrize(
-    "features,answer",
-    (
-        (set(), set()),
-        ({"a", "b"}, set()),
-        (
-            {"target_component_a", "a", "b", "target_component_c", "target", "target_0.95"},
-            {"target_component_a", "target_component_c"},
-        ),
-    ),
-)
-def test_match_target_components(features, answer):
-    components = match_target_components(features)
-    assert components == answer
-
-
 @pytest.fixture
 def target_components_df():
     timestamp = pd.date_range("2021-01-01", "2021-01-05")
@@ -394,11 +377,16 @@ def test_inverse_transform_target_components(
     [
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-02"), "D", 1),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-11"), "D", 10),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-11"), pd.offsets.Day(), 10),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-01"), "D", 0),
         (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-19"), "W-SUN", 2),
+        (pd.Timestamp("2020-01-05"), pd.Timestamp("2020-01-19"), pd.offsets.Week(weekday=6), 2),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-01-15"), pd.offsets.Week(), 2),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-01-16"), pd.offsets.Week(), 2),
         (pd.Timestamp("2020-01-31"), pd.Timestamp("2021-02-28"), "M", 13),
+        (pd.Timestamp("2020-01-31"), pd.Timestamp("2021-02-28"), pd.offsets.MonthEnd(), 13),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-01"), "MS", 17),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2021-06-01"), pd.offsets.MonthBegin(), 17),
         (0, 0, None, 0),
         (0, 5, None, 5),
         (3, 10, None, 7),
@@ -425,7 +413,9 @@ def test_determine_num_steps_fail_wrong_order(start_timestamp, end_timestamp, fr
     "start_timestamp, end_timestamp, freq",
     [
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), "M"),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), pd.offsets.MonthEnd()),
         (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), "MS"),
+        (pd.Timestamp("2020-01-02"), pd.Timestamp("2020-06-01"), pd.offsets.MonthBegin()),
         (2.2, 5, None),
     ],
 )
@@ -449,7 +439,9 @@ def test_determine_num_steps_fail_wrong_start(start_timestamp, end_timestamp, fr
     "start_timestamp, end_timestamp, freq",
     [
         (pd.Timestamp("2020-01-31"), pd.Timestamp("2020-06-05"), "M"),
+        (pd.Timestamp("2020-01-31"), pd.Timestamp("2020-06-05"), pd.offsets.MonthEnd()),
         (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-06-05"), "MS"),
+        (pd.Timestamp("2020-01-01"), pd.Timestamp("2020-06-05"), pd.offsets.MonthBegin()),
     ],
 )
 def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq):
@@ -458,20 +450,37 @@ def test_determine_num_steps_fail_wrong_end(start_timestamp, end_timestamp, freq
 
 
 @pytest.mark.parametrize(
-    "timestamps,answer",
+    "timestamps,freq_format,answer",
     (
-        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "M"),
-        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "W-SUN"),
-        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "D"),
-        (pd.Series(np.arange(10)), None),
-        (pd.Series(np.arange(5, 15)), None),
-        (pd.Series(np.arange(1)), None),
+        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "str", "M"),
+        (pd.date_range(start="2020-01-01", periods=3, freq="M"), "offset", pd.offsets.MonthEnd()),
+        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "str", "W-SUN"),
+        (pd.date_range(start="2020-01-01", periods=3, freq="W"), "offset", pd.offsets.Week(weekday=6)),
+        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "str", "D"),
+        (pd.date_range(start="2020-01-01", periods=3, freq="D"), "offset", pd.offsets.Day()),
+        (pd.Series(np.arange(10)), "str", None),
+        (pd.Series(np.arange(10)), "offset", None),
+        (pd.Series(np.arange(5, 15)), "str", None),
+        (pd.Series(np.arange(1)), "str", None),
     ),
 )
-def test_determine_freq(timestamps, answer):
-    assert determine_freq(timestamps=timestamps) == answer
+def test_determine_freq(timestamps, freq_format, answer):
+    assert determine_freq(timestamps=timestamps, freq_format=freq_format) == answer
 
 
+@pytest.mark.parametrize(
+    "timestamps",
+    (
+        pd.date_range(start="2020-01-01", periods=3, freq="D"),
+        pd.Series(np.arange(10)),
+    ),
+)
+def test_determine_freq_fail_wrong_freq_format(timestamps):
+    with pytest.raises(NotImplementedError, match="unknown is not a valid"):
+        _ = determine_freq(timestamps=timestamps, freq_format="unknown")
+
+
+@pytest.mark.parametrize("freq_format", ["str", "offset"])
 @pytest.mark.parametrize(
     "timestamps",
     (
@@ -479,11 +488,12 @@ def test_determine_freq(timestamps, answer):
         pd.to_datetime(pd.Series(["2020-02-15", "2020-01-22", "2020-01-23"])),
     ),
 )
-def test_determine_freq_fail_cant_determine(timestamps):
+def test_determine_freq_fail_cant_determine(timestamps, freq_format):
     with pytest.raises(ValueError, match="Can't determine frequency of a given dataframe"):
-        _ = determine_freq(timestamps=timestamps)
+        _ = determine_freq(timestamps=timestamps, freq_format=freq_format)
 
 
+@pytest.mark.parametrize("freq_format", ["str", "offset"])
 @pytest.mark.parametrize(
     "timestamps",
     (
@@ -492,18 +502,26 @@ def test_determine_freq_fail_cant_determine(timestamps):
         pd.Series([3, 4, 6]),
     ),
 )
-def test_determine_freq_fail_int_gaps(timestamps):
+def test_determine_freq_fail_int_gaps(timestamps, freq_format):
     with pytest.raises(ValueError, match="Integer timestamp isn't ordered and doesn't contain all the values"):
-        _ = determine_freq(timestamps=timestamps)
+        _ = determine_freq(timestamps=timestamps, freq_format=freq_format)
 
 
 @pytest.mark.parametrize(
     "start, end, periods, freq, expected_range",
     [
         ("2020-01-01", "2020-01-10", None, "D", pd.date_range(start="2020-01-01", end="2020-01-10", freq="D")),
+        (
+            "2020-01-01",
+            "2020-01-10",
+            None,
+            pd.offsets.Day(),
+            pd.date_range(start="2020-01-01", end="2020-01-10", freq="D"),
+        ),
         ("2020-01-01", None, 10, "D", pd.date_range(start="2020-01-01", periods=10, freq="D")),
         (None, "2020-01-10", 10, "D", pd.date_range(end="2020-01-10", periods=10, freq="D")),
         ("2020-01-01", None, 10, "MS", pd.date_range(start="2020-01-01", periods=10, freq="MS")),
+        ("2020-01-01", None, 10, pd.offsets.MonthBegin(), pd.date_range(start="2020-01-01", periods=10, freq="MS")),
         (10, 19, None, None, np.arange(10, 20)),
         (10, None, 10, None, np.arange(10, 20)),
         (None, 19, 10, None, np.arange(10, 20)),
@@ -521,6 +539,7 @@ def test_timestamp_range(start, end, periods, freq, expected_range):
         ("2020-01-01", None, 10, None),
         (None, "2020-01-10", 10, None),
         ("2020-01-01", 20, None, "D"),
+        ("2020-01-01", 20, None, pd.offsets.Day()),
         (10, "2020-01-10", None, "D"),
         (10, 20, None, "D"),
         (10, None, 10, "D"),
@@ -756,6 +775,15 @@ def test_apply_alignment_new_timestamps(df_name, alignment, expected_timestamps,
             9,
             None,
             "D",
+            "external_timestamp",
+            timestamp_range(start="2020-01-01", periods=10, freq="D"),
+        ),
+        (
+            {"segment_0": pd.Timestamp("2020-01-01")},
+            0,
+            9,
+            None,
+            pd.offsets.Day(),
             "external_timestamp",
             timestamp_range(start="2020-01-01", periods=10, freq="D"),
         ),

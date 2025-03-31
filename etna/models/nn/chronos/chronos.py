@@ -99,7 +99,7 @@ class ChronosModel(ChronosBaseModel):
             path_or_url=path_or_url,
             encoder_length=encoder_length,
             device=device,
-            dtype=dtype,
+            dtype=self.dtype,
             cache_dir=cache_dir,
         )
 

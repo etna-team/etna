@@ -76,7 +76,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
         self._train_init_dict: Optional[Dict[str, pd.Series]] = None
         self._test_init_df: Optional[pd.DataFrame] = None
         self.in_column_regressor: Optional[bool] = None
-        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
+        self._freq_offset: Optional[pd.DateOffset] = _DEFAULT_FREQ  # type: ignore
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -97,7 +97,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
     def fit(self, ts: TSDataset) -> "_SingleDifferencingTransform":
         """Fit the transform."""
         self.in_column_regressor = self.in_column in ts.regressors
-        self._freq = ts.freq
+        self._freq_offset = ts.freq_offset
         super().fit(ts)
         return self
 
@@ -200,7 +200,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
 
         # check that test is right after the train
         expected_min_test_timestamp = timestamp_range(
-            start=self._test_init_df.index[-1], periods=2, freq=self._freq  # type: ignore
+            start=self._test_init_df.index[-1], periods=2, freq=self._freq_offset  # type: ignore
         )[-1]
         if expected_min_test_timestamp != df.index.min():
             raise ValueError("Test should go after the train without gaps")
@@ -356,7 +356,7 @@ class DifferencingTransform(ReversibleTransform):
             )
         self._fit_segments: Optional[List[str]] = None
         self.in_column_regressor: Optional[bool] = None
-        self._freq: Optional[str] = _DEFAULT_FREQ  # type: ignore
+        self._freq_offset: Optional[pd.DateOffset] = _DEFAULT_FREQ  # type: ignore
 
     def _get_column_name(self) -> str:
         if self.inplace:
@@ -377,7 +377,7 @@ class DifferencingTransform(ReversibleTransform):
     def fit(self, ts: TSDataset) -> "DifferencingTransform":
         """Fit the transform."""
         self.in_column_regressor = self.in_column in ts.regressors
-        self._freq = ts.freq
+        self._freq_offset = ts.freq_offset
         super().fit(ts)
         return self
 
@@ -402,7 +402,7 @@ class DifferencingTransform(ReversibleTransform):
         result_df = df
         for transform in self._differencing_transforms:
             result_df = transform._fit_transform(result_df)
-            transform._freq = self._freq
+            transform._freq_offset = self._freq_offset
             transform.in_column_regressor = self.in_column_regressor
 
         self._fit_segments = df.columns.get_level_values("segment").unique().tolist()
