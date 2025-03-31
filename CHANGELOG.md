@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add the ability to train DL models (except `TFTModel` and `DeepStateModel`) on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - Add warning if training DL models on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `etna.dataset.utils`, `etna.dataset.generation`, `etna.analysis` ([#635](https://github.com/etna-team/etna/pull/635))
-- 
+- Add `ModelPredictionIntervalsMixin` with intervals forecasting logic for models ([#633](https://github.com/etna-team/etna/pull/633))
 - 
 - 
 
@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change cpu docker image to use Python 3.10 ([#617](https://github.com/etna-team/etna/pull/617))
 - Change cuda docker image to use Python 3.10 and cuda 12.4.0 ([#617](https://github.com/etna-team/etna/pull/617))
 - Rework the use of some deprecated functionalities ([#624](https://github.com/etna-team/etna/pull/624))
-- 
+- Reworked quantiles and intervals handling in the library ([#633](https://github.com/etna-team/etna/pull/633))
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
@@ -78,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove attributes `known_future`, `freq`, `current_df_level` and `current_df_exog_level` from `TSDataset`, and make them properties ([#630](https://github.com/etna-team/etna/pull/630))
 - **Breaking:** Remove properties `columns` and `loc` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/631))
 - **Breaking:** Remove `match_target_components` ([#634](https://github.com/etna-team/etna/pull/634))
+- **Breaking:** Remove `match_target_quantiles` and `get_target_with_quantiles` ([#633](https://github.com/etna-team/etna/pull/633))
 
 ## [2.10.0] - 2025-01-09
 ### Added

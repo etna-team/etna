@@ -6,7 +6,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 from typing import Union
 from typing import cast
 
@@ -270,11 +269,6 @@ def set_columns_wide(
     df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
 
     return df_left
-
-
-def match_target_components(features: Set[str]) -> Set[str]:
-    """Find target components in a set of features."""
-    return set(filter(lambda f: f.startswith("target_component_"), features))
 
 
 def get_level_dataframe(
