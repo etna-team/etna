@@ -20,7 +20,7 @@ def config_sampler():
 def objective(config_mapping={f"hash_{i}": {"x": i} for i in range(10)}):
     def objective(trial: optuna.trial.Trial):
         rng = SystemRandom()
-        config = config_mapping[trial.relative_params]
+        config = config_mapping[trial.relative_params["hash"]]
         time.sleep(10 * rng.random())
         return (config["x"] - 2) ** 2
 

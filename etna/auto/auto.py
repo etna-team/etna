@@ -471,7 +471,7 @@ class Auto(AutoBase):
 
         def _objective(trial: Trial) -> float:
 
-            pipeline_config = config_mapping[trial.relative_params]
+            pipeline_config = config_mapping[trial.relative_params["hash"]]
 
             pipeline: BasePipeline = get_from_params(**pipeline_config)
             if initializer is not None:

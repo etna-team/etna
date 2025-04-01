@@ -48,8 +48,8 @@ class ConfigSampler(BaseSampler):
         """Infer relative search space. Not used."""
         return {}
 
-    def sample_relative(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> str:
-        """Sample configuration to test.
+    def sample_relative(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> dict:
+        """Sample config hash to test.
 
         Parameters
         ----------
@@ -61,7 +61,7 @@ class ConfigSampler(BaseSampler):
         Return
         ------
         :
-            sampled configuration to run objective on
+            sampled config hash to run objective on
         """
         trials_to_sample = self._get_unfinished_hashes(study=study, current_trial=trial)
 
@@ -78,7 +78,7 @@ class ConfigSampler(BaseSampler):
             hash_to_sample = _trials_to_sample[idx]
 
         study._storage.set_trial_user_attr(trial._trial_id, "hash", hash_to_sample)
-        return hash_to_sample
+        return {"hash": hash_to_sample}
 
     def after_trial(self, study: Study, trial: FrozenTrial, *args, **kwargs) -> None:  # noqa: D102
         """Stop study if all configs have been tested.

@@ -64,9 +64,9 @@ def test_objective(
     metric_aggregation: Literal["mean"] = "mean",
     metrics=[MAE(missing_mode="ignore")],
     backtest_params={},
-    relative_params="hash",
+    relative_params={"hash": "hash_1"},
     config_mapping={
-        "hash": {
+        "hash_1": {
             "_target_": "etna.pipeline.Pipeline",
             "horizon": 7,
             "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
@@ -105,9 +105,9 @@ def test_objective_fail_none(
     backtest_params={},
     initializer=MagicMock(spec=_Initializer),
     callback=MagicMock(spec=_Callback),
-    relative_params="hash",
+    relative_params={"hash": "hash_1"},
     config_mapping={
-        "hash": {
+        "hash_1": {
             "_target_": "etna.pipeline.Pipeline",
             "horizon": 7,
             "model": {"_target_": "etna.models.NaiveModel", "lag": 1},
