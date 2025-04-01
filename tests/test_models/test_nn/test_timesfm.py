@@ -142,15 +142,15 @@ def test_forecast(ts, expected_ts_increasing_integers, encoder_length, request):
 
 
 def test_forecast_int_timestamp(ts_increasing_integers, expected_ts_increasing_integers):
-    warnings.filterwarnings("ignore", message="Frequency is None. Mapping it to 0, that can be not optimal.")
-
     ts_increasing_integers_int_timestamp = convert_ts_to_int_timestamp(ts_increasing_integers)
     expected_ts = convert_ts_to_int_timestamp(expected_ts_increasing_integers)
 
     model = TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32)
     pipeline = Pipeline(model=model, horizon=2)
     pipeline.fit(ts_increasing_integers_int_timestamp)
-    forecast = pipeline.forecast()
+
+    with pytest.warns(UserWarning, match="Frequency is None. Mapping it to 0, that can be not optimal."):
+        forecast = pipeline.forecast()
 
     forecast._df = forecast._df.reset_index(drop=True)
     assert_frame_equal(forecast._df, expected_ts._df, atol=1, check_names=False)

@@ -743,16 +743,6 @@ class TestForecastOutSample:
             (NBeatsGenericModel(input_size=7, output_size=7, trainer_params=dict(max_epochs=1)), [], "example_tsds"),
             (ChronosModel(path_or_url="amazon/chronos-t5-tiny", encoder_length=7), [], "example_tsds"),
             (ChronosBoltModel(path_or_url="amazon/chronos-bolt-tiny", encoder_length=7), [], "example_tsds"),
-        ],
-    )
-    def test_forecast_out_sample_int_timestamp(self, model, transforms, dataset_name, request):
-        ts = request.getfixturevalue(dataset_name)
-        ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
-        self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
-
-    @pytest.mark.parametrize(
-        "model, transforms, dataset_name",
-        [
             (
                 lambda: TimesFMModel(path_or_url="google/timesfm-1.0-200m-pytorch", encoder_length=32),
                 [],
@@ -760,16 +750,12 @@ class TestForecastOutSample:
             ),
         ],
     )
-    def test_forecast_out_sample_int_timestamp_failed_timesfm(self, model, transforms, dataset_name, request):
+    def test_forecast_out_sample_int_timestamp(self, model, transforms, dataset_name, request):
         if callable(model):
             model = model()
         ts = request.getfixturevalue(dataset_name)
         ts_int_timestamp = convert_ts_to_int_timestamp(ts, shift=10)
-        with pytest.raises(
-            NotImplementedError,
-            match="Forecasting misaligned data with freq=None without exogenous features isn't currently implemented.",
-        ):
-            self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
+        self._test_forecast_out_sample(ts_int_timestamp, model, transforms)
 
     @pytest.mark.parametrize(
         "model, transforms, dataset_name",
