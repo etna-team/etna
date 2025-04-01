@@ -167,6 +167,7 @@
 # Note: Copied from timesfm repository (https://github.com/google-research/timesfm/blob/c9a582506b7588a39bc11b38b17c0020e5942629/src/timesfm/timesfm_base.py)
 # replace print with logging
 # rework freq_map to handle new pandas freq names
+# removed forecast postprocessing in forecast_on_df method
 
 import warnings
 
@@ -865,6 +866,7 @@ class TimesFmBase:
                                      freq=freq_inps,
                                      normalize=normalize,
                                      window_size=window_size)
+    # changed: return median_forecast instead of full_forecast and remove postprocessing
     if verbose:
       logging.info("Finished forecasting.")
 
