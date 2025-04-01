@@ -861,11 +861,11 @@ class TimesFmBase:
     if verbose:
       logging.info("Finished preprocessing dataframe.")   # changed: replace print
     freq_inps = [freq_map(freq)] * len(new_inputs)
-    _, full_forecast = self.forecast(new_inputs,
+    median_forecast, _ = self.forecast(new_inputs,
                                      freq=freq_inps,
                                      normalize=normalize,
                                      window_size=window_size)
     if verbose:
       logging.info("Finished forecasting.")
 
-    return full_forecast
+    return median_forecast

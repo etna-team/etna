@@ -346,9 +346,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                 target, freq=ts.freq, value_name="target", normalize=self.normalize_target
             )
 
-            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions[:, :, 5].swapaxes(
-                1, 0
-            )  # 5th index contains 0.5 quantile value
+            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.swapaxes(1, 0)
         return future_ts
 
     @staticmethod
