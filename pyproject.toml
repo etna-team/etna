@@ -225,6 +225,7 @@ filterwarnings = [
     "ignore: This model doesn't work with exogenous features",
     "ignore: Some of external objects in input parameters could be not",
     "ignore: If you use MPS, it can sometimes cause unexpected results",
+    "ignore: Frequency is None. Mapping it to 0, that can be not optimal.",
     # external warnings
     "ignore: Attribute 'loss' is an instance of `nn.Module` and is already",
     "ignore: Maximum Likelihood optimization failed to converge. Check mle_retvals",
