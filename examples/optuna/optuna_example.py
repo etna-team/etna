@@ -38,7 +38,7 @@ def init_logger(config: dict, project: str = "wandb-sweeps", tags: Optional[list
     tslogger.add(wblogger)
 
 
-def dataloader(file_path: Path, freq: str = "D") -> TSDataset:
+def dataloader(file_path: Path, freq: str | pd.offsets.BaseOffset = "D") -> TSDataset:
     df = pd.read_csv(file_path)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq=freq)
@@ -82,7 +82,7 @@ def run_optuna(
     n_trials: int = 200,
     file_path: Path = FILE_PATH.parents[1] / "data" / "example_dataset.csv",
     direction: str = "minimize",
-    freq: str = "D",
+    freq: str | pd.offsets.BaseOffset = "D",
     lags: int = 24,
     seed: int = 11,
 ):

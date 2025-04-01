@@ -21,7 +21,7 @@ def set_seed(seed: int = 42):
     np.random.seed(seed)
 
 
-def dataloader(file_path: Path, freq: str) -> TSDataset:
+def dataloader(file_path: Path, freq: str | pd.offsets.BaseOffset) -> TSDataset:
     df = pd.read_csv(file_path)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq=freq)

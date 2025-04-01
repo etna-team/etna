@@ -32,7 +32,7 @@ def init_logger(config: dict, project: str = "wandb-sweeps", tags: Optional[list
     tslogger.add(wblogger)
 
 
-def dataloader(file_path: Path, freq: str) -> TSDataset:
+def dataloader(file_path: Path, freq: str | pd.offsets.BaseOffset) -> TSDataset:
     df = pd.read_csv(file_path)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq=freq)
