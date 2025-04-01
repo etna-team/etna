@@ -20,24 +20,25 @@ def optuna_storage():
 
 
 @pytest.fixture()
-def trials():
+def trials_with_pipelines():
     class Trial(NamedTuple):
         user_attrs: dict
+        params: dict
         state: TrialState = TrialState.COMPLETE
 
     complete_trials = [
         Trial(
             user_attrs={
-                "pipeline": pipeline.to_dict(),
                 "SMAPE_median": float(i),
                 "hash": config_hash(pipeline.to_dict()),
-            }
+            },
+            params={"model.lag": i},
         )
         for i, pipeline in enumerate((Pipeline(NaiveModel(j), horizon=7) for j in range(10)))
     ]
-    fail_trials = [Trial(user_attrs={}, state=TrialState.FAIL)]
+    fail_trials = [Trial(user_attrs={}, state=TrialState.FAIL, params={})]
 
-    return complete_trials + complete_trials[:3] + fail_trials
+    return complete_trials + complete_trials[:3] + fail_trials, [Pipeline(NaiveModel(i), horizon=7) for i in range(10)]
 
 
 @pytest.fixture

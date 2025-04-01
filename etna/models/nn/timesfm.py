@@ -31,8 +31,6 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
 
     This model is only for zero-shot forecasting: it doesn't support training on data during ``fit``.
 
-    This model doesn't support forecasting on misaligned data with `freq=None` without exogenous features.
-
     This model doesn't support NaN in the middle or at the end of target and exogenous features.
     Use :py:class:`~etna.transforms.TimeSeriesImputerTransform` to fill them.
 
@@ -252,8 +250,6 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             if dataset doesn't have any context timestamps.
         ValueError:
             if there are NaNs in the middle or end of the time series.
-        NotImplementedError:
-            if forecasting is done without exogenous features and dataset has None frequency.
         """
         if return_components:
             raise NotImplementedError("This mode isn't currently implemented!")
@@ -343,11 +339,6 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
             )
             future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)
         else:
-            if ts.freq is None:
-                raise NotImplementedError(
-                    "Forecasting misaligned data with freq=None without exogenous features isn't currently implemented."
-                )
-
             target = TSDataset.to_flatten(df=target_df)
             target = target.rename(columns={"segment": "unique_id", "timestamp": "ds"})
 
@@ -355,11 +346,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                 target, freq=ts.freq, value_name="target", normalize=self.normalize_target
             )
 
-            predictions = predictions.rename(columns={"unique_id": "segment", "ds": "timestamp", "timesfm": "target"})
-            predictions = TSDataset.to_dataset(predictions)
-            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.loc[
-                :, pd.IndexSlice[:, "target"]
-            ].values  # .values is needed to cast predictions type of initial target type in ts
+            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.swapaxes(1, 0)
         return future_ts
 
     @staticmethod

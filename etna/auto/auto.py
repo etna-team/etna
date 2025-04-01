@@ -260,6 +260,7 @@ class Auto(AutoBase):
         )
         self.pool = pool
         self._pool = self._make_pool(pool=pool, horizon=horizon)
+        self._configs_mapping = {config_hash(config=pipeline.to_dict()): pipeline.to_dict() for pipeline in self._pool}
         self._pool_optuna: Optional[Optuna] = None
 
         root_folder = f"{self.experiment_folder}/" if self.experiment_folder is not None else ""
@@ -394,6 +395,7 @@ class Auto(AutoBase):
                 backtest_params=self.backtest_params,
                 initializer=initializer,
                 callback=callback,
+                config_mapping=self._configs_mapping,
             ),
             runner=self.runner,
             n_trials=n_trials,
@@ -435,6 +437,7 @@ class Auto(AutoBase):
         metric_aggregation: MetricAggregationStatistics,
         metrics: List[Metric],
         backtest_params: dict,
+        config_mapping: Dict[str, dict],
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
     ) -> Callable[[Trial], float]:
@@ -457,6 +460,8 @@ class Auto(AutoBase):
             Object that is called before each pipeline backtest, can be used to initialize loggers.
         callback:
             Object that is called after each pipeline backtest, can be used to log extra metrics.
+        config_mapping:
+            Mapping from config hashes to configs.
 
         Returns
         -------
@@ -466,9 +471,7 @@ class Auto(AutoBase):
 
         def _objective(trial: Trial) -> float:
 
-            pipeline_config = dict()
-            pipeline_config.update(trial.relative_params)
-            pipeline_config.update(trial.params)
+            pipeline_config = config_mapping[trial.relative_params["hash"]]
 
             pipeline: BasePipeline = get_from_params(**pipeline_config)
             if initializer is not None:
@@ -494,7 +497,6 @@ class Auto(AutoBase):
 
     def _init_pool_optuna(self, suppress_logging: bool = False) -> Optuna:
         """Initialize optuna."""
-        pool = [pipeline.to_dict() for pipeline in self._pool]
         logging_verbosity = optuna.logging.get_verbosity()
         try:
             if suppress_logging:
@@ -503,7 +505,7 @@ class Auto(AutoBase):
                 direction="maximize" if self.target_metric.greater_is_better else "minimize",
                 study_name=self._pool_folder,
                 storage=self.storage,
-                sampler=ConfigSampler(configs=pool),
+                sampler=ConfigSampler(config_hashes=set(self._configs_mapping.keys())),
             )
         finally:
             optuna.logging.set_verbosity(logging_verbosity)
@@ -511,7 +513,7 @@ class Auto(AutoBase):
 
     def _init_tuners(self, pool_optuna: Optuna) -> List["Tune"]:
         trials = pool_optuna.study.get_trials()
-        configs = [trial.user_attrs["pipeline"] for trial in trials]
+        configs = [self._configs_mapping[trial.user_attrs["hash"]] for trial in trials]
 
         results = []
         for config in configs:
@@ -538,8 +540,8 @@ class Auto(AutoBase):
         study_params = []
         for trial in trials:
             trial_pipeline: Optional[BasePipeline] = None
-            if "pipeline" in trial.user_attrs:
-                trial_pipeline = get_from_params(**trial.user_attrs.get("pipeline"))
+            if (config := self._configs_mapping.get(trial.user_attrs.get("hash"))) is not None:
+                trial_pipeline = get_from_params(**config)
             record = {
                 **trial.user_attrs,
                 "study": self._pool_folder,
@@ -555,8 +557,8 @@ class Auto(AutoBase):
         study_params = []
         for trial in trials:
             trial_pipeline: Optional[BasePipeline] = None
-            if "pipeline" in trial.user_attrs:
-                trial_pipeline = get_from_params(**trial.user_attrs.get("pipeline"))
+            if trial.params is not None:
+                trial_pipeline = pipeline.set_params(**trial.params)
             record = {
                 **trial.user_attrs,
                 "study": study,
@@ -727,7 +729,8 @@ class Tune(AutoBase):
             **optuna_params,
         )
 
-        return get_from_params(**self._optuna.study.best_trial.params)
+        best_params = self._optuna.study.best_trial.params
+        return self.pipeline.set_params(**best_params)
 
     @staticmethod
     def objective(
@@ -806,7 +809,6 @@ class Tune(AutoBase):
                 if callback is not None:
                     callback(metrics_df=metrics_df, forecast_df=forecast_df, fold_info_df=fold_info_df)
 
-                trial.set_user_attr("pipeline", pipeline_trial_params.to_dict())
                 trial.set_user_attr("hash", config_hash(pipeline_trial_params.to_dict()))
 
                 aggregated_metrics = aggregate_metrics_df(metrics_df)
@@ -842,8 +844,8 @@ class Tune(AutoBase):
         study_params = []
         for trial in trials:
             trial_pipeline: Optional[BasePipeline] = None
-            if "pipeline" in trial.user_attrs:
-                trial_pipeline = get_from_params(**trial.user_attrs.get("pipeline"))
+            if trial.params is not None:
+                trial_pipeline = self.pipeline.set_params(**trial.params)
             record = {
                 **trial.user_attrs,
                 "pipeline": trial_pipeline,
