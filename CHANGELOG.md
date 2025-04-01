@@ -49,7 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change cpu docker image to use Python 3.10 ([#617](https://github.com/etna-team/etna/pull/617))
 - Change cuda docker image to use Python 3.10 and cuda 12.4.0 ([#617](https://github.com/etna-team/etna/pull/617))
 - Rework the use of some deprecated functionalities ([#624](https://github.com/etna-team/etna/pull/624))
-- Rework `ConfigSampler` and `objective` in `Auto` ([#637](https://github.com/etna-team/etna/pull/637))
+- **Breaking:** Change signature of `Auto.objective` and init parameters of `ConfigSampler` ([#637](https://github.com/etna-team/etna/pull/637))
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
