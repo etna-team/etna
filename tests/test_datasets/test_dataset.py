@@ -1108,7 +1108,7 @@ def test_make_future_datetime_timestamp(freq):
     ts = TSDataset(TSDataset.to_dataset(df), freq=freq)
     ts_future = ts.make_future(10)
     assert np.all(
-        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq=freq)
+        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta(days=1), periods=10, freq=freq)
     )
     assert set(ts_future.features) == {"target"}
 
@@ -1127,7 +1127,7 @@ def test_make_future_with_exog_datetime_timestamp(tsdf_with_exog):
     ts_future = ts.make_future(10)
     assert np.all(
         ts_future.timestamps
-        == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq=pd.offsets.Day())
+        == pd.date_range(ts.timestamps.max() + pd.Timedelta(days=1), periods=10, freq=pd.offsets.Day())
     )
     assert set(ts_future.features) == {"target", "exog"}
 
@@ -1159,7 +1159,7 @@ def test_make_future_with_regressors(df_and_regressors, freq):
     ts = TSDataset(df=df, df_exog=df_exog, freq=freq, known_future=known_future)
     ts_future = ts.make_future(10)
     assert np.all(
-        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq=freq)
+        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta(days=1), periods=10, freq=freq)
     )
     assert set(ts_future.features) == {"target", "regressor_1", "regressor_2"}
 
@@ -1170,7 +1170,7 @@ def test_make_future_with_regressors_and_context(df_and_regressors, tail_steps):
     horizon = 10
     ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     ts_future = ts.make_future(horizon, tail_steps=tail_steps)
-    assert ts_future.timestamps[tail_steps] == ts.timestamps[-1] + pd.Timedelta("1 day")
+    assert ts_future.timestamps[tail_steps] == ts.timestamps[-1] + pd.Timedelta(days=1)
 
 
 def test_make_future_inherits_regressors(df_and_regressors):
@@ -1578,7 +1578,7 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
         torch_dataset[0]["target"],
-        tsdf_with_exog._df.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values.astype(
+        tsdf_with_exog._df.loc[fill_na_idx + pd.Timedelta(days=1) :, pd.IndexSlice["Moscow", "target"]].values.astype(
             np.float32
         ),
     )
