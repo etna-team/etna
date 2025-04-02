@@ -49,6 +49,9 @@ class SSM(ABC, BaseMixin):
        :math:`\sigma_0` - prior standard deviation
     """
 
+    def __init__(self):
+        pass
+
     @abstractmethod
     def latent_dim(self) -> int:
         """Dimension of the latent space.
@@ -137,6 +140,9 @@ class LevelSSM(SSM):
     Read more about this at :ref:`installation page <installation>`.
     """
 
+    def __init__(self):
+        super().__init__()
+
     def latent_dim(self) -> int:
         """Dimension of the latent space.
 
@@ -224,6 +230,9 @@ class LevelTrendSSM(LevelSSM):
     Read more about this at :ref:`installation page <installation>`.
     """
 
+    def __init__(self):
+        super().__init__()
+
     def latent_dim(self) -> int:
         """Dimension of the latent space.
 
@@ -270,6 +279,7 @@ class SeasonalitySSM(LevelSSM):
         num_seasons:
             Number of seasons in the considered seasonality period.
         """
+        super().__init__()
         self.num_seasons = num_seasons
         self.timestamp_transform = timestamp_transform
 
@@ -421,9 +431,10 @@ class CompositeSSM(SSM):
         nonseasonal_ssm:
             Instance of Level or Level-Trend State Space Model.
         """
+        super().__init__()
         self.seasonal_ssms = seasonal_ssms
         self.nonseasonal_ssm = nonseasonal_ssm
-        self.ssms: List[SSM] = self.seasonal_ssms  # type: ignore
+        self.ssms: List[SSM] = self.seasonal_ssms.copy()  # type: ignore
         if self.nonseasonal_ssm is not None:
             self.ssms.append(self.nonseasonal_ssm)
 

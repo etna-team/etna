@@ -7,6 +7,8 @@ import pytest
 from etna.metrics import MAE
 from etna.models.nn import DeepStateModel
 from etna.models.nn.deepstate import CompositeSSM
+from etna.models.nn.deepstate import LevelTrendSSM
+from etna.models.nn.deepstate import SeasonalitySSM
 from etna.models.nn.deepstate import WeeklySeasonalitySSM
 from etna.models.nn.deepstate.deepstate import DeepStateNet
 from etna.pipeline import Pipeline
@@ -178,7 +180,7 @@ def test_error_training_with_mps(mock_is_available, ts_dataset_weekly_function_w
     with pytest.raises(
         NotImplementedError, match="DeepStateModel does not support MPS. Please use CPU on your MacBook."
     ):
-        model = DeepStateModel(
+        _ = DeepStateModel(
             ssm=CompositeSSM(seasonal_ssms=[WeeklySeasonalitySSM()], nonseasonal_ssm=None),
             input_size=0,
             encoder_length=encoder_length,
@@ -199,3 +201,18 @@ def test_accelerator_cpu_when_mps_is_available(mock_is_available):
         trainer_params=dict(max_epochs=1),
     )
     assert model.trainer_params["accelerator"] == "cpu"
+
+
+def test_deepstate_repr_with_leveltrendssm():
+    horizon = 7
+    monthly_smm = SeasonalitySSM(num_seasons=31, timestamp_transform=lambda x: x.day - 1)
+    weekly_smm = SeasonalitySSM(num_seasons=7, timestamp_transform=lambda x: x.weekday())
+
+    model_dsm = DeepStateModel(
+        ssm=CompositeSSM(seasonal_ssms=[weekly_smm, monthly_smm], nonseasonal_ssm=LevelTrendSSM()),
+        input_size=1,
+        encoder_length=2 * horizon,
+        decoder_length=horizon,
+    )
+
+    _ = repr(model_dsm)
