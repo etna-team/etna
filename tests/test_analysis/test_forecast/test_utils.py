@@ -36,7 +36,7 @@ def residuals():
 @pytest.fixture
 def residuals_with_components(residuals):
     residuals_df, forecast_df, ts = residuals
-    df_wide = ts.to_pandas().astype(float)
+    df_wide = ts.to_pandas()
     df_component_1 = df_wide.rename(columns={"target": "component_1"}, level="feature")
     df_component_2 = df_wide.rename(columns={"target": "component_2"}, level="feature")
     df_component_1.loc[:, pd.IndexSlice[:, "component_1"]] *= 0.7
