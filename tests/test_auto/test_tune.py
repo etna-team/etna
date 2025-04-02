@@ -173,9 +173,10 @@ def test_can_handle_transforms(example_tsds, optuna_storage):
 
 
 def test_summary(
-    trials,
+    trials_with_pipelines,
     tune=MagicMock(),
 ):
+    trials, _ = trials_with_pipelines
     tune._optuna.study.get_trials.return_value = trials
     tune._summary = partial(Tune._summary, self=tune)  # essential for summary
     df_summary = Tune.summary(self=tune)
@@ -188,7 +189,7 @@ def test_summary(
 
 @pytest.mark.parametrize("k, expected_k", [(1, 1), (2, 2), (3, 3), (20, 10)])
 def test_top_k(
-    trials,
+    trials_with_pipelines,
     k,
     expected_k,
     tune=MagicMock(),
@@ -197,9 +198,11 @@ def test_top_k(
     tune.metric_aggregation = "median"
     tune.target_metric.greater_is_better = False
 
+    trials, pipelines = trials_with_pipelines
     tune._optuna.study.get_trials.return_value = trials
     tune._summary = partial(Tune._summary, self=tune)
     tune._top_k = partial(Tune._top_k, self=tune)
+    tune.pipeline = pipelines[0]
 
     df_summary = Tune.summary(self=tune)
     tune.summary = MagicMock(return_value=df_summary)

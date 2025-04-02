@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
 - **Breaking:** Rename `DeepARNativeModel` -> `DeepARModel`, `TFTNativeModel` -> `TFTModel` ([#585](https://github.com/etna-team/etna/pull/585))
 - Implement non-empty `params_to_tune` for `VotingEnsemble` ([#557](https://github.com/etna-team/etna/pull/557))
-- 
+- Allow `TimesFMModel` to forecast misaligned data with `freq=None` without exogenous features ([#641](https://github.com/etna-team/etna/pull/641))
 - Implement non-empty `params_to_tune` for `DirectEnsemble` ([#559](https://github.com/etna-team/etna/pull/559))
 - 
 - Implement non-empty `params_to_tune` for `StackingEnsemble` ([#561](https://github.com/etna-team/etna/pull/561))
@@ -49,9 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change cpu docker image to use Python 3.10 ([#617](https://github.com/etna-team/etna/pull/617))
 - Change cuda docker image to use Python 3.10 and cuda 12.4.0 ([#617](https://github.com/etna-team/etna/pull/617))
 - Rework the use of some deprecated functionalities ([#624](https://github.com/etna-team/etna/pull/624))
+- **Breaking:** Change init parameters of `ConfigSampler`, now it accepts set of config hashes `config_hashes` instead of list of configs `configs` ([#637](https://github.com/etna-team/etna/pull/637))
+- **Breaking:** Change return value of `ConfigSampler.sample_relative`, now it return a dict with hash instead of config ([#637](https://github.com/etna-team/etna/pull/637))
+- **Breaking:** Change signature of `Auto.objective`. Now it accepts extra required parameter `config_mapping` (from hash to config). We moved interaction with configs from `ConfigSampler` to `Auto` ([#637](https://github.com/etna-team/etna/pull/637))
 - Rework quantiles and intervals handling in the library ([#633](https://github.com/etna-team/etna/pull/633))
 - **Breaking:** Move `etna.experimental.prediction_intervals` module to `etna.prediction_intervals` ([#633](https://github.com/etna-team/etna/pull/633))
-- 
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
