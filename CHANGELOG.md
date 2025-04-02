@@ -49,7 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change cpu docker image to use Python 3.10 ([#617](https://github.com/etna-team/etna/pull/617))
 - Change cuda docker image to use Python 3.10 and cuda 12.4.0 ([#617](https://github.com/etna-team/etna/pull/617))
 - Rework the use of some deprecated functionalities ([#624](https://github.com/etna-team/etna/pull/624))
-- Reworked quantiles and intervals handling in the library ([#633](https://github.com/etna-team/etna/pull/633))
+- Rework quantiles and intervals handling in the library ([#633](https://github.com/etna-team/etna/pull/633))
+- **Breaking:** Move `etna.experimental.prediction_intervals` module to `etna.prediction_intervals` ([#633](https://github.com/etna-team/etna/pull/633))
+- 
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))

@@ -78,7 +78,7 @@ def test_sanity_const_df(model, const_ts):
     train_ts, test_ts = const_ts.train_test_split(test_size=horizon)
     pipeline = Pipeline(model=model, horizon=horizon)
     pipeline.fit(train_ts)
-    future_ts = pipeline.forecast(prediction_interval=True)
+    future_ts = pipeline.forecast()
 
     mae = MAE(mode="macro")
     mae_value = mae(y_true=test_ts, y_pred=future_ts)
