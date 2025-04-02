@@ -2,6 +2,7 @@ import random
 from functools import partial
 from pathlib import Path
 from typing import Optional
+from typing import Union
 
 import numpy as np
 import optuna
@@ -9,7 +10,6 @@ import pandas as pd
 import typer
 
 from etna.datasets import TSDataset
-from etna.datasets import generate_ar_df
 from etna.loggers import WandbLogger
 from etna.loggers import tslogger
 from etna.metrics import MAE
@@ -38,7 +38,7 @@ def init_logger(config: dict, project: str = "wandb-sweeps", tags: Optional[list
     tslogger.add(wblogger)
 
 
-def dataloader(file_path: Path, freq: str | pd.offsets.BaseOffset = "D") -> TSDataset:
+def dataloader(file_path: Path, freq: Union[str, pd.offsets.BaseOffset] = "D") -> TSDataset:
     df = pd.read_csv(file_path)
     df = TSDataset.to_dataset(df)
     ts = TSDataset(df=df, freq=freq)
