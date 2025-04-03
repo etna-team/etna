@@ -52,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change init parameters of `ConfigSampler`, now it accepts set of config hashes `config_hashes` instead of list of configs `configs` ([#637](https://github.com/etna-team/etna/pull/637))
 - **Breaking:** Change return value of `ConfigSampler.sample_relative`, now it return a dict with hash instead of config ([#637](https://github.com/etna-team/etna/pull/637))
 - **Breaking:** Change signature of `Auto.objective`. Now it accepts extra required parameter `config_mapping` (from hash to config). We moved interaction with configs from `ConfigSampler` to `Auto` ([#637](https://github.com/etna-team/etna/pull/637))
-- 
+- **Breaking:** Bump minimum `tsfresh` version to 0.21.0 ([#640](https://github.com/etna-team/etna/pull/640))
+-
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
