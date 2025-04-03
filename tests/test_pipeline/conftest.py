@@ -15,6 +15,7 @@ from etna.models.base import PredictionIntervalContextIgnorantAbstractModel
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
 from etna.models.mixins import NonPredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import NonPredictionIntervalContextRequiredModelMixin
+from etna.models.mixins import PerSegmentModelMixin
 from etna.models.mixins import PredictionIntervalContextIgnorantModelMixin
 from etna.models.mixins import PredictionIntervalContextRequiredModelMixin
 from etna.pipeline import Pipeline
@@ -249,7 +250,10 @@ def ts_process_fold_forecast() -> TSDataset:
     return ts
 
 
-class DummyModelBase:
+class DummyModelBase(PerSegmentModelMixin):
+    def __init__(self):
+        super().__init__(base_model=None)
+
     def fit(self, ts: TSDataset):
         return self
 

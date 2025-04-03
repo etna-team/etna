@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add the ability to train DL models (except `TFTModel` and `DeepStateModel`) on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - Add warning if training DL models on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `etna.dataset.utils`, `etna.dataset.generation`, `etna.analysis` ([#635](https://github.com/etna-team/etna/pull/635))
+- Add `ModelPredictionIntervalsMixin` with intervals forecasting logic for models ([#633](https://github.com/etna-team/etna/pull/633))
 - Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `_SARIMAXBaseAdapter`, `_StatsForecastBaseAdapter`, `_TBATSAdapter`, `_HoltWintersAdapter` ([#640](https://github.com/etna-team/etna/pull/640))
 - 
 - 
@@ -52,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change init parameters of `ConfigSampler`, now it accepts set of config hashes `config_hashes` instead of list of configs `configs` ([#637](https://github.com/etna-team/etna/pull/637))
 - **Breaking:** Change return value of `ConfigSampler.sample_relative`, now it return a dict with hash instead of config ([#637](https://github.com/etna-team/etna/pull/637))
 - **Breaking:** Change signature of `Auto.objective`. Now it accepts extra required parameter `config_mapping` (from hash to config). We moved interaction with configs from `ConfigSampler` to `Auto` ([#637](https://github.com/etna-team/etna/pull/637))
+- Rework quantiles and intervals handling in the library ([#633](https://github.com/etna-team/etna/pull/633))
+- **Breaking:** Move `etna.experimental.prediction_intervals` module to `etna.prediction_intervals` ([#633](https://github.com/etna-team/etna/pull/633))
 - **Breaking:** Bump minimum `tsfresh` version to 0.21.0 ([#640](https://github.com/etna-team/etna/pull/640))
 -
 
@@ -83,6 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove attributes `known_future`, `freq`, `current_df_level` and `current_df_exog_level` from `TSDataset`, and make them properties ([#630](https://github.com/etna-team/etna/pull/630))
 - **Breaking:** Remove properties `columns` and `loc` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/631))
 - **Breaking:** Remove `match_target_components` ([#634](https://github.com/etna-team/etna/pull/634))
+- **Breaking:** Remove `match_target_quantiles` and `get_target_with_quantiles` ([#633](https://github.com/etna-team/etna/pull/633))
 
 ## [2.10.0] - 2025-01-09
 ### Added

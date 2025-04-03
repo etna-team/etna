@@ -42,6 +42,20 @@ class _TBATSAdapter(BaseAdapter):
             )
 
     def fit(self, df: pd.DataFrame, regressors: Iterable[str]):
+        """Fit adapter.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        regressors:
+            List of the columns with regressors
+
+        Returns
+        -------
+        :
+            Fitted adapter
+        """
         self._freq = determine_freq(timestamps=df["timestamp"], freq_format="offset")
         self._check_not_used_columns(df)
 
@@ -52,7 +66,83 @@ class _TBATSAdapter(BaseAdapter):
 
         return self
 
-    def forecast(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
+    def forecast(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Compute predictions on future data.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        if self._fitted_model is None or self._freq is _DEFAULT_FREQ:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        steps_to_forecast = self._get_steps_to_forecast(df=df)
+        steps_to_skip = steps_to_forecast - df.shape[0]
+
+        y_pred = pd.DataFrame({"target": self._fitted_model.forecast(steps=steps_to_forecast)})
+
+        # skip non-relevant timestamps
+        y_pred = y_pred.iloc[steps_to_skip:].reset_index(drop=True)
+
+        return y_pred
+
+    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Compute in-sample predictions.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        if self._fitted_model is None or self._freq is _DEFAULT_FREQ or self._last_train_timestamp is None:
+            raise ValueError("Model is not fitted! Fit the model before calling predict method!")
+
+        train_timestamp = timestamp_range(
+            start=self._first_train_timestamp, end=self._last_train_timestamp, freq=self._freq
+        )
+
+        if not (set(df["timestamp"]) <= set(train_timestamp)):
+            raise NotImplementedError(
+                "This model can't make predict on future out-of-sample data! "
+                "Use forecast method for this type of prediction."
+            )
+
+        y_pred = pd.DataFrame({"target": self._fitted_model.y_hat, "timestamp": train_timestamp})
+
+        # selecting time points from provided dataframe
+        y_pred.set_index("timestamp", inplace=True)
+        y_pred = y_pred.loc[df["timestamp"]]
+        y_pred.reset_index(drop=True, inplace=True)
+
+        return y_pred
+
+    def forecast_intervals(self, df: pd.DataFrame, quantiles: Iterable[float]) -> pd.DataFrame:
+        """
+        Compute prediction intervals on future data.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
         if self._fitted_model is None or self._freq is _DEFAULT_FREQ:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
@@ -60,26 +150,34 @@ class _TBATSAdapter(BaseAdapter):
         steps_to_skip = steps_to_forecast - df.shape[0]
 
         y_pred = pd.DataFrame()
-        if prediction_interval:
-            for quantile in quantiles:
-                pred, confidence_intervals = self._fitted_model.forecast(
-                    steps=steps_to_forecast, confidence_level=quantile
-                )
-                y_pred["target"] = pred
-                if quantile < 1 / 2:
-                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
-                else:
-                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
-        else:
-            pred = self._fitted_model.forecast(steps=steps_to_forecast)
-            y_pred["target"] = pred
+        for quantile in quantiles:
+            _, confidence_intervals = self._fitted_model.forecast(steps=steps_to_forecast, confidence_level=quantile)
+            if quantile < 1 / 2:
+                y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
+            else:
+                y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
 
         # skip non-relevant timestamps
         y_pred = y_pred.iloc[steps_to_skip:].reset_index(drop=True)
 
         return y_pred
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Iterable[float]) -> pd.DataFrame:
+    def predict_intervals(self, df: pd.DataFrame, quantiles: Iterable[float]) -> pd.DataFrame:
+        """
+        Compute in-sample prediction intervals.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
+        quantiles:
+            Levels of prediction distribution
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
         if self._fitted_model is None or self._freq is _DEFAULT_FREQ or self._last_train_timestamp is None:
             raise ValueError("Model is not fitted! Fit the model before calling predict method!")
 
@@ -94,19 +192,17 @@ class _TBATSAdapter(BaseAdapter):
             )
 
         y_pred = pd.DataFrame()
-        y_pred["target"] = self._fitted_model.y_hat
         y_pred["timestamp"] = train_timestamp
 
-        if prediction_interval:
-            for quantile in quantiles:
-                confidence_intervals = self._fitted_model._calculate_confidence_intervals(
-                    y_pred["target"].values, quantile
-                )
+        for quantile in quantiles:
+            confidence_intervals = self._fitted_model._calculate_confidence_intervals(
+                self._fitted_model.y_hat, quantile
+            )
 
-                if quantile < 1 / 2:
-                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
-                else:
-                    y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
+            if quantile < 1 / 2:
+                y_pred[f"target_{quantile:.4g}"] = confidence_intervals["lower_bound"]
+            else:
+                y_pred[f"target_{quantile:.4g}"] = confidence_intervals["upper_bound"]
 
         # selecting time points from provided dataframe
         y_pred.set_index("timestamp", inplace=True)

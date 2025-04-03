@@ -8,7 +8,7 @@ from etna.distributions import *
 from etna.ensembles import *
 from etna.experimental.change_points import *
 from etna.experimental.classification import *
-from etna.experimental.prediction_intervals import *
+from etna.prediction_intervals import *
 from etna.loggers import *
 from etna.metrics import *
 from etna.models import *

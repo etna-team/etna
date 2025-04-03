@@ -435,11 +435,11 @@ def test_forecast_decompose_sum_up_to_target(dfs_name, estimator, params, method
 
     if use_future:
         pred_df = test
-        y_pred = model.forecast(test, prediction_interval=False, quantiles=[])
+        y_pred = model.forecast(test)
 
     else:
         pred_df = train
-        y_pred = model.predict(train, prediction_interval=False, quantiles=[])
+        y_pred = model.predict(train)
 
     method_to_call = getattr(model, method)
     components = method_to_call(df=pred_df)
@@ -462,7 +462,7 @@ def test_predict_decompose_on_subset(periodic_dfs, estimator):
     model = _TBATSAdapter(model=estimator())
     model.fit(train, [])
 
-    y_pred = model.predict(df=sub_train, prediction_interval=False, quantiles=[])
+    y_pred = model.predict(df=sub_train)
     components = model.predict_components(df=sub_train)
 
     y_hat_pred = np.sum(components.values, axis=1)
@@ -483,7 +483,7 @@ def test_forecast_decompose_on_subset(periodic_dfs, estimator):
     model = _TBATSAdapter(model=estimator())
     model.fit(train, [])
 
-    y_pred = model.forecast(df=sub_test, prediction_interval=False, quantiles=[])
+    y_pred = model.forecast(df=sub_test)
     components = model.forecast_components(df=sub_test)
 
     y_hat_pred = np.sum(components.values, axis=1)
