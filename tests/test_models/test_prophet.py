@@ -472,7 +472,7 @@ def test_predict_components_sum_up_to_target(
     model.fit(df=train, regressors=regressors + cap + timestamp_column_regressors)
 
     components = model.predict_components(df=test)
-    pred = model.predict(df=test, prediction_interval=False, quantiles=[])
+    pred = model.predict(df=test)
 
     np.testing.assert_allclose(np.sum(components, axis=1), pred["target"].values)
 

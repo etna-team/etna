@@ -171,7 +171,7 @@ class _ProphetAdapter(BaseAdapter):
         self.model.fit(prophet_df)
         return self
 
-    def predict(self, df: pd.DataFrame, prediction_interval: bool, quantiles: Sequence[float]) -> pd.DataFrame:
+    def predict(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Compute predictions from a Prophet model.
 
@@ -179,8 +179,25 @@ class _ProphetAdapter(BaseAdapter):
         ----------
         df:
             Features dataframe
-        prediction_interval:
-            If True returns prediction interval for forecast
+
+        Returns
+        -------
+        :
+            DataFrame with predictions
+        """
+        prophet_df = self._prepare_prophet_df(df=df)
+        forecast = self.model.predict(prophet_df)
+        y_pred = pd.DataFrame({"target": forecast["yhat"]})
+        return y_pred
+
+    def predict_intervals(self, df: pd.DataFrame, quantiles: Sequence[float]) -> pd.DataFrame:
+        """
+        Compute prediction intervals from a Prophet model.
+
+        Parameters
+        ----------
+        df:
+            Features dataframe
         quantiles:
             Levels of prediction distribution
 
@@ -190,17 +207,14 @@ class _ProphetAdapter(BaseAdapter):
             DataFrame with predictions
         """
         prophet_df = self._prepare_prophet_df(df=df)
-        forecast = self.model.predict(prophet_df)
-        y_pred = pd.DataFrame(forecast["yhat"])
-        if prediction_interval:
-            sim_values = self.model.predictive_samples(prophet_df)
-            for quantile in quantiles:
-                percentile = quantile * 100
-                y_pred[f"yhat_{quantile:.4g}"] = self.model.percentile(sim_values["yhat"], percentile, axis=1)
-        rename_dict = {
-            column: column.replace("yhat", "target") for column in y_pred.columns if column.startswith("yhat")
-        }
-        y_pred = y_pred.rename(rename_dict, axis=1)
+        sim_values = self.model.predictive_samples(prophet_df)
+
+        quantiles_pred = {}
+        for quantile in quantiles:
+            percentile = quantile * 100
+            quantiles_pred[f"target_{quantile:.4g}"] = self.model.percentile(sim_values["yhat"], percentile, axis=1)
+
+        y_pred = pd.DataFrame(data=quantiles_pred)
         return y_pred
 
     def _validate_timestamp(self, df: pd.DataFrame):

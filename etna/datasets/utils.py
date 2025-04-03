@@ -1,4 +1,3 @@
-import re
 from collections import Counter
 from collections import defaultdict
 from enum import Enum
@@ -7,7 +6,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Sequence
-from typing import Set
 from typing import Union
 from typing import cast
 
@@ -271,21 +269,6 @@ def set_columns_wide(
     df_left.loc[timestamps_left_index, (segments_left_index, features_left_index)] = right_value.values
 
     return df_left
-
-
-def match_target_quantiles(features: Set[str]) -> Set[str]:
-    """Find quantiles in dataframe columns."""
-    pattern = re.compile(r"target_\d+\.\d+$")
-    return {i for i in list(features) if pattern.match(i) is not None}
-
-
-def get_target_with_quantiles(columns: pd.Index) -> Set[str]:
-    """Find "target" column and target quantiles among dataframe columns."""
-    column_names = set(columns.get_level_values(level="feature"))
-    target_columns = match_target_quantiles(column_names)
-    if "target" in column_names:
-        target_columns.add("target")
-    return target_columns
 
 
 def get_level_dataframe(
