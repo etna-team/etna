@@ -34,7 +34,7 @@ def ts_check_pipeline_with_limit_transform() -> TSDataset:
     df["target"] = np.arange(periods)
 
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
     return tsds
 
 
@@ -55,7 +55,7 @@ def ts_check_limit_transform(random_seed) -> TSDataset:
 
     df = pd.concat((df1, df2))
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
     return tsds
 
 

@@ -91,7 +91,7 @@ def direct_ensemble_mix_pipeline(naive_pipeline_top_down_product_7) -> DirectEns
 def simple_ts_train():
     df = generate_from_patterns_df(patterns=[[1, 3, 5], [2, 4, 6], [7, 9, 11]], periods=3, start_time="2000-01-01")
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 
@@ -99,7 +99,7 @@ def simple_ts_train():
 def simple_ts_forecast():
     df = generate_from_patterns_df(patterns=[[5, 3], [6, 4], [11, 9]], periods=2, start_time="2000-01-04")
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 

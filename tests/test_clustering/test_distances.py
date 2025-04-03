@@ -42,7 +42,7 @@ def dtw_ts(pattern) -> TSDataset:
         tmp["target"] = pattern
         dfs.append(tmp)
     df = pd.concat(dfs, ignore_index=True)
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day())
     return ts
 
 

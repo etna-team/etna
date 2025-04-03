@@ -37,7 +37,7 @@ def ts_with_local_levels(random_seed) -> TSDataset:
     )
     df = pd.concat((df_1, df_2))
     df = TSDataset.to_dataset(df=df)
-    ts = TSDataset(df, "D")
+    ts = TSDataset(df, pd.offsets.Day())
     return ts
 
 

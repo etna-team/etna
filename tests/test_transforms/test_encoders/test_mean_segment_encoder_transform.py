@@ -47,14 +47,14 @@ def test_new_segments_error(mean_segment_encoder_ts):
 
 @pytest.fixture
 def almost_constant_ts(random_seed) -> TSDataset:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="D")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="D")})
+    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
+    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
     df_1["segment"] = "Moscow"
     df_1["target"] = 1 + np.random.normal(0, 0.1, size=len(df_1))
     df_2["segment"] = "Omsk"
     df_2["target"] = 10 + np.random.normal(0, 0.1, size=len(df_1))
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    ts = TSDataset(df=TSDataset.to_dataset(classic_df), freq="D")
+    ts = TSDataset(df=TSDataset.to_dataset(classic_df), freq=pd.offsets.Day())
     return ts
 
 

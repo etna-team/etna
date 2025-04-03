@@ -26,7 +26,7 @@ def df_one_segment(example_df) -> pd.DataFrame:
 @pytest.fixture
 def ts_two_segments(example_df) -> TSDataset:
     df = TSDataset.to_dataset(example_df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 
@@ -34,14 +34,14 @@ def ts_two_segments(example_df) -> TSDataset:
 def ts_two_segments_diff_size(example_df) -> TSDataset:
     df = TSDataset.to_dataset(example_df)
     df.loc[: df.index[3], pd.IndexSlice[DEFAULT_SEGMENT, "target"]] = None
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 
 @pytest.fixture
 def df_quadratic() -> pd.DataFrame:
     """Make dataframe with quadratic trends. Segments 1, 2 has linear trend, segments -- 3, 4 quadratic."""
-    timestamp = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    timestamp = pd.date_range(start="2020-01-01", end="2020-02-01", freq=pd.offsets.Hour())
     rng = np.random.default_rng(42)
     df_template = pd.DataFrame({"timestamp": timestamp, "segment": "segment", "target": np.arange(len(timestamp))})
 
@@ -77,7 +77,7 @@ def df_one_segment_linear(df_quadratic) -> pd.DataFrame:
 def ts_two_segments_linear(df_quadratic) -> TSDataset:
     df_linear = df_quadratic[df_quadratic["segment"].isin(["segment_1", "segment_2"])]
     df = TSDataset.to_dataset(df_linear)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 
@@ -89,7 +89,7 @@ def df_one_segment_quadratic(df_quadratic) -> pd.DataFrame:
 @pytest.fixture
 def ts_two_segments_quadratic(df_quadratic) -> TSDataset:
     df = TSDataset.to_dataset(df_quadratic)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 

@@ -32,7 +32,7 @@ def add_seasonality(series: pd.Series, period: int, magnitude: float) -> pd.Seri
 
 def get_one_df(coef: float, period: int, magnitude: float) -> pd.DataFrame:
     df = pd.DataFrame()
-    df["timestamp"] = pd.date_range(start="2020-01-01", end="2020-03-01", freq="D")
+    df["timestamp"] = pd.date_range(start="2020-01-01", end="2020-03-01", freq=pd.offsets.Day())
     df["target"] = 0
     df["target"] = add_seasonality(df["target"], period=period, magnitude=magnitude)
     df["target"] = add_trend(df["target"], coef=coef)
@@ -67,7 +67,7 @@ def ts_trend_seasonal() -> TSDataset:
     df_2 = get_one_df(coef=0.05, period=7, magnitude=2)
     df_2["segment"] = "segment_2"
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
-    return TSDataset(TSDataset.to_dataset(classic_df), freq="D")
+    return TSDataset(TSDataset.to_dataset(classic_df), freq=pd.offsets.Day())
 
 
 @pytest.fixture
@@ -87,7 +87,7 @@ def ts_trend_seasonal_starting_with_nans() -> TSDataset:
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
     df.loc[[df.index[0], df.index[1]], pd.IndexSlice["segment_1", "target"]] = None
-    return TSDataset(df, freq="D")
+    return TSDataset(df, freq=pd.offsets.Day())
 
 
 @pytest.fixture
@@ -101,7 +101,7 @@ def ts_trend_seasonal_nan_tails() -> TSDataset:
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
     df.loc[[df.index[0], df.index[1], df.index[-2], df.index[-1]], pd.IndexSlice["segment_1", "target"]] = None
-    return TSDataset(df, freq="D")
+    return TSDataset(df, freq=pd.offsets.Day())
 
 
 @pytest.fixture

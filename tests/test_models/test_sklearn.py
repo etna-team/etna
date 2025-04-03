@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 from sklearn.linear_model import LinearRegression
 
@@ -15,7 +16,7 @@ def ts_with_regressors(example_df):
         AddConstTransform(in_column="target", inplace=False, value=10, out_column="add_const_target"),
         LagTransform(in_column="target", lags=[2], out_column="lag"),
     ]
-    ts = TSDataset(df=TSDataset.to_dataset(example_df), freq="H", known_future=())
+    ts = TSDataset(df=TSDataset.to_dataset(example_df), freq=pd.offsets.Hour(), known_future=())
     ts.fit_transform(transforms)
     return ts
 

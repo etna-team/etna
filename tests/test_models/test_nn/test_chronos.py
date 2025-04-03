@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from hydra_slayer import get_from_params
 from pandas.testing import assert_frame_equal
@@ -18,7 +19,7 @@ from etna.pipeline import Pipeline
 def ts_increasing_integers():
     df = generate_ar_df(start_time="2001-01-01", periods=10, n_segments=2)
     df["target"] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] + [100, 101, 102, 103, 104, 105, 106, 107, 108, 109]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -26,7 +27,7 @@ def ts_increasing_integers():
 def expected_ts_increasing_integers():
     df = generate_ar_df(start_time="2001-01-11", periods=1, n_segments=2)
     df["target"] = [10.0] + [110.0]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

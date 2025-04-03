@@ -24,7 +24,7 @@ def many_time_series_ts(many_time_series):
         dfs.append(df)
     df = pd.concat(dfs)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts, ts_y
 
 

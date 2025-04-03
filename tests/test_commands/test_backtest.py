@@ -79,7 +79,7 @@ def test_backtest(pipeline_path_name, base_backtest_yaml_path, base_timeseries_p
             str(pipeline_path),
             str(base_backtest_yaml_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
         ]
     )
@@ -123,7 +123,7 @@ def test_backtest_with_exog(
             str(pipeline_path),
             str(base_backtest_yaml_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_exog_path),
         ]
@@ -142,7 +142,7 @@ def test_forecast_format(base_pipeline_yaml_path, base_backtest_yaml_path, base_
             str(base_pipeline_yaml_path),
             str(base_backtest_yaml_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
         ]
     )
@@ -174,7 +174,7 @@ def test_backtest_estimate_n_folds(
             str(pipeline_path),
             str(backtest_config_path),
             str(base_timeseries_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
         ]
     )
@@ -199,7 +199,7 @@ def test_backtest_with_numeric_segments(
             str(base_pipeline_yaml_path),
             str(base_backtest_yaml_path),
             str(base_timeseries_numeric_segments_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
         ]
     )
@@ -226,7 +226,7 @@ def test_backtest_with_numeric_segments_with_exog(
             str(base_pipeline_yaml_path),
             str(base_backtest_yaml_path),
             str(base_timeseries_numeric_segments_path),
-            "D",
+            pd.offsets.Day().freqstr,
             str(tmp_output_path),
             str(base_timeseries_numeric_segments_exog_path),
         ]

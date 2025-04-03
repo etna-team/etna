@@ -30,9 +30,9 @@ def pre_transformed_df() -> pd.DataFrame:
 
 @pytest.fixture
 def simple_ar_ts(random_seed):
-    df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=3, ar_coef=[2], freq="D")
+    df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=3, ar_coef=[2], freq=pd.offsets.Day())
     df_ts_format = TSDataset.to_dataset(df)
-    return TSDataset(df_ts_format, freq="D")
+    return TSDataset(df_ts_format, freq=pd.offsets.Day())
 
 
 @pytest.fixture

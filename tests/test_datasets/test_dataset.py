@@ -23,8 +23,8 @@ from etna.transforms import TimeSeriesImputerTransform
 
 @pytest.fixture
 def tsdf_with_exog(random_seed) -> TSDataset:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="D")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq="D")})
+    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq=pd.offsets.Day())})
+    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq=pd.offsets.Day())})
     df_1["segment"] = "Moscow"
     df_1["target"] = [x**2 + np.random.uniform(-2, 2) for x in list(range(len(df_1)))]
     df_2["segment"] = "Omsk"
@@ -38,7 +38,7 @@ def tsdf_with_exog(random_seed) -> TSDataset:
     classic_df_exog.rename(columns={"target": "exog"}, inplace=True)
     df_exog = TSDataset.to_dataset(classic_df_exog)
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
     return ts
 
 
@@ -92,7 +92,7 @@ def ts_info() -> TSDataset:
     # add NaNs at the end
     df.iloc[-3:, 1] = np.NaN
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=["regressor_1", "regressor_2"])
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=["regressor_1", "regressor_2"])
     return ts
 
 
@@ -105,7 +105,7 @@ def ts_info_with_components_and_quantiles() -> TSDataset:
     df = pd.concat([df_1, df_2, df_3], ignore_index=True)
     df = TSDataset.to_dataset(df)
 
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
 
     intervals_df = pd.concat(
         [
@@ -155,7 +155,7 @@ def df_updated_add_feature() -> pd.DataFrame:
     df_2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "new_column": 200, "segment": "2"})
     df_2.loc[:4, "target"] = None
     df = pd.concat([df_1, df_2], ignore_index=True)
-    df = TSDataset(df=TSDataset.to_dataset(df), freq="D")._df
+    df = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day())._df
     return df
 
 
@@ -165,7 +165,7 @@ def df_updated_update_feature() -> pd.DataFrame:
     df_1 = pd.DataFrame({"timestamp": timestamp, "target": 100, "segment": "1"})
     df_2 = pd.DataFrame({"timestamp": timestamp, "target": 200, "segment": "2"})
     df = pd.concat([df_1, df_2], ignore_index=True)
-    df = TSDataset(df=TSDataset.to_dataset(df), freq="D")._df
+    df = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day())._df
     return df
 
 
@@ -184,7 +184,7 @@ def df_exog_updated_add_feature() -> pd.DataFrame:
     df_2.iloc[:31, df_2.columns.get_loc("new_column")] = None
     df_exog = pd.concat([df_1, df_2], ignore_index=True)
     df_exog = TSDataset.to_dataset(df_exog)
-    df_exog = TSDataset(df=df_exog, freq="D")._df
+    df_exog = TSDataset(df=df_exog, freq=pd.offsets.Day())._df
     return df_exog
 
 
@@ -229,7 +229,7 @@ def ts_with_categoricals():
     df_exog = pd.concat([df_1, df_2], ignore_index=True)
     df_exog = TSDataset.to_dataset(df_exog)
 
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=["regressor"])
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future=["regressor"])
     return ts
 
 
@@ -290,7 +290,7 @@ def inverse_transformed_components_df():
     )
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
-    df.index.freq = "D"
+    df.index.freq = pd.offsets.Day().freqstr
     return df
 
 
@@ -336,7 +336,7 @@ def ts_without_target_components():
     df_2 = pd.DataFrame({"timestamp": timestamp, "target": 7, "segment": 2})
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 
@@ -348,7 +348,7 @@ def ts_with_target_components(target_components_df):
     df = pd.concat([df_1, df_2])
     df = TSDataset.to_dataset(df=df)
 
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts.add_target_components(target_components_df=target_components_df)
     return ts
 
@@ -368,7 +368,7 @@ def ts_after_transform(example_tsds):
     return ts
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_create_ts_with_datetime_timestamp(freq):
     df = generate_ar_df(periods=10, freq=freq, n_segments=3)
     df_wide = TSDataset.to_dataset(df)
@@ -395,12 +395,12 @@ def test_create_ts_with_int_timestamp():
 def test_create_ts_with_int_timestamp_with_freq():
     df = generate_ar_df(periods=10, freq=None, n_segments=3)
     df_wide = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df_wide, freq="D")
+    ts = TSDataset(df=df_wide, freq=pd.offsets.Day())
 
     assert ts.timestamps.dtype == "datetime64[ns]"
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_create_ts_with_exog_datetime_timestamp(freq):
     df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
     df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
@@ -433,25 +433,27 @@ def test_create_ts_with_exog_int_timestamp():
 @pytest.mark.parametrize(
     "df_exog",
     (
-        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D").rename(
+        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq=pd.offsets.Day()).rename(
             {"target": "target_exog"}, axis=1
         ),
     ),
 )
-@pytest.mark.parametrize("df", (generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D"),))
+@pytest.mark.parametrize(
+    "df", (generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq=pd.offsets.Day()),)
+)
 def test_create_ts_with_exog_error(df, df_exog):
     with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
-        _ = TSDataset(df=df, df_exog=df_exog, freq="D")
+        _ = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
 
 
 def test_create_ts_different_feat_sets_df_exog_error():
-    df = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq=pd.offsets.Day())
 
     df_exog = pd.merge(
-        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D").rename(
+        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq=pd.offsets.Day()).rename(
             {"target": "target_exog1"}, axis=1
         ),
-        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D").rename(
+        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq=pd.offsets.Day()).rename(
             {"target": "target_exog"}, axis=1
         ),
         on=["timestamp", "segment"],
@@ -460,22 +462,22 @@ def test_create_ts_different_feat_sets_df_exog_error():
     ts_df_exog = TSDataset.to_dataset(df_exog).dropna(axis=1)
 
     with pytest.raises(ValueError, match="Given wide dataframe doesn't have all combinations of pairs"):
-        _ = TSDataset(df=df, df_exog=ts_df_exog, freq="D")
+        _ = TSDataset(df=df, df_exog=ts_df_exog, freq=pd.offsets.Day())
 
 
 def test_create_ts_different_feat_sets_df():
     df = pd.merge(
-        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq="D").rename(
+        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=1, freq=pd.offsets.Day()).rename(
             {"target": "target_exog1"}, axis=1
         ),
-        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D"),
+        generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq=pd.offsets.Day()),
         on=["timestamp", "segment"],
         how="right",
     )
     ts_df = TSDataset.to_dataset(df).dropna(axis=1)
 
     with pytest.raises(ValueError, match="Given wide dataframe doesn't have all combinations of pairs"):
-        _ = TSDataset(df=ts_df, freq="D")
+        _ = TSDataset(df=ts_df, freq=pd.offsets.Day())
 
 
 @pytest.mark.filterwarnings(
@@ -489,13 +491,13 @@ def test_create_ts_with_exog_int_timestamp_with_freq():
 
     df_wide = TSDataset.to_dataset(df)
     df_exog_wide = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+    ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Day())
 
     assert ts.timestamps.dtype == "datetime64[ns]"
 
 
 def test_create_ts_missing_datetime_timestamp():
-    freq = "D"
+    freq = pd.offsets.Day().freqstr
     df = generate_ar_df(periods=10, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=0)
 
     df_wide = TSDataset.to_dataset(df)
@@ -522,7 +524,7 @@ def test_create_ts_missing_int_timestamp():
     pd.testing.assert_frame_equal(ts.to_pandas(), expected_df)
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_create_ts_with_int_timestamp_fail_datetime(freq):
     df = generate_ar_df(periods=10, freq=freq, n_segments=3)
     df_wide = TSDataset.to_dataset(df)
@@ -531,14 +533,14 @@ def test_create_ts_with_int_timestamp_fail_datetime(freq):
 
 
 def test_create_datetime_conversion_during_init():
-    classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2, freq="D")
+    classic_df = generate_ar_df(periods=30, start_time="2021-06-01", n_segments=2, freq=pd.offsets.Day())
     classic_df["categorical_column"] = [0] * 30 + [1] * 30
     classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
     df_exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
     df.index = df.index.astype(str)
     df_exog.index = df.index.astype(str)
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
     assert ts.timestamps.dtype == "datetime64[ns]"
 
 
@@ -557,12 +559,12 @@ def test_create_segment_conversion_during_init(df_segments_int):
     df_exog_wide.columns = pd.MultiIndex.from_frame(columns_frame)
 
     with pytest.warns(UserWarning, match="Segment values doesn't have string type"):
-        ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+        ts = TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Day())
 
     assert np.all(ts._df.columns.get_level_values("segment") == ["1", "1", "2", "2"])
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_create_from_long_format_with_exog(freq):
     df = generate_ar_df(periods=10, start_time="2020-01-05", freq=freq, n_segments=3, random_seed=0)
     df_exog = generate_ar_df(periods=20, start_time="2020-01-01", freq=freq, n_segments=3, random_seed=1)
@@ -578,7 +580,7 @@ def test_create_from_long_format_with_exog(freq):
 
 
 @patch("etna.datasets.utils.DataFrameFormat.determine")
-@pytest.mark.parametrize("freq", ["D"])
+@pytest.mark.parametrize("freq", [pd.offsets.Day()])
 def test_create_from_long_format_with_exog_calls_determine(determine_mock, freq):
     determine_mock.side_effect = [DataFrameFormat.long, DataFrameFormat.long]
 
@@ -597,7 +599,7 @@ def test_check_endings_error():
     df2 = pd.DataFrame({"timestamp": timestamp[:-5], "target": 12, "segment": "2"})
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
 
     with pytest.raises(ValueError):
         ts._check_endings()
@@ -610,7 +612,7 @@ def test_check_endings_pass():
     df2 = pd.DataFrame({"timestamp": timestamp, "target": 12, "segment": "2"})
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts._check_endings()
 
 
@@ -663,7 +665,7 @@ def test_categorical_after_call_to_pandas():
     classic_df["categorical_column"] = classic_df["categorical_column"].astype("category")
     df = TSDataset.to_dataset(classic_df[["timestamp", "segment", "target"]])
     exog = TSDataset.to_dataset(classic_df[["timestamp", "segment", "categorical_column"]])
-    ts = TSDataset(df, "D", exog)
+    ts = TSDataset(df, pd.offsets.Day(), exog)
     flatten_df = ts.to_pandas(flatten=True)
     assert flatten_df["categorical_column"].dtype == "category"
 
@@ -1004,7 +1006,7 @@ def test_train_test_split_failed(ts_name, test_size, borders, match, request):
 
 def test_train_test_split_pass_regressors_to_output(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     train, test = ts.train_test_split(test_size=5)
     assert set(train.regressors).issubset(set(train.features))
     assert set(test.regressors).issubset(set(test.features))
@@ -1014,7 +1016,7 @@ def test_train_test_split_pass_regressors_to_output(df_and_regressors):
 
 def test_train_test_split_pass_transform_regressors_to_output(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     ts.fit_transform(transforms=[LagTransform(in_column="target", lags=[1, 2, 3])])
     train, test = ts.train_test_split(test_size=5)
     assert set(train.regressors).issubset(set(train.features))
@@ -1067,19 +1069,21 @@ def test_to_dataset_on_integer_timestamp():
 
 
 def test_size_target_only():
-    df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq="D")
-    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq="D")
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=40, n_segments=3, freq=pd.offsets.Day())
+    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), freq=pd.offsets.Day())
     assert ts_temp.size()[0] == len(df_temp) / 3
     assert ts_temp.size()[1] == 3
     assert ts_temp.size()[2] == 1
 
 
 def simple_test_size_():
-    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
-    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq="D")
+    df_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq=pd.offsets.Day())
+    df_exog_temp = generate_ar_df(start_time="2023-01-01", periods=30, n_segments=2, freq=pd.offsets.Day())
     df_exog_temp = df_exog_temp.rename({"target": "target_exog"}, axis=1)
     df_exog_temp["other_feature"] = 1
-    ts_temp = TSDataset(df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq="D")
+    ts_temp = TSDataset(
+        df=TSDataset.to_dataset(df_temp), df_exog=TSDataset.to_dataset(df_exog_temp), freq=pd.offsets.Day()
+    )
     assert ts_temp.size()[0] == len(df_exog_temp) / 2
     assert ts_temp.size()[1] == 2
     assert ts_temp.size()[2] == 3
@@ -1098,13 +1102,13 @@ def test_make_future_with_imputer(ts_diff_endings, ts_future):
     assert_frame_equal(future.to_pandas(), ts_future.to_pandas())
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_make_future_datetime_timestamp(freq):
     df = generate_ar_df(periods=20, freq=freq, n_segments=2)
     ts = TSDataset(TSDataset.to_dataset(df), freq=freq)
     ts_future = ts.make_future(10)
     assert np.all(
-        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq=freq)
+        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta(days=1), periods=10, freq=freq)
     )
     assert set(ts_future.features) == {"target"}
 
@@ -1121,7 +1125,10 @@ def test_make_future_int_timestamp():
 def test_make_future_with_exog_datetime_timestamp(tsdf_with_exog):
     ts = tsdf_with_exog
     ts_future = ts.make_future(10)
-    assert np.all(ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq="D"))
+    assert np.all(
+        ts_future.timestamps
+        == pd.date_range(ts.timestamps.max() + pd.Timedelta(days=1), periods=10, freq=pd.offsets.Day())
+    )
     assert set(ts_future.features) == {"target", "exog"}
 
 
@@ -1140,19 +1147,19 @@ def test_make_future_small_horizon():
     df2 = pd.DataFrame({"timestamp": timestamp, "target": target2, "segment": "2"})
     df = pd.concat([df1, df2], ignore_index=True)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
-    train = TSDataset(ts[: ts.timestamps[10], :, :], freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
+    train = TSDataset(ts[: ts.timestamps[10], :, :], freq=pd.offsets.Day())
     with pytest.warns(UserWarning, match="TSDataset freq can't be inferred"):
         assert train.make_future(1).size()[0] == 1
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_make_future_with_regressors(df_and_regressors, freq):
     df, df_exog, known_future = df_and_regressors
     ts = TSDataset(df=df, df_exog=df_exog, freq=freq, known_future=known_future)
     ts_future = ts.make_future(10)
     assert np.all(
-        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta("1D"), periods=10, freq=freq)
+        ts_future.timestamps == pd.date_range(ts.timestamps.max() + pd.Timedelta(days=1), periods=10, freq=freq)
     )
     assert set(ts_future.features) == {"target", "regressor_1", "regressor_2"}
 
@@ -1161,14 +1168,14 @@ def test_make_future_with_regressors(df_and_regressors, freq):
 def test_make_future_with_regressors_and_context(df_and_regressors, tail_steps):
     df, df_exog, known_future = df_and_regressors
     horizon = 10
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     ts_future = ts.make_future(horizon, tail_steps=tail_steps)
-    assert ts_future.timestamps[tail_steps] == ts.timestamps[-1] + pd.Timedelta("1 day")
+    assert ts_future.timestamps[tail_steps] == ts.timestamps[-1] + pd.Timedelta(days=1)
 
 
 def test_make_future_inherits_regressors(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     ts_future = ts.make_future(10)
     assert ts_future.regressors == ts.regressors
 
@@ -1194,7 +1201,7 @@ def test_make_future_removes_target_components(ts_with_target_components):
 def test_make_future_warn_not_enough_regressors(df_and_regressors):
     """Check that warning is thrown if regressors don't have enough values for the future."""
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     with pytest.warns(UserWarning, match="Some regressors don't have enough values"):
         ts.make_future(ts._df_exog.shape[0] + 100)
 
@@ -1220,20 +1227,20 @@ def test_check_regressors_error(exog_starts_later: bool, exog_ends_earlier: bool
     df_regressors = TSDataset.to_dataset(df_regressors)
 
     with pytest.raises(ValueError):
-        _ = TSDataset(df=df, df_exog=df_regressors, known_future="all", freq="D")
+        _ = TSDataset(df=df, df_exog=df_regressors, known_future="all", freq=pd.offsets.Day())
 
 
 def test_check_regressors_pass(df_and_regressors):
     """Check that regressors check on creation passes with correct regressors."""
     df, df_exog, _ = df_and_regressors
-    _ = TSDataset(df=df, df_exog=df_exog, known_future="all", freq="D")
+    _ = TSDataset(df=df, df_exog=df_exog, known_future="all", freq=pd.offsets.Day())
 
 
 def test_check_regressors_pass_empty(df_and_regressors):
     """Check that regressors check on creation passes with no regressors."""
     df, _, _ = df_and_regressors
     df_exog = pd.DataFrame(columns=["timestamp", "segment", "exog"])
-    _ = TSDataset(df=df, df_exog=df_exog, known_future="all", freq="D")
+    _ = TSDataset(df=df, df_exog=df_exog, known_future="all", freq=pd.offsets.Day())
 
 
 def test_getitem_only_date(tsdf_with_exog):
@@ -1271,14 +1278,14 @@ def test_getitem_all_indexes(tsdf_with_exog):
 def test_finding_regressors_marked(df_and_regressors):
     """Check that ts.regressors property works correctly when regressors set."""
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=["regressor_1", "regressor_2"])
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=["regressor_1", "regressor_2"])
     assert sorted(ts.regressors) == ["regressor_1", "regressor_2"]
 
 
 def test_finding_regressors_unmarked(df_and_regressors):
     """Check that ts.regressors property works correctly when regressors don't set."""
     df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
     assert sorted(ts.regressors) == []
 
 
@@ -1299,7 +1306,7 @@ def test_right_format_sorting():
     # need names and values in inverse fashion
     df["reg_2"] = 1
     df["reg_1"] = 2
-    tsd = TSDataset(TSDataset.to_dataset(df), freq="D")
+    tsd = TSDataset(TSDataset.to_dataset(df), freq=pd.offsets.Day())
     inv_df = tsd.to_pandas(flatten=True)
     pd.testing.assert_series_equal(df["reg_1"], inv_df["reg_1"])
     pd.testing.assert_series_equal(df["reg_2"], inv_df["reg_2"])
@@ -1368,14 +1375,14 @@ def test_to_flatten_with_exog(df_and_regressors_flat):
 )
 def test_to_flatten_correct_columns(df_and_regressors, features, expected_columns):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     flattened_df = ts.to_flatten(ts._df, features=features)
     assert sorted(flattened_df.columns) == sorted(expected_columns)
 
 
 def test_to_flatten_raise_error_incorrect_literal(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     with pytest.raises(ValueError, match="The only possible literal is 'all'"):
         _ = ts.to_flatten(ts._df, features="incorrect")
 
@@ -1397,7 +1404,7 @@ def test_to_pandas_simple_int_timestamp():
 )
 def test_to_pandas_correct_columns(df_and_regressors, features, expected_columns):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     pandas_df = ts.to_pandas(flatten=False, features=features)
     got_columns = set(pandas_df.columns.get_level_values("feature"))
     assert sorted(got_columns) == sorted(expected_columns)
@@ -1405,7 +1412,7 @@ def test_to_pandas_correct_columns(df_and_regressors, features, expected_columns
 
 def test_to_pandas_raise_error_incorrect_literal(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     with pytest.raises(ValueError, match="The only possible literal is 'all'"):
         _ = ts.to_pandas(flatten=False, features="incorrect")
 
@@ -1423,10 +1430,25 @@ def test_fit_transform_raise_warning_on_diff_endings(ts_diff_endings):
 @pytest.mark.parametrize(
     "ts_name, expected_answer",
     [
-        ("ts_info", {"num_segments": 3, "num_exogs": 2, "num_regressors": 2, "num_known_future": 2, "freq": "D"}),
+        (
+            "ts_info",
+            {
+                "num_segments": 3,
+                "num_exogs": 2,
+                "num_regressors": 2,
+                "num_known_future": 2,
+                "freq": pd.offsets.Day().freqstr,
+            },
+        ),
         (
             "ts_info_with_components_and_quantiles",
-            {"num_segments": 3, "num_exogs": 0, "num_regressors": 0, "num_known_future": 0, "freq": "D"},
+            {
+                "num_segments": 3,
+                "num_exogs": 0,
+                "num_regressors": 0,
+                "num_known_future": 0,
+                "freq": pd.offsets.Day().freqstr,
+            },
         ),
     ],
 )
@@ -1481,13 +1503,13 @@ def test_describe(ts_info):
     assert np.all(description["num_exogs"] == 2)
     assert np.all(description["num_regressors"] == 2)
     assert np.all(description["num_known_future"] == 2)
-    assert np.all(description["freq"] == "D")
+    assert np.all(description["freq"] == pd.offsets.Day().freqstr)
 
 
 @pytest.fixture()
 def ts_with_regressors(df_and_regressors):
     df, df_exog, regressors = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return ts
 
 
@@ -1556,7 +1578,7 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
     assert len(torch_dataset) == len(tsdf_with_exog.segments)
     np.testing.assert_array_equal(
         torch_dataset[0]["target"],
-        tsdf_with_exog._df.loc[fill_na_idx + pd.Timedelta("1 day") :, pd.IndexSlice["Moscow", "target"]].values.astype(
+        tsdf_with_exog._df.loc[fill_na_idx + pd.Timedelta(days=1) :, pd.IndexSlice["Moscow", "target"]].values.astype(
             np.float32
         ),
     )
@@ -1567,14 +1589,14 @@ def test_to_torch_dataset_with_drop(tsdf_with_exog):
 
 def test_add_features_from_pandas_update_df(df_and_regressors, df_update_add_feature, df_updated_add_feature):
     df, _, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts.add_features_from_pandas(df_update=df_update_add_feature, update_exog=False)
     pd.testing.assert_frame_equal(ts._df, df_updated_add_feature)
 
 
 def test_add_features_from_pandas_update_df_exog(df_and_regressors, df_update_add_feature, df_exog_updated_add_feature):
     df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog)
     ts.add_features_from_pandas(df_update=df_update_add_feature, update_exog=True)
     pd.testing.assert_frame_equal(ts._df_exog, df_exog_updated_add_feature)
 
@@ -1590,14 +1612,14 @@ def test_add_features_from_pandas_update_regressors(
     df_and_regressors, df_update_add_feature, known_future, regressors, expected_regressors
 ):
     df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=known_future)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future=known_future)
     ts.add_features_from_pandas(df_update=df_update_add_feature, update_exog=True, regressors=regressors)
     assert sorted(ts.regressors) == sorted(expected_regressors)
 
 
 def test_add_features_from_pandas_different_segment_sets_error_single(df_and_regressors, df_update_add_feature):
     df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog)
 
     with pytest.raises(ValueError, match="There is a mismatch in segments between provided and expected sets"):
         ts.add_features_from_pandas(df_update=df_update_add_feature.drop(columns=[("2", "new_column")]))
@@ -1605,7 +1627,7 @@ def test_add_features_from_pandas_different_segment_sets_error_single(df_and_reg
 
 def test_add_features_from_pandas_different_segment_sets_error_multiple(df_and_regressors, df_update_add_feature):
     df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog)
     df_update_add_feature[("2", "new_column_1")] = 2
     with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
         ts.add_features_from_pandas(df_update=df_update_add_feature)
@@ -1613,7 +1635,7 @@ def test_add_features_from_pandas_different_segment_sets_error_multiple(df_and_r
 
 def test_update_columns_from_pandas_different_segment_sets_error_single(df_and_regressors, df_update_update_feature):
     df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog)
 
     with pytest.raises(ValueError, match="There is a mismatch in segments between provided and expected sets"):
         ts.update_features_from_pandas(df_update=df_update_update_feature.drop(columns=[("2", "target")]))
@@ -1621,7 +1643,7 @@ def test_update_columns_from_pandas_different_segment_sets_error_single(df_and_r
 
 def test_update_columns_from_pandas_different_segment_sets_error_multiple(df_and_regressors, df_update_update_feature):
     df, df_exog, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog)
     df_update_update_feature[("2", "regressor_1")] = 2
     with pytest.raises(ValueError, match="There is a mismatch in feature sets between segments"):
         ts.update_features_from_pandas(df_update=df_update_update_feature)
@@ -1630,7 +1652,7 @@ def test_update_columns_from_pandas_different_segment_sets_error_multiple(df_and
 @pytest.mark.parametrize("update_slice", (slice(4, -4), slice(None, None, 2)))
 def test_update_features_from_pandas_invalid_timestamps(df_and_regressors, update_slice, df_update_update_feature):
     df, _, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     with pytest.raises(ValueError, match="Non matching timestamps detected when attempted to update the dataset!"):
         ts.update_features_from_pandas(df_update=df_update_update_feature.iloc[update_slice])
 
@@ -1638,7 +1660,7 @@ def test_update_features_from_pandas_invalid_timestamps(df_and_regressors, updat
 def test_update_features_from_pandas_invalid_columns_error(df_and_regressors, df_update_update_feature):
     df, _, _ = df_and_regressors
     df_update = df_update_update_feature.rename({"1": "new"}, axis=1, level=0)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     with pytest.raises(ValueError, match="Some columns in the dataframe for update are not presented in the dataset!"):
         ts.update_features_from_pandas(df_update=df_update)
 
@@ -1646,7 +1668,7 @@ def test_update_features_from_pandas_invalid_columns_error(df_and_regressors, df
 def test_update_features_from_pandas_duplicate_columns_error(df_and_regressors, df_update_update_feature):
     df, _, _ = df_and_regressors
     df_exog = df.rename(columns={"target": "new"}, level=1)
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
     ts._df = pd.concat([ts._df, df_exog], axis=1)
 
     with pytest.raises(ValueError, match="The dataset features set contains duplicates!"):
@@ -1655,7 +1677,7 @@ def test_update_features_from_pandas_duplicate_columns_error(df_and_regressors, 
 
 def test_update_features_from_pandas(df_and_regressors, df_update_update_feature, df_updated_update_feature):
     df, _, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts.update_features_from_pandas(df_update=df_update_update_feature)
     pd.testing.assert_frame_equal(ts._df, df_updated_update_feature)
 
@@ -1686,7 +1708,7 @@ def test_update_features_from_pandas(df_and_regressors, df_update_update_feature
 )
 def test_drop_features(df_and_regressors, features, drop_from_exog, df_expected_columns, df_exog_expected_columns):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=drop_from_exog)
     df_columns, df_exog_columns = ts.to_flatten(ts._df).columns, ts.to_flatten(ts._df_exog).columns
     assert sorted(df_columns) == sorted(df_expected_columns)
@@ -1697,7 +1719,7 @@ def test_drop_features_raise_warning_on_unknown_columns(
     df_and_regressors, features=["regressor_2", "out_of_dataset_column"]
 ):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     with pytest.warns(UserWarning, match="Features {'out_of_dataset_column'} are not present in df!"):
         ts.drop_features(features=features, drop_from_exog=False)
 
@@ -1712,14 +1734,14 @@ def test_drop_features_raise_warning_on_unknown_columns(
 )
 def test_drop_features_update_regressors(df_and_regressors, features, expected_regressors):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     ts.drop_features(features=features, drop_from_exog=False)
     assert sorted(ts.regressors) == sorted(expected_regressors)
 
 
 def test_drop_features_throw_error_on_target(df_and_regressors):
     df, df_exog, known_future = df_and_regressors
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future=known_future)
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future=known_future)
     with pytest.raises(ValueError, match="Target can't be dropped from the dataset!"):
         ts.drop_features(features=["target"], drop_from_exog=False)
 
@@ -1906,24 +1928,24 @@ def test_check_timestamp_type_warning():
     df_exog_wide = TSDataset.to_dataset(df_exog)
 
     with pytest.warns(UserWarning, match=match):
-        TSDataset(df=df_wide, freq="D")
+        TSDataset(df=df_wide, freq=pd.offsets.Day())
 
     with pytest.warns(UserWarning, match=match):
-        TSDataset(df=df_wide, df_exog=df_exog_wide, freq="D")
+        TSDataset(df=df_wide, df_exog=df_exog_wide, freq=pd.offsets.Day())
 
 
 @pytest.mark.parametrize(
     "df_name, freq, original_timestamp_name, future_steps",
     [
-        ("df_aligned_datetime", "D", "external_timestamp", 1),
+        ("df_aligned_datetime", pd.offsets.Day().freqstr, "external_timestamp", 1),
         ("df_aligned_datetime", pd.offsets.Day(), "external_timestamp", 1),
         ("df_aligned_int", None, "external_timestamp", 1),
-        ("df_misaligned_datetime", "D", "external_timestamp", 1),
+        ("df_misaligned_datetime", pd.offsets.Day().freqstr, "external_timestamp", 1),
         ("df_misaligned_datetime", pd.offsets.Day(), "external_timestamp", 1),
         ("df_misaligned_int", None, "external_timestamp", 1),
-        ("df_misaligned_datetime", "D", "new_timestamp", 1),
-        ("df_misaligned_datetime", "D", "external_timestamp", 3),
-        ("df_misaligned_datetime", "D", "external_timestamp", 100),
+        ("df_misaligned_datetime", pd.offsets.Day().freqstr, "new_timestamp", 1),
+        ("df_misaligned_datetime", pd.offsets.Day().freqstr, "external_timestamp", 3),
+        ("df_misaligned_datetime", pd.offsets.Day().freqstr, "external_timestamp", 100),
     ],
 )
 def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_name, future_steps, request):
@@ -1953,15 +1975,43 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
 @pytest.mark.parametrize(
     "df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps",
     [
-        ("df_aligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        (
+            "df_aligned_datetime",
+            "df_exog_aligned_datetime",
+            pd.offsets.Day().freqstr,
+            ["exog_1"],
+            "external_timestamp",
+            1,
+        ),
         ("df_aligned_datetime", "df_exog_aligned_datetime", pd.offsets.Day(), ["exog_1"], "external_timestamp", 1),
-        ("df_aligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        (
+            "df_aligned_datetime",
+            "df_exog_misaligned_datetime",
+            pd.offsets.Day().freqstr,
+            ["exog_1"],
+            "external_timestamp",
+            1,
+        ),
         ("df_aligned_datetime", "df_exog_misaligned_datetime", pd.offsets.Day(), ["exog_1"], "external_timestamp", 1),
         ("df_aligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
         ("df_aligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
-        ("df_misaligned_datetime", "df_exog_aligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        (
+            "df_misaligned_datetime",
+            "df_exog_aligned_datetime",
+            pd.offsets.Day().freqstr,
+            ["exog_1"],
+            "external_timestamp",
+            1,
+        ),
         ("df_misaligned_datetime", "df_exog_aligned_datetime", pd.offsets.Day(), ["exog_1"], "external_timestamp", 1),
-        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 1),
+        (
+            "df_misaligned_datetime",
+            "df_exog_misaligned_datetime",
+            pd.offsets.Day().freqstr,
+            ["exog_1"],
+            "external_timestamp",
+            1,
+        ),
         (
             "df_misaligned_datetime",
             "df_exog_misaligned_datetime",
@@ -1972,9 +2022,30 @@ def test_create_from_misaligned_without_exog(df_name, freq, original_timestamp_n
         ),
         ("df_misaligned_int", "df_exog_aligned_int", None, ["exog_1"], "external_timestamp", 1),
         ("df_misaligned_int", "df_exog_misaligned_int", None, ["exog_1"], "external_timestamp", 1),
-        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "new_timestamp", 1),
-        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 3),
-        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "external_timestamp", 100),
+        (
+            "df_misaligned_datetime",
+            "df_exog_misaligned_datetime",
+            pd.offsets.Day().freqstr,
+            ["exog_1"],
+            "new_timestamp",
+            1,
+        ),
+        (
+            "df_misaligned_datetime",
+            "df_exog_misaligned_datetime",
+            pd.offsets.Day().freqstr,
+            ["exog_1"],
+            "external_timestamp",
+            3,
+        ),
+        (
+            "df_misaligned_datetime",
+            "df_exog_misaligned_datetime",
+            pd.offsets.Day().freqstr,
+            ["exog_1"],
+            "external_timestamp",
+            100,
+        ),
     ],
 )
 def test_create_from_misaligned_with_exog(
@@ -2020,7 +2091,7 @@ def test_create_from_misaligned_with_exog(
         (
             "df_misaligned_datetime",
             "df_exog_all_misaligned_datetime",
-            "D",
+            pd.offsets.Day().freqstr,
             "external_timestamp",
             1,
             ["exog_1", "exog_2", "external_timestamp"],
@@ -2074,8 +2145,8 @@ def test_create_from_misaligned_with_exog_all(
 @pytest.mark.parametrize(
     "df_name, freq, original_timestamp_name, future_steps",
     [
-        ("df_misaligned_datetime", "D", "external_timestamp", 0),
-        ("df_misaligned_datetime", "D", "external_timestamp", -3),
+        ("df_misaligned_datetime", pd.offsets.Day().freqstr, "external_timestamp", 0),
+        ("df_misaligned_datetime", pd.offsets.Day().freqstr, "external_timestamp", -3),
         ("df_misaligned_datetime", pd.offsets.Day(), "external_timestamp", -3),
         ("df_misaligned_int", None, "external_timestamp", 0),
         ("df_misaligned_int", None, "external_timestamp", -3),
@@ -2098,7 +2169,7 @@ def test_create_from_misaligned_fail_non_positive_future_steps(
 @pytest.mark.parametrize(
     "df_name, df_exog_name, freq, known_future, original_timestamp_name, future_steps",
     [
-        ("df_misaligned_datetime", "df_exog_misaligned_datetime", "D", ["exog_1"], "exog_1", 1),
+        ("df_misaligned_datetime", "df_exog_misaligned_datetime", pd.offsets.Day().freqstr, ["exog_1"], "exog_1", 1),
     ],
 )
 def test_create_from_misaligned_fail_name_intersection(
@@ -2137,7 +2208,7 @@ def test_features(ts_name, expected_features, request):
 
 def test_error_set_read_only_known_future(df_and_regressors):
     df, df_exog, regressors = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=regressors)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future=regressors)
     with pytest.raises(
         AttributeError, match="can't set attribute|property 'known_future' of 'TSDataset' object has no setter"
     ):
@@ -2146,7 +2217,7 @@ def test_error_set_read_only_known_future(df_and_regressors):
 
 def test_not_equal_updated_known_futures(df_and_regressors):
     df, df_exog, regressors = df_and_regressors
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=regressors)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future=regressors)
     new_known_future = ts.known_future
     new_known_future.append("new_regressor")
     assert ts.known_future != new_known_future
@@ -2154,26 +2225,26 @@ def test_not_equal_updated_known_futures(df_and_regressors):
 
 def test_error_set_freq(df_and_regressors):
     df, _, _ = df_and_regressors
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     with pytest.raises(AttributeError, match="can't set attribute|property 'freq' of 'TSDataset' object has no setter"):
-        ts.freq = "H"
+        ts.freq = pd.offsets.Hour()
 
 
 @pytest.mark.parametrize(
     "freq, freq_str, freq_offset",
     [
-        ("D", "D", pd.offsets.Day()),
-        (pd.offsets.Day(), "D", pd.offsets.Day()),
-        ("2D", "2D", pd.offsets.Day(n=2)),
-        (pd.offsets.Day(n=2), "2D", pd.offsets.Day(n=2)),
-        ("W", "W-SUN", pd.offsets.Week(weekday=6)),
-        (pd.offsets.Week(weekday=6), "W-SUN", pd.offsets.Week(weekday=6)),
-        (pd.offsets.Week(weekday=0), "W-MON", pd.offsets.Week(weekday=0)),
-        (pd.offsets.Week(), "W", pd.offsets.Week()),
-        ("M", "M", pd.offsets.MonthEnd()),
-        (pd.offsets.MonthEnd(), "M", pd.offsets.MonthEnd()),
-        ("MS", "MS", pd.offsets.MonthBegin()),
-        (pd.offsets.MonthBegin(), "MS", pd.offsets.MonthBegin()),
+        (pd.offsets.Day().freqstr, pd.offsets.Day().freqstr, pd.offsets.Day()),
+        (pd.offsets.Day(), pd.offsets.Day().freqstr, pd.offsets.Day()),
+        (pd.offsets.Day(2).freqstr, pd.offsets.Day(2).freqstr, pd.offsets.Day(n=2)),
+        (pd.offsets.Day(n=2), pd.offsets.Day(2).freqstr, pd.offsets.Day(n=2)),
+        (pd.offsets.Week().freqstr, pd.offsets.Week(weekday=6).freqstr, pd.offsets.Week(weekday=6)),
+        (pd.offsets.Week(weekday=6), pd.offsets.Week(weekday=6).freqstr, pd.offsets.Week(weekday=6)),
+        (pd.offsets.Week(weekday=0), pd.offsets.Week(weekday=0).freqstr, pd.offsets.Week(weekday=0)),
+        (pd.offsets.Week(), pd.offsets.Week().freqstr, pd.offsets.Week()),
+        (pd.offsets.MonthEnd().freqstr, pd.offsets.MonthEnd().freqstr, pd.offsets.MonthEnd()),
+        (pd.offsets.MonthEnd(), pd.offsets.MonthEnd().freqstr, pd.offsets.MonthEnd()),
+        (pd.offsets.MonthBegin().freqstr, pd.offsets.MonthBegin().freqstr, pd.offsets.MonthBegin()),
+        (pd.offsets.MonthBegin(), pd.offsets.MonthBegin().freqstr, pd.offsets.MonthBegin()),
     ],
 )
 def test_freq_with_datetime_timestamp(freq, freq_str, freq_offset):

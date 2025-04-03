@@ -24,5 +24,5 @@ def ts_with_exog(random_seed) -> TSDataset:
 
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=["regressor_1", "regressor_2"])
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future=["regressor_1", "regressor_2"])
     return ts

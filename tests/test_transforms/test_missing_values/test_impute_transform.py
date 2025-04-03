@@ -188,7 +188,7 @@ def test_range_missing_running_mean(ts_with_missing_range_x_index, window: int):
 
 @pytest.fixture
 def sample_ts():
-    timestamp = pd.date_range(start="2020-01-01", end="2020-01-11", freq="D")
+    timestamp = pd.date_range(start="2020-01-01", end="2020-01-11", freq=pd.offsets.Day())
     df1 = pd.DataFrame()
     df1["timestamp"] = timestamp
     df1["segment"] = "segment_1"
@@ -200,7 +200,7 @@ def sample_ts():
     df2["target"] = np.arange(0, 110, 10)
 
     df = pd.concat([df1, df2], ignore_index=True)
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day())
     return ts
 
 

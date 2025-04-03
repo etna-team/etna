@@ -216,7 +216,7 @@ def l1_level_df_tailed():
 @pytest.fixture
 def simple_hierarchical_ts(market_level_df, hierarchical_structure):
     df = market_level_df
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     return ts
 
 
@@ -240,7 +240,7 @@ def test_get_dataframe(df, expected_level, simple_hierarchical_ts, request):
 def test_init_different_level_segments_df_fails(different_level_segments_df, hierarchical_structure):
     df = different_level_segments_df
     with pytest.raises(ValueError, match="Segments in dataframe are from more than 1 hierarchical levels!"):
-        _ = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+        _ = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
 
 
 def test_init_different_level_segments_df_exog_fails(
@@ -248,14 +248,14 @@ def test_init_different_level_segments_df_exog_fails(
 ):
     df, df_exog = market_level_df, different_level_segments_df_exog
     with pytest.raises(ValueError, match="Segments in dataframe are from more than 1 hierarchical levels!"):
-        _ = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+        _ = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, hierarchical_structure=hierarchical_structure)
 
 
 def test_init_df_same_level_df_exog(
     market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "regressor", "exog"}
 ):
     df, df_exog = market_level_df, market_level_df_exog
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     df_columns = set(ts.features)
     assert df_columns == expected_columns
 
@@ -264,7 +264,7 @@ def test_init_df_different_level_df_exog(
     product_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target"}
 ):
     df, df_exog = product_level_df, market_level_df_exog
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     df_columns = set(ts.features)
     assert df_columns == expected_columns
 
@@ -272,14 +272,14 @@ def test_init_df_different_level_df_exog(
 def test_init_missing_segmnets_df(missing_segments_df, hierarchical_structure):
     df = missing_segments_df
     with pytest.raises(ValueError, match="Some segments of hierarchical level are missing in dataframe!"):
-        _ = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+        _ = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
 
 
 def test_make_future_df_same_level_df_exog(
     market_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target", "regressor", "exog"}
 ):
     df, df_exog = market_level_df, market_level_df_exog
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     future = ts.make_future(future_steps=4)
     future_columns = set(future.features)
     assert future_columns == expected_columns
@@ -289,7 +289,7 @@ def test_make_future_df_different_level_df_exog(
     product_level_df, market_level_df_exog, hierarchical_structure, expected_columns={"target"}
 ):
     df, df_exog = product_level_df, market_level_df_exog
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     future = ts.make_future(future_steps=4)
     future_columns = set(future.features)
     assert future_columns == expected_columns
@@ -302,7 +302,7 @@ def test_level_names_with_hierarchical_structure(simple_hierarchical_ts, expecte
 
 def test_level_names_without_hierarchical_structure(market_level_df):
     df = market_level_df
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     ts_level_names = ts.level_names()
     assert ts_level_names is None
 
@@ -403,10 +403,10 @@ def test_get_level_dataset(hierarchical_structure_name, source_df_name, target_l
     hierarchical_structure = request.getfixturevalue(hierarchical_structure_name)
 
     source_df = request.getfixturevalue(source_df_name)
-    source_ts = TSDataset(df=source_df, freq="D", hierarchical_structure=hierarchical_structure)
+    source_ts = TSDataset(df=source_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
 
     target_df = request.getfixturevalue(target_df_name)
-    target_ts = TSDataset(df=target_df, freq="D", hierarchical_structure=hierarchical_structure)
+    target_ts = TSDataset(df=target_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
 
     estimated_target_ts = source_ts.get_level_dataset(target_level)
 
@@ -433,7 +433,7 @@ def test_get_level_dataset_with_exog(
     source_ts = TSDataset(
         df=source_df,
         df_exog=market_level_df_exog,
-        freq="D",
+        freq=pd.offsets.Day(),
         hierarchical_structure=hierarchical_structure,
         known_future=["regressor"],
     )
@@ -442,7 +442,7 @@ def test_get_level_dataset_with_exog(
     target_ts = TSDataset(
         df=target_df,
         df_exog=market_level_df_exog,
-        freq="D",
+        freq=pd.offsets.Day(),
         hierarchical_structure=hierarchical_structure,
         known_future=["regressor"],
     )
@@ -454,7 +454,7 @@ def test_get_level_dataset_with_exog(
 
 
 def test_get_level_dataset_no_hierarchy_error(market_level_df):
-    ts = TSDataset(df=market_level_df, freq="D")
+    ts = TSDataset(df=market_level_df, freq=pd.offsets.Day())
     with pytest.raises(ValueError, match="Method could be applied only to instances with a hierarchy!"):
         ts.get_level_dataset(target_level="total")
 
@@ -522,7 +522,7 @@ def test_train_test_split_pass_hierarchy_to_output(simple_hierarchical_ts):
 
 def test_error_set_current_df_level(market_level_df, hierarchical_structure):
     df = market_level_df
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     with pytest.raises(
         AttributeError, match="can't set attribute|property 'current_df_level' of 'TSDataset' object has no setter"
     ):
@@ -531,7 +531,7 @@ def test_error_set_current_df_level(market_level_df, hierarchical_structure):
 
 def test_error_set_current_df_exog_level(product_level_df, market_level_df_exog, hierarchical_structure):
     df, df_exog = product_level_df, market_level_df_exog
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, hierarchical_structure=hierarchical_structure)
     with pytest.raises(
         AttributeError, match="can't set attribute|property 'current_df_exog_level' of 'TSDataset' object has no setter"
     ):

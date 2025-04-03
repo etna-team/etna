@@ -67,7 +67,7 @@ def test_run_with_reg(catboostmodel, new_format_df, new_format_exog):
 def constant_ts(size=40) -> TSDataset:
     constants = [7, 50, 130, 277, 370, 513]
     segments = [constant for constant in constants for _ in range(size)]
-    ts_range = list(pd.date_range("2020-01-03", freq="D", periods=size))
+    ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=size))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * len(constants),
@@ -75,7 +75,7 @@ def constant_ts(size=40) -> TSDataset:
             "segment": [f"segment_{i+1}" for i in range(len(constants)) for _ in range(size)],
         }
     )
-    ts = TSDataset(TSDataset.to_dataset(df), "D")
+    ts = TSDataset(TSDataset.to_dataset(df), pd.offsets.Day())
     train, test = ts.train_test_split(test_size=5)
     return train, test
 
@@ -128,7 +128,7 @@ def test_get_model_per_segment_after_training(example_tsds):
 def test_encoder_catboost(encoder):
     df = generate_ar_df(start_time="2021-01-01", periods=20, n_segments=2)
     ts = TSDataset.to_dataset(df)
-    ts = TSDataset(ts, freq="D")
+    ts = TSDataset(ts, freq=pd.offsets.Day())
 
     transforms = [DateFlagsTransform(week_number_in_month=True, out_column="date_flag"), encoder]
     model = CatBoostMultiSegmentModel(iterations=100)
@@ -191,7 +191,7 @@ def ts_with_features() -> TSDataset:
 
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
-    return TSDataset(df=df, df_exog=df_exog, freq="D")
+    return TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
 
 
 @pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))

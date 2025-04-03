@@ -24,7 +24,7 @@ def check_change_points(change_points: Dict[str, List[pd.Timestamp]], segments: 
 @pytest.mark.parametrize("n_bkps", [5, 10, 12, 27])
 def test_find_change_points_simple(multitrend_df: pd.DataFrame, n_bkps: int):
     """Test that find_change_points works fine with multitrend example."""
-    ts = TSDataset(df=multitrend_df, freq="D")
+    ts = TSDataset(df=multitrend_df, freq=pd.offsets.Day())
     change_points = find_change_points(ts=ts, in_column="target", change_point_model=Binseg(), n_bkps=n_bkps)
     check_change_points(change_points, segments=ts.segments, num_points=n_bkps)
 
@@ -33,7 +33,7 @@ def test_find_change_points_simple(multitrend_df: pd.DataFrame, n_bkps: int):
 def test_find_change_points_nans_head(multitrend_df: pd.DataFrame, n_bkps: int):
     """Test that find_change_points works fine with nans at the beginning of the series."""
     multitrend_df.iloc[:5, :] = np.NaN
-    ts = TSDataset(df=multitrend_df, freq="D")
+    ts = TSDataset(df=multitrend_df, freq=pd.offsets.Day())
     change_points = find_change_points(ts=ts, in_column="target", change_point_model=Binseg(), n_bkps=n_bkps)
     check_change_points(change_points, segments=ts.segments, num_points=n_bkps)
 
@@ -42,6 +42,6 @@ def test_find_change_points_nans_head(multitrend_df: pd.DataFrame, n_bkps: int):
 def test_find_change_points_nans_tail(multitrend_df: pd.DataFrame, n_bkps: int):
     """Test that find_change_points works fine with nans at the end of the series."""
     multitrend_df.iloc[-5:, :] = np.NaN
-    ts = TSDataset(df=multitrend_df, freq="D")
+    ts = TSDataset(df=multitrend_df, freq=pd.offsets.Day())
     change_points = find_change_points(ts=ts, in_column="target", change_point_model=Binseg(), n_bkps=n_bkps)
     check_change_points(change_points, segments=ts.segments, num_points=n_bkps)

@@ -60,7 +60,7 @@ def df_regressors() -> pd.DataFrame:
 @pytest.fixture
 def ts_nans(df_nans) -> TSDataset:
     """Create TSDataset with nans at the beginning of one segment."""
-    ts = TSDataset(df=df_nans, freq="D")
+    ts = TSDataset(df=df_nans, freq=pd.offsets.Day())
     return ts
 
 
@@ -72,7 +72,7 @@ def ts_nans_int_timestamp(ts_nans) -> TSDataset:
 @pytest.fixture
 def ts_nans_with_regressors(df_nans, df_regressors) -> TSDataset:
     """Create TSDataset with regressors and nans at the beginning of one segment."""
-    ts = TSDataset(df=df_nans, df_exog=df_regressors, freq="D")
+    ts = TSDataset(df=df_nans, df_exog=df_regressors, freq=pd.offsets.Day())
     return ts
 
 
@@ -85,7 +85,7 @@ def ts_nans_middle() -> TSDataset:
     df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(df)
     df.iloc[5:10, 0] = np.NaN
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 
@@ -104,7 +104,7 @@ def ts_nans_with_noise(df_nans, random_seed) -> TSDataset:
     df_nans.loc[df_nans.index[5] :, pd.IndexSlice["2", "target"]] += np.random.normal(
         scale=0.05, size=df_nans.shape[0] - 5
     )
-    ts = TSDataset(df=df_nans, freq="D")
+    ts = TSDataset(df=df_nans, freq=pd.offsets.Day())
     return ts
 
 

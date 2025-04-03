@@ -30,7 +30,7 @@ def simple_multisegment_ts() -> TSDataset:
 
     df = pd.concat((x1, x2, x3, x4), ignore_index=True)
     df["target"] = df["target"].astype(float)
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day())
     return ts
 
 

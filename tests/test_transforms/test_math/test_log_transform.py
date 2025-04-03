@@ -26,7 +26,7 @@ def non_positive_ts_(random_seed) -> TSDataset:
     df = pd.concat((df1, df2))
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -47,7 +47,7 @@ def positive_ts_(random_seed) -> TSDataset:
     df = pd.concat((df1, df2))
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

@@ -114,7 +114,7 @@ class _StatsForecastBaseAdapter(BaseAdapter):
 
         self._model.fit(y=endog_data, X=exog_data)
 
-        self._freq = determine_freq(timestamps=df["timestamp"])
+        self._freq = determine_freq(timestamps=df["timestamp"], freq_format="offset")
         self._first_train_timestamp = df["timestamp"].min()
         self._last_train_timestamp = df["timestamp"].max()
 
