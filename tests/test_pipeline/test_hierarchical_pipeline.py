@@ -1,3 +1,4 @@
+from typing import List
 from unittest.mock import Mock
 
 import numpy as np
@@ -267,7 +268,7 @@ def test_backtest(market_level_constant_hierarchical_ts, reconciliator):
     ts = market_level_constant_hierarchical_ts
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
+    metrics = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)["metrics_df"]
     np.testing.assert_allclose(metrics["MAE"], 0)
 
 
@@ -284,9 +285,10 @@ def test_get_historical_forecasts(market_level_constant_hierarchical_ts, reconci
     n_folds = 2
     model = NaiveModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
-    assert isinstance(forecasts, pd.DataFrame)
-    assert len(forecasts) == n_folds * pipeline.horizon
+    list_forecast_ts = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
+    assert isinstance(list_forecast_ts, List)
+    for forecast_ts in list_forecast_ts:
+        assert forecast_ts.size()[0] == pipeline.horizon
 
 
 @pytest.mark.parametrize(
@@ -306,7 +308,7 @@ def test_backtest_w_transforms(market_level_constant_hierarchical_ts, reconcilia
         LinearTrendTransform(in_column="target"),
     ]
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=transforms, horizon=1)
-    metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
+    metrics = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)["metrics_df"]
     np.testing.assert_allclose(metrics["MAE"], 0)
 
 
@@ -322,7 +324,7 @@ def test_backtest_w_exog(product_level_constant_hierarchical_ts_with_exog, recon
     ts = product_level_constant_hierarchical_ts_with_exog
     model = LinearPerSegmentModel()
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
-    metrics, _, _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)
+    metrics = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=2, aggregate_metrics=True)["metrics_df"]
     np.testing.assert_allclose(metrics["MAE"], 0)
 
 
@@ -451,14 +453,14 @@ def test_interval_metrics(product_level_constant_hierarchical_ts, metric_type, r
     pipeline = HierarchicalPipeline(reconciliator=reconciliator, model=model, transforms=[], horizon=1)
 
     metric = metric_type()
-    results, _, _ = pipeline.backtest(
+    metrics_df = pipeline.backtest(
         ts=ts,
         metrics=[metric],
         n_folds=1,
         aggregate_metrics=True,
         forecast_params={"prediction_interval": True, "n_folds": 2},
-    )
-    np.testing.assert_allclose(results[metric.name], answer)
+    )["metrics_df"]
+    np.testing.assert_allclose(metrics_df[metric.name], answer)
 
 
 @pytest.mark.parametrize(

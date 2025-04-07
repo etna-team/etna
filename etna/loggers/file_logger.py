@@ -9,6 +9,7 @@ from copy import copy
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -137,7 +138,7 @@ class BaseFileLogger(BaseLogger):
             warnings.warn(str(e), UserWarning)
 
     def log_backtest_metrics(
-        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, list_forecast_ts: List["TSDataset"], fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
@@ -148,8 +149,8 @@ class BaseFileLogger(BaseLogger):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
-        forecast_df:
-            Forecast from backtest
+        list_forecast_ts:
+            List of TSDataset with forecast for each fold from backtest
         fold_info_df:
             Fold information from backtest
 
@@ -157,12 +158,21 @@ class BaseFileLogger(BaseLogger):
         -----
         If some exception during saving is raised, then it becomes a warning.
         """
-        from etna.datasets import TSDataset
         from etna.metrics.utils import aggregate_metrics_df
 
         try:
             self._save_table(metrics_df, "metrics")
-            self._save_table(TSDataset.to_flatten(forecast_df), "forecast")
+
+            forecast_df = pd.concat(
+                [
+                    forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold)
+                    for num_fold, forecast_ts in enumerate(list_forecast_ts)
+                ],
+                axis=0,
+                ignore_index=True,
+            )
+            self._save_table(forecast_df, "forecast")
+
             self._save_table(fold_info_df, "fold_info")
         except Exception as e:
             warnings.warn(str(e), UserWarning)

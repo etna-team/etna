@@ -233,7 +233,7 @@ def check_backtest_sanity(transform: GeneralDifferencingTransform, ts: TSDataset
     )
 
     # run backtest
-    metrics_df, _, _ = pipeline.backtest(ts, n_folds=3, aggregate_metrics=True, metrics=[R2()])
+    metrics_df = pipeline.backtest(ts, n_folds=3, aggregate_metrics=True, metrics=[R2()])["metrics_df"]
     assert np.all(metrics_df["R2"] > 0.95)
 
 

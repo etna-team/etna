@@ -28,6 +28,21 @@ from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 from tests.test_pipeline.utils import assert_pipeline_predicts
 
 
+def check_backtest_return_type(backtest_result: dict):
+    for key, value in backtest_result.items():
+        match key:
+            case "metrics_df" | "fold_info_df":
+                assert isinstance(value, pd.DataFrame)
+            case "pipelines":
+                assert isinstance(value, list)
+                for pipeline in value:
+                    assert isinstance(pipeline, DirectEnsemble)
+            case "list_forecast_ts":
+                assert isinstance(value, list)
+                for ts in value:
+                    assert isinstance(ts, TSDataset)
+
+
 @pytest.fixture
 def direct_ensemble_pipeline() -> DirectEnsemble:
     ensemble = DirectEnsemble(
@@ -310,8 +325,7 @@ def test_params_to_tune(pipelines, expected_params_to_tune):
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(direct_ensemble_pipeline, example_tsds, n_jobs: int):
     results = direct_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -321,8 +335,7 @@ def test_backtest_hierarchical_pipeline(
     results = direct_ensemble_hierarchical_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -332,5 +345,4 @@ def test_backtest_mix_pipeline(
     results = direct_ensemble_mix_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results)

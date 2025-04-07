@@ -178,9 +178,9 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
         metrics = [MAE(), MSE(), SMAPE()]
         pipeline = Pipeline(model=NaiveModel(), horizon=10)
         n_folds = 5
-        metrics_df, forecast_df, fold_info_df = pipeline.backtest(
+        metrics_df, list_forecast_ts, fold_info_df, pipelines = pipeline.backtest(
             ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds, aggregate_metrics=aggregate_metrics
-        )
+        ).values()
 
         crossval_results_folder = experiment_folder.joinpath("crossval_results").joinpath("all")
 
@@ -191,7 +191,14 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
         assert np.allclose(metrics_df_saved.drop(columns=["segment"]), metrics_df.drop(columns=["segment"]))
 
         # check forecast_df
-        forecast_df = TSDataset.to_flatten(forecast_df)
+        forecast_df = pd.concat(
+            [
+                forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold)
+                for num_fold, forecast_ts in enumerate(list_forecast_ts)
+            ],
+            axis=0,
+            ignore_index=True,
+        )
         forecast_df_saved = pd.read_csv(crossval_results_folder.joinpath("forecast.csv"), parse_dates=["timestamp"])
         assert np.all(
             forecast_df_saved[["timestamp", "fold_number", "segment"]]

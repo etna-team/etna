@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Union
 
 import pandas as pd
@@ -68,7 +69,7 @@ class BaseLogger(ABC, BaseMixin):
         """Finish experiment."""
         pass
 
-    def log_backtest_run(self, metrics: pd.DataFrame, forecast: pd.DataFrame, test: pd.DataFrame):
+    def log_backtest_run(self, metrics: pd.DataFrame, list_forecast_ts: List["TSDataset"], test: pd.DataFrame):
         """
         Backtest metrics from one fold to logger.
 
@@ -76,8 +77,8 @@ class BaseLogger(ABC, BaseMixin):
         ----------
         metrics:
             Dataframe with metrics from backtest fold
-        forecast:
-            Dataframe with forecast
+        list_forecast_ts:
+            List of TSDataset with forecast for each fold from backtest
         test:
             Dataframe with ground truth
         """
@@ -126,7 +127,7 @@ class _Logger(BaseLogger):
             logger.log(msg, **kwargs)
 
     def log_backtest_metrics(
-        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, list_forecast_ts: List["TSDataset"], fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
@@ -137,13 +138,13 @@ class _Logger(BaseLogger):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
-        forecast_df:
-            Forecast from backtest
+        list_forecast_ts:
+            List of TSDataset with forecast for each fold from backtest
         fold_info_df:
             Fold information from backtest
         """
         for logger in self.loggers:
-            logger.log_backtest_metrics(ts, metrics_df, forecast_df, fold_info_df)
+            logger.log_backtest_metrics(ts, metrics_df, list_forecast_ts, fold_info_df)
 
     def log_backtest_run(self, metrics: pd.DataFrame, forecast: pd.DataFrame, test: pd.DataFrame):
         """

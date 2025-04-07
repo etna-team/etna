@@ -120,7 +120,7 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             raise ValueError("Invalid format of weights is passed!")
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> List[TSDataset]:
         """Get forecasts from backtest for given pipeline."""
         forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
         return forecasts
@@ -130,9 +130,14 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         if self.weights is None:
             weights = [1.0 for _ in range(len(self.pipelines))]
         elif self.weights == "auto":
-            forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+            nested_list_forecast_ts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
                 delayed(self._backtest_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
             )
+
+            forecasts = [
+                pd.concat([forecast_ts._df for forecast_ts in list_forecast_ts], axis=0)
+                for list_forecast_ts in nested_list_forecast_ts
+            ]
 
             x = pd.concat(
                 [

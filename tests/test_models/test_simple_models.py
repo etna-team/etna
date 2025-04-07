@@ -650,8 +650,8 @@ def big_ts() -> TSDataset:
 def test_pipeline_with_deadline_model(big_ts):
     model = DeadlineMovingAverageModel(window=5, seasonality="month")
     pipeline = Pipeline(model=model, horizon=200)
-    metrics, forecast, _ = pipeline.backtest(ts=big_ts, metrics=[MAE()], n_folds=3)
-    assert not forecast.isnull().values.any()
+    list_forecast_ts = pipeline.backtest(ts=big_ts, metrics=[MAE()], n_folds=3)["list_forecast_ts"]
+    assert not any(ts.isnull().any(axis=None) for ts in list_forecast_ts)
 
 
 @pytest.fixture()

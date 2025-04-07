@@ -356,11 +356,11 @@ def test_add_forecast_borders_overlapping_timestamps(example_tsds, model, stride
     pipeline = Pipeline(model=model, transforms=[DateFlagsTransform()], horizon=5)
     pipeline.fit(example_tsds)
 
-    forecasts = pipeline.get_historical_forecasts(ts=example_tsds, stride=stride)
+    list_forecast_ts = pipeline.get_historical_forecasts(ts=example_tsds, stride=stride)
 
     with pytest.raises(ValueError, match="Historical backtest timestamps must match"):
         pipeline._add_forecast_borders(
-            ts=example_tsds, backtest_forecasts=forecasts, quantiles=[0.025, 0.975], predictions=None
+            ts=example_tsds, list_backtest_forecasts=list_forecast_ts, quantiles=[0.025, 0.975], predictions=None
         )
 
 
@@ -510,11 +510,11 @@ def test_backtest_metrics_interface(
     catboost_pipeline: Pipeline, aggregate_metrics: bool, expected_columns: List[str], big_daily_example_tsdf: TSDataset
 ):
     """Check that Pipeline.backtest returns metrics in correct format."""
-    metrics_df, _, _ = catboost_pipeline.backtest(
+    metrics_df = catboost_pipeline.backtest(
         ts=big_daily_example_tsdf,
         aggregate_metrics=aggregate_metrics,
         metrics=[MAE("per-segment"), MSE("per-segment"), SMAPE("per-segment"), DummyMetric("per-segment", alpha=0.0)],
-    )
+    )["metrics_df"]
     assert sorted(expected_columns) == sorted(metrics_df.columns)
 
 
@@ -528,11 +528,12 @@ def test_backtest_metrics_interface(
 def test_backtest_forecasts_columns(ts_fixture, catboost_pipeline, request):
     """Check that Pipeline.backtest returns forecasts in correct format."""
     ts = request.getfixturevalue(ts_fixture)
-    _, forecast, _ = catboost_pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS)
+    list_forecast_ts = catboost_pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS)["list_forecast_ts"]
     expected_columns = sorted(
-        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "target"]
     )
-    assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
+    for forecast_ts in list_forecast_ts:
+        assert expected_columns == sorted(forecast_ts.features)
 
 
 @pytest.mark.parametrize(
@@ -545,11 +546,12 @@ def test_backtest_forecasts_columns(ts_fixture, catboost_pipeline, request):
 def test_get_historical_forecasts_columns(ts_fixture, catboost_pipeline, request):
     """Check that Pipeline.get_historical_forecasts returns forecasts in correct format."""
     ts = request.getfixturevalue(ts_fixture)
-    forecast = catboost_pipeline.get_historical_forecasts(ts=ts)
+    list_forecast_ts = catboost_pipeline.get_historical_forecasts(ts=ts)
     expected_columns = sorted(
-        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "fold_number", "target"]
+        ["regressor_lag_feature_10", "regressor_lag_feature_11", "regressor_lag_feature_12", "target"]
     )
-    assert expected_columns == sorted(set(forecast.columns.get_level_values("feature")))
+    for forecast_ts in list_forecast_ts:
+        assert expected_columns == sorted(forecast_ts.features)
 
 
 @pytest.mark.parametrize(
@@ -597,10 +599,13 @@ def test_backtest_forecasts_timestamps(ts_name, n_folds, horizon, expected_times
     """Check that Pipeline.backtest returns forecasts with expected timestamps."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
-    _, forecast, _ = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)
-    timestamp = ts.timestamps
+    list_forecast_ts = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)["list_forecast_ts"]
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
+    forecast_df = pd.concat([forecast_ts.to_pandas() for forecast_ts in list_forecast_ts])
+
+    timestamps = ts.timestamps
+
+    np.testing.assert_array_equal(forecast_df.index, timestamps[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
@@ -648,10 +653,13 @@ def test_get_historical_forecasts_timestamps(ts_name, n_folds, horizon, expected
     """Check that Pipeline.get_historical_forecasts returns forecasts with expected timestamps."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
-    forecast = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
+    list_forecast_ts = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds)
+
+    forecast_df = pd.concat([forecast_ts.to_pandas() for forecast_ts in list_forecast_ts])
+
     timestamp = ts.timestamps
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
+    np.testing.assert_array_equal(forecast_df.index, timestamp[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
@@ -665,10 +673,15 @@ def test_get_historical_forecasts_timestamps(ts_name, n_folds, horizon, expected
 def test_backtest_forecasts_timestamps_with_stride(n_folds, horizon, stride, expected_timestamp_indices, example_tsdf):
     """Check that Pipeline.backtest with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
-    _, forecast, _ = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)
-    timestamp = example_tsdf.timestamps
+    list_forecast_ts = pipeline.backtest(ts=example_tsdf, metrics=DEFAULT_METRICS, n_folds=n_folds, stride=stride)[
+        "list_forecast_ts"
+    ]
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
+    forecast_df = pd.concat([forecast_ts.to_pandas() for forecast_ts in list_forecast_ts])
+
+    timestamps = example_tsdf.timestamps
+
+    np.testing.assert_array_equal(forecast_df.index, timestamps[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
@@ -684,10 +697,13 @@ def test_get_historical_forecasts_timestamps_with_stride(
 ):
     """Check that Pipeline.get_historical_forecasts with stride returns forecasts with expected timestamps."""
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
-    forecast = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds, stride=stride)
-    timestamp = example_tsdf.timestamps
+    list_forecast_ts = pipeline.get_historical_forecasts(ts=example_tsdf, n_folds=n_folds, stride=stride)
 
-    np.testing.assert_array_equal(forecast.index, timestamp[expected_timestamp_indices])
+    forecast_df = pd.concat([forecast_ts.to_pandas() for forecast_ts in list_forecast_ts])
+
+    timestamps = example_tsdf.timestamps
+
+    np.testing.assert_array_equal(forecast_df.index, timestamps[expected_timestamp_indices])
 
 
 @pytest.mark.parametrize(
@@ -703,7 +719,7 @@ def test_backtest_fold_info_format(ts_fixture, n_folds, request):
     """Check that Pipeline.backtest returns info dataframe in correct format."""
     ts = request.getfixturevalue(ts_fixture)
     pipeline = Pipeline(model=NaiveModel(lag=7), horizon=7)
-    _, _, info_df = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)
+    info_df = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, n_folds=n_folds)["fold_info_df"]
 
     expected_folds = pd.Series(np.arange(n_folds))
     pd.testing.assert_series_equal(info_df["fold_number"], expected_folds, check_names=False)
@@ -1060,9 +1076,9 @@ def test_backtest_fold_info_timestamps(
     """Check that Pipeline.backtest returns info dataframe with correct timestamps."""
     ts = request.getfixturevalue(ts_name)
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
-    _, _, info_df = pipeline.backtest(
-        ts=ts, metrics=DEFAULT_METRICS, mode=mode, n_folds=n_folds, refit=refit, stride=stride
-    )
+    info_df = pipeline.backtest(ts=ts, metrics=DEFAULT_METRICS, mode=mode, n_folds=n_folds, refit=refit, stride=stride)[
+        "fold_info_df"
+    ]
     timestamp = ts.timestamps
 
     np.testing.assert_array_equal(info_df["train_start_time"], timestamp[expected_train_start_indices])
@@ -1094,16 +1110,33 @@ def test_backtest_with_n_jobs(refit, catboost_pipeline: Pipeline, big_example_ts
     ts2 = deepcopy(big_example_tsdf)
     pipeline_1 = deepcopy(catboost_pipeline)
     pipeline_2 = deepcopy(catboost_pipeline)
-    _, forecast_1, _ = pipeline_1.backtest(ts=ts1, n_jobs=1, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)
-    _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)
-    assert (forecast_1 == forecast_2).all().all()
+
+    list_forecast_ts_1 = pipeline_1.backtest(ts=ts1, n_jobs=1, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)[
+        "list_forecast_ts"
+    ]
+
+    list_forecast_ts_2 = pipeline_2.backtest(ts=ts2, n_jobs=3, n_folds=4, metrics=DEFAULT_METRICS, refit=refit)[
+        "list_forecast_ts"
+    ]
+
+    for forecast_1, forecast_2 in zip(list_forecast_ts_1, list_forecast_ts_2):
+        pd.testing.assert_frame_equal(forecast_1.to_pandas(), forecast_2.to_pandas())
 
 
 def test_sanity_backtest_forecasts(step_ts: TSDataset):
     """Check that Pipeline.backtest gives correct forecasts according to the simple case."""
     ts, expected_metrics_df, expected_forecast_df = step_ts
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    metrics_df, forecast_df, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=3)
+    backtest_result = pipeline.backtest(ts, metrics=[MAE()], n_folds=3)
+    metrics_df = backtest_result["metrics_df"]
+    list_forecast_ts = backtest_result["list_forecast_ts"]
+
+    forecast_df = pd.concat(
+        [
+            TSDataset.to_dataset(forcast_ts.to_pandas(flatten=True).assign(fold_number=num_fold))
+            for num_fold, forcast_ts in enumerate(list_forecast_ts)
+        ]
+    )
 
     assert np.all(metrics_df.reset_index(drop=True) == expected_metrics_df)
     assert np.all(forecast_df == expected_forecast_df)
@@ -1113,7 +1146,13 @@ def test_sanity_get_historical_forecasts(step_ts: TSDataset):
     """Check that Pipeline.get_historical_forecasts gives correct forecasts according to the simple case."""
     ts, _, expected_forecast_df = step_ts
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    forecast_df = pipeline.get_historical_forecasts(ts, n_folds=3)
+    list_forecast_ts = pipeline.get_historical_forecasts(ts, n_folds=3)
+    forecast_df = pd.concat(
+        [
+            TSDataset.to_dataset(forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold))
+            for num_fold, forecast_ts in enumerate(list_forecast_ts)
+        ]
+    )
 
     assert np.all(forecast_df == expected_forecast_df)
 
@@ -1668,7 +1707,9 @@ def test_backtest_one_point(simple_ts: TSDataset, lag: int, expected: Dict[str, 
         [simple_ts.timestamps.min() + np.timedelta64(8, "D")],
     )
     pipeline = Pipeline(model=NaiveModel(lag=lag), transforms=[], horizon=2)
-    metrics_df, _, _ = pipeline.backtest(ts=simple_ts, metrics=[SMAPE()], n_folds=[mask], aggregate_metrics=True)
+    metrics_df = pipeline.backtest(ts=simple_ts, metrics=[SMAPE()], n_folds=[mask], aggregate_metrics=True)[
+        "metrics_df"
+    ]
     metrics = dict(metrics_df.values)
     for segment in expected.keys():
         assert segment in metrics.keys()
@@ -1685,7 +1726,7 @@ def test_backtest_two_points(masked_ts: TSDataset, lag: int, expected: Dict[str,
         [masked_ts.timestamps.min() + np.timedelta64(9, "D"), masked_ts.timestamps.min() + np.timedelta64(10, "D")],
     )
     pipeline = Pipeline(model=NaiveModel(lag=lag), transforms=[], horizon=4)
-    metrics_df, _, _ = pipeline.backtest(ts=masked_ts, metrics=[MAE()], n_folds=[mask], aggregate_metrics=True)
+    metrics_df = pipeline.backtest(ts=masked_ts, metrics=[MAE()], n_folds=[mask], aggregate_metrics=True)["metrics_df"]
     metrics = dict(metrics_df.values)
     for segment in expected.keys():
         assert segment in metrics.keys()
@@ -1696,27 +1737,29 @@ def test_sanity_backtest_naive_with_intervals(weekly_period_ts):
     train_ts, _ = weekly_period_ts
     quantiles = (0.01, 0.99)
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    _, forecast_df, _ = pipeline.backtest(
+    list_forecast_ts = pipeline.backtest(
         ts=train_ts,
         metrics=[MAE(), Width(quantiles=quantiles)],
         forecast_params={"quantiles": quantiles, "prediction_interval": True},
-    )
-    features = forecast_df.columns.get_level_values(1)
-    assert f"target_{quantiles[0]}" in features
-    assert f"target_{quantiles[1]}" in features
+    )["list_forecast_ts"]
+    for forecast_ts in list_forecast_ts:
+        features = forecast_ts.features
+        assert f"target_{quantiles[0]}" in features
+        assert f"target_{quantiles[1]}" in features
 
 
 def test_sanity_get_historical_forecasts_naive_with_intervals(weekly_period_ts):
     train_ts, _ = weekly_period_ts
     quantiles = (0.01, 0.99)
     pipeline = Pipeline(model=NaiveModel(), horizon=5)
-    forecast_df = pipeline.get_historical_forecasts(
+    list_forecast_ts = pipeline.get_historical_forecasts(
         ts=train_ts,
         forecast_params={"quantiles": quantiles, "prediction_interval": True},
     )
-    features = forecast_df.columns.get_level_values(1)
-    assert f"target_{quantiles[0]}" in features
-    assert f"target_{quantiles[1]}" in features
+    for forecast_ts in list_forecast_ts:
+        features = forecast_ts.features
+        assert f"target_{quantiles[0]}" in features
+        assert f"target_{quantiles[1]}" in features
 
 
 @pytest.mark.skip(

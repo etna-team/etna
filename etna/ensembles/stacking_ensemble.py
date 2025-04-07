@@ -111,7 +111,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
     def _filter_features_to_use(self, forecasts: List[pd.DataFrame]) -> Union[None, Set[str]]:
         """Return all the features from ``features_to_use`` which can be obtained from base models' forecasts."""
         features_df = pd.concat(forecasts, axis=1)
-        available_features = set(features_df.columns.get_level_values("feature")) - {"fold_number"}
+        available_features = set(features_df.columns.get_level_values("feature"))
         features_to_use = self.features_to_use
         if features_to_use is None:
             return None
@@ -134,7 +134,7 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             )
             return None
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> List[TSDataset]:
         """Get forecasts from backtest for given pipeline."""
         forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
         return forecasts
@@ -159,11 +159,15 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             Fitted ensemble.
         """
         # Get forecasts from base models on backtest to fit the final model on
-        forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+        nested_list_forecast_ts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._backtest_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
 
         # Fit the final model
+        forecasts = [
+            pd.concat([forecast_ts._df for forecast_ts in list_forecast_ts], axis=0)
+            for list_forecast_ts in nested_list_forecast_ts
+        ]
         self.filtered_features_for_final_model = self._filter_features_to_use(forecasts)
         x, y = self._make_features(ts=ts, forecasts=forecasts, train=True)
         self.final_model.fit(x, y)

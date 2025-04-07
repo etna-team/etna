@@ -121,10 +121,22 @@ def backtest(
 
     backtest_call_args = remove_params(params=backtest_configs_hydra_slayer, to_remove=ADDITIONAL_BACKTEST_PARAMETERS)
 
-    metrics, forecast, info = pipeline.backtest(ts=tsdataset, **backtest_call_args)
+    backtest_result = pipeline.backtest(ts=tsdataset, **backtest_call_args)
+    metrics = backtest_result["metrics_df"]
+    list_forecast_ts = backtest_result["list_forecast_ts"]
+    info = backtest_result["fold_info_df"]
+
+    forecast_df = pd.concat(
+        [
+            forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold)
+            for num_fold, forecast_ts in enumerate(list_forecast_ts)
+        ],
+        axis=0,
+        ignore_index=True,
+    )
 
     (metrics.to_csv(output_path / "metrics.csv", index=False))
-    (TSDataset.to_flatten(forecast).to_csv(output_path / "forecast.csv", index=False))
+    (forecast_df.to_csv(output_path / "forecast.csv", index=False))
     (info.to_csv(output_path / "info.csv", index=False))
 
 

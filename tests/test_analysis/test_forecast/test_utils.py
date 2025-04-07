@@ -5,7 +5,7 @@ import pytest
 from etna.analysis import get_residuals
 from etna.analysis.forecast.utils import _get_existing_intervals
 from etna.analysis.forecast.utils import _select_prediction_intervals_names
-from etna.analysis.forecast.utils import _validate_intersecting_segments
+from etna.analysis.forecast.utils import _validate_intersecting_folds
 from etna.datasets import TSDataset
 
 
@@ -22,15 +22,19 @@ def residuals():
     df_wide = TSDataset.to_dataset(df)
     ts = TSDataset(df=df_wide, freq=pd.offsets.Day())
 
-    forecast_df = ts[timestamp[10:], :, :]
-    forecast_df.loc[:, pd.IndexSlice["segment_0", "target"]] = -1
-    forecast_df.loc[:, pd.IndexSlice["segment_1", "target"]] = 1
+    forecast_df = df[df["timestamp"] >= timestamp[10]]
+    forecast_df.loc[df["segment"] == "segment_0", "target"] = -1
+    forecast_df.loc[df["segment"] == "segment_1", "target"] = 1
+    list_forecast_ts = [
+        TSDataset(df=forecast_df.loc[df["timestamp"] < timestamp[55]], freq=pd.offsets.Day()),
+        TSDataset(df=forecast_df.loc[df["timestamp"] >= timestamp[55]], freq=pd.offsets.Day()),
+    ]
 
     residuals_df = ts[timestamp[10:], :, :]
     residuals_df.loc[:, pd.IndexSlice["segment_0", "target"]] += 1
     residuals_df.loc[:, pd.IndexSlice["segment_1", "target"]] -= 1
 
-    return residuals_df, forecast_df, ts
+    return residuals_df, list_forecast_ts, ts
 
 
 @pytest.fixture
@@ -53,34 +57,35 @@ def dataset_dict(toy_dataset_equal_targets_and_quantiles):
 
 def test_get_residuals(residuals):
     """Test that get_residuals finds residuals correctly."""
-    residuals_df, forecast_df, ts = residuals
-    actual_residuals = get_residuals(forecast_df=forecast_df, ts=ts)
+    residuals_df, list_forecast_ts, ts = residuals
+    actual_residuals = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
     assert actual_residuals.to_pandas().equals(residuals_df)
 
 
 def test_get_residuals_with_components(residuals_with_components):
     """Test that get_residuals finds residuals correctly in case of target components presence."""
-    residuals_df, forecast_df, ts = residuals_with_components
-    actual_residuals = get_residuals(forecast_df=forecast_df, ts=ts)
+    residuals_df, list_forecast_ts, ts = residuals_with_components
+    actual_residuals = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
     assert actual_residuals.to_pandas().equals(residuals_df)
 
 
 def test_get_residuals_not_matching_lengths(residuals):
     """Test that get_residuals fails to find residuals correctly if ts hasn't answers."""
-    residuals_df, forecast_df, ts = residuals
+    residuals_df, list_forecast_ts, ts = residuals
     ts = TSDataset(df=ts[ts.timestamps[:-10], :, :], freq=pd.offsets.Day())
     with pytest.raises(KeyError):
-        _ = get_residuals(forecast_df=forecast_df, ts=ts)
+        _ = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
 
 
 def test_get_residuals_not_matching_segments(residuals):
     """Test that get_residuals fails to find residuals correctly if segments of dataset and forecast differ."""
-    residuals_df, forecast_df, ts = residuals
-    columns_frame = forecast_df.columns.to_frame()
-    columns_frame["segment"] = ["segment_0", "segment_3"]
-    forecast_df.columns = pd.MultiIndex.from_frame(columns_frame)
+    residuals_df, list_forecast_ts, ts = residuals
+    for forecast_ts in list_forecast_ts:
+        columns_frame = forecast_ts._df.columns.to_frame()
+        columns_frame["segment"] = ["segment_0", "segment_3"]
+        forecast_ts._df.columns = pd.MultiIndex.from_frame(columns_frame)
     with pytest.raises(KeyError, match="Segments of `ts` and `forecast_df` should be the same"):
-        _ = get_residuals(forecast_df=forecast_df, ts=ts)
+        _ = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
 
 
 @pytest.mark.parametrize(
@@ -101,7 +106,7 @@ def test_get_residuals_not_matching_segments(residuals):
     ],
 )
 def test_validate_intersecting_segments_ok(fold_numbers):
-    _validate_intersecting_segments(fold_numbers)
+    _validate_intersecting_folds(fold_numbers)
 
 
 @pytest.mark.parametrize(
@@ -157,7 +162,7 @@ def test_validate_intersecting_segments_ok(fold_numbers):
 )
 def test_validate_intersecting_segments_fail(fold_numbers):
     with pytest.raises(ValueError):
-        _validate_intersecting_segments(fold_numbers)
+        _validate_intersecting_folds(fold_numbers)
 
 
 @pytest.mark.parametrize("ts_name", ("example_tsds", "toy_dataset_equal_targets_and_quantiles"))

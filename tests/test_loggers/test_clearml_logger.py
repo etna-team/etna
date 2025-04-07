@@ -33,7 +33,7 @@ def test_task_not_init_error(init_task):
 def test_log_backtest_metrics_not_init_error(init_task):
     cml_logger = ClearMLLogger()
     with pytest.raises(ValueError, match="Experiment is not properly initialized!"):
-        cml_logger.log_backtest_metrics(ts=None, metrics_df=None, forecast_df=None, fold_info_df=None)
+        cml_logger.log_backtest_metrics(ts=None, metrics_df=None, list_forecast_ts=None, fold_info_df=None)
 
 
 @patch("etna.loggers.clearml_logger.ClearMLLogger.init_task")
