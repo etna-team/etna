@@ -509,6 +509,11 @@ class TSDataset:
         future_ts._regressors = deepcopy(self.regressors)
         if self._df_exog is not None:
             future_ts._df_exog = self._df_exog.copy(deep=True)
+
+        additional_columns = set(self.features) - set(future_ts.features)
+        if len(additional_columns) > 0:
+            warnings.warn(f"Some columns were not preserved when building the future dataset: {additional_columns}")
+
         return future_ts
 
     def tsdataset_idx_slice(self, start_idx: Optional[int] = None, end_idx: Optional[int] = None) -> "TSDataset":
