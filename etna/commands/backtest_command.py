@@ -122,9 +122,15 @@ def backtest(
     backtest_call_args = remove_params(params=backtest_configs_hydra_slayer, to_remove=ADDITIONAL_BACKTEST_PARAMETERS)
 
     backtest_result = pipeline.backtest(ts=tsdataset, **backtest_call_args)
+
     metrics = backtest_result["metrics_df"]
+    metrics = cast(pd.DataFrame, metrics)
+
     list_forecast_ts = backtest_result["list_forecast_ts"]
+    list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
+
     info = backtest_result["fold_info_df"]
+    info = cast(pd.DataFrame, info)
 
     forecast_df = pd.concat(
         [

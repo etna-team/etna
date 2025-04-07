@@ -8,6 +8,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+from typing import cast
 
 import optuna
 import pandas as pd
@@ -485,9 +486,13 @@ class Auto(AutoBase):
 
             backtest_result = pipeline.backtest(ts, metrics=metrics, **backtest_params)
             metrics_df = backtest_result["metrics_df"]
+            metrics_df = cast(pd.DataFrame, metrics_df)
             list_forecast_ts = backtest_result["list_forecast_ts"]
+            list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
             fold_info_df = backtest_result["fold_info_df"]
+            fold_info_df = cast(pd.DataFrame, fold_info_df)
             pipelines = backtest_result["pipelines"]
+            pipelines = cast(List[BasePipeline], pipelines)
 
             if callback is not None:
                 callback(
@@ -819,9 +824,13 @@ class Tune(AutoBase):
 
                 backtest_result = pipeline.backtest(ts, metrics=metrics, **backtest_params)
                 metrics_df = backtest_result["metrics_df"]
+                metrics_df = cast(pd.DataFrame, metrics_df)
                 list_forecast_ts = backtest_result["list_forecast_ts"]
+                list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
                 fold_info_df = backtest_result["fold_info_df"]
+                fold_info_df = cast(pd.DataFrame, fold_info_df)
                 pipelines = backtest_result["pipelines"]
+                pipelines = cast(List[BasePipeline], pipelines)
 
                 if callback is not None:
                     callback(

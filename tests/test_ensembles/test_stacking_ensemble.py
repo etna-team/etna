@@ -48,8 +48,6 @@ def check_backtest_return_type(backtest_result: dict):
                     assert isinstance(ts, TSDataset)
 
 
-
-
 @pytest.mark.parametrize("input_cv,true_cv", ([(2, 2)]))
 def test_cv_pass(naive_pipeline_1: Pipeline, naive_pipeline_2: Pipeline, input_cv, true_cv):
     """Check that StackingEnsemble._validate_cv works correctly in case of valid cv parameter."""

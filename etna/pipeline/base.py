@@ -13,6 +13,7 @@ from typing import Sequence
 from typing import Set
 from typing import Tuple
 from typing import Union
+from typing import cast
 
 import numpy as np
 import pandas as pd
@@ -1174,6 +1175,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 joblib_params=joblib_params,
                 forecast_params=forecast_params,
             )
-            list_forecast_ts: list[TSDataset] = backtest_result["list_forecast_ts"]
+            list_forecast_ts = backtest_result["list_forecast_ts"]
+            list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
 
         return list_forecast_ts

@@ -86,9 +86,7 @@ def test_backtest(example_tsds, pipeline_name, request):
     ]
 
     for forecast_pipeline, forecast_intervals_pipeline in zip(pipeline_results, intervals_pipeline_results):
-        pd.testing.assert_frame_equal(
-            forecast_pipeline.to_pandas(), forecast_intervals_pipeline.to_pandas()
-        )
+        pd.testing.assert_frame_equal(forecast_pipeline.to_pandas(), forecast_intervals_pipeline.to_pandas())
 
 
 @pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
@@ -100,9 +98,7 @@ def test_get_historical_forecasts(example_tsds, pipeline_name, request):
     intervals_pipeline_results = intervals_pipeline.get_historical_forecasts(ts=example_tsds)
 
     for forecast_pipeline, forecast_intervals_pipeline in zip(pipeline_results, intervals_pipeline_results):
-        pd.testing.assert_frame_equal(
-            forecast_pipeline.to_pandas(), forecast_intervals_pipeline.to_pandas()
-        )
+        pd.testing.assert_frame_equal(forecast_pipeline.to_pandas(), forecast_intervals_pipeline.to_pandas())
 
 
 @pytest.mark.parametrize(
