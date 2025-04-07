@@ -322,6 +322,18 @@ def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds
         _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
 
 
+def test_forecast_additional_columns_warning(example_tsds):
+    transform = LagTransform(lags=[3, 4], in_column="target")
+    transformed_ts = transform.fit_transform(ts=example_tsds)
+
+    pipeline = Pipeline(
+        model=LinearPerSegmentModel(), transforms=[LagTransform(lags=[5, 6], in_column="target")], horizon=2
+    )
+    pipeline.fit(transformed_ts)
+    with pytest.warns(UserWarning, match="Some columns were not preserved"):
+        _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
 @pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
