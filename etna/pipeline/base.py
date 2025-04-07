@@ -1057,8 +1057,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
 
         Returns
         -------
-        metrics_df, forecast_df, fold_info_df:
-            Metrics dataframe, forecast dataframe and dataframe with information about folds
+        backtest_result:
+            Dictionary with backtest results. It contains metrics dataframe, list of TSDatasets with forecast for each fold,
+            dataframe with information about folds and list of pipelines for each fold.
+
 
         Raises
         ------
@@ -1097,14 +1099,14 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         tslogger.log_backtest_metrics(ts, metrics_df, list_forecast_ts, fold_info_df)
         tslogger.finish_experiment()
 
-        result = {
+        backtest_result = {
             "metrics_df": metrics_df,
             "list_forecast_ts": list_forecast_ts,
             "fold_info_df": fold_info_df,
             "pipelines": pipelines,
         }
 
-        return result
+        return backtest_result
 
     def get_historical_forecasts(
         self,
@@ -1151,7 +1153,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         Returns
         -------
         :
-            Forecast dataframe
+            List of TSDataset with forecast for each fold on the historical dataset.
 
         Raises
         ------
