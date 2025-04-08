@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add warning if training DL models on MPS [#621](https://github.com/etna-team/etna/pull/621)
 - Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `etna.dataset.utils`, `etna.dataset.generation`, `etna.analysis` ([#635](https://github.com/etna-team/etna/pull/635))
 - Add `ModelPredictionIntervalsMixin` with intervals forecasting logic for models ([#633](https://github.com/etna-team/etna/pull/633))
-- 
+- Add warning when features are dropped in `make_future` ([#644](https://github.com/etna-team/etna/pull/644))
 - 
 
 ### Changed
