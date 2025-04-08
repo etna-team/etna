@@ -327,7 +327,7 @@ def plot_backtest(
 
             if draw_only_lines:
                 # draw forecast
-                if fold_number != len(list_forecast_ts) - 1:
+                if fold_number != fold_numbers.iloc[-1]:
                     next_fold_first_value = list_forecast_df[fold_number + 1][segment].iloc[[0]]
                     segment_fold_forecast_df = pd.concat([segment_fold_forecast_df, next_fold_first_value], axis=0)
 
@@ -357,14 +357,15 @@ def plot_backtest(
                 color="skyblue",
             )
 
-        # plot legend
-        legend_handles = [
-            Line2D([0], [0], marker="o", color=color, label=label) for label, color in lines_colors.items()
-        ]
-        ax[i].legend(handles=legend_handles)
+            # plot legend
+            if fold_number == fold_numbers.iloc[-1]:
+                legend_handles = [
+                    Line2D([0], [0], marker="o", color=color, label=label) for label, color in lines_colors.items()
+                ]
+                ax[i].legend(handles=legend_handles)
 
-        ax[i].set_title(segment)
-        ax[i].tick_params("x", rotation=45)
+                ax[i].set_title(segment)
+                ax[i].tick_params("x", rotation=45)
 
 
 def plot_backtest_interactive(
