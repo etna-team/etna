@@ -52,7 +52,7 @@ def df():
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="1d")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -72,7 +72,7 @@ def long_periodic_ts():
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
 
     return ts
 
@@ -136,26 +136,42 @@ def test_deadline_model_fit_with_exogs_warning(example_reg_tsds):
 @pytest.mark.parametrize(
     "freq, periods, start, prediction_size, seasonality, window, expected",
     [
-        ("D", 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
-        ("D", 31 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-02")),
-        ("D", 31 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
-        ("D", 31 + 29 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
-        ("D", 31 + 29 + 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
-        ("H", 31 * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
-        ("H", 31 * 24 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01 01:00")),
-        ("H", 31 * 24 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
-        ("H", (31 + 29) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
-        ("H", (31 + 29 + 31) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
-        ("D", 366 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
-        ("D", 366 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-02")),
-        ("D", 366 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
-        ("D", 366 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
-        ("D", 366 + 365 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
-        ("H", 366 * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
-        ("H", 366 * 24 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01 01:00")),
-        ("H", 366 * 24 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
-        ("H", (366 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
-        ("H", (366 + 365 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Day(), 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Day(), 31 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-02")),
+        (pd.offsets.Day(), 31 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Day(), 31 + 29 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Day(), 31 + 29 + 31 + 1, "2020-01-01", 1, SeasonalityMode.month, 3, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Hour(), 31 * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Hour(), 31 * 24 + 2, "2020-01-01", 1, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01 01:00")),
+        (pd.offsets.Hour(), 31 * 24 + 5, "2020-01-01", 5, SeasonalityMode.month, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Hour(), (31 + 29) * 24 + 1, "2020-01-01", 1, SeasonalityMode.month, 2, pd.Timestamp("2020-01-01")),
+        (
+            pd.offsets.Hour(),
+            (31 + 29 + 31) * 24 + 1,
+            "2020-01-01",
+            1,
+            SeasonalityMode.month,
+            3,
+            pd.Timestamp("2020-01-01"),
+        ),
+        (pd.offsets.Day(), 366 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Day(), 366 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-02")),
+        (pd.offsets.Day(), 366 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Day(), 366 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Day(), 366 + 365 + 365 + 1, "2020-01-01", 1, SeasonalityMode.year, 3, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Hour(), 366 * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Hour(), 366 * 24 + 2, "2020-01-01", 1, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01 01:00")),
+        (pd.offsets.Hour(), 366 * 24 + 5, "2020-01-01", 5, SeasonalityMode.year, 1, pd.Timestamp("2020-01-01")),
+        (pd.offsets.Hour(), (366 + 365) * 24 + 1, "2020-01-01", 1, SeasonalityMode.year, 2, pd.Timestamp("2020-01-01")),
+        (
+            pd.offsets.Hour(),
+            (366 + 365 + 365) * 24 + 1,
+            "2020-01-01",
+            1,
+            SeasonalityMode.year,
+            3,
+            pd.Timestamp("2020-01-01"),
+        ),
     ],
 )
 def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size, seasonality, window, expected):
@@ -170,18 +186,18 @@ def test_deadline_get_context_beginning_ok(freq, periods, start, prediction_size
 @pytest.mark.parametrize(
     "freq, periods, start, prediction_size, seasonality, window",
     [
-        ("D", 1, "2020-01-01", 1, SeasonalityMode.month, 1),
-        ("H", 1, "2020-01-01", 1, SeasonalityMode.month, 1),
-        ("D", 1, "2020-01-01", 1, SeasonalityMode.year, 1),
-        ("H", 1, "2020-01-01", 1, SeasonalityMode.year, 1),
-        ("D", 1, "2020-01-01", 2, SeasonalityMode.month, 1),
-        ("H", 1, "2020-01-01", 2, SeasonalityMode.month, 1),
-        ("D", 1, "2020-01-01", 2, SeasonalityMode.year, 1),
-        ("H", 1, "2020-01-01", 2, SeasonalityMode.year, 1),
-        ("D", 31 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
-        ("H", 31 * 24 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
-        ("D", 366 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
-        ("H", 366 * 24 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        (pd.offsets.Day(), 1, "2020-01-01", 1, SeasonalityMode.month, 1),
+        (pd.offsets.Hour(), 1, "2020-01-01", 1, SeasonalityMode.month, 1),
+        (pd.offsets.Day(), 1, "2020-01-01", 1, SeasonalityMode.year, 1),
+        (pd.offsets.Hour(), 1, "2020-01-01", 1, SeasonalityMode.year, 1),
+        (pd.offsets.Day(), 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        (pd.offsets.Hour(), 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        (pd.offsets.Day(), 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        (pd.offsets.Hour(), 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        (pd.offsets.Day(), 31 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        (pd.offsets.Hour(), 31 * 24 + 1, "2020-01-01", 2, SeasonalityMode.month, 1),
+        (pd.offsets.Day(), 366 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
+        (pd.offsets.Hour(), 366 * 24 + 1, "2020-01-01", 2, SeasonalityMode.year, 1),
     ],
 )
 def test_deadline_get_context_beginning_fail_not_enough_context(
@@ -205,8 +221,8 @@ def test_deadline_model_predict(simple_tsdf, model):
 
 
 def test_deadline_model_fit_fail_not_supported_freq():
-    df = generate_ar_df(start_time="2020-01-01", periods=100, freq="2D")
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="2D")
+    df = generate_ar_df(start_time="2020-01-01", periods=100, freq=pd.offsets.Day(2))
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day(2))
     model = DeadlineMovingAverageModel(window=1000)
     with pytest.raises(ValueError, match="Freq 2D is not supported"):
         model.fit(ts)
@@ -568,14 +584,14 @@ def test_context_size_seasonal_ma(model):
 @pytest.mark.parametrize(
     "model, freq, expected_context_size",
     [
-        (DeadlineMovingAverageModel(window=1, seasonality="month"), "D", 31),
-        (DeadlineMovingAverageModel(window=3, seasonality="month"), "D", 3 * 31),
-        (DeadlineMovingAverageModel(window=1, seasonality="year"), "D", 366),
-        (DeadlineMovingAverageModel(window=3, seasonality="year"), "D", 3 * 366),
-        (DeadlineMovingAverageModel(window=1, seasonality="month"), "H", 31 * 24),
-        (DeadlineMovingAverageModel(window=3, seasonality="month"), "H", 3 * 31 * 24),
-        (DeadlineMovingAverageModel(window=1, seasonality="year"), "H", 366 * 24),
-        (DeadlineMovingAverageModel(window=3, seasonality="year"), "H", 3 * 366 * 24),
+        (DeadlineMovingAverageModel(window=1, seasonality="month"), pd.offsets.Day(), 31),
+        (DeadlineMovingAverageModel(window=3, seasonality="month"), pd.offsets.Day(), 3 * 31),
+        (DeadlineMovingAverageModel(window=1, seasonality="year"), pd.offsets.Day(), 366),
+        (DeadlineMovingAverageModel(window=3, seasonality="year"), pd.offsets.Day(), 3 * 366),
+        (DeadlineMovingAverageModel(window=1, seasonality="month"), pd.offsets.Hour(), 31 * 24),
+        (DeadlineMovingAverageModel(window=3, seasonality="month"), pd.offsets.Hour(), 3 * 31 * 24),
+        (DeadlineMovingAverageModel(window=1, seasonality="year"), pd.offsets.Hour(), 366 * 24),
+        (DeadlineMovingAverageModel(window=3, seasonality="year"), pd.offsets.Hour(), 3 * 366 * 24),
     ],
 )
 def test_context_size_deadline_ma(model, freq, expected_context_size):
@@ -626,7 +642,7 @@ def big_ts() -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -648,7 +664,7 @@ def two_month_ts():
     df1["timestamp"] = pd.date_range(start="2020-01-01", periods=history)
 
     df = TSDataset.to_dataset(df1)
-    tsds = TSDataset(df, freq="1d")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
     return tsds
 
 

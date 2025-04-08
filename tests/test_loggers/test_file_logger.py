@@ -234,7 +234,7 @@ def test_local_file_logger_with_stacking_ensemble(example_df):
 
         idx = tslogger.add(logger)
         example_df = TSDataset.to_dataset(example_df)
-        example_df = TSDataset(example_df, freq="1H")
+        example_df = TSDataset(example_df, freq=pd.offsets.Hour())
         ensemble_pipeline = StackingEnsemble(
             pipelines=[
                 Pipeline(
@@ -274,7 +274,7 @@ def test_local_file_logger_with_empirical_prediction_interval(example_df):
 
         idx = tslogger.add(logger)
         example_df = TSDataset.to_dataset(example_df)
-        example_df = TSDataset(example_df, freq="1H")
+        example_df = TSDataset(example_df, freq=pd.offsets.Hour())
         pipe = Pipeline(model=NaiveModel(), transforms=[], horizon=2)
         n_folds = 5
 

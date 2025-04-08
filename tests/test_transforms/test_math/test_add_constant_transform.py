@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from etna.datasets import TSDataset
@@ -8,7 +9,7 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 @pytest.fixture()
 def example_ts_(example_df_) -> TSDataset:
-    ts = TSDataset(example_df_, freq="D")
+    ts = TSDataset(example_df_, freq=pd.offsets.Day())
     return ts
 
 

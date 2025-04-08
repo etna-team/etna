@@ -587,13 +587,13 @@ def test_predict_calls_private_predict(prediction_interval, quantiles, example_t
 def ts_short_segment():
     df = pd.DataFrame(
         {
-            "timestamp": list(pd.date_range(start="2000-01-01", periods=5, freq="D")) * 2,
+            "timestamp": list(pd.date_range(start="2000-01-01", periods=5, freq=pd.offsets.Day())) * 2,
             "segment": ["segment_1"] * 5 + ["short"] * 5,
             "target": [1] * 5 + [np.NAN, np.NAN, np.NAN, 1, 2],
         }
     )
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 
@@ -601,13 +601,13 @@ def ts_short_segment():
 def ts_empty_segment():
     df = pd.DataFrame(
         {
-            "timestamp": list(pd.date_range(start="2000-01-01", periods=5, freq="D")) * 2,
+            "timestamp": list(pd.date_range(start="2000-01-01", periods=5, freq=pd.offsets.Day())) * 2,
             "segment": ["segment_1"] * 5 + ["empty"] * 5,
             "target": [1] * 5 + [np.NAN] * 5,
         }
     )
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 

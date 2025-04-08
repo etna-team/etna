@@ -37,7 +37,7 @@ def multitrend_ts_with_nans_in_tails(multitrend_df):
         [multitrend_df.index[0], multitrend_df.index[1], multitrend_df.index[-2], multitrend_df.index[-1]],
         pd.IndexSlice["segment_1", "target"],
     ] = None
-    ts = TSDataset(multitrend_df, freq="D")
+    ts = TSDataset(multitrend_df, freq=pd.offsets.Day())
     return ts
 
 
@@ -208,7 +208,7 @@ def test_fit_transform_with_nans_in_middle_raise_error(ts_with_nans):
 
 
 def test_save_load(multitrend_df):
-    ts = TSDataset(df=multitrend_df, freq="D")
+    ts = TSDataset(df=multitrend_df, freq=pd.offsets.Day())
     transform = ChangePointsTrendTransform(
         in_column="target",
         change_points_model=RupturesChangePointsModel(change_points_model=Binseg(), n_bkps=5),

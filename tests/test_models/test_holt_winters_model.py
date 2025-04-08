@@ -20,9 +20,9 @@ from tests.test_models.utils import assert_sampling_is_valid
 def const_ts():
     """Create a constant dataset with little noise."""
     rng = np.random.default_rng(42)
-    df = generate_const_df(start_time="2020-01-01", periods=100, freq="D", n_segments=3, scale=5)
+    df = generate_const_df(start_time="2020-01-01", periods=100, freq=pd.offsets.Day(), n_segments=3, scale=5)
     df["target"] += rng.normal(loc=0, scale=0.05, size=df.shape[0])
-    return TSDataset(df=TSDataset.to_dataset(df), freq="D")
+    return TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day())
 
 
 @pytest.mark.parametrize(
@@ -162,7 +162,7 @@ def seasonal_dfs():
             44.319737,
             47.913736,
         ],
-        index=pd.period_range(start="2005Q1", end="2010Q4", freq="Q"),
+        index=pd.period_range(start="2005Q1", end="2010Q4", freq=pd.offsets.QuarterEnd()),
     )
 
     df = pd.DataFrame(

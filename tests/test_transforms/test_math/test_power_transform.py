@@ -17,8 +17,8 @@ from tests.test_transforms.utils import assert_transformation_equals_loaded_orig
 
 @pytest.fixture
 def non_positive_ts() -> TSDataset:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
+    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
+    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
     df_1["segment"] = "Moscow"
     df_1["target"] = 0
     df_1["exog"] = -1
@@ -27,14 +27,14 @@ def non_positive_ts() -> TSDataset:
     df_2["exog"] = -7
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df, freq="1d")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
 @pytest.fixture
 def positive_ts() -> TSDataset:
-    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
-    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq="1d")})
+    df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
+    df_2 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-06-01", "2021-07-01", freq=pd.offsets.Day())})
     generator = np.random.RandomState(seed=1)
     df_1["segment"] = "Moscow"
     df_1["target"] = np.abs(generator.normal(loc=10, scale=1, size=len(df_1))) + 1
@@ -44,7 +44,7 @@ def positive_ts() -> TSDataset:
     df_2["exog"] = np.abs(generator.normal(loc=4, scale=1, size=len(df_2))) + 1
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df, freq="1d")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

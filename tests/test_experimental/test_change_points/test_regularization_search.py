@@ -1,3 +1,4 @@
+import pandas as pd
 import pytest
 from ruptures import Binseg
 
@@ -9,9 +10,9 @@ from etna.experimental.change_points.regularization_search import _get_n_bkps
 
 @pytest.fixture
 def simple_change_points_ts():
-    df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=3, freq="D", random_seed=42)
+    df = generate_ar_df(periods=125, start_time="2021-05-20", n_segments=3, freq=pd.offsets.Day(), random_seed=42)
     df_ts_format = TSDataset.to_dataset(df)
-    return TSDataset(df_ts_format, freq="D")
+    return TSDataset(df_ts_format, freq=pd.offsets.Day())
 
 
 @pytest.mark.parametrize(

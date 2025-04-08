@@ -34,7 +34,7 @@ def generate_exog():
 @pytest.fixture
 def ts_increasing_integers():
     df = generate_increasing_df()
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -42,7 +42,7 @@ def ts_increasing_integers():
 def ts_nan_start():
     df = generate_increasing_df()
     df.loc[0, "target"] = np.NaN
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -50,7 +50,7 @@ def ts_nan_start():
 def ts_nan_middle():
     df = generate_increasing_df()
     df.loc[120, "target"] = np.NaN
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -58,7 +58,7 @@ def ts_nan_middle():
 def expected_ts_increasing_integers():
     df = generate_ar_df(start_time="2001-05-09", periods=2, n_segments=2)
     df["target"] = [128.0, 129.0] + [228.0, 229.0]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -67,7 +67,7 @@ def ts_exog_middle_nan():
     df = generate_increasing_df()
     df_exog = generate_exog()
     df_exog.loc[120, "exog"] = np.NaN
-    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+    ts = TSDataset(df, df_exog=df_exog, freq=pd.offsets.Day(), known_future="all")
     return ts
 
 
@@ -76,7 +76,7 @@ def ts_exog_all_nan():
     df = generate_increasing_df()
     df_exog = generate_exog()
     df_exog["exog"] = np.NaN
-    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+    ts = TSDataset(df, df_exog=df_exog, freq=pd.offsets.Day(), known_future="all")
     return ts
 
 

@@ -17,13 +17,15 @@ def ts_check_event_transform_expected_binary_pre_2_post_2(ts_check_event_transfo
     df = ts_check_event_transform.to_pandas(features=["target"])
     df_exog = ts_check_event_transform._df_exog
 
-    holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
+    holiday = generate_const_df(
+        start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), scale=1, n_segments=3
+    )
     holiday.drop(columns=["target"], inplace=True)
     holiday["holiday_pre"] = [1, 0, 1, 0, 0, 0, 1, 1, 0, 0] + [0] * 10 + [0] * 10
     holiday["holiday_post"] = [0, 0, 1, 0, 0, 1, 1, 0, 0, 1] + [0] * 10 + [0] * 10
     holiday = TSDataset.to_dataset(holiday).astype(float)
     df_exog = pd.concat([holiday, df_exog], axis=1)
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return ts
 
 
@@ -33,13 +35,15 @@ def ts_check_event_transform_expected_binary_pre_1_post_1(ts_check_event_transfo
     df = ts_check_event_transform.to_pandas(features=["target"])
     df_exog = ts_check_event_transform._df_exog
 
-    holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
+    holiday = generate_const_df(
+        start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), scale=1, n_segments=3
+    )
     holiday.drop(columns=["target"], inplace=True)
     holiday["holiday_pre"] = [1, 0, 1, 0, 0, 0, 0, 1, 0, 0] + [0] * 10 + [0] * 10
     holiday["holiday_post"] = [0, 0, 1, 0, 0, 1, 0, 0, 0, 1] + [0] * 10 + [0] * 10
     holiday = TSDataset.to_dataset(holiday).astype(float)
     df_exog = pd.concat([holiday, df_exog], axis=1)
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return ts
 
 
@@ -49,13 +53,15 @@ def ts_check_event_transform_expected_distance_pre_3_post_3(ts_check_event_trans
     df = ts_check_event_transform.to_pandas(features=["target"])
     df_exog = ts_check_event_transform._df_exog
 
-    holiday = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
+    holiday = generate_const_df(
+        start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), scale=1, n_segments=3
+    )
     holiday.drop(columns=["target"], inplace=True)
     holiday["holiday_pre"] = [1, 0, 1, 0, 0, 1 / 3, 1 / 2, 1, 0, 0] + [0] * 10 + [0] * 10
     holiday["holiday_post"] = [0, 0, 1, 0, 0, 1, 1 / 2, 1 / 3, 0, 1] + [0] * 10 + [0] * 10
     holiday = TSDataset.to_dataset(holiday).astype(float)
     df_exog = pd.concat([holiday, df_exog], axis=1)
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future="all")
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return ts
 
 
@@ -63,15 +69,17 @@ def ts_check_event_transform_expected_distance_pre_3_post_3(ts_check_event_trans
 def ts_check_event_transform() -> TSDataset:
     periods = 9
     periods_exog = periods + 1
-    df = generate_const_df(start_time="2020-01-01", periods=periods, freq="D", scale=1, n_segments=3)
-    df_exog = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
+    df = generate_const_df(start_time="2020-01-01", periods=periods, freq=pd.offsets.Day(), scale=1, n_segments=3)
+    df_exog = generate_const_df(
+        start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), scale=1, n_segments=3
+    )
     df_exog.rename(columns={"target": "holiday"}, inplace=True)
     df_exog["holiday"] = (
         [0, 1, 0, 1, 1, 0, 0, 0, 1, 0] + [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] + [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     )
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
-    tsds = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
+    tsds = TSDataset(df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return tsds
 
 

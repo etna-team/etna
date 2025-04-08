@@ -18,13 +18,13 @@ def simple_ts_with_regressors():
     df_exog = generate_const_df(scale=10, n_segments=3, start_time="2020-01-01", periods=150).rename(
         {"target": "regressor_a"}, axis=1
     )
-    ts = TSDataset(df=TSDataset.to_dataset(df), freq="D", df_exog=TSDataset.to_dataset(df_exog))
+    ts = TSDataset(df=TSDataset.to_dataset(df), freq=pd.offsets.Day(), df_exog=TSDataset.to_dataset(df_exog))
     return ts
 
 
 @pytest.fixture()
 def simple_constant_df_daily():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-01", end="2020-01-15", freq="D")})
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-01", end="2020-01-15", freq=pd.offsets.Day())})
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
@@ -32,7 +32,9 @@ def simple_constant_df_daily():
 
 @pytest.fixture()
 def simple_constant_df_day_15_min():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-12-11", freq="1D 15MIN")})
+    df = pd.DataFrame(
+        {"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-12-11", freq=pd.DateOffset(days=1, minutes=15))}
+    )
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
@@ -54,7 +56,7 @@ def two_segments_simple_ts_daily(simple_constant_df_daily: pd.DataFrame):
     classic_df.drop(columns=["target"], inplace=True)
     df_exog = TSDataset.to_dataset(classic_df)
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
     return ts
 
 
@@ -99,13 +101,13 @@ def two_segments_simple_ts_day_15min(simple_constant_df_day_15_min: pd.DataFrame
     classic_df.drop(columns=["target"], inplace=True)
     df_exog = TSDataset.to_dataset(classic_df)
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="1D 15MIN")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.DateOffset(days=1, minutes=15))
     return ts
 
 
 @pytest.fixture()
 def simple_constant_df_hour():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-01-10", freq="H")})
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-01-10", freq=pd.offsets.Hour())})
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
@@ -113,7 +115,9 @@ def simple_constant_df_hour():
 
 @pytest.fixture()
 def simple_week_mon_df():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-05-12", freq="W-MON")})
+    df = pd.DataFrame(
+        {"timestamp": pd.date_range(start="2020-01-08 22:15", end="2020-05-12", freq=pd.offsets.Week(weekday=0))}
+    )
     df["target"] = 7
     df.set_index("timestamp", inplace=True)
     return df
@@ -135,7 +139,7 @@ def two_segments_w_mon(simple_week_mon_df: pd.DataFrame):
     classic_df.drop(columns=["target"], inplace=True)
     df_exog = TSDataset.to_dataset(classic_df)
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="W-MON")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Week(weekday=0))
     return ts
 
 
@@ -162,7 +166,7 @@ def two_segments_w_mon_external_irregular_timestamp(two_segments_w_mon: TSDatase
     ts = two_segments_w_mon
     df = ts._raw_df
     df_exog = ts._df_exog
-    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta("3H")
+    df_exog.loc[df_exog.index[3], pd.IndexSlice["segment_1", "external_timestamp"]] += pd.Timedelta(hours=3)
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
 
@@ -173,7 +177,7 @@ def two_segments_w_mon_external_irregular_timestamp_different_freq(two_segments_
     df = ts._raw_df
     df_exog = ts._df_exog
     df_exog.loc[:, pd.IndexSlice["segment_1", "external_timestamp"]] = pd.date_range(
-        start="2020-01-01", periods=len(df_exog), freq="W-SUN"
+        start="2020-01-01", periods=len(df_exog), freq=pd.offsets.Week(weekday=6)
     )
     ts = TSDataset(df=df, df_exog=df_exog, freq=ts.freq)
     return ts
@@ -209,13 +213,15 @@ def two_segments_simple_ts_hour(simple_constant_df_hour: pd.DataFrame):
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df, freq="H")
+    ts = TSDataset(df, freq=pd.offsets.Hour())
     return ts
 
 
 @pytest.fixture()
 def simple_constant_df_minute():
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-11-26 02:15", freq="15T")})
+    df = pd.DataFrame(
+        {"timestamp": pd.date_range(start="2020-11-25 22:30", end="2020-11-26 02:15", freq=pd.offsets.Minute(15))}
+    )
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
@@ -237,7 +243,7 @@ def two_segments_simple_ts_minute(simple_constant_df_minute):
     classic_df.drop(columns=["target"], inplace=True)
     df_exog = TSDataset.to_dataset(classic_df)
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="15MIN")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Minute(15))
     return ts
 
 

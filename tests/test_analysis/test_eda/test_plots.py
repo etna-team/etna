@@ -135,7 +135,7 @@ def test_acf_nan_middle(ts_with_nans):
 
 @pytest.mark.filterwarnings("ignore: The default method 'yw' can produce PACF values outside of .* interval")
 def test_acf_nan_begin(df_with_nans_in_head):
-    ts = TSDataset(df_with_nans_in_head, freq="H")
+    ts = TSDataset(df_with_nans_in_head, freq=pd.offsets.Hour())
     acf_plot(ts, partial=False)
     acf_plot(ts, partial=True)
 
@@ -178,7 +178,7 @@ def test_plot_imputation_fail_incorrect_start_end_type(ts_name, params, match, r
         plot_imputation(ts=ts, imputer=imputer, **params)
 
 
-@pytest.mark.parametrize("freq", ["D", pd.offsets.Day()])
+@pytest.mark.parametrize("freq", [pd.offsets.Day().freqstr, pd.offsets.Day()])
 def test_distribution_plot_datetime_timestamp(example_tsdf, freq):
     distribution_plot(example_tsdf, freq=freq)
 

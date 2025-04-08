@@ -57,14 +57,26 @@ DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 def ts_with_feature():
     periods = 100
     df = generate_ar_df(
-        start_time="2019-01-01", periods=periods, ar_coef=[1], sigma=1, n_segments=2, random_seed=0, freq="D"
+        start_time="2019-01-01",
+        periods=periods,
+        ar_coef=[1],
+        sigma=1,
+        n_segments=2,
+        random_seed=0,
+        freq=pd.offsets.Day(),
     )
     df_feature = generate_ar_df(
-        start_time="2019-01-01", periods=periods, ar_coef=[0.9], sigma=2, n_segments=2, random_seed=42, freq="D"
+        start_time="2019-01-01",
+        periods=periods,
+        ar_coef=[0.9],
+        sigma=2,
+        n_segments=2,
+        random_seed=42,
+        freq=pd.offsets.Day(),
     )
     df["feature_1"] = df_feature["target"].apply(lambda x: abs(x))
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -427,11 +439,11 @@ def test_invalid_n_folds(catboost_pipeline: Pipeline, n_folds: int, example_tsdf
 )
 def test_invalid_backtest_dataset_size(min_size, n_folds, horizon, stride):
     """Test Pipeline.backtest behavior in case of too small dataframe for given number of folds."""
-    df = generate_ar_df(start_time="2020-01-01", periods=100, n_segments=2, freq="D")
+    df = generate_ar_df(start_time="2020-01-01", periods=100, n_segments=2, freq=pd.offsets.Day())
     df_wide = TSDataset.to_dataset(df)
     to_remove = len(df_wide) - min_size
     df_wide.iloc[:to_remove, 0] = np.NaN
-    ts = TSDataset(df=df_wide, freq="D")
+    ts = TSDataset(df=df_wide, freq=pd.offsets.Day())
     pipeline = Pipeline(model=NaiveModel(lag=horizon), horizon=horizon)
 
     with pytest.raises(ValueError, match="All the series from feature dataframe should contain at least .* timestamps"):

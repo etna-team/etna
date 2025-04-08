@@ -23,7 +23,7 @@ def category_ts() -> TSDataset:
     df_exog.rename(columns={"target": "regressor"}, inplace=True)
     df_exog["regressor"] = ["A", "B", np.NaN, "A", pd.NA, "B", "C", "A"] + ["A", "B", "A", "A", "A", np.NaN, "A", "C"]
 
-    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+    ts = TSDataset(df, df_exog=df_exog, freq=pd.offsets.Day(), known_future="all")
     return ts
 
 
@@ -32,7 +32,7 @@ def expected_micro_category_ts() -> TSDataset:
     df = generate_ar_df(start_time="2001-01-01", periods=6, n_segments=2)
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 1.5, 2.75, 2.25] + [np.NaN, np.NaN, 6.25, 7, 7.625, np.NaN]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -42,7 +42,7 @@ def expected_micro_global_mean_ts() -> TSDataset:
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, 1.5, 1.5, 2.5, 2.25] + [np.NaN, np.NaN, 6.25, 7, 7.625, 8.0]
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -52,7 +52,7 @@ def expected_micro_category_make_future_ts() -> TSDataset:
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [3, 2.5] + [8.25, 8.5]
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -62,7 +62,7 @@ def expected_macro_category_ts() -> TSDataset:
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 4.875, 4, 4.851] + [np.NaN, np.NaN, 3.66, 4.875, 5.5, 4.27]
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -72,7 +72,7 @@ def expected_macro_global_mean_ts() -> TSDataset:
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, 4, 4.875, 5, 4.85] + [np.NaN, np.NaN, 3.66, 4.875, 5.5, 5.55]
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -82,7 +82,7 @@ def expected_macro_category_make_future_ts() -> TSDataset:
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [6, 6.33] + [6.33, 6]
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -95,7 +95,7 @@ def ts_begin_nan() -> TSDataset:
     df_exog.rename(columns={"target": "regressor"}, inplace=True)
     df_exog["regressor"] = ["A", "B", "A", "A", "B", "B", "C", "A"]
 
-    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+    ts = TSDataset(df, df_exog=df_exog, freq=pd.offsets.Day(), known_future="all")
     return ts
 
 
@@ -105,7 +105,7 @@ def expected_ts_begin_nan_smooth_1() -> TSDataset:
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 1.75, 1.5, 2.5]
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -115,7 +115,7 @@ def expected_ts_begin_nan_smooth_2() -> TSDataset:
     df.rename(columns={"target": "mean_encoded_regressor"}, inplace=True)
     df["mean_encoded_regressor"] = [np.NaN, np.NaN, np.NaN, 5 / 3, 5 / 3, 2.5]
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -133,7 +133,7 @@ def multiple_nan_target_category_ts() -> TSDataset:
     df_exog.rename(columns={"target": "regressor"}, inplace=True)
     df_exog["regressor"] = ["A", "B", "A", "A", "B", "B", "B", "A", "A"]
 
-    ts = TSDataset(df=df, df_exog=df_exog, freq="D", known_future="all")
+    ts = TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future="all")
 
     return ts
 
@@ -144,7 +144,7 @@ def expected_multiple_nan_target_category_ts() -> TSDataset:
     df.rename(columns={"target": "regressor_mean"}, inplace=True)
     df["regressor_mean"] = [np.NaN, np.NaN, np.NaN, np.NaN, 1.5, 2.75, 2.75, 3.0]
 
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
 
     return ts
 
@@ -174,7 +174,7 @@ def multiple_nan_target_two_segments_ts() -> TSDataset:
     df_exog.rename(columns={"target": "regressor"}, inplace=True)
     df_exog["regressor"] = ["A", "B", "A", "A", "B", "B", "A"] + ["A", "B", "A", "B", "A", "B", "A"]
 
-    ts = TSDataset(df, df_exog=df_exog, freq="D", known_future="all")
+    ts = TSDataset(df, df_exog=df_exog, freq=pd.offsets.Day(), known_future="all")
 
     return ts
 
@@ -185,7 +185,7 @@ def expected_multiple_nan_target_two_segments_ts() -> TSDataset:
     df.rename(columns={"target": "regressor_mean"}, inplace=True)
     df["regressor_mean"] = [np.NaN, np.NaN, np.NaN, np.NaN, 4.5, 4.5] + [np.NaN, np.NaN, np.NaN, 4.5, 4, 4.5]
 
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
 
     return ts
 

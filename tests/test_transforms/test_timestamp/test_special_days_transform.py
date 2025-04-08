@@ -16,7 +16,7 @@ from tests.utils import convert_ts_to_int_timestamp
 @pytest.fixture()
 def constant_days_df():
     """Create pandas dataframe that represents one segment and has const value column"""
-    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-01", end="2020-04-01", freq="D")})
+    df = pd.DataFrame({"timestamp": pd.date_range(start="2020-01-01", end="2020-04-01", freq=pd.offsets.Day())})
     df["target"] = 42
     df.set_index("timestamp", inplace=True)
     return df
@@ -65,7 +65,7 @@ def ts_with_specials(df_with_specials):
     flat_df.drop(columns=["target"], inplace=True)
     df_exog = TSDataset.to_dataset(flat_df)
 
-    ts = TSDataset(df=wide_df, df_exog=df_exog, freq="D")
+    ts = TSDataset(df=wide_df, df_exog=df_exog, freq=pd.offsets.Day())
     return ts
 
 
@@ -98,7 +98,7 @@ def constant_days_two_segments_ts(constant_days_df: pd.DataFrame):
 
     classic_df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(classic_df)
-    ts = TSDataset(df=df, freq="D")
+    ts = TSDataset(df=df, freq=pd.offsets.Day())
     return ts
 
 

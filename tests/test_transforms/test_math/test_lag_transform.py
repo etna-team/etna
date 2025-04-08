@@ -34,7 +34,7 @@ def int_ts_two_segments(int_df_one_segment) -> TSDataset:
 
     df = pd.concat([df_1, df_2], ignore_index=True)
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

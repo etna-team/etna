@@ -99,7 +99,7 @@ def test_create_holidays_df_as_is_int_timestamp(simple_tsdf_int_timestamp):
 
 
 def test_create_holidays_df_hour_freq():
-    classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="H")
+    classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq=pd.offsets.Hour())
     df_wide = TSDataset.to_dataset(classic_df)
     holidays = pd.DataFrame(
         {
@@ -115,7 +115,7 @@ def test_create_holidays_df_hour_freq():
 
 
 def test_create_holidays_df_15t_freq():
-    classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq="15T")
+    classic_df = generate_ar_df(periods=30, start_time="2020-01-01", n_segments=1, freq=pd.offsets.Minute(15))
     df_wide = TSDataset.to_dataset(classic_df)
     holidays = pd.DataFrame({"holiday": "New Year", "ds": pd.to_datetime(["2020-01-01 01:00:00"]), "upper_window": 3})
     df = _create_holidays_df(holidays, df_wide.index, as_is=False)

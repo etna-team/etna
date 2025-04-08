@@ -27,12 +27,12 @@ def random_seed():
 @pytest.fixture()
 def example_df(random_seed):
     df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq=pd.offsets.Hour())
     df1["segment"] = "segment_1"
     df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
 
     df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq=pd.offsets.Hour())
     df2["segment"] = "segment_2"
     df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
 
@@ -55,7 +55,7 @@ def two_dfs_with_different_timestamps(random_seed):
         df = df.reorder_levels([1, 0], axis=1)
         df = df.sort_index(axis=1)
         df.columns.names = ["segment", "feature"]
-        return TSDataset(df, freq="1D")
+        return TSDataset(df, freq=pd.offsets.Day())
 
     df1 = generate_df(start_time="2020-01-01")
     df2 = generate_df(start_time="2019-01-01")
@@ -79,7 +79,7 @@ def two_dfs_with_different_segments_sets(random_seed):
         df = df.reorder_levels([1, 0], axis=1)
         df = df.sort_index(axis=1)
         df.columns.names = ["segment", "feature"]
-        return TSDataset(df, freq="1D")
+        return TSDataset(df, freq=pd.offsets.Day())
 
     df1 = generate_df(n_segments=5)
     df2 = generate_df(n_segments=10)
@@ -103,7 +103,7 @@ def train_test_dfs(random_seed):
         df = df.reorder_levels([1, 0], axis=1)
         df = df.sort_index(axis=1)
         df.columns.names = ["segment", "feature"]
-        return TSDataset(df, freq="1D")
+        return TSDataset(df, freq=pd.offsets.Day())
 
     df1 = generate_df()
     df2 = generate_df()
@@ -128,7 +128,7 @@ def simple_tsdf() -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="1d")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -184,7 +184,7 @@ def example_tsds(random_seed) -> TSDataset:
 
     df = pd.concat([df1, df2]).reset_index(drop=True)
     df = TSDataset.to_dataset(df)
-    tsds = TSDataset(df, freq="D")
+    tsds = TSDataset(df, freq=pd.offsets.Day())
 
     return tsds
 
@@ -219,7 +219,7 @@ def example_reg_tsds(random_seed) -> TSDataset:
     df = TSDataset.to_dataset(df)
     exog = TSDataset.to_dataset(exog)
 
-    tsds = TSDataset(df, freq="D", df_exog=exog, known_future="all")
+    tsds = TSDataset(df, freq=pd.offsets.Day(), df_exog=exog, known_future="all")
 
     return tsds
 
@@ -261,7 +261,9 @@ def outliers_tsds():
 
 @pytest.fixture()
 def outliers_tsds_without_missing(outliers_tsds):
-    tsds = TSDataset(df=outliers_tsds[..., "target"].dropna(), freq="1d", df_exog=outliers_tsds._df_exog.dropna())
+    tsds = TSDataset(
+        df=outliers_tsds[..., "target"].dropna(), freq=pd.offsets.Day(), df_exog=outliers_tsds._df_exog.dropna()
+    )
     return tsds
 
 
@@ -322,44 +324,44 @@ def ts_with_different_series_length(example_df: pd.DataFrame) -> TSDataset:
     """Generate TSDataset with different lengths series."""
     df = TSDataset.to_dataset(example_df)
     df.loc[: df.index[3], pd.IndexSlice["segment_1", "target"]] = None
-    ts = TSDataset(df=df, freq="H")
+    ts = TSDataset(df=df, freq=pd.offsets.Hour())
     return ts
 
 
 @pytest.fixture
 def imbalanced_tsdf(random_seed) -> TSDataset:
     """Generate two series with big time range difference"""
-    df1 = pd.DataFrame({"timestamp": pd.date_range("2021-01-25", "2021-02-01", freq="D")})
+    df1 = pd.DataFrame({"timestamp": pd.date_range("2021-01-25", "2021-02-01", freq=pd.offsets.Day())})
     df1["segment"] = "segment_1"
     df1["target"] = np.random.uniform(0, 5, len(df1))
 
-    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-02-01", freq="D")})
+    df2 = pd.DataFrame({"timestamp": pd.date_range("2020-01-01", "2021-02-01", freq=pd.offsets.Day())})
     df2["segment"] = "segment_2"
     df2["target"] = np.random.uniform(0, 5, len(df2))
 
     df = pd.concat((df1, df2))
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
 @pytest.fixture
 def example_tsdf(random_seed) -> TSDataset:
     df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq=pd.offsets.Hour())
     df1["segment"] = "segment_1"
     df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
 
     df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq="H")
+    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2020-02-01", freq=pd.offsets.Hour())
     df2["segment"] = "segment_2"
     df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
 
     df = pd.concat([df1, df2], ignore_index=True)
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    df = TSDataset(df, freq="H")
+    df = TSDataset(df, freq=pd.offsets.Hour())
     return df
 
 
@@ -372,38 +374,38 @@ def example_tsdf_int_timestamp(example_tsdf) -> TSDataset:
 @pytest.fixture
 def big_daily_example_tsdf(random_seed) -> TSDataset:
     df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2019-01-01", end="2020-04-01", freq="D")
+    df1["timestamp"] = pd.date_range(start="2019-01-01", end="2020-04-01", freq=pd.offsets.Day())
     df1["segment"] = "segment_1"
     df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
 
     df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2019-06-01", end="2020-04-01", freq="D")
+    df2["timestamp"] = pd.date_range(start="2019-06-01", end="2020-04-01", freq=pd.offsets.Day())
     df2["segment"] = "segment_2"
     df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
 
     df = pd.concat([df1, df2], ignore_index=True)
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    df = TSDataset(df, freq="D")
+    df = TSDataset(df, freq=pd.offsets.Day())
     return df
 
 
 @pytest.fixture
 def big_example_tsdf(random_seed) -> TSDataset:
     df1 = pd.DataFrame()
-    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
+    df1["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq=pd.offsets.Day())
     df1["segment"] = "segment_1"
     df1["target"] = np.arange(len(df1)) + 2 * np.random.normal(size=len(df1))
 
     df2 = pd.DataFrame()
-    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq="D")
+    df2["timestamp"] = pd.date_range(start="2020-01-01", end="2021-02-01", freq=pd.offsets.Day())
     df2["segment"] = "segment_2"
     df2["target"] = np.sqrt(np.arange(len(df2)) + 2 * np.cos(np.arange(len(df2))))
 
     df = pd.concat([df1, df2], ignore_index=True)
     df = df.pivot(index="timestamp", columns="segment").reorder_levels([1, 0], axis=1).sort_index(axis=1)
     df.columns.names = ["segment", "feature"]
-    df = TSDataset(df, freq="D")
+    df = TSDataset(df, freq=pd.offsets.Day())
     return df
 
 
@@ -437,7 +439,7 @@ def simple_df_relevance() -> Tuple[pd.DataFrame, pd.DataFrame]:
 @pytest.fixture
 def const_ts_anomal() -> TSDataset:
     df = generate_const_df(periods=15, start_time="2020-01-01", scale=1.0, n_segments=2)
-    ts = TSDataset(TSDataset.to_dataset(df), freq="D")
+    ts = TSDataset(TSDataset.to_dataset(df), freq=pd.offsets.Day())
     return ts
 
 
@@ -453,7 +455,7 @@ def ts_with_nans_in_tails(example_df):
     df = TSDataset.to_dataset(example_df)
     df.loc[: df.index[3], pd.IndexSlice["segment_1", "target"]] = None
     df.loc[df.index[-3] :, pd.IndexSlice["segment_1", "target"]] = None
-    ts = TSDataset(df, freq="H")
+    ts = TSDataset(df, freq=pd.offsets.Hour())
     return ts
 
 
@@ -461,7 +463,7 @@ def ts_with_nans_in_tails(example_df):
 def ts_with_nans(ts_with_nans_in_tails):
     df = ts_with_nans_in_tails.to_pandas()
     df.loc[[df.index[5], df.index[8]], pd.IndexSlice["segment_1", "target"]] = None
-    ts = TSDataset(df, freq="H")
+    ts = TSDataset(df, freq=pd.offsets.Hour())
     return ts
 
 
@@ -470,7 +472,7 @@ def toy_dataset_equal_targets_and_quantiles():
     n_periods = 5
     n_segments = 2
 
-    time = list(pd.date_range("2020-01-01", periods=n_periods, freq="1D"))
+    time = list(pd.date_range("2020-01-01", periods=n_periods, freq=pd.offsets.Day()))
 
     df = {
         "timestamp": time * n_segments,
@@ -487,7 +489,7 @@ def toy_dataset_equal_targets_and_quantiles():
     df = TSDataset.to_dataset(pd.DataFrame(df))
     quantiles_df = TSDataset.to_dataset(pd.DataFrame(quantiles_df))
 
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
@@ -499,7 +501,7 @@ def toy_dataset_with_mean_shift_in_target():
     n_periods = 5
     n_segments = 2
 
-    time = list(pd.date_range("2020-01-01", periods=n_periods, freq="1D"))
+    time = list(pd.date_range("2020-01-01", periods=n_periods, freq=pd.offsets.Day()))
 
     df = {
         "timestamp": time * n_segments,
@@ -518,7 +520,7 @@ def toy_dataset_with_mean_shift_in_target():
     df = TSDataset.to_dataset(pd.DataFrame(df))
     quantiles_df = TSDataset.to_dataset(pd.DataFrame(quantiles_df))
 
-    ts = TSDataset(df, freq="1D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
@@ -576,7 +578,7 @@ def product_level_df_long_history(periods=200):
     n_segments = 4
     df = pd.DataFrame(
         {
-            "timestamp": list(pd.date_range(start="2000-01-01", periods=periods, freq="D")) * n_segments,
+            "timestamp": list(pd.date_range(start="2000-01-01", periods=periods, freq=pd.offsets.Day())) * n_segments,
             "segment": ["a"] * periods + ["b"] * periods + ["c"] * periods + ["d"] * periods,
             "target": np.random.uniform(low=0, high=100, size=periods * n_segments),
         }
@@ -665,37 +667,41 @@ def market_level_constant_hierarchical_df_exog():
 
 @pytest.fixture
 def total_level_simple_hierarchical_ts(total_level_df, hierarchical_structure):
-    ts = TSDataset(df=total_level_df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=total_level_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     return ts
 
 
 @pytest.fixture
 def market_level_simple_hierarchical_ts(market_level_df, hierarchical_structure):
-    ts = TSDataset(df=market_level_df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=market_level_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     return ts
 
 
 @pytest.fixture
 def product_level_simple_hierarchical_ts(product_level_df, hierarchical_structure):
-    ts = TSDataset(df=product_level_df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=product_level_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     return ts
 
 
 @pytest.fixture
 def product_level_simple_hierarchical_ts_long_history(product_level_df_long_history, hierarchical_structure):
-    ts = TSDataset(df=product_level_df_long_history, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(
+        df=product_level_df_long_history, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure
+    )
     return ts
 
 
 @pytest.fixture
 def simple_no_hierarchy_ts(market_level_df):
-    ts = TSDataset(df=market_level_df, freq="D")
+    ts = TSDataset(df=market_level_df, freq=pd.offsets.Day())
     return ts
 
 
 @pytest.fixture
 def market_level_constant_hierarchical_ts(market_level_constant_hierarchical_df, hierarchical_structure):
-    ts = TSDataset(df=market_level_constant_hierarchical_df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(
+        df=market_level_constant_hierarchical_df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure
+    )
     return ts
 
 
@@ -706,7 +712,7 @@ def market_level_constant_hierarchical_ts_w_exog(
     ts = TSDataset(
         df=market_level_constant_hierarchical_df,
         df_exog=market_level_constant_hierarchical_df_exog,
-        freq="D",
+        freq=pd.offsets.Day(),
         hierarchical_structure=hierarchical_structure,
         known_future="all",
     )
@@ -717,7 +723,7 @@ def market_level_constant_hierarchical_ts_w_exog(
 def product_level_constant_hierarchical_ts(product_level_constant_hierarchical_df, hierarchical_structure):
     ts = TSDataset(
         df=product_level_constant_hierarchical_df,
-        freq="D",
+        freq=pd.offsets.Day(),
         hierarchical_structure=hierarchical_structure,
     )
     return ts
@@ -735,7 +741,7 @@ def product_level_constant_hierarchical_ts_with_exog(
     ts = TSDataset(
         df=product_level_constant_hierarchical_df,
         df_exog=market_level_constant_hierarchical_df_exog,
-        freq="D",
+        freq=pd.offsets.Day(),
         hierarchical_structure=hierarchical_structure,
         known_future="all",
     )
@@ -764,7 +770,7 @@ def product_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = TSDataset.to_dataset(df=df)
     quantiles_df = TSDataset.to_dataset(df=quantiles_df)
 
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
@@ -788,7 +794,7 @@ def product_level_constant_forecast_with_target_components(hierarchical_structur
     )
     df = TSDataset.to_dataset(df=df)
     target_components_df = TSDataset.to_dataset(target_components_df)
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     ts.add_target_components(target_components_df=target_components_df)
     return ts
 
@@ -815,7 +821,7 @@ def market_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = TSDataset.to_dataset(df=df)
     quantiles_df = TSDataset.to_dataset(df=quantiles_df)
 
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
@@ -839,7 +845,7 @@ def market_level_constant_forecast_with_target_components(hierarchical_structure
     )
     df = TSDataset.to_dataset(df=df)
     target_components_df = TSDataset.to_dataset(target_components_df)
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     ts.add_target_components(target_components_df=target_components_df)
     return ts
 
@@ -866,7 +872,7 @@ def total_level_constant_forecast_with_quantiles(hierarchical_structure):
     df = TSDataset.to_dataset(df=df)
     quantiles_df = TSDataset.to_dataset(df=quantiles_df)
 
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
     return ts
 
@@ -890,7 +896,7 @@ def total_level_constant_forecast_with_target_components(hierarchical_structure)
     )
     df = TSDataset.to_dataset(df=df)
     target_components_df = TSDataset.to_dataset(target_components_df)
-    ts = TSDataset(df=df, freq="D", hierarchical_structure=hierarchical_structure)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), hierarchical_structure=hierarchical_structure)
     ts.add_target_components(target_components_df=target_components_df)
     return ts
 
@@ -899,21 +905,23 @@ def total_level_constant_forecast_with_target_components(hierarchical_structure)
 def ts_with_binary_exog() -> TSDataset:
     periods = 100
     periods_exog = periods + 10
-    df = generate_const_df(start_time="2020-01-01", periods=periods, freq="D", scale=1, n_segments=3)
-    df_exog = generate_const_df(start_time="2020-01-01", periods=periods_exog, freq="D", scale=1, n_segments=3)
+    df = generate_const_df(start_time="2020-01-01", periods=periods, freq=pd.offsets.Day(), scale=1, n_segments=3)
+    df_exog = generate_const_df(
+        start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), scale=1, n_segments=3
+    )
     df_exog.rename(columns={"target": "holiday"}, inplace=True)
     df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 3)
 
     df = TSDataset.to_dataset(df)
     df_exog = TSDataset.to_dataset(df_exog)
-    ts = TSDataset(df, freq="D", df_exog=df_exog, known_future="all")
+    ts = TSDataset(df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return ts
 
 
 @pytest.fixture()
 def outliers_solid_tsds():
     """Create TSDataset with outliers and same last date."""
-    timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq="D")
+    timestamp = pd.date_range("2021-01-01", end="2021-02-20", freq=pd.offsets.Day())
     target1 = [np.sin(i) for i in range(len(timestamp))]
     target1[10] += 10
 
@@ -930,7 +938,7 @@ def outliers_solid_tsds():
     ts = TSDataset(
         df=TSDataset.to_dataset(df).iloc[:-10],
         df_exog=TSDataset.to_dataset(df_exog),
-        freq="D",
+        freq=pd.offsets.Day(),
         known_future="all",
     )
     return ts

@@ -26,7 +26,7 @@ def simple_ts_for_agg() -> TSDataset:
     df["target"] = list(range(n))
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -37,7 +37,7 @@ def ts_for_agg() -> TSDataset:
     df["target"] = [-1, 1, 3, 2, 4, 9, 8, 5, 6, 0]
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 
@@ -48,7 +48,7 @@ def ts_for_agg_with_nan() -> TSDataset:
     df["target"] = [-1, 1, 3, None, 4, 9, 8, 5, 6, 0]
     df["segment"] = "segment_1"
     df = TSDataset.to_dataset(df)
-    ts = TSDataset(df, freq="D")
+    ts = TSDataset(df, freq=pd.offsets.Day())
     return ts
 
 

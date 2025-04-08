@@ -12,7 +12,7 @@ from etna.datasets import generate_ar_df
 def weekly_period_df(n_repeats=15):
     segment_1 = [7.0, 7.0, 7.0, 7.0, 7.0, 3.0, 1.0]
     segment_2 = [7.0, 7.0, 7.0, 4.0, 1.0, 7.0, 7.0]
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=n_repeats * len(segment_1)))
+    ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=n_repeats * len(segment_1)))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
@@ -32,8 +32,8 @@ def ts_dataset_weekly_function_with_horizon(weekly_period_df):
             weekly_period_df[lambda x: x.timestamp >= ts_start],
         )
 
-        ts_train = TSDataset(TSDataset.to_dataset(train), "D")
-        ts_test = TSDataset(TSDataset.to_dataset(test), "D")
+        ts_train = TSDataset(TSDataset.to_dataset(train), pd.offsets.Day())
+        ts_test = TSDataset(TSDataset.to_dataset(test), pd.offsets.Day())
         return ts_train, ts_test
 
     return wrapper
@@ -42,7 +42,7 @@ def ts_dataset_weekly_function_with_horizon(weekly_period_df):
 @pytest.fixture()
 def example_make_samples_df():
     target = np.arange(50).astype(float)
-    timestamp = pd.date_range("2020-01-03", freq="D", periods=len(target))
+    timestamp = pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=len(target))
     df = pd.DataFrame(
         {
             "timestamp": timestamp,
@@ -96,7 +96,7 @@ def ts_different_regressors(df_different_regressors):
 
     ts = TSDataset(
         df=df,
-        freq="D",
+        freq=pd.offsets.Day(),
         df_exog=df_exog,
         known_future=["reals_static", "reals_regr", "categ_regr", "categ_regr_new"],
     )

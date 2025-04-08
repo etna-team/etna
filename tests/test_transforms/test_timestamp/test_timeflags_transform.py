@@ -28,7 +28,10 @@ INIT_PARAMS_TEMPLATE = {
 @pytest.fixture
 def timeflags_true_df() -> pd.DataFrame:
     """Generate dataset with answers for TimeFlagsTransform."""
-    dataframes = [pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq="5T")}) for _ in range(5)]
+    dataframes = [
+        pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq=pd.offsets.Minute(5))})
+        for _ in range(5)
+    ]
 
     out_column = "timeflag"
     for i in range(len(dataframes)):
@@ -51,7 +54,7 @@ def timeflags_true_df() -> pd.DataFrame:
 
     flat_df = pd.concat(dataframes, ignore_index=True)
     result = TSDataset.to_dataset(flat_df)
-    result.index.freq = "5T"
+    result.index.freq = pd.offsets.Minute(5).freqstr
 
     return result
 
@@ -59,7 +62,10 @@ def timeflags_true_df() -> pd.DataFrame:
 @pytest.fixture
 def train_ts() -> TSDataset:
     """Generate dataset without timeflags"""
-    dataframes = [pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq="5T")}) for _ in range(5)]
+    dataframes = [
+        pd.DataFrame({"timestamp": pd.date_range("2020-06-01", "2021-06-01", freq=pd.offsets.Minute(5))})
+        for _ in range(5)
+    ]
 
     for i in range(len(dataframes)):
         df = dataframes[i]
@@ -73,7 +79,7 @@ def train_ts() -> TSDataset:
     flat_df.drop(columns=["target"], inplace=True)
     df_exog = TSDataset.to_dataset(flat_df)
 
-    ts = TSDataset(df=wide_df, df_exog=df_exog, freq="5T")
+    ts = TSDataset(df=wide_df, df_exog=df_exog, freq=pd.offsets.Minute(5))
     return ts
 
 

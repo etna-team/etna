@@ -38,7 +38,7 @@ def hierarchical_ts():
     df_exog, _ = TSDataset.to_hierarchical_dataset(
         df=df_exog, level_columns=["market"], keep_level_columns=False, return_hierarchy=False
     )
-    ts = TSDataset(df=df, freq="D", df_exog=df_exog, known_future=["exog"], hierarchical_structure=hs)
+    ts = TSDataset(df=df, freq=pd.offsets.Day(), df_exog=df_exog, known_future=["exog"], hierarchical_structure=hs)
     return ts
 
 
