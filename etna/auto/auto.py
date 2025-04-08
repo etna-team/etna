@@ -822,7 +822,7 @@ class Tune(AutoBase):
                 if initializer is not None:
                     initializer(pipeline=pipeline_trial_params)
 
-                backtest_result = pipeline.backtest(ts, metrics=metrics, **backtest_params)
+                backtest_result = pipeline_trial_params.backtest(ts, metrics=metrics, **backtest_params)
                 metrics_df = backtest_result["metrics_df"]
                 metrics_df = cast(pd.DataFrame, metrics_df)
                 list_forecast_ts = backtest_result["list_forecast_ts"]
