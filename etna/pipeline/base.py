@@ -1059,8 +1059,8 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         Returns
         -------
         backtest_result:
-            Dictionary with backtest results. It contains metrics dataframe, list of TSDatasets with forecast for each fold,
-            dataframe with information about folds and list of pipelines for each fold.
+            Dictionary with backtest results. It contains metrics dataframe, list of TSDatasets with forecast for each fold in ascending order folds,
+            dataframe with information about folds and list of pipelines for each fold in ascending order folds.
 
 
         Raises
