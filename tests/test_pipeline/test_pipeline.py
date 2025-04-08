@@ -339,7 +339,7 @@ def test_forecast_additional_columns_warning(example_tsds):
     transformed_ts = transform.fit_transform(ts=example_tsds)
 
     pipeline = Pipeline(
-        model=LinearPerSegmentModel(), transforms=[LagTransform(lags=[5, 6], in_column="target")], horizon=2
+        model=MovingAverageModel(), transforms=[LagTransform(lags=[5, 6], in_column="target")], horizon=2
     )
     pipeline.fit(transformed_ts)
     with pytest.warns(UserWarning, match="Some columns were not preserved"):
