@@ -418,7 +418,11 @@ class TSDataset:
     ) -> "TSDataset":
         """Return new TSDataset with features extended into the future.
 
+        Notes
+        _____
         The result dataset doesn't contain prediction intervals and target components.
+        Some columns may be lost if a modified dataset is used to make future.
+        This behavior is due to the usage of an initial state of the dataset to compute the future.
 
         Parameters
         ----------
@@ -494,9 +498,13 @@ class TSDataset:
 
         # Here only df is required, other metadata is not necessary to build the dataset
         ts = TSDataset(df=df, freq=self.freq)
+        removed_features = set(ts.features)
         for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
             transform.transform(ts)
+
+        removed_features -= set(ts.features)
+
         df = ts.to_pandas()
 
         future_dataset = df.tail(future_steps + tail_steps).copy(deep=True)
@@ -510,7 +518,13 @@ class TSDataset:
         if self._df_exog is not None:
             future_ts._df_exog = self._df_exog.copy(deep=True)
 
-        additional_columns = set(self.features) - set(future_ts.features)
+        additional_columns = (
+            set(self.features)
+            - set(self.target_components_names)
+            - set(self.prediction_intervals_names)
+            - set(future_ts.features)
+            - removed_features
+        )
         if len(additional_columns) > 0:
             warnings.warn(f"Some columns were not preserved when building the future dataset: {additional_columns}")
 
