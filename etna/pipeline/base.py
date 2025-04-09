@@ -450,10 +450,10 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self, ts: TSDataset, predictions: TSDataset, quantiles: Sequence[float], n_folds: int
     ) -> TSDataset:
         """Add prediction intervals to the forecasts."""
-        list_forecast_ts = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
+        forecast_ts_list = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
 
         self._add_forecast_borders(
-            ts=ts, list_backtest_forecasts=list_forecast_ts, quantiles=quantiles, predictions=predictions
+            ts=ts, list_backtest_forecasts=forecast_ts_list, quantiles=quantiles, predictions=predictions
         )
 
         return predictions
@@ -1020,7 +1020,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         stride: Optional[int] = None,
         joblib_params: Optional[Dict[str, Any]] = None,
         forecast_params: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Union[pd.DataFrame, List[TSDataset], pd.DataFrame, List["BasePipeline"]]]:
+    ) -> Dict[str, Union[pd.DataFrame, List[TSDataset], List["BasePipeline"]]]:
         """Run backtest with the pipeline.
 
         If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
@@ -1093,17 +1093,17 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         )
 
         metrics_df = self._get_backtest_metrics(aggregate_metrics=aggregate_metrics)
-        list_forecast_ts = [fold["forecast"] for fold in self._folds.values()]
+        forecast_ts_list = [fold["forecast"] for fold in self._folds.values()]
         fold_info_df = self._get_fold_info()
 
         tslogger.start_experiment(job_type="crossval_results", group="all")
-        tslogger.log_backtest_metrics(ts, metrics_df, list_forecast_ts, fold_info_df)
+        tslogger.log_backtest_metrics(ts, metrics_df, forecast_ts_list, fold_info_df)
         tslogger.finish_experiment()
 
         backtest_result = {
-            "metrics_df": metrics_df,
-            "list_forecast_ts": list_forecast_ts,
-            "fold_info_df": fold_info_df,
+            "metrics": metrics_df,
+            "forecasts": forecast_ts_list,
+            "fold_info": fold_info_df,
             "pipelines": pipelines,
         }
 
@@ -1154,7 +1154,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         Returns
         -------
         :
-            List of TSDataset with forecast for each fold on the historical dataset.
+            List of `TSDataset` with forecast for each fold on the historical dataset.
 
         Raises
         ------
@@ -1175,7 +1175,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
                 joblib_params=joblib_params,
                 forecast_params=forecast_params,
             )
-            list_forecast_ts = backtest_result["list_forecast_ts"]
-            list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
+            forecast_ts_list = backtest_result["forecasts"]
+            forecast_ts_list = cast(List[TSDataset], forecast_ts_list)
 
-        return list_forecast_ts
+        return forecast_ts_list

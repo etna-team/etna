@@ -70,7 +70,7 @@ def objective(trial: optuna.Trial, metric_name: str, ts: TSDataset, horizon: int
 
     # Start backtest
     backtest_result = pipeline.backtest(ts=ts, metrics=[MAE(), SMAPE(), Sign(), MSE()])
-    metrics = backtest_result["metrics_df"]
+    metrics = backtest_result["metrics"]
     return metrics[metric_name].mean()
 
 

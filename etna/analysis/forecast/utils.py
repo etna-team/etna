@@ -14,14 +14,14 @@ if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
-def get_residuals(list_forecast_ts: List["TSDataset"], ts: "TSDataset") -> "TSDataset":
+def get_residuals(forecast_ts_list: List["TSDataset"], ts: "TSDataset") -> "TSDataset":
     """Get residuals for further analysis.
 
     Function keeps hierarchy, features in result dataset and removes target components.
 
     Parameters
     ----------
-    list_forecast_ts:
+    forecast_ts_list:
         List of TSDataset with forecast for each fold from backtest
     ts:
         dataset of timeseries that has answers to forecast
@@ -39,7 +39,7 @@ def get_residuals(list_forecast_ts: List["TSDataset"], ts: "TSDataset") -> "TSDa
     from etna.datasets import TSDataset
 
     # cast list of TSDataset to pd.DataFrame
-    forecast_df = pd.concat([forecast.to_pandas() for forecast in list_forecast_ts], axis=0)
+    forecast_df = pd.concat([forecast.to_pandas() for forecast in forecast_ts_list], axis=0)
 
     # remove target components
     ts_copy = deepcopy(ts)

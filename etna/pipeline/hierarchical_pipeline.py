@@ -290,11 +290,11 @@ class HierarchicalPipeline(Pipeline):
         try:
             # TODO: rework intervals estimation for `BottomUpReconciliator`
 
-            list_forecast_ts = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
+            forecast_ts_list = self.get_historical_forecasts(ts=ts, n_folds=n_folds)
 
             source_ts = self.reconciliator.aggregate(ts=ts)
             self._add_forecast_borders(
-                ts=source_ts, list_backtest_forecasts=list_forecast_ts, quantiles=quantiles, predictions=predictions
+                ts=source_ts, list_backtest_forecasts=forecast_ts_list, quantiles=quantiles, predictions=predictions
             )
             return predictions
 

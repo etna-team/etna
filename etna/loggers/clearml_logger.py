@@ -133,7 +133,7 @@ class ClearMLLogger(BaseLogger):
         )
 
     def log_backtest_metrics(
-        self, ts: "TSDataset", metrics_df: pd.DataFrame, list_forecast_ts: List["TSDataset"], fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_ts_list: List["TSDataset"], fold_info_df: pd.DataFrame
     ):
         """Write metrics to logger.
 
@@ -143,7 +143,7 @@ class ClearMLLogger(BaseLogger):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
-        list_forecast_ts:
+        forecast_ts_list:
             List of TSDataset with forecast for each fold from backtest
         fold_info_df:
             Fold information from backtest
@@ -162,7 +162,7 @@ class ClearMLLogger(BaseLogger):
             logger.report_table(title="Fold info", series=self._job_type, table_plot=fold_info_df)
 
         if self.plot:
-            fig = plot_backtest_interactive(list_forecast_ts, ts, history_len=100)
+            fig = plot_backtest_interactive(forecast_ts_list, ts, history_len=100)
             logger.report_plotly(title="Backtest forecast", series=self._job_type, figure=fig)
 
         metrics_dict = aggregate_metrics_df(metrics_df)

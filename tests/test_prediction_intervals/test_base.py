@@ -78,12 +78,10 @@ def test_forecast_with_fitted_pipeline(example_tsds, pipeline_name, request):
 @pytest.mark.parametrize("pipeline_name", ("naive_pipeline", "naive_pipeline_with_transforms"))
 def test_backtest(example_tsds, pipeline_name, request):
     pipeline = request.getfixturevalue(pipeline_name)
-    pipeline_results = pipeline.backtest(ts=example_tsds, metrics=[_DummyMetric()])["list_forecast_ts"]
+    pipeline_results = pipeline.backtest(ts=example_tsds, metrics=[_DummyMetric()])["forecasts"]
 
     intervals_pipeline = DummyPredictionIntervals(pipeline=pipeline)
-    intervals_pipeline_results = intervals_pipeline.backtest(ts=example_tsds, metrics=[_DummyMetric()])[
-        "list_forecast_ts"
-    ]
+    intervals_pipeline_results = intervals_pipeline.backtest(ts=example_tsds, metrics=[_DummyMetric()])["forecasts"]
 
     for forecast_pipeline, forecast_intervals_pipeline in zip(pipeline_results, intervals_pipeline_results):
         pd.testing.assert_frame_equal(forecast_pipeline.to_pandas(), forecast_intervals_pipeline.to_pandas())

@@ -233,8 +233,8 @@ def test_simple_pipeline_backtest(ts_with_exogs, in_column, horizon):
 
     pipeline = simple_pipeline_with_decompose(in_column=in_column, horizon=horizon, k=5)
 
-    list_forecast_ts = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)["list_forecast_ts"]
-    forecast_df = pd.concat([forecast.to_pandas() for forecast in list_forecast_ts])
+    forecast_ts_list = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=3)["forecasts"]
+    forecast_df = pd.concat([forecast.to_pandas() for forecast in forecast_ts_list])
 
     assert len(forecast_df) == horizon * 3
     assert np.sum(forecast_df.loc[:, pd.IndexSlice[:, "target"]].isna().sum()) == 0

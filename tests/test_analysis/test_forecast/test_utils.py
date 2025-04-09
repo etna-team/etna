@@ -25,7 +25,7 @@ def residuals():
     forecast_df = df[df["timestamp"] >= timestamp[10]]
     forecast_df.loc[df["segment"] == "segment_0", "target"] = -1
     forecast_df.loc[df["segment"] == "segment_1", "target"] = 1
-    list_forecast_ts = [
+    forecast_ts_list = [
         TSDataset(df=forecast_df.loc[df["timestamp"] < timestamp[55]], freq=pd.offsets.Day()),
         TSDataset(df=forecast_df.loc[df["timestamp"] >= timestamp[55]], freq=pd.offsets.Day()),
     ]
@@ -34,7 +34,7 @@ def residuals():
     residuals_df.loc[:, pd.IndexSlice["segment_0", "target"]] += 1
     residuals_df.loc[:, pd.IndexSlice["segment_1", "target"]] -= 1
 
-    return residuals_df, list_forecast_ts, ts
+    return residuals_df, forecast_ts_list, ts
 
 
 @pytest.fixture
@@ -57,35 +57,35 @@ def dataset_dict(toy_dataset_equal_targets_and_quantiles):
 
 def test_get_residuals(residuals):
     """Test that get_residuals finds residuals correctly."""
-    residuals_df, list_forecast_ts, ts = residuals
-    actual_residuals = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
+    residuals_df, forecast_ts_list, ts = residuals
+    actual_residuals = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts)
     assert actual_residuals.to_pandas().equals(residuals_df)
 
 
 def test_get_residuals_with_components(residuals_with_components):
     """Test that get_residuals finds residuals correctly in case of target components presence."""
-    residuals_df, list_forecast_ts, ts = residuals_with_components
-    actual_residuals = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
+    residuals_df, forecast_ts_list, ts = residuals_with_components
+    actual_residuals = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts)
     assert actual_residuals.to_pandas().equals(residuals_df)
 
 
 def test_get_residuals_not_matching_lengths(residuals):
     """Test that get_residuals fails to find residuals correctly if ts hasn't answers."""
-    residuals_df, list_forecast_ts, ts = residuals
+    residuals_df, forecast_ts_list, ts = residuals
     ts = TSDataset(df=ts[ts.timestamps[:-10], :, :], freq=pd.offsets.Day())
     with pytest.raises(KeyError):
-        _ = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
+        _ = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts)
 
 
 def test_get_residuals_not_matching_segments(residuals):
     """Test that get_residuals fails to find residuals correctly if segments of dataset and forecast differ."""
-    residuals_df, list_forecast_ts, ts = residuals
-    for forecast_ts in list_forecast_ts:
+    residuals_df, forecast_ts_list, ts = residuals
+    for forecast_ts in forecast_ts_list:
         columns_frame = forecast_ts._df.columns.to_frame()
         columns_frame["segment"] = ["segment_0", "segment_3"]
         forecast_ts._df.columns = pd.MultiIndex.from_frame(columns_frame)
     with pytest.raises(KeyError, match="Segments of `ts` and `forecast_df` should be the same"):
-        _ = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts)
+        _ = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts)
 
 
 @pytest.mark.parametrize(

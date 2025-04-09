@@ -47,7 +47,7 @@ class _Callback(Protocol):
     def __call__(
         self,
         metrics_df: pd.DataFrame,
-        list_forecast_ts: List[TSDataset],
+        forecast_ts_list: List[TSDataset],
         fold_info_df: pd.DataFrame,
         pipelines: List[BasePipeline],
     ) -> None:
@@ -485,11 +485,11 @@ class Auto(AutoBase):
                 initializer(pipeline=pipeline)
 
             backtest_result = pipeline.backtest(ts, metrics=metrics, **backtest_params)
-            metrics_df = backtest_result["metrics_df"]
+            metrics_df = backtest_result["metrics"]
             metrics_df = cast(pd.DataFrame, metrics_df)
-            list_forecast_ts = backtest_result["list_forecast_ts"]
-            list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
-            fold_info_df = backtest_result["fold_info_df"]
+            forecast_ts_list = backtest_result["forecasts"]
+            forecast_ts_list = cast(List[TSDataset], forecast_ts_list)
+            fold_info_df = backtest_result["fold_info"]
             fold_info_df = cast(pd.DataFrame, fold_info_df)
             pipelines = backtest_result["pipelines"]
             pipelines = cast(List[BasePipeline], pipelines)
@@ -497,7 +497,7 @@ class Auto(AutoBase):
             if callback is not None:
                 callback(
                     metrics_df=metrics_df,
-                    list_forecast_ts=list_forecast_ts,
+                    forecast_ts_list=forecast_ts_list,
                     fold_info_df=fold_info_df,
                     pipelines=pipelines,
                 )
@@ -823,11 +823,11 @@ class Tune(AutoBase):
                     initializer(pipeline=pipeline_trial_params)
 
                 backtest_result = pipeline_trial_params.backtest(ts, metrics=metrics, **backtest_params)
-                metrics_df = backtest_result["metrics_df"]
+                metrics_df = backtest_result["metrics"]
                 metrics_df = cast(pd.DataFrame, metrics_df)
-                list_forecast_ts = backtest_result["list_forecast_ts"]
-                list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
-                fold_info_df = backtest_result["fold_info_df"]
+                forecast_ts_list = backtest_result["forecasts"]
+                forecast_ts_list = cast(List[TSDataset], forecast_ts_list)
+                fold_info_df = backtest_result["fold_info"]
                 fold_info_df = cast(pd.DataFrame, fold_info_df)
                 pipelines = backtest_result["pipelines"]
                 pipelines = cast(List[BasePipeline], pipelines)
@@ -835,7 +835,7 @@ class Tune(AutoBase):
                 if callback is not None:
                     callback(
                         metrics_df=metrics_df,
-                        list_forecast_ts=list_forecast_ts,
+                        forecast_ts_list=forecast_ts_list,
                         fold_info_df=fold_info_df,
                         pipelines=pipelines,
                     )

@@ -121,7 +121,7 @@ class WandbLogger(BaseLogger):
             self.experiment.log(msg)
 
     def log_backtest_metrics(
-        self, ts: "TSDataset", metrics_df: pd.DataFrame, list_forecast_ts: List["TSDataset"], fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_ts_list: List["TSDataset"], fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
@@ -132,7 +132,7 @@ class WandbLogger(BaseLogger):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
-        list_forecast_ts:
+        forecast_ts_list:
             List of TSDataset with forecast for each fold from backtest
         fold_info_df:
             Fold information from backtest
@@ -147,7 +147,7 @@ class WandbLogger(BaseLogger):
             forecast_df = pd.concat(
                 [
                     forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold)
-                    for num_fold, forecast_ts in enumerate(list_forecast_ts)
+                    for num_fold, forecast_ts in enumerate(forecast_ts_list)
                 ],
                 axis=0,
                 ignore_index=True,
@@ -157,7 +157,7 @@ class WandbLogger(BaseLogger):
             summary["fold_info"] = wandb.Table(data=fold_info_df)
 
         if self.plot:
-            fig = plot_backtest_interactive(list_forecast_ts, ts, history_len=100)
+            fig = plot_backtest_interactive(forecast_ts_list, ts, history_len=100)
             summary["backtest"] = fig
 
         metrics_dict = aggregate_metrics_df(metrics_df)

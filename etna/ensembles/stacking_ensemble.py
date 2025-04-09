@@ -159,14 +159,14 @@ class StackingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
             Fitted ensemble.
         """
         # Get forecasts from base models on backtest to fit the final model on
-        nested_list_forecast_ts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+        nested_forecast_ts_list = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
             delayed(self._backtest_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
         )
 
         # Fit the final model
         forecasts = [
-            pd.concat([forecast_ts._df for forecast_ts in list_forecast_ts], axis=0)
-            for list_forecast_ts in nested_list_forecast_ts
+            pd.concat([forecast_ts._df for forecast_ts in forecast_ts_list], axis=0)
+            for forecast_ts_list in nested_forecast_ts_list
         ]
         self.filtered_features_for_final_model = self._filter_features_to_use(forecasts)
         x, y = self._make_features(ts=ts, forecasts=forecasts, train=True)

@@ -178,7 +178,7 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
         metrics = [MAE(), MSE(), SMAPE()]
         pipeline = Pipeline(model=NaiveModel(), horizon=10)
         n_folds = 5
-        metrics_df, list_forecast_ts, fold_info_df, pipelines = pipeline.backtest(
+        metrics_df, forecast_ts_list, fold_info_df, pipelines = pipeline.backtest(
             ts=example_tsds, metrics=metrics, n_jobs=1, n_folds=n_folds, aggregate_metrics=aggregate_metrics
         ).values()
 
@@ -194,7 +194,7 @@ def test_base_file_logger_log_backtest_metrics(example_tsds: TSDataset, aggregat
         forecast_df = pd.concat(
             [
                 forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold)
-                for num_fold, forecast_ts in enumerate(list_forecast_ts)
+                for num_fold, forecast_ts in enumerate(forecast_ts_list)
             ],
             axis=0,
             ignore_index=True,

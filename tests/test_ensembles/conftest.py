@@ -201,13 +201,13 @@ def forecasts_df(
     example_tsds: "TSDataset", naive_featured_pipeline_1: Pipeline, naive_featured_pipeline_2: Pipeline
 ) -> List[pd.DataFrame]:
     ensemble = StackingEnsemble(pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use="all")
-    nested_list_forecast_ts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+    nested_forecast_ts_list = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
         delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
         for pipeline in ensemble.pipelines
     )
     forecasts = [
-        pd.concat([forecast_ts._df for forecast_ts in list_forecast_ts], axis=0)
-        for list_forecast_ts in nested_list_forecast_ts
+        pd.concat([forecast_ts._df for forecast_ts in forecast_ts_list], axis=0)
+        for forecast_ts_list in nested_forecast_ts_list
     ]
     return forecasts
 
@@ -228,7 +228,7 @@ def targets(example_tsds: "TSDataset", forecasts_df: List[pd.DataFrame]) -> pd.D
 def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset", "TSDataset"]:
     segment_1 = [7.0, 7.0, 3.0, 1.0]
     segment_2 = [40.0, 70.0, 20.0, 10.0]
-    ts_range = list(pd.date_range("2020-01-03", freq="1D", periods=n_repeats * len(segment_1)))
+    ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=n_repeats * len(segment_1)))
     df = pd.DataFrame(
         {
             "timestamp": ts_range * 2,
@@ -241,8 +241,8 @@ def weekly_period_ts(n_repeats: int = 15, horizon: int = 7) -> Tuple["TSDataset"
         df[lambda x: x.timestamp < ts_start],
         df[lambda x: x.timestamp >= ts_start],
     )
-    train = TSDataset(TSDataset.to_dataset(train), "D")
-    test = TSDataset(TSDataset.to_dataset(test), "D")
+    train = TSDataset(TSDataset.to_dataset(train), pd.offsets.Day())
+    test = TSDataset(TSDataset.to_dataset(test), pd.offsets.Day())
 
     return train, test
 
@@ -265,8 +265,8 @@ def naive_ensemble(horizon: int = 7) -> StackingEnsemble:
 
 @pytest.fixture
 def ts_with_segment_named_target() -> TSDataset:
-    df = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=5, freq="D")
+    df = generate_ar_df(periods=100, start_time="2020-01-01", n_segments=5, freq=pd.offsets.Day())
     df.loc[df["segment"] == "segment_0", "segment"] = "target"
     df_wide = TSDataset.to_dataset(df)
-    ts = TSDataset(df=df_wide, freq="D")
+    ts = TSDataset(df=df_wide, freq=pd.offsets.Day())
     return ts

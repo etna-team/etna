@@ -123,19 +123,19 @@ def backtest(
 
     backtest_result = pipeline.backtest(ts=tsdataset, **backtest_call_args)
 
-    metrics = backtest_result["metrics_df"]
+    metrics = backtest_result["metrics"]
     metrics = cast(pd.DataFrame, metrics)
 
-    list_forecast_ts = backtest_result["list_forecast_ts"]
-    list_forecast_ts = cast(List[TSDataset], list_forecast_ts)
+    forecast_ts_list = backtest_result["forecasts"]
+    forecast_ts_list = cast(List[TSDataset], forecast_ts_list)
 
-    info = backtest_result["fold_info_df"]
+    info = backtest_result["fold_info"]
     info = cast(pd.DataFrame, info)
 
     forecast_df = pd.concat(
         [
             forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold)
-            for num_fold, forecast_ts in enumerate(list_forecast_ts)
+            for num_fold, forecast_ts in enumerate(forecast_ts_list)
         ],
         axis=0,
         ignore_index=True,

@@ -145,11 +145,15 @@ def plot_forecast(
 
         if (train_ts is not None) and (n_train_samples != 0):
             marker = None if len(plot_df) > 1 else "o"
-            ax[i].plot(plot_df.index.values, plot_df.target.values, label="train", marker=marker)
+            ax[i].plot(plot_df.index.values, plot_df["target"].values, label="train", marker=marker)
         if test_ts is not None:
             marker = None if len(segment_test_df) > 1 else "o"
             ax[i].plot(
-                segment_test_df.index.values, segment_test_df.target.values, color="purple", label="test", marker=marker
+                segment_test_df.index.values,
+                segment_test_df["target"].values,
+                color="purple",
+                label="test",
+                marker=marker,
             )
 
         # plot forecast plot for each of given forecasts
@@ -161,7 +165,7 @@ def plot_forecast(
 
             line = ax[i].plot(
                 segment_forecast_df.index.values,
-                segment_forecast_df.target.values,
+                segment_forecast_df["target"].values,
                 linewidth=1,
                 label=f"{legend_prefix}forecast",
                 marker=marker,
@@ -237,7 +241,7 @@ def plot_forecast(
 
 
 def plot_backtest(
-    list_forecast_ts: List["TSDataset"],
+    forecast_ts_list: List["TSDataset"],
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
@@ -250,7 +254,7 @@ def plot_backtest(
 
     Parameters
     ----------
-    list_forecast_ts:
+    forecast_ts_list:
         List of TSDataset with forecast for each fold from backtest
     ts:
         dataframe of timeseries that was used for backtest
@@ -277,7 +281,7 @@ def plot_backtest(
         segments = sorted(ts.segments)
 
     fold_numbers = pd.concat(
-        [pd.Series(i, index=list_forecast_ts[i].timestamps) for i in range(len(list_forecast_ts))], axis=0
+        [pd.Series(i, index=forecast_ts.timestamps) for i, forecast_ts in enumerate(forecast_ts_list)], axis=0
     )
     _validate_intersecting_folds(fold_numbers)
 
@@ -294,17 +298,17 @@ def plot_backtest(
 
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
-    list_forecast_df = [forecast_ts.to_pandas() for forecast_ts in list_forecast_ts]
+    list_forecast_df = [forecast_ts.to_pandas() for forecast_ts in forecast_ts_list]
 
     # plot history
     for i, segment in enumerate(segments):
         segment_history_df = history_df[segment]
 
         if history_len == "all":
-            ax[i].plot(segment_history_df.index, segment_history_df.target, color=lines_colors["history"])
+            ax[i].plot(segment_history_df.index, segment_history_df["target"], color=lines_colors["history"])
         elif history_len > 0:
             tail_segment_history_df = segment_history_df.tail(history_len)
-            ax[i].plot(tail_segment_history_df.index, tail_segment_history_df.target, color=lines_colors["history"])
+            ax[i].plot(tail_segment_history_df.index, tail_segment_history_df["target"], color=lines_colors["history"])
 
     # Define type of forecast plot (line or scatters)
     is_full_fold = set(backtest_df.index) == set(fold_numbers.index)
@@ -323,7 +327,7 @@ def plot_backtest(
             segment_fold_forecast_df = fold_forecast_df[segment]
 
             # draw test
-            ax[i].plot(segment_fold_backtest_df.index, segment_fold_backtest_df.target, color=lines_colors["test"])
+            ax[i].plot(segment_fold_backtest_df.index, segment_fold_backtest_df["target"], color=lines_colors["test"])
 
             if draw_only_lines:
                 # draw forecast
@@ -332,7 +336,7 @@ def plot_backtest(
                     segment_fold_forecast_df = pd.concat([segment_fold_forecast_df, next_fold_first_value], axis=0)
 
                 ax[i].plot(
-                    segment_fold_forecast_df.index, segment_fold_forecast_df.target, color=lines_colors["forecast"]
+                    segment_fold_forecast_df.index, segment_fold_forecast_df["target"], color=lines_colors["forecast"]
                 )
 
             else:
@@ -340,12 +344,12 @@ def plot_backtest(
 
                 # draw points on test
                 ax[i].scatter(
-                    segment_fold_backtest_df.index, segment_fold_backtest_df.target, color=lines_colors["test"]
+                    segment_fold_backtest_df.index, segment_fold_backtest_df["target"], color=lines_colors["test"]
                 )
 
                 # draw forecast
                 ax[i].scatter(
-                    segment_fold_forecast_df.index, segment_fold_forecast_df.target, color=lines_colors["forecast"]
+                    segment_fold_forecast_df.index, segment_fold_forecast_df["target"], color=lines_colors["forecast"]
                 )
 
             # draw borders of current fold
@@ -369,7 +373,7 @@ def plot_backtest(
 
 
 def plot_backtest_interactive(
-    list_forecast_ts: List["TSDataset"],
+    forecast_ts_list: List["TSDataset"],
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
     history_len: Union[int, Literal["all"]] = 0,
@@ -379,7 +383,7 @@ def plot_backtest_interactive(
 
     Parameters
     ----------
-    list_forecast_ts:
+    forecast_ts_list:
         List of TSDataset with forecast for each fold from backtest
     ts:
         dataframe of timeseries that was used for backtest
@@ -409,7 +413,7 @@ def plot_backtest_interactive(
         segments = sorted(ts.segments)
 
     fold_numbers = pd.concat(
-        [pd.Series(i, index=list_forecast_ts[i].timestamps) for i in range(len(list_forecast_ts))], axis=0
+        [pd.Series(i, index=forecast_ts.timestamps) for i, forecast_ts in enumerate(forecast_ts_list)], axis=0
     )
     _validate_intersecting_folds(fold_numbers)
 
@@ -419,7 +423,7 @@ def plot_backtest_interactive(
     history_df = df[df.index <= forecast_start]
     backtest_df = df[df.index >= forecast_start]
 
-    list_forecast_df = [forecast_ts.to_pandas() for forecast_ts in list_forecast_ts]
+    list_forecast_df = [forecast_ts.to_pandas() for forecast_ts in forecast_ts_list]
 
     # prepare colors
     colors = plotly.colors.qualitative.Dark24
@@ -439,7 +443,7 @@ def plot_backtest_interactive(
         fig.add_trace(
             go.Scattergl(
                 x=plot_df.index,
-                y=plot_df.target,
+                y=plot_df["target"],
                 legendgroup=f"{segment}",
                 name=f"{segment}",
                 mode="lines",
@@ -468,7 +472,7 @@ def plot_backtest_interactive(
             fig.add_trace(
                 go.Scattergl(
                     x=segment_fold_backtest_df.index,
-                    y=segment_fold_backtest_df.target,
+                    y=segment_fold_backtest_df["target"],
                     legendgroup=f"{segment}",
                     name=f"Test: {segment}",
                     mode="lines",
@@ -480,14 +484,14 @@ def plot_backtest_interactive(
 
             if draw_only_lines:
                 # draw forecast
-                if fold_number != len(list_forecast_ts) - 1:
+                if fold_number != len(forecast_ts_list) - 1:
                     next_fold_first_value = list_forecast_df[fold_number + 1][segment].iloc[[0]]
                     segment_fold_forecast_df = pd.concat([segment_fold_forecast_df, next_fold_first_value], axis=0)
 
                 fig.add_trace(
                     go.Scattergl(
                         x=segment_fold_forecast_df.index,
-                        y=segment_fold_forecast_df.target,
+                        y=segment_fold_forecast_df["target"],
                         legendgroup=f"{segment}",
                         name=f"Forecast: {segment}",
                         mode="lines",
@@ -504,7 +508,7 @@ def plot_backtest_interactive(
                 fig.add_trace(
                     go.Scattergl(
                         x=segment_fold_backtest_df.index,
-                        y=segment_fold_backtest_df.target,
+                        y=segment_fold_backtest_df["target"],
                         legendgroup=f"{segment}",
                         name=f"Test: {segment}",
                         mode="markers",
@@ -517,7 +521,7 @@ def plot_backtest_interactive(
                 fig.add_trace(
                     go.Scattergl(
                         x=segment_fold_forecast_df.index,
-                        y=segment_fold_forecast_df.target,
+                        y=segment_fold_forecast_df["target"],
                         legendgroup=f"{segment}",
                         name=f"Forecast: {segment}",
                         mode="markers",
@@ -567,7 +571,7 @@ def plot_backtest_interactive(
 
 
 def plot_residuals(
-    list_forecast_ts: List["TSDataset"],
+    forecast_ts_list: List["TSDataset"],
     ts: "TSDataset",
     feature: Union[str, Literal["timestamp"]] = "timestamp",
     transforms: Sequence["Transform"] = (),
@@ -579,7 +583,7 @@ def plot_residuals(
 
     Parameters
     ----------
-    list_forecast_ts:
+    forecast_ts_list:
         List of TSDataset with forecast for each fold from backtest
     ts:
         dataframe of timeseries that was used for backtest
@@ -610,12 +614,12 @@ def plot_residuals(
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     fold_numbers = pd.concat(
-        [pd.Series(i, index=list_forecast_ts[i].timestamps) for i in range(len(list_forecast_ts))], axis=0
+        [pd.Series(i, index=forecast_ts_list[i].timestamps) for i in range(len(forecast_ts_list))], axis=0
     )
 
     ts_copy = deepcopy(ts)
     ts_copy.fit_transform(transforms=transforms)
-    ts_residuals = get_residuals(list_forecast_ts=list_forecast_ts, ts=ts_copy)
+    ts_residuals = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts_copy)
     df = ts_residuals.to_pandas()
     # check if feature is present in dataset
     if feature != "timestamp":
@@ -630,11 +634,12 @@ def plot_residuals(
 
         # highlight different backtest folds
         if feature == "timestamp":
-            folds = (i for i in range(len(list_forecast_ts)))
+            folds = (i for i in range(len(forecast_ts_list)))
             for fold_number in folds:
+                fold_indices = fold_numbers[fold_numbers == fold_number].index
                 ax[i].axvspan(
-                    fold_numbers[fold_numbers == fold_number].index.min(),
-                    fold_numbers[fold_numbers == fold_number].index.max(),
+                    fold_indices.min(),
+                    fold_indices.max(),
                     alpha=0.15 * int((fold_number + 1) % 2),
                     color="skyblue",
                 )
@@ -1031,7 +1036,7 @@ def plot_forecast_decomposition(
 
 
 def prediction_actual_scatter_plot(
-    list_forecast_ts: List["TSDataset"],
+    forecast_ts_list: List["TSDataset"],
     ts: "TSDataset",
     segments: Optional[List[str]] = None,
     columns_num: int = 2,
@@ -1041,7 +1046,7 @@ def prediction_actual_scatter_plot(
 
     Parameters
     ----------
-    list_forecast_ts:
+    forecast_ts_list:
         List of TSDataset with forecast for each fold from backtest
     ts:
         dataframe of timeseries that was used for backtest
@@ -1058,7 +1063,7 @@ def prediction_actual_scatter_plot(
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     df = ts.to_pandas()
-    forecast_df = pd.concat([forecast_ts.to_pandas() for forecast_ts in list_forecast_ts], axis=0)
+    forecast_df = pd.concat([forecast_ts.to_pandas() for forecast_ts in forecast_ts_list], axis=0)
 
     for i, segment in enumerate(segments):
         forecast_segment_df = forecast_df.loc[:, pd.IndexSlice[segment, "target"]]
