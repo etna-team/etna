@@ -1,7 +1,8 @@
 from typing import TYPE_CHECKING
-import pandas as pd
-from etna.datasets import TSDataset
 
+import pandas as pd
+
+from etna.datasets import TSDataset
 
 if TYPE_CHECKING:
     from etna.ensembles import EnsembleMixin

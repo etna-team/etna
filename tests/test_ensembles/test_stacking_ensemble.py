@@ -23,13 +23,13 @@ from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
+from tests.test_ensembles.utils import check_backtest_return_type
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts_with_prediction_intervals
 from tests.test_pipeline.utils import assert_pipeline_forecasts_without_self_ts
 from tests.test_pipeline.utils import assert_pipeline_predicts
-from tests.test_ensembles.utils import check_backtest_return_type
 
 HORIZON = 7
 
