@@ -5,7 +5,9 @@ on:
     branches:
       - master
   pull_request:
-    types: [opened, synchronize]
+    branches:
+      - master
+    types: [closed]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -14,6 +16,7 @@ concurrency:
 jobs:
   
   notebooks-test:
+      if: github.event_name == 'push'||github.event.pull_request.merged == true
       runs-on: ubuntu-latest
 
       steps:
