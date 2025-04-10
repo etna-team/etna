@@ -413,15 +413,39 @@ class TSDataset:
         df.index.name = index_name
         return df
 
+    def _detect_modified_columns(self, transformed_ts: "TSDataset") -> Set[str]:
+        same_columns = set(self.features) & set(transformed_ts.features)
+
+        if len(same_columns) == 0:
+            return same_columns
+
+        columns_to_use = list(same_columns)
+        df = self._df.loc[:, pd.IndexSlice[:, columns_to_use]]
+        transformed_df = transformed_ts._df.loc[df.index[0] : df.index[-1], pd.IndexSlice[:, columns_to_use]]
+
+        num_df = df.select_dtypes(include=[int, float])
+        transformed_num_df = transformed_df.select_dtypes(include=[int, float])
+        num_mismatch_mask = np.any(~np.isclose(num_df.values, transformed_num_df.values, equal_nan=True), axis=0)
+        num_mismatch = set(num_df.columns[num_mismatch_mask])
+
+        other_df = df.select_dtypes(exclude=[int, float])
+        transformed_other_df = transformed_df.select_dtypes(exclude=[int, float])
+        other_mismatch_mask = np.any(other_df != transformed_other_df, axis=0)
+        other_mismatch = set(other_df.columns[other_mismatch_mask])
+
+        mismatch_columns = num_mismatch | other_mismatch
+
+        return {column for _, column in mismatch_columns}
+
     def make_future(
         self, future_steps: int, transforms: Sequence["Transform"] = (), tail_steps: int = 0
     ) -> "TSDataset":
         """Return new TSDataset with features extended into the future.
 
         Notes
-        _____
+        -----
         The result dataset doesn't contain prediction intervals and target components.
-        Some columns may be lost if a modified dataset is used to make future.
+        Some columns and modifications may be lost if a transformed dataset is used to make future.
         This behavior is due to the usage of an initial state of the dataset to compute the future.
 
         Parameters
@@ -499,11 +523,21 @@ class TSDataset:
         # Here only df is required, other metadata is not necessary to build the dataset
         ts = TSDataset(df=df, freq=self.freq)
         removed_features = set(ts.features)
+        expected_to_change = set()
         for transform in transforms:
             tslogger.log(f"Transform {repr(transform)} is applied to dataset")
             transform.transform(ts)
 
+            if hasattr(transform, "in_column"):
+                if (hasattr(transform, "inplace") and transform.inplace) or not hasattr(transform, "out_column"):
+                    expected_to_change.add(transform.in_column)
+
         removed_features -= set(ts.features)
+
+        mismatch_columns = self._detect_modified_columns(ts)
+        mismatch_columns -= expected_to_change
+        if len(mismatch_columns) > 0:
+            warnings.warn(f"Some columns modifications would not be preserved: {mismatch_columns}")
 
         df = ts.to_pandas()
 
