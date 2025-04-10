@@ -201,10 +201,14 @@ def forecasts_df(
     example_tsds: "TSDataset", naive_featured_pipeline_1: Pipeline, naive_featured_pipeline_2: Pipeline
 ) -> List[pd.DataFrame]:
     ensemble = StackingEnsemble(pipelines=[naive_featured_pipeline_1, naive_featured_pipeline_2], features_to_use="all")
-    forecasts = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
+    nested_forecast_ts_list = Parallel(n_jobs=ensemble.n_jobs, backend="multiprocessing", verbose=11)(
         delayed(ensemble._backtest_pipeline)(pipeline=pipeline, ts=deepcopy(example_tsds))
         for pipeline in ensemble.pipelines
     )
+    forecasts = [
+        pd.concat([forecast_ts._df for forecast_ts in forecast_ts_list], axis=0)
+        for forecast_ts_list in nested_forecast_ts_list
+    ]
     return forecasts
 
 

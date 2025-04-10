@@ -5,7 +5,6 @@ from typing import Union
 from unittest.mock import MagicMock
 
 import numpy as np
-import pandas as pd
 import pytest
 from joblib import Parallel
 from joblib import delayed
@@ -24,6 +23,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
+from tests.test_ensembles.utils import check_backtest_return_type
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
@@ -205,8 +205,7 @@ def test_multiprocessing_ensembles(
 def test_backtest(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with VotingEnsemble."""
     results = voting_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, VotingEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -219,8 +218,7 @@ def test_backtest_hierarchical_pipeline(
     results = voting_ensemble_hierarchical_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, VotingEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -233,17 +231,20 @@ def test_backtest_mix_pipeline(
     results = voting_ensemble_mix_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, VotingEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_get_historical_forecasts(voting_ensemble_pipeline: VotingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that get_historical_forecasts works with VotingEnsemble."""
     n_folds = 3
-    forecasts = voting_ensemble_pipeline.get_historical_forecasts(ts=example_tsds, n_jobs=n_jobs, n_folds=n_folds)
-    assert isinstance(forecasts, pd.DataFrame)
-    assert len(forecasts) == n_folds * voting_ensemble_pipeline.horizon
+    forecast_ts_list = voting_ensemble_pipeline.get_historical_forecasts(
+        ts=example_tsds, n_jobs=n_jobs, n_folds=n_folds
+    )
+    assert isinstance(forecast_ts_list, List)
+    for forecast_ts in forecast_ts_list:
+        assert isinstance(forecast_ts, TSDataset)
+        assert forecast_ts.size()[0] == HORIZON
 
 
 @pytest.mark.parametrize("load_ts", [True, False])

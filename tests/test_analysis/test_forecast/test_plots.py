@@ -16,9 +16,9 @@ def test_plot_residuals_fails_unkown_feature(example_tsdf):
     pipeline = Pipeline(
         model=LinearPerSegmentModel(), transforms=[LagTransform(in_column="target", lags=[5, 6, 7])], horizon=5
     )
-    metrics, forecast_df, info = pipeline.backtest(ts=example_tsdf, metrics=[MAE()], n_folds=3)
+    metrics, forecast_ts_list, info, pipelines = pipeline.backtest(ts=example_tsdf, metrics=[MAE()], n_folds=3).values()
     with pytest.raises(ValueError, match="Given feature isn't present in the dataset"):
-        plot_residuals(forecast_df=forecast_df, ts=example_tsdf, feature="unkown_feature")
+        plot_residuals(forecast_ts_list=forecast_ts_list, ts=example_tsdf, feature="unkown_feature")
 
 
 @pytest.mark.parametrize(

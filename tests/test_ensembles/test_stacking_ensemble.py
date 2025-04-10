@@ -23,6 +23,7 @@ from etna.pipeline import Pipeline
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
+from tests.test_ensembles.utils import check_backtest_return_type
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
@@ -339,8 +340,7 @@ def test_multiprocessing_ensembles(
 def test_backtest(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that backtest works with StackingEnsemble."""
     results = stacking_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, StackingEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -353,8 +353,7 @@ def test_backtest_hierarchical_pipeline(
     results = stacking_ensemble_hierarchical_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, StackingEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -367,17 +366,19 @@ def test_backtest_mix_pipeline(
     results = stacking_ensemble_mix_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, StackingEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_get_historical_forecasts(stacking_ensemble_pipeline: StackingEnsemble, example_tsds: TSDataset, n_jobs: int):
     """Check that get_historical_forecasts works with StackingEnsemble."""
     n_folds = 3
-    forecast = stacking_ensemble_pipeline.get_historical_forecasts(ts=example_tsds, n_jobs=n_jobs, n_folds=n_folds)
-    assert isinstance(forecast, pd.DataFrame)
-    assert len(forecast) == n_folds * stacking_ensemble_pipeline.horizon
+    forecast_ts_list = stacking_ensemble_pipeline.get_historical_forecasts(
+        ts=example_tsds, n_jobs=n_jobs, n_folds=n_folds
+    )
+    assert isinstance(forecast_ts_list, List)
+    for forecast_ts in forecast_ts_list:
+        assert forecast_ts.size()[0] == stacking_ensemble_pipeline.horizon
 
 
 @pytest.mark.parametrize("load_ts", [True, False])
@@ -460,8 +461,7 @@ def test_ts_with_segment_named_target(
     results = stacking_ensemble_pipeline.backtest(
         ts=ts_with_segment_named_target, metrics=[MAE()], n_jobs=n_jobs, n_folds=5
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, StackingEnsemble)
 
 
 @pytest.mark.parametrize(

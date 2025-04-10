@@ -14,15 +14,15 @@ if TYPE_CHECKING:
     from etna.datasets import TSDataset
 
 
-def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
+def get_residuals(forecast_ts_list: List["TSDataset"], ts: "TSDataset") -> "TSDataset":
     """Get residuals for further analysis.
 
     Function keeps hierarchy, features in result dataset and removes target components.
 
     Parameters
     ----------
-    forecast_df:
-        forecasted dataframe with timeseries data
+    forecast_ts_list:
+        List of TSDataset with forecast for each fold from backtest
     ts:
         dataset of timeseries that has answers to forecast
 
@@ -37,6 +37,9 @@ def get_residuals(forecast_df: pd.DataFrame, ts: "TSDataset") -> "TSDataset":
         if segments of ``forecast_df`` and ``ts`` aren't the same
     """
     from etna.datasets import TSDataset
+
+    # cast list of TSDataset to pd.DataFrame
+    forecast_df = pd.concat([forecast.to_pandas() for forecast in forecast_ts_list], axis=0)
 
     # remove target components
     ts_copy = deepcopy(ts)
@@ -107,8 +110,8 @@ def _prepare_forecast_results(
         raise ValueError("Unknown type of `forecast_ts`")
 
 
-def _validate_intersecting_segments(fold_numbers: pd.Series):
-    """Validate if segments aren't intersecting."""
+def _validate_intersecting_folds(fold_numbers: pd.Series):
+    """Validate if folds aren't intersecting."""
     fold_info = []
     for fold_number in fold_numbers.unique():
         fold_start = fold_numbers[fold_numbers == fold_number].index.min()

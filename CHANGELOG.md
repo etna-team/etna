@@ -56,6 +56,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rework quantiles and intervals handling in the library ([#633](https://github.com/etna-team/etna/pull/633))
 - **Breaking:** Move `etna.experimental.prediction_intervals` module to `etna.prediction_intervals` ([#633](https://github.com/etna-team/etna/pull/633))
 - **Breaking:** Bump minimum `tsfresh` version to 0.21.0 ([#640](https://github.com/etna-team/etna/pull/640))
+- **Breaking:** Change signature `backtest` to return dictionary with metrics, `TSDataset` with forecast for each fold, info and pipeline for each fold. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Change signature `get_historical_forecasts` to return list of `TSDataset` with forecast for each fold. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Change signature `plot_backtest`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Change signature `plot_backtest_interactive`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Change signature `prediction_actual_scatter_plot`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Change signature `plot_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Change signature `get_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Change signature `log_backtest_metrics`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 -
 
 ### Fixed

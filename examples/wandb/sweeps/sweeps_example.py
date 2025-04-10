@@ -60,7 +60,7 @@ def objective(cfg: DictConfig):
     init_logger(pipeline.to_dict())
 
     # Run backtest
-    _, _, _ = pipeline.backtest(ts, **backtest_params)
+    pipeline.backtest(ts, **backtest_params)
 
 
 if __name__ == "__main__":

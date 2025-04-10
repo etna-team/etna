@@ -34,7 +34,8 @@ def residuals_matrices(
     if stride is not None and stride <= 0:
         raise ValueError("Parameter `stride` must be positive!")
 
-    backtest_forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds, stride=stride)
+    list_backtest_forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=n_folds, stride=stride)
+    backtest_forecasts = pd.concat([forecast.to_pandas() for forecast in list_backtest_forecasts], axis=0)
 
     residuals = backtest_forecasts.loc[:, pd.IndexSlice[:, "target"]] - ts[backtest_forecasts.index, :, "target"]
 
