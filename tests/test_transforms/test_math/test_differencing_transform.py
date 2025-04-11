@@ -198,7 +198,7 @@ def check_inverse_transform_inplace_unfilled_test(transform: GeneralDifferencing
     ts_train, ts_test = ts.train_test_split(test_size=20)
     ts_train.fit_transform(transforms=[transform])
 
-    future_ts = ts_train.make_future(20)
+    future_ts = ts_train.make_future(20, transforms=[transform])
 
     # check values from inverse_transform
     future_ts.inverse_transform([transform])

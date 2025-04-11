@@ -1142,16 +1142,16 @@ class TestForecastMixedInOutSample:
     @staticmethod
     def _test_forecast_mixed_in_out_sample(ts, model, transforms, num_skip_points=50, future_prediction_size=5):
         # fitting
-        df = ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
         ts.fit_transform(transforms)
         model.fit(ts)
 
         # forecasting mixed in-sample and out-sample
-        future_ts = ts.make_future(future_steps=future_prediction_size)
-        future_df = future_ts.to_pandas().loc[:, pd.IndexSlice[:, "target"]]
-        df_full = pd.concat((df, future_df))
+        future_ts = ts.make_future(future_steps=future_prediction_size, transforms=transforms)
+        df_full = pd.concat((ts.to_pandas(), future_ts.to_pandas()), axis=0)
+        if ts._df_exog is not None:
+            df_full.drop(columns=ts._df_exog.columns, inplace=True)
+
         forecast_full_ts = TSDataset(df=df_full, df_exog=ts._df_exog, freq=ts.freq, known_future=ts.known_future)
-        forecast_full_ts.transform(transforms)
         forecast_full_ts._df = forecast_full_ts._df.iloc[(num_skip_points - model.context_size) :]
         full_prediction_size = len(forecast_full_ts.timestamps) - model.context_size
         forecast_full_ts = make_forecast(model=model, ts=forecast_full_ts, prediction_size=full_prediction_size)
