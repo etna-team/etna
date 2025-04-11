@@ -430,7 +430,9 @@ class TSDataset:
 
         other_df = df.select_dtypes(exclude=[int, float])
         transformed_other_df = transformed_df.select_dtypes(exclude=[int, float])
-        other_mismatch_mask = np.any(other_df != transformed_other_df, axis=0)
+        other_mismatch_mask = np.any(
+            ~((other_df == transformed_other_df) | (other_df.isna() & transformed_other_df.isna())), axis=0
+        )
         other_mismatch = set(other_df.columns[other_mismatch_mask])
 
         mismatch_columns = num_mismatch | other_mismatch
@@ -530,7 +532,14 @@ class TSDataset:
 
             if hasattr(transform, "in_column"):
                 if (hasattr(transform, "inplace") and transform.inplace) or not hasattr(transform, "out_column"):
-                    expected_to_change.add(transform.in_column)
+                    if isinstance(transform.in_column, str):
+                        expected_to_change.add(transform.in_column)
+
+                    elif transform.in_column is not None:
+                        expected_to_change.update(transform.in_column)
+
+            if hasattr(transform, "out_column"):
+                expected_to_change.add(transform.out_column)
 
         removed_features -= set(ts.features)
 
