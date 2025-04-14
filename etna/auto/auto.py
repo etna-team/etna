@@ -8,6 +8,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+from typing import cast
 
 import optuna
 import pandas as pd
@@ -43,13 +44,17 @@ from etna.pipeline.base import BasePipeline
 
 
 class _Callback(Protocol):
-    def __call__(self, metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame) -> None:
-        ...
+    def __call__(  # noqa: E704
+        self,
+        metrics_df: pd.DataFrame,
+        forecast_ts_list: List[TSDataset],
+        fold_info_df: pd.DataFrame,
+        pipelines: List[BasePipeline],
+    ) -> None: ...
 
 
 class _Initializer(Protocol):
-    def __call__(self, pipeline: BasePipeline) -> None:
-        ...
+    def __call__(self, pipeline: BasePipeline) -> None: ...  # noqa: E704
 
 
 class AutoAbstract(ABC):
@@ -477,10 +482,23 @@ class Auto(AutoBase):
             if initializer is not None:
                 initializer(pipeline=pipeline)
 
-            metrics_df, forecast_df, fold_info_df = pipeline.backtest(ts, metrics=metrics, **backtest_params)
+            backtest_result = pipeline.backtest(ts, metrics=metrics, **backtest_params)
+            metrics_df = backtest_result["metrics"]
+            metrics_df = cast(pd.DataFrame, metrics_df)
+            forecast_ts_list = backtest_result["forecasts"]
+            forecast_ts_list = cast(List[TSDataset], forecast_ts_list)
+            fold_info_df = backtest_result["fold_info"]
+            fold_info_df = cast(pd.DataFrame, fold_info_df)
+            pipelines = backtest_result["pipelines"]
+            pipelines = cast(List[BasePipeline], pipelines)
 
             if callback is not None:
-                callback(metrics_df=metrics_df, forecast_df=forecast_df, fold_info_df=fold_info_df)
+                callback(
+                    metrics_df=metrics_df,
+                    forecast_ts_list=forecast_ts_list,
+                    fold_info_df=fold_info_df,
+                    pipelines=pipelines,
+                )
 
             aggregated_metrics = aggregate_metrics_df(metrics_df)
 
@@ -802,12 +820,23 @@ class Tune(AutoBase):
                 if initializer is not None:
                     initializer(pipeline=pipeline_trial_params)
 
-                metrics_df, forecast_df, fold_info_df = pipeline_trial_params.backtest(
-                    ts, metrics=metrics, **backtest_params
-                )
+                backtest_result = pipeline_trial_params.backtest(ts, metrics=metrics, **backtest_params)
+                metrics_df = backtest_result["metrics"]
+                metrics_df = cast(pd.DataFrame, metrics_df)
+                forecast_ts_list = backtest_result["forecasts"]
+                forecast_ts_list = cast(List[TSDataset], forecast_ts_list)
+                fold_info_df = backtest_result["fold_info"]
+                fold_info_df = cast(pd.DataFrame, fold_info_df)
+                pipelines = backtest_result["pipelines"]
+                pipelines = cast(List[BasePipeline], pipelines)
 
                 if callback is not None:
-                    callback(metrics_df=metrics_df, forecast_df=forecast_df, fold_info_df=fold_info_df)
+                    callback(
+                        metrics_df=metrics_df,
+                        forecast_ts_list=forecast_ts_list,
+                        fold_info_df=fold_info_df,
+                        pipelines=pipelines,
+                    )
 
                 trial.set_user_attr("hash", config_hash(pipeline_trial_params.to_dict()))
 

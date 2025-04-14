@@ -99,7 +99,7 @@ def test_backtest(simple_ar_ts):
         in_column="target", change_points_model=change_points_model, out_column=OUT_COLUMN
     )
     pipeline = Pipeline(model=model, transforms=[bs], horizon=horizon)
-    _, _, _ = pipeline.backtest(ts=simple_ar_ts, metrics=[SMAPE()], n_folds=3)
+    _ = pipeline.backtest(ts=simple_ar_ts, metrics=[SMAPE()], n_folds=3)
 
 
 # issue with assert on pandas==1.2 and pandas==1.3

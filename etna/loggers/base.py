@@ -4,6 +4,7 @@ from contextlib import contextmanager
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Union
 
 import pandas as pd
@@ -39,7 +40,7 @@ class BaseLogger(ABC, BaseMixin):
 
     @abstractmethod
     def log_backtest_metrics(
-        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_ts_list: List["TSDataset"], fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
@@ -50,8 +51,8 @@ class BaseLogger(ABC, BaseMixin):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
-        forecast_df:
-            Forecast from backtest
+        forecast_ts_list:
+            List of TSDataset with forecast for each fold from backtest
         fold_info_df:
             Fold information from backtest
         """
@@ -126,7 +127,7 @@ class _Logger(BaseLogger):
             logger.log(msg, **kwargs)
 
     def log_backtest_metrics(
-        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_ts_list: List["TSDataset"], fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
@@ -137,13 +138,13 @@ class _Logger(BaseLogger):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
-        forecast_df:
-            Forecast from backtest
+        forecast_ts_list:
+            List of TSDataset with forecast for each fold from backtest
         fold_info_df:
             Fold information from backtest
         """
         for logger in self.loggers:
-            logger.log_backtest_metrics(ts, metrics_df, forecast_df, fold_info_df)
+            logger.log_backtest_metrics(ts, metrics_df, forecast_ts_list, fold_info_df)
 
     def log_backtest_run(self, metrics: pd.DataFrame, forecast: pd.DataFrame, test: pd.DataFrame):
         """
