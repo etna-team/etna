@@ -44,6 +44,7 @@ def get_residuals(forecast_ts_list: List["TSDataset"], ts: "TSDataset") -> "TSDa
     # remove target components
     ts_copy = deepcopy(ts)
     ts_copy.drop_target_components()
+    ts_copy.drop_prediction_intervals()
 
     # find the residuals
     true_df = ts_copy[forecast_df.index, :, :]

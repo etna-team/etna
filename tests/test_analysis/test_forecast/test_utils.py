@@ -7,6 +7,7 @@ from etna.analysis.forecast.utils import _get_existing_intervals
 from etna.analysis.forecast.utils import _select_prediction_intervals_names
 from etna.analysis.forecast.utils import _validate_intersecting_folds
 from etna.datasets import TSDataset
+from etna.datasets import generate_ar_df
 
 
 @pytest.fixture
@@ -51,6 +52,16 @@ def residuals_with_components(residuals):
 
 
 @pytest.fixture
+def residuals_with_intervals(residuals):
+    residuals_df, forecast_df, ts = residuals
+    intervals = generate_ar_df(periods=100, n_segments=2, start_time="2020-01-01", freq=pd.offsets.Day())
+    intervals.rename(columns={"target": "target_0.025"}, inplace=True)
+    intervals_wide = TSDataset.to_dataset(intervals)
+    ts.add_prediction_intervals(intervals_wide)
+    return residuals_df, forecast_df, ts
+
+
+@pytest.fixture
 def dataset_dict(toy_dataset_equal_targets_and_quantiles):
     return {"1": toy_dataset_equal_targets_and_quantiles}
 
@@ -67,6 +78,14 @@ def test_get_residuals_with_components(residuals_with_components):
     residuals_df, forecast_ts_list, ts = residuals_with_components
     actual_residuals = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts)
     assert actual_residuals.to_pandas().equals(residuals_df)
+
+
+def test_get_residuals_with_invervals(residuals_with_intervals):
+    """Test that get_residuals deletes prediction intervals."""
+    residuals_df, forecast_ts_list, ts = residuals_with_intervals
+    actual_residuals = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts)
+    assert "target_0.025" not in actual_residuals.features
+    assert "target_0.025" not in actual_residuals.prediction_intervals_names
 
 
 def test_get_residuals_not_matching_lengths(residuals):
