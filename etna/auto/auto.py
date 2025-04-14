@@ -44,7 +44,7 @@ from etna.pipeline.base import BasePipeline
 
 
 class _Callback(Protocol):
-    def __call__(
+    def __call__(  # noqa: E704
         self,
         metrics_df: pd.DataFrame,
         forecast_ts_list: List[TSDataset],
@@ -54,7 +54,7 @@ class _Callback(Protocol):
 
 
 class _Initializer(Protocol):
-    def __call__(self, pipeline: BasePipeline) -> None: ...
+    def __call__(self, pipeline: BasePipeline) -> None: ...  # noqa: E704
 
 
 class AutoAbstract(ABC):
