@@ -82,6 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix typing for `dtype` parameter of `Chronos`-based models ([#623](https://github.com/etna-team/etna/pull/623))
 - Fix `No space left on device error` during building docker images ([#632](https://github.com/etna-team/etna/pull/632))
 - Fix error with `repr` of `DeepStateModel` and `LevelTrendSSM` ([#642](https://github.com/etna-team/etna/pull/642))
+- Fix `get_residuals` to drop prediction intervals ([#645](https://github.com/etna-team/etna/pull/645))
 
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
