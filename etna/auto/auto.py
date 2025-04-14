@@ -50,13 +50,11 @@ class _Callback(Protocol):
         forecast_ts_list: List[TSDataset],
         fold_info_df: pd.DataFrame,
         pipelines: List[BasePipeline],
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class _Initializer(Protocol):
-    def __call__(self, pipeline: BasePipeline) -> None:
-        ...
+    def __call__(self, pipeline: BasePipeline) -> None: ...
 
 
 class AutoAbstract(ABC):

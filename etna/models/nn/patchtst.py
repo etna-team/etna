@@ -29,7 +29,6 @@ class PatchTSTBatch(TypedDict):
 
 
 class PositionalEncoding(nn.Module):
-
     """Positional encoding of tokens and reshaping."""
 
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 5000):

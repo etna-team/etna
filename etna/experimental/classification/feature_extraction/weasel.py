@@ -169,7 +169,7 @@ class CustomWEASEL(WEASEL):
         window_sizes, window_steps = self._check_params(self._min_series_len)
         self._padding_expected_len = max(window_sizes)
 
-        for (window_size, window_step) in zip(window_sizes, window_steps):
+        for window_size, window_step in zip(window_sizes, window_steps):
             x_windowed, y_windowed, n_windows_per_sample_cum = self._windowed_view(
                 x=x, y=y, window_size=window_size, window_step=window_step
             )
@@ -229,7 +229,7 @@ class CustomWEASEL(WEASEL):
 
         x_features = coo_matrix((n_samples, 0), dtype=np.int64)
 
-        for (window_size, window_step, sfa, vectorizer, relevant_features) in zip(
+        for window_size, window_step, sfa, vectorizer, relevant_features in zip(
             window_sizes, window_steps, self._sfa_list, self._vectorizer_list, self._relevant_features_list
         ):
             x_windowed, _, n_windows_per_sample_cum = self._windowed_view(
