@@ -361,15 +361,15 @@ def plot_backtest(
                 color="skyblue",
             )
 
-            # plot legend
-            if fold_number == fold_numbers.iloc[-1]:
-                legend_handles = [
-                    Line2D([0], [0], marker="o", color=color, label=label) for label, color in lines_colors.items()
-                ]
-                ax[i].legend(handles=legend_handles)
+    # add title and legend
+    for i, segment in enumerate(segments):
+        legend_handles = [
+            Line2D([0], [0], marker="o", color=color, label=label) for label, color in lines_colors.items()
+        ]
+        ax[i].legend(handles=legend_handles)
 
-                ax[i].set_title(segment)
-                ax[i].tick_params("x", rotation=45)
+        ax[i].set_title(segment)
+        ax[i].tick_params("x", rotation=45)
 
 
 def plot_backtest_interactive(
@@ -614,7 +614,7 @@ def plot_residuals(
     _, ax = _prepare_axes(num_plots=len(segments), columns_num=columns_num, figsize=figsize)
 
     fold_numbers = pd.concat(
-        [pd.Series(i, index=forecast_ts_list[i].timestamps) for i in range(len(forecast_ts_list))], axis=0
+        [pd.Series(i, index=forecast_ts.timestamps) for i, forecast_ts in enumerate(forecast_ts_list)], axis=0
     )
 
     ts_copy = deepcopy(ts)

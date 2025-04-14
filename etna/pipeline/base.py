@@ -326,7 +326,7 @@ class AbstractPipeline(AbstractSaveable):
         stride: Optional[int] = None,
         joblib_params: Optional[Dict[str, Any]] = None,
         forecast_params: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Union[pd.DataFrame, List[TSDataset], pd.DataFrame, List["BasePipeline"]]]:
+    ) -> Dict[str, Union[pd.DataFrame, List[TSDataset], List["BasePipeline"]]]:
         """Run backtest with the pipeline.
 
         If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
