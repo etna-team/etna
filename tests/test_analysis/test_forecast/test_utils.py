@@ -31,7 +31,7 @@ def residuals():
         TSDataset(df=forecast_df.loc[df["timestamp"] >= timestamp[55]], freq=pd.offsets.Day()),
     ]
 
-    residuals_df = ts[timestamp[10:], :, :]
+    residuals_df = ts[ts.timestamps[10:], :, :]
     residuals_df.loc[:, pd.IndexSlice["segment_0", "target"]] += 1
     residuals_df.loc[:, pd.IndexSlice["segment_1", "target"]] -= 1
 
@@ -86,6 +86,7 @@ def test_get_residuals_with_invervals(residuals_with_intervals):
     actual_residuals = get_residuals(forecast_ts_list=forecast_ts_list, ts=ts)
     assert "target_0.025" not in actual_residuals.features
     assert "target_0.025" not in actual_residuals.prediction_intervals_names
+    pd.testing.assert_frame_equal(actual_residuals._df, residuals_df)
 
 
 def test_get_residuals_not_matching_lengths(residuals):
