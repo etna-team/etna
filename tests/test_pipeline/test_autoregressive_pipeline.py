@@ -41,6 +41,40 @@ from tests.test_pipeline.utils import assert_pipeline_predicts
 DEFAULT_METRICS = [MAE(mode=MetricAggregationMode.per_segment)]
 
 
+def test_forecast_additional_columns_warning(example_tsds):
+    transform = LagTransform(lags=[3, 4], in_column="target")
+    transformed_ts = transform.fit_transform(ts=example_tsds)
+
+    pipeline = AutoRegressivePipeline(
+        model=LinearPerSegmentModel(), transforms=[LagTransform(lags=[5, 6], in_column="target")], horizon=2
+    )
+    pipeline.fit(transformed_ts)
+
+    # different behavior to Pipeline, but results in the same error.
+    with pytest.raises(KeyError, match=".* not in index"):
+        _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
+@pytest.mark.parametrize(
+    "ts_name,feature",
+    (
+        ("example_tsds", "target"),  # different behavior to Pipeline, modifications in target are preserved.
+        ("outliers_tsds_without_missing", "exog"),  # different behavior to Pipeline, modifications in exog are ignored.
+    ),
+)
+def test_forecast_prior_modifications(ts_name, feature, request, example_tsds):
+    ts = request.getfixturevalue(ts_name)
+    transform = AddConstTransform(value=1000, in_column=feature)
+    transformed_ts = transform.fit_transform(ts=ts)
+
+    pipeline = AutoRegressivePipeline(
+        model=LinearPerSegmentModel(), transforms=[LagTransform(lags=[5, 6], in_column="target")], horizon=2
+    )
+    pipeline.fit(transformed_ts)
+
+    _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
 @pytest.mark.parametrize("save_ts", [False, True])
 def test_fit(example_tsds, save_ts):
     """Test that AutoRegressivePipeline pipeline makes fit without failing."""

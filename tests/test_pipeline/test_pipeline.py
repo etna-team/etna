@@ -334,7 +334,35 @@ def test_forecast_prediction_interval_not_builtin_with_nans_warning(example_tsds
         _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
 
 
+def test_forecast_additional_columns_warning(example_tsds):
+    transform = LagTransform(lags=[3, 4], in_column="target")
+    transformed_ts = transform.fit_transform(ts=example_tsds)
+
+    pipeline = Pipeline(
+        model=MovingAverageModel(), transforms=[LagTransform(lags=[5, 6], in_column="target")], horizon=2
+    )
+    pipeline.fit(transformed_ts)
+    with pytest.warns(UserWarning, match="Some columns were not preserved"):
+        _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
+@pytest.mark.parametrize("ts_name,feature", (("example_tsds", "target"), ("outliers_tsds_without_missing", "exog")))
+def test_forecast_prior_modifications_warning(ts_name, feature, request, example_tsds):
+    ts = request.getfixturevalue(ts_name)
+    transform = AddConstTransform(value=1000, in_column=feature)
+    transformed_ts = transform.fit_transform(ts=ts)
+
+    pipeline = Pipeline(
+        model=LinearPerSegmentModel(), transforms=[LagTransform(lags=[5, 6], in_column="target")], horizon=2
+    )
+    pipeline.fit(transformed_ts)
+
+    with pytest.warns(UserWarning, match="Some columns modifications would not be preserved"):
+        _ = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])
+
+
 @pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
+@pytest.mark.filterwarnings("ignore: Some columns modifications would not be preserved")
 @pytest.mark.parametrize("model", (MovingAverageModel(), LinearPerSegmentModel()))
 def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, model):
     example_tsds._df.loc[example_tsds.timestamps[-20:-1], pd.IndexSlice["segment_1", "target"]] = None
@@ -348,6 +376,7 @@ def test_forecast_prediction_interval_not_builtin_with_nans_error(example_tsds, 
 
 
 @pytest.mark.filterwarnings("ignore: There are NaNs in target on time span from .* to .*")
+@pytest.mark.filterwarnings("ignore: Some columns modifications would not be preserved")
 @pytest.mark.parametrize("model", (MovingAverageModel(),))
 @pytest.mark.parametrize("stride", (1, 4, 6))
 def test_add_forecast_borders_overlapping_timestamps(example_tsds, model, stride):

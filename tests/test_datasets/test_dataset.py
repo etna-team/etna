@@ -1095,6 +1095,26 @@ def test_make_future_raise_error_on_diff_endings(ts_diff_endings):
         ts_diff_endings.make_future(10)
 
 
+def test_make_future_additional_columns_warning(example_tsds):
+    transform = LagTransform(lags=[3, 4], in_column="target")
+    transformed_ts = transform.fit_transform(ts=example_tsds)
+    with pytest.warns(UserWarning, match="Some columns were not preserved"):
+        _ = transformed_ts.make_future(2)
+
+
+def test_make_future_with_added_columns(example_tsds):
+    transform = LagTransform(lags=[3, 4], in_column="target")
+    transformed_ts = transform.fit_transform(ts=example_tsds)
+    transformed_ts.make_future(2, transforms=[transform])
+
+
+def test_make_future_modified_columns_warning(example_tsds):
+    transform = AddConstTransform(value=1, in_column="target")
+    transformed_ts = transform.fit_transform(ts=example_tsds)
+    with pytest.warns(UserWarning, match="Some columns modifications would not"):
+        _ = transformed_ts.make_future(2)
+
+
 def test_make_future_with_imputer(ts_diff_endings, ts_future):
     imputer = TimeSeriesImputerTransform(in_column="target")
     ts_diff_endings.fit_transform([imputer])
