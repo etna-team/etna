@@ -16,25 +16,8 @@ from etna.models import StatsForecastAutoThetaModel
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
-
-
-def _check_forecast(ts, model, horizon):
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == horizon * 2
-
-
-def _check_predict(ts, model):
-    model.fit(ts)
-    res = model.predict(ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == len(ts.timestamps) * 2
+from tests.test_models.utils import check_forecast_context_ignorant
+from tests.test_models.utils import check_predict_context_ignorant
 
 
 @pytest.mark.parametrize(
@@ -187,8 +170,8 @@ def test_predict_future_fail(model, example_tsds):
 @pytest.mark.parametrize("ts_name", ["example_tsds", "example_reg_tsds", "ts_with_external_timestamp"])
 def test_prediction(model, ts_name, request):
     ts = request.getfixturevalue(ts_name)
-    _check_forecast(ts=deepcopy(ts), model=model, horizon=7)
-    _check_predict(ts=deepcopy(ts), model=model)
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=model, horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=model)
 
 
 @pytest.mark.parametrize(

@@ -14,25 +14,8 @@ from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
-
-
-def _check_forecast(ts, model, horizon):
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res["target"].isnull().values.any()
-    assert len(res) == horizon * 2
-
-
-def _check_predict(ts, model):
-    model.fit(ts)
-    res = model.predict(ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res["target"].isnull().values.any()
-    assert len(res) == len(ts.timestamps) * 2
+from tests.test_models.utils import check_forecast_context_ignorant
+from tests.test_models.utils import check_predict_context_ignorant
 
 
 def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
@@ -87,31 +70,31 @@ def test_select_regressors_correctly_int_timestamp(example_reg_tsds_int_timestam
 @pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp", "ts_with_external_timestamp"])
 def test_prediction(ts_name, request):
     ts = request.getfixturevalue(ts_name)
-    _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
-    _check_predict(ts=deepcopy(ts), model=SARIMAXModel())
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=SARIMAXModel())
 
 
 def test_prediction_with_simple_differencing(example_tsds):
-    _check_forecast(ts=deepcopy(example_tsds), model=SARIMAXModel(simple_differencing=True), horizon=7)
-    _check_predict(ts=deepcopy(example_tsds), model=SARIMAXModel(simple_differencing=True))
+    check_forecast_context_ignorant(ts=deepcopy(example_tsds), model=SARIMAXModel(simple_differencing=True), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(example_tsds), model=SARIMAXModel(simple_differencing=True))
 
 
 @pytest.mark.parametrize("ts_name", ["example_reg_tsds", "example_reg_tsds_int_timestamp"])
 def test_prediction_with_reg(ts_name, request):
     ts = request.getfixturevalue(ts_name)
-    _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
-    _check_predict(ts=deepcopy(ts), model=SARIMAXModel())
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=SARIMAXModel())
 
 
 def test_prediction_with_reg_custom_order(example_reg_tsds):
-    _check_forecast(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)), horizon=7)
-    _check_predict(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)))
+    check_forecast_context_ignorant(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(example_reg_tsds), model=SARIMAXModel(order=(3, 1, 0)))
 
 
 def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
     ts = ts_with_short_regressor
     with pytest.raises(ValueError, match="Regressors .* contain NaN values"):
-        _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=20)
+        check_forecast_context_ignorant(ts=deepcopy(ts), model=SARIMAXModel(), horizon=20)
 
 
 @pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
