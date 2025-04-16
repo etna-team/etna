@@ -2,6 +2,7 @@ import sys
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Union
 
 import pandas as pd
@@ -49,7 +50,7 @@ class ConsoleLogger(BaseLogger):
         self.logger.patch(lambda r: r.update(**kwargs)).info(msg)  # type: ignore
 
     def log_backtest_metrics(
-        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_df: pd.DataFrame, fold_info_df: pd.DataFrame
+        self, ts: "TSDataset", metrics_df: pd.DataFrame, forecast_ts_list: List["TSDataset"], fold_info_df: pd.DataFrame
     ):
         """
         Write metrics to logger.
@@ -60,8 +61,8 @@ class ConsoleLogger(BaseLogger):
             TSDataset to with backtest data
         metrics_df:
             Dataframe produced with :py:meth:`etna.pipeline.Pipeline._get_backtest_metrics`
-        forecast_df:
-            Forecast from backtest
+        forecast_ts_list:
+            List of TSDataset with forecast for each fold from backtest
         fold_info_df:
             Fold information from backtest
 

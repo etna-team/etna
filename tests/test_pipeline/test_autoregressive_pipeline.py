@@ -271,18 +271,30 @@ def test_backtest_with_n_jobs(big_example_tsdf: TSDataset):
     ts2 = deepcopy(big_example_tsdf)
     pipeline_1 = deepcopy(pipeline)
     pipeline_2 = deepcopy(pipeline)
-    _, forecast_1, _ = pipeline_1.backtest(ts=ts1, n_jobs=1, metrics=DEFAULT_METRICS)
-    _, forecast_2, _ = pipeline_2.backtest(ts=ts2, n_jobs=3, metrics=DEFAULT_METRICS)
+
+    forecast_ts_list_1 = pipeline_1.backtest(ts=ts1, n_jobs=1, metrics=DEFAULT_METRICS)["forecasts"]
+
+    forecast_ts_list_2 = pipeline_2.backtest(ts=ts2, n_jobs=3, metrics=DEFAULT_METRICS)["forecasts"]
 
     # compare the results taking into account NaNs
-    assert forecast_1.equals(forecast_2)
+    for forecast_ts_1, forecast_ts_2 in zip(forecast_ts_list_1, forecast_ts_list_2):
+        pd.testing.assert_frame_equal(forecast_ts_1.to_pandas(), forecast_ts_2.to_pandas())
 
 
 def test_backtest_forecasts_sanity(step_ts: TSDataset):
     """Check that AutoRegressivePipeline.backtest gives correct forecasts according to the simple case."""
     ts, expected_metrics_df, expected_forecast_df = step_ts
     pipeline = AutoRegressivePipeline(model=NaiveModel(), horizon=5, step=1)
-    metrics_df, forecast_df, _ = pipeline.backtest(ts, metrics=[MAE()], n_folds=3)
+    backtest_result = pipeline.backtest(ts, metrics=[MAE()], n_folds=3)
+
+    metrics_df = backtest_result["metrics"]
+    forecast_ts_list = backtest_result["forecasts"]
+    forecast_df = pd.concat(
+        [
+            TSDataset.to_dataset(forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold))
+            for num_fold, forecast_ts in enumerate(forecast_ts_list)
+        ]
+    )
 
     assert np.all(metrics_df.reset_index(drop=True) == expected_metrics_df)
     assert np.all(forecast_df == expected_forecast_df)
@@ -292,7 +304,13 @@ def test_get_historical_forecasts_sanity(step_ts: TSDataset):
     """Check that AutoRegressivePipeline.get_historical_forecasts gives correct forecasts according to the simple case."""
     ts, expected_metrics_df, expected_forecast_df = step_ts
     pipeline = AutoRegressivePipeline(model=NaiveModel(), horizon=5, step=1)
-    forecast_df = pipeline.get_historical_forecasts(ts, n_folds=3)
+    forecast_ts_list = pipeline.get_historical_forecasts(ts, n_folds=3)
+    forecast_df = pd.concat(
+        [
+            TSDataset.to_dataset(forecast_ts.to_pandas(flatten=True).assign(fold_number=num_fold))
+            for num_fold, forecast_ts in enumerate(forecast_ts_list)
+        ]
+    )
 
     assert np.all(forecast_df == expected_forecast_df)
 

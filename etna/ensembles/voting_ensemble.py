@@ -120,7 +120,7 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         else:
             raise ValueError("Invalid format of weights is passed!")
 
-    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> pd.DataFrame:
+    def _backtest_pipeline(self, pipeline: BasePipeline, ts: TSDataset) -> List[TSDataset]:
         """Get forecasts from backtest for given pipeline."""
         forecasts = pipeline.get_historical_forecasts(ts=ts, n_folds=self.n_folds)
         return forecasts
@@ -130,21 +130,25 @@ class VotingEnsemble(EnsembleMixin, SaveEnsembleMixin, BasePipeline):
         if self.weights is None:
             weights = [1.0 for _ in range(len(self.pipelines))]
         elif self.weights == "auto":
-            forecasts = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
+            nested_forecast_ts_list = Parallel(n_jobs=self.n_jobs, **self.joblib_params)(
                 delayed(self._backtest_pipeline)(pipeline=pipeline, ts=ts) for pipeline in self.pipelines
             )
 
+            x_list = [
+                pd.concat(
+                    [forecast_ts._df.loc[:, pd.IndexSlice[:, "target"]] for forecast_ts in forecast_ts_list], axis=0
+                )
+                for forecast_ts_list in nested_forecast_ts_list
+            ]
+
             x = pd.concat(
-                [
-                    forecast.loc[:, pd.IndexSlice[:, "target"]].rename({"target": f"target_{i}"}, axis=1)
-                    for i, forecast in enumerate(forecasts)
-                ],
+                [x_i.rename({"target": f"target_{i}"}, axis=1) for i, x_i in enumerate(x_list)],
                 axis=1,
             )
             x = pd.concat([x.loc[:, segment] for segment in ts.segments], axis=0)
 
             y = pd.concat(
-                [ts[forecasts[0].index.min() : forecasts[0].index.max(), segment, "target"] for segment in ts.segments],
+                [ts[x.index.min() : x.index.max(), segment, "target"] for segment in ts.segments],
                 axis=0,
             )
 

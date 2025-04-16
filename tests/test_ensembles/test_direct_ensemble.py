@@ -20,6 +20,7 @@ from etna.reconciliation import TopDownReconciliator
 from etna.transforms import DateFlagsTransform
 from etna.transforms import LagTransform
 from etna.transforms import StandardScalerTransform
+from tests.test_ensembles.utils import check_backtest_return_type
 from tests.test_pipeline.utils import assert_pipeline_equals_loaded_original
 from tests.test_pipeline.utils import assert_pipeline_forecast_raise_error_if_no_ts
 from tests.test_pipeline.utils import assert_pipeline_forecasts_given_ts
@@ -310,8 +311,7 @@ def test_params_to_tune(pipelines, expected_params_to_tune):
 @pytest.mark.parametrize("n_jobs", (1, 5))
 def test_backtest(direct_ensemble_pipeline, example_tsds, n_jobs: int):
     results = direct_ensemble_pipeline.backtest(ts=example_tsds, metrics=[MAE()], n_jobs=n_jobs, n_folds=3)
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, DirectEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -321,8 +321,7 @@ def test_backtest_hierarchical_pipeline(
     results = direct_ensemble_hierarchical_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, DirectEnsemble)
 
 
 @pytest.mark.parametrize("n_jobs", (1, 5))
@@ -332,5 +331,4 @@ def test_backtest_mix_pipeline(
     results = direct_ensemble_mix_pipeline.backtest(
         ts=product_level_simple_hierarchical_ts_long_history, metrics=[MAE()], n_jobs=n_jobs, n_folds=3
     )
-    for df in results:
-        assert isinstance(df, pd.DataFrame)
+    check_backtest_return_type(results, DirectEnsemble)
