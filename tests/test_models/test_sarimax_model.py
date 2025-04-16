@@ -84,7 +84,7 @@ def test_select_regressors_correctly_int_timestamp(example_reg_tsds_int_timestam
         pd.testing.assert_frame_equal(segment_regressors, segment_regressors_expected)
 
 
-@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp", "ts_with_external_timestamp"])
 def test_prediction(ts_name, request):
     ts = request.getfixturevalue(ts_name)
     _check_forecast(ts=deepcopy(ts), model=SARIMAXModel(), horizon=7)
