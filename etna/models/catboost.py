@@ -38,7 +38,20 @@ class _CatBoostAdapter(BaseAdapter):
             l2_leaf_reg=l2_leaf_reg,
             **kwargs,
         )
+        self.regressor_columns: Optional[List[str]] = None
         self._categorical = None
+
+    def _select_regressors(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Select data with regressors."""
+        if self.regressor_columns is None:
+            raise ValueError("Something went wrong, regressor_columns is None!")
+
+        if self.regressor_columns:
+            result = df[self.regressor_columns]
+        else:
+            raise ValueError("There are not features for fitting the model!")
+
+        return result
 
     def _prepare_float_category_columns(self, df: pd.DataFrame):
         df[self._float_category_columns] = df[self._float_category_columns].astype(str).astype("category")
@@ -79,8 +92,9 @@ class _CatBoostAdapter(BaseAdapter):
         :
             Fitted model
         """
+        self.regressor_columns = regressors
         df = df.sort_values(by="timestamp")
-        features = df.drop(columns=["timestamp", "target"])
+        features = self._select_regressors(df)
         target = df["target"]
         train_pool = self._prepare_pool(features, target.values)
         self.model.fit(train_pool)
@@ -100,7 +114,7 @@ class _CatBoostAdapter(BaseAdapter):
         :
             Array with predictions
         """
-        features = df.drop(columns=["timestamp", "target"])
+        features = self._select_regressors(df)
         self._prepare_float_category_columns(features)
         predict_pool = Pool(features, cat_features=self._categorical)
         pred = self.model.predict(predict_pool)
@@ -144,7 +158,7 @@ class _CatBoostAdapter(BaseAdapter):
         :
             dataframe with prediction components
         """
-        features = df.drop(columns=["timestamp", "target"])
+        features = self._select_regressors(df)
         self._prepare_float_category_columns(features)
         predict_pool = Pool(features, cat_features=self._categorical)
         prediction = self.model.predict(predict_pool)
