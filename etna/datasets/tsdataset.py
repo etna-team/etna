@@ -1752,7 +1752,7 @@ class TSDataset:
         num_timestamps = df.shape[0]
         not_na = ~np.isnan(df.values)
         min_idx = np.argmax(not_na, axis=0)
-        max_idx = num_timestamps - np.argmax(not_na[::-1, :], axis=0) - 1
+        max_idx = np.ones(len(segments), dtype=int) * num_timestamps - 1
 
         segments_dict = {}
         segments_dict["start_timestamp"] = df.index[min_idx].to_series(index=segments)
@@ -1778,7 +1778,7 @@ class TSDataset:
 
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
 
-        * end_timestamp: ending of the segment, missing values in the ending are ignored
+        * end_timestamp: ending of the segment
 
         * length: length according to ``start_timestamp`` and ``end_timestamp``
 
@@ -1880,7 +1880,7 @@ class TSDataset:
 
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
 
-        * end_timestamp: ending of the segment, missing values in the ending are ignored
+        * end_timestamp: ending of the segment
 
         * length: length according to ``start_timestamp`` and ``end_timestamp``
 
