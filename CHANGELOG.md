@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change signature `plot_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Change signature `get_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Change signature `log_backtest_metrics`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
--
+- **Breaking:** Prohibit `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` from using non-regressors ([#654](https://github.com/etna-team/etna/pull/654))
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))

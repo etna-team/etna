@@ -10,6 +10,7 @@ from etna.models import ProphetModel
 from etna.pipeline import Pipeline
 from etna.transforms import FourierDecomposeTransform
 from etna.transforms import IForestOutlierTransform
+from etna.transforms import LagTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
@@ -250,12 +251,18 @@ def test_simple_pipeline_backtest(ts_with_exogs, in_column, horizon):
     ),
 )
 @pytest.mark.parametrize("k", (1, 5, 10, 40, 51))
-@pytest.mark.parametrize("forecast_model", (ProphetModel(), CatBoostPerSegmentModel(iterations=10)))
-def test_pipeline_parameter_k(ts_name, in_column, forecast_model, k, request):
+@pytest.mark.parametrize(
+    "forecast_model, forecast_transforms",
+    [
+        (ProphetModel(), []),
+        (CatBoostPerSegmentModel(iterations=10), [LagTransform(in_column="target", lags=[3, 4, 5])]),
+    ],
+)
+def test_pipeline_parameter_k(ts_name, in_column, forecast_model, forecast_transforms, k, request):
     ts = request.getfixturevalue(ts_name)
 
     pipeline = Pipeline(
-        transforms=[FourierDecomposeTransform(k=5, in_column=in_column)],
+        transforms=forecast_transforms + [FourierDecomposeTransform(k=5, in_column=in_column)],
         model=forecast_model,
         horizon=3,
     )

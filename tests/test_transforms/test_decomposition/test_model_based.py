@@ -15,6 +15,7 @@ from etna.models import SimpleExpSmoothingModel
 from etna.models import TBATSModel
 from etna.pipeline import Pipeline
 from etna.transforms import IForestOutlierTransform
+from etna.transforms import LagTransform
 from etna.transforms import ModelDecomposeTransform
 from etna.transforms import TimeSeriesImputerTransform
 
@@ -235,12 +236,19 @@ def test_simple_pipeline_backtest(ts_with_exogs, in_column, horizon):
         ProphetModel(),
     ),
 )
-@pytest.mark.parametrize("forecast_model", (HoltWintersModel(), ProphetModel(), CatBoostPerSegmentModel(iterations=10)))
-def test_pipeline_models(ts_name, in_column, decompose_model, forecast_model, request):
+@pytest.mark.parametrize(
+    "forecast_model, forecast_transforms",
+    [
+        (HoltWintersModel(), []),
+        (ProphetModel(), []),
+        (CatBoostPerSegmentModel(iterations=10), [LagTransform(in_column="target", lags=[3, 4, 5])]),
+    ],
+)
+def test_pipeline_models(ts_name, in_column, decompose_model, forecast_model, forecast_transforms, request):
     ts = request.getfixturevalue(ts_name)
 
     pipeline = Pipeline(
-        transforms=[ModelDecomposeTransform(model=decompose_model, in_column=in_column)],
+        transforms=forecast_transforms + [ModelDecomposeTransform(model=decompose_model, in_column=in_column)],
         model=forecast_model,
         horizon=3,
     )
