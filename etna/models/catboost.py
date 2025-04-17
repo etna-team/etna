@@ -199,6 +199,10 @@ class CatBoostPerSegmentModel(
 ):
     """Class for holding per segment Catboost model.
 
+    This is a per-segment wrapper for :py:class:`catboost.CatBoostRegressor` model.
+    Model uses only regressors as features (non-regressor features are ignored).
+    Features with dtype "category" are used as ``cat_features`` parameter during creation of :py:class:`catboost.Pool`.
+
     Examples
     --------
     >>> from etna.datasets import generate_periodic_df
@@ -339,6 +343,10 @@ class CatBoostMultiSegmentModel(
     NonPredictionIntervalContextIgnorantAbstractModel,
 ):
     """Class for holding Catboost model for all segments.
+
+    This is a multi-segment wrapper for :py:class:`catboost.CatBoostRegressor` model.
+    Model uses only regressors as features (non-regressor features are ignored).
+    Features with dtype "category" are used as ``cat_features`` parameter during creation of :py:class:`catboost.Pool`.
 
     Examples
     --------
