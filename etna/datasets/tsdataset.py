@@ -1914,10 +1914,11 @@ class TSDataset:
         num_regressors: 1
         num_known_future: 1
         freq: D
-                  start_timestamp end_timestamp  length  num_missing
+        end_timestamp: 2021-06-30 00:00:00
+                  start_timestamp  length  num_missing
         segments
-        segment_0      2021-06-01    2021-06-30      30            0
-        segment_1      2021-06-01    2021-06-30      30            0
+        segment_0      2021-06-01      30            0
+        segment_1      2021-06-01      30            0
         """
         if segments is None:
             segments = self.segments
