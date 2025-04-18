@@ -1036,3 +1036,4 @@ class BasePipeline(BaseMixin, AbstractSaveable):
         :
             Grid with hyperparameters.
         """
+        pass
