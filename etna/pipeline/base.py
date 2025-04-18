@@ -20,6 +20,7 @@ import pandas as pd
 from joblib import Parallel
 from joblib import delayed
 from scipy.stats import norm
+from typing_extensions import Self
 from typing_extensions import TypedDict
 from typing_extensions import assert_never
 
@@ -207,178 +208,6 @@ class FoldMask(BaseMixin):
             raise ValueError(f"Last target timestamp should be not later than {dataset_horizon_border_timestamp}!")
 
 
-class AbstractPipeline(AbstractSaveable):
-    """Interface for pipeline."""
-
-    @abstractmethod
-    def fit(self, ts: TSDataset, save_ts: bool = True) -> "AbstractPipeline":
-        """Fit the Pipeline.
-
-        Parameters
-        ----------
-        ts:
-            Dataset with timeseries data
-        save_ts:
-            Will ``ts`` be saved in the pipeline during ``fit``.
-
-        Returns
-        -------
-        :
-            Fitted Pipeline instance
-        """
-        pass
-
-    @abstractmethod
-    def forecast(
-        self,
-        ts: Optional[TSDataset] = None,
-        prediction_interval: bool = False,
-        quantiles: Sequence[float] = (0.025, 0.975),
-        n_folds: int = 3,
-        return_components: bool = False,
-    ) -> TSDataset:
-        """Make a forecast of the next points of a dataset.
-
-        The result of forecasting starts from the last point of ``ts``, not including it.
-
-        Parameters
-        ----------
-        ts:
-            Dataset to forecast. If not given, dataset given during :py:meth:`fit` is used.
-        prediction_interval:
-            If True returns prediction interval for forecast
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval
-        n_folds:
-            Number of folds to use in the backtest for prediction interval estimation
-        return_components:
-            If True additionally returns forecast components
-
-        Returns
-        -------
-        :
-            Dataset with predictions
-        """
-        pass
-
-    @abstractmethod
-    def predict(
-        self,
-        ts: TSDataset,
-        start_timestamp: Union[pd.Timestamp, int, str, None] = None,
-        end_timestamp: Union[pd.Timestamp, int, str, None] = None,
-        prediction_interval: bool = False,
-        quantiles: Sequence[float] = (0.025, 0.975),
-        return_components: bool = False,
-    ) -> TSDataset:
-        """Make in-sample predictions on dataset in a given range.
-
-        Currently, in situation when segments start with different timestamps
-        we only guarantee to work with ``start_timestamp`` >= beginning of all segments.
-
-        Parameters ``start_timestamp`` and ``end_timestamp`` of type ``str`` are converted into ``pd.Timestamp``.
-
-        Parameters
-        ----------
-        ts:
-            Dataset to make predictions on.
-        start_timestamp:
-            First timestamp of prediction range to return, should be >= than first timestamp in ``ts``;
-            expected that beginning of each segment <= ``start_timestamp``;
-            if isn't set the first timestamp where each segment began is taken.
-        end_timestamp:
-            Last timestamp of prediction range to return; if isn't set the last timestamp of ``ts`` is taken.
-            Expected that value is less or equal to the last timestamp in ``ts``.
-        prediction_interval:
-            If True returns prediction interval for forecast.
-        quantiles:
-            Levels of prediction distribution. By default 2.5% and 97.5% taken to form a 95% prediction interval.
-        return_components:
-            If True additionally returns forecast components
-
-        Returns
-        -------
-        :
-            Dataset with predictions in ``[start_timestamp, end_timestamp]`` range.
-
-        Raises
-        ------
-        ValueError:
-            Incorrect type of ``start_timestamp`` or ``end_timestamp`` is used according to ``ts.freq``
-        ValueError:
-            Value of ``end_timestamp`` is less than ``start_timestamp``.
-        ValueError:
-            Value of ``start_timestamp`` goes before point where each segment started.
-        ValueError:
-            Value of ``end_timestamp`` goes after the last timestamp.
-        """
-
-    @abstractmethod
-    def backtest(
-        self,
-        ts: TSDataset,
-        metrics: List[Metric],
-        n_folds: Union[int, List[FoldMask]] = 5,
-        mode: Optional[str] = None,
-        aggregate_metrics: bool = False,
-        n_jobs: int = 1,
-        refit: Union[bool, int] = True,
-        stride: Optional[int] = None,
-        joblib_params: Optional[Dict[str, Any]] = None,
-        forecast_params: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Union[pd.DataFrame, List[TSDataset], List["BasePipeline"]]]:
-        """Run backtest with the pipeline.
-
-        If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
-
-        Parameters
-        ----------
-        ts:
-            Dataset to fit models in backtest
-        metrics:
-            List of metrics to compute for each fold
-        n_folds:
-            Number of folds or the list of fold masks
-        mode:
-            Train generation policy: 'expand' or 'constant'. Works only if ``n_folds`` is integer.
-            By default, is set to 'expand'.
-        aggregate_metrics:
-            If True aggregate metrics above folds, return raw metrics otherwise
-        n_jobs:
-            Number of jobs to run in parallel
-        refit:
-            Determines how often pipeline should be retrained during iteration over folds.
-
-            * If ``True``: pipeline is retrained on each fold.
-
-            * If ``False``: pipeline is trained only on the first fold.
-
-            * If ``value: int``: pipeline is trained every ``value`` folds starting from the first.
-
-        stride:
-            Number of points between folds. Works only if ``n_folds`` is integer. By default, is set to ``horizon``.
-        joblib_params:
-            Additional parameters for :py:class:`joblib.Parallel`
-        forecast_params:
-            Additional parameters for :py:func:`~etna.pipeline.base.BasePipeline.forecast`
-
-        Returns
-        -------
-        metrics_df, forecast_df, fold_info_df:
-            Metrics dataframe, forecast dataframe and dataframe with information about folds
-        """
-
-    @abstractmethod
-    def params_to_tune(self) -> Dict[str, BaseDistribution]:
-        """Get hyperparameter grid to tune.
-
-        Returns
-        -------
-        :
-            Grid with hyperparameters.
-        """
-
-
 class FoldParallelGroup(TypedDict):
     """Group for parallel fold processing."""
 
@@ -411,7 +240,7 @@ class _DummyMetric(Metric):
         return metrics
 
 
-class BasePipeline(AbstractPipeline, BaseMixin):
+class BasePipeline(BaseMixin, AbstractSaveable):
     """Base class for pipeline."""
 
     def __init__(self, horizon: int):
@@ -426,6 +255,24 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         self._validate_horizon(horizon=horizon)
         self.horizon = horizon
         self.ts: Optional[TSDataset] = None
+
+    @abstractmethod
+    def fit(self, ts: TSDataset, save_ts: bool = True) -> "BasePipeline":
+        """Fit the Pipeline.
+
+        Parameters
+        ----------
+        ts:
+            Dataset with timeseries data
+        save_ts:
+            Will ``ts`` be saved in the pipeline during ``fit``.
+
+        Returns
+        -------
+        :
+            Fitted Pipeline instance
+        """
+        pass
 
     @staticmethod
     def _validate_horizon(horizon: int):
@@ -1020,7 +867,7 @@ class BasePipeline(AbstractPipeline, BaseMixin):
         stride: Optional[int] = None,
         joblib_params: Optional[Dict[str, Any]] = None,
         forecast_params: Optional[Dict[str, Any]] = None,
-    ) -> Dict[str, Union[pd.DataFrame, List[TSDataset], List["BasePipeline"]]]:
+    ) -> Dict[str, Union[pd.DataFrame, List[TSDataset], List[Self]]]:
         """Run backtest with the pipeline.
 
         If ``refit != True`` and some component of the pipeline doesn't support forecasting with gap, this component will raise an exception.
@@ -1179,3 +1026,13 @@ class BasePipeline(AbstractPipeline, BaseMixin):
             forecast_ts_list = cast(List[TSDataset], forecast_ts_list)
 
         return forecast_ts_list
+
+    @abstractmethod
+    def params_to_tune(self) -> Dict[str, BaseDistribution]:
+        """Get hyperparameter grid to tune.
+
+        Returns
+        -------
+        :
+            Grid with hyperparameters.
+        """
