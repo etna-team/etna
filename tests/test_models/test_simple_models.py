@@ -14,25 +14,8 @@ from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
-
-
-def _check_forecast(ts, model, horizon):
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon, tail_steps=model.context_size)
-    res = model.forecast(ts=future_ts, prediction_size=horizon)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == horizon * 2
-
-
-def _check_predict(ts, model, prediction_size):
-    model.fit(ts)
-    res = model.predict(ts, prediction_size=prediction_size)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == prediction_size * 2
+from tests.test_models.utils import check_forecast_context_required
+from tests.test_models.utils import check_predict_context_required
 
 
 @pytest.fixture()
@@ -86,12 +69,12 @@ def test_sma_model_fit_with_exogs_warning(example_reg_tsds):
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_forecast(simple_tsdf, model):
-    _check_forecast(ts=simple_tsdf, model=model(), horizon=7)
+    check_forecast_context_required(ts=simple_tsdf, model=model(), horizon=7)
 
 
 @pytest.mark.parametrize("model", [SeasonalMovingAverageModel, NaiveModel, MovingAverageModel])
 def test_sma_model_predict(simple_tsdf, model):
-    _check_predict(ts=simple_tsdf, model=model(), prediction_size=7)
+    check_predict_context_required(ts=simple_tsdf, model=model(), prediction_size=7)
 
 
 def test_sma_model_forecast_fail_not_enough_context(simple_tsdf):
@@ -212,12 +195,12 @@ def test_deadline_get_context_beginning_fail_not_enough_context(
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_forecast(simple_tsdf, model):
-    _check_forecast(ts=simple_tsdf, model=model(window=1), horizon=7)
+    check_forecast_context_required(ts=simple_tsdf, model=model(window=1), horizon=7)
 
 
 @pytest.mark.parametrize("model", [DeadlineMovingAverageModel])
 def test_deadline_model_predict(simple_tsdf, model):
-    _check_predict(ts=simple_tsdf, model=model(window=1), prediction_size=7)
+    check_predict_context_required(ts=simple_tsdf, model=model(window=1), prediction_size=7)
 
 
 def test_deadline_model_fit_fail_not_supported_freq():

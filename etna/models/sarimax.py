@@ -236,9 +236,12 @@ class _SARIMAXBaseAdapter(BaseAdapter):
                 "Try to lower horizon value, or drop these regressors."
             )
 
-        if self.regressor_columns:
+        regressor_columns_except_datetime = (
+            df[self.regressor_columns].select_dtypes(exclude="datetime").columns.to_list()
+        )
+        if regressor_columns_except_datetime:
             try:
-                result = df[self.regressor_columns].astype(float)
+                result = df[regressor_columns_except_datetime].astype(float)
             except ValueError as e:
                 raise ValueError(f"Only convertible to float features are allowed! Error: {str(e)}")
 
