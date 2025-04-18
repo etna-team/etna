@@ -1484,7 +1484,6 @@ def test_gather_common_data(ts_name, expected_answer, request):
     assert common_data["end_timestamp"] == pd.Timestamp("2021-02-01")
 
 
-
 def test_gather_segments_data(ts_info):
     """Check that TSDataset._gather_segments_data correctly finds segment data for info/describe methods."""
     segments_dict = ts_info._gather_segments_data(ts_info.segments)

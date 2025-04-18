@@ -1733,7 +1733,7 @@ class TSDataset:
             "num_regressors": len(self.regressors),
             "num_known_future": len(self.known_future),
             "freq": self.freq,
-            "end_timestamp": self.timestamps[-1]
+            "end_timestamp": self.timestamps[-1],
         }
 
         return common_dict
