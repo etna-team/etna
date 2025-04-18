@@ -81,9 +81,9 @@ class _StatsForecastBaseAdapter(BaseAdapter):
                 "Try to lower horizon value, or drop these regressors."
             )
 
-        regressor_columns_except_datetime = [
-            column for column in self.regressor_columns if not pd.api.types.is_datetime64_dtype(df[column])
-        ]
+        regressor_columns_except_datetime = (
+            df[self.regressor_columns].select_dtypes(exclude="datetime").columns.to_list()
+        )
         if regressor_columns_except_datetime:
             try:
                 result = df[regressor_columns_except_datetime].values.astype(float)

@@ -170,8 +170,8 @@ def test_predict_future_fail(model, example_tsds):
 @pytest.mark.parametrize("ts_name", ["example_tsds", "example_reg_tsds", "ts_with_external_timestamp"])
 def test_prediction(model, ts_name, request):
     ts = request.getfixturevalue(ts_name)
-    check_forecast_context_ignorant(ts=deepcopy(ts), model=model, horizon=7)
-    check_predict_context_ignorant(ts=deepcopy(ts), model=model)
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=deepcopy(model), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=deepcopy(model))
 
 
 @pytest.mark.parametrize(
