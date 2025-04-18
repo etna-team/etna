@@ -10,10 +10,10 @@ from lightning_fabric.utilities.seed import seed_everything
 
 from etna.datasets import TSDataset
 from etna.datasets.utils import timestamp_range
-from etna.pipeline.base import AbstractPipeline
+from etna.pipeline.base import BasePipeline
 
 
-def get_loaded_pipeline(pipeline: AbstractPipeline, ts: TSDataset = None) -> AbstractPipeline:
+def get_loaded_pipeline(pipeline: BasePipeline, ts: TSDataset = None) -> BasePipeline:
     with tempfile.TemporaryDirectory() as dir_path_str:
         dir_path = pathlib.Path(dir_path_str)
         path = dir_path.joinpath("dummy.zip")
@@ -26,8 +26,8 @@ def get_loaded_pipeline(pipeline: AbstractPipeline, ts: TSDataset = None) -> Abs
 
 
 def assert_pipeline_equals_loaded_original(
-    pipeline: AbstractPipeline, ts: TSDataset, load_ts: bool = True
-) -> Tuple[AbstractPipeline, AbstractPipeline]:
+    pipeline: BasePipeline, ts: TSDataset, load_ts: bool = True
+) -> Tuple[BasePipeline, BasePipeline]:
 
     initial_ts = deepcopy(ts)
 
@@ -49,7 +49,7 @@ def assert_pipeline_equals_loaded_original(
     return pipeline, loaded_pipeline
 
 
-def assert_pipeline_forecast_raise_error_if_no_ts(pipeline: AbstractPipeline, ts: TSDataset):
+def assert_pipeline_forecast_raise_error_if_no_ts(pipeline: BasePipeline, ts: TSDataset):
     with pytest.raises(ValueError, match="There is no ts to forecast!"):
         _ = pipeline.forecast()
 
@@ -58,9 +58,7 @@ def assert_pipeline_forecast_raise_error_if_no_ts(pipeline: AbstractPipeline, ts
         _ = pipeline.forecast()
 
 
-def assert_pipeline_forecasts_without_self_ts(
-    pipeline: AbstractPipeline, ts: TSDataset, horizon: int
-) -> AbstractPipeline:
+def assert_pipeline_forecasts_without_self_ts(pipeline: BasePipeline, ts: TSDataset, horizon: int) -> BasePipeline:
     pipeline.fit(ts=ts, save_ts=False)
     forecast_ts = pipeline.forecast(ts=ts)
     forecast_df = forecast_ts.to_pandas(flatten=True)
@@ -79,7 +77,7 @@ def assert_pipeline_forecasts_without_self_ts(
     return pipeline
 
 
-def assert_pipeline_forecasts_given_ts(pipeline: AbstractPipeline, ts: TSDataset, horizon: int) -> AbstractPipeline:
+def assert_pipeline_forecasts_given_ts(pipeline: BasePipeline, ts: TSDataset, horizon: int) -> BasePipeline:
     fit_ts = deepcopy(ts)
     fit_ts._df = fit_ts._df.iloc[:-horizon]
     to_forecast_ts = deepcopy(ts)
@@ -103,8 +101,8 @@ def assert_pipeline_forecasts_given_ts(pipeline: AbstractPipeline, ts: TSDataset
 
 
 def assert_pipeline_forecasts_given_ts_with_prediction_intervals(
-    pipeline: AbstractPipeline, ts: TSDataset, horizon: int, **forecast_params
-) -> AbstractPipeline:
+    pipeline: BasePipeline, ts: TSDataset, horizon: int, **forecast_params
+) -> BasePipeline:
     fit_ts = deepcopy(ts)
     fit_ts._df = fit_ts._df.iloc[:-horizon]
     to_forecast_ts = deepcopy(ts)
@@ -132,9 +130,7 @@ def assert_pipeline_forecasts_given_ts_with_prediction_intervals(
     return pipeline
 
 
-def assert_pipeline_predicts(
-    pipeline: AbstractPipeline, ts: TSDataset, start_idx: int, end_idx: int
-) -> AbstractPipeline:
+def assert_pipeline_predicts(pipeline: BasePipeline, ts: TSDataset, start_idx: int, end_idx: int) -> BasePipeline:
     predict_ts = deepcopy(ts)
     pipeline.fit(ts)
 
