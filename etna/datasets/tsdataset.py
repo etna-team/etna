@@ -1733,6 +1733,7 @@ class TSDataset:
             "num_regressors": len(self.regressors),
             "num_known_future": len(self.known_future),
             "freq": self.freq,
+            "end_timestamp": self.timestamps[-1]
         }
 
         return common_dict
@@ -1756,7 +1757,6 @@ class TSDataset:
 
         segments_dict = {}
         segments_dict["start_timestamp"] = df.index[min_idx].to_series(index=segments)
-        segments_dict["end_timestamp"] = df.index[max_idx].to_series(index=segments)
         segments_dict["length"] = pd.Series(max_idx - min_idx + 1, dtype="Int64", index=segments)
         segments_dict["num_missing"] = pd.Series(
             segments_dict["length"] - np.sum(not_na, axis=0), dtype="Int64", index=segments
@@ -1765,7 +1765,6 @@ class TSDataset:
         # handle all-nans series
         all_nans_mask = np.all(~not_na, axis=0)
         segments_dict["start_timestamp"][all_nans_mask] = None
-        segments_dict["end_timestamp"][all_nans_mask] = None
         segments_dict["length"][all_nans_mask] = None
         segments_dict["num_missing"][all_nans_mask] = None
 
@@ -1778,7 +1777,7 @@ class TSDataset:
 
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
 
-        * end_timestamp: ending of the segment
+        * end_timestamp: ending of the dataset, common for all segments
 
         * length: length according to ``start_timestamp`` and ``end_timestamp``
 
@@ -1842,6 +1841,7 @@ class TSDataset:
         segments_dict["num_regressors"] = [common_dict["num_regressors"]] * len(segments)
         segments_dict["num_known_future"] = [common_dict["num_known_future"]] * len(segments)
         segments_dict["freq"] = [common_dict["freq"]] * len(segments)
+        segments_dict["end_timestamp"] = [common_dict["end_timestamp"]] * len(segments)
 
         result_df = pd.DataFrame(segments_dict, index=segments)
         columns_order = [
@@ -1876,11 +1876,11 @@ class TSDataset:
 
         * freq: frequency of the dataset
 
+        * end_timestamp: ending of the dataset
+
         Information about individual segments:
 
         * start_timestamp: beginning of the segment, missing values in the beginning are ignored
-
-        * end_timestamp: ending of the segment
 
         * length: length according to ``start_timestamp`` and ``end_timestamp``
 

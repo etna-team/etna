@@ -65,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change signature `plot_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Change signature `get_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Change signature `log_backtest_metrics`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
-- Rework handling `end_timestamp` to not take into account missing values at the end of segments for `info` and `describe` methods ([#653](https://github.com/etna-team/etna/pull/653))
+- **Breaking:** Rework handling `end_timestamp` to not take into account missing values at the end of segments for `info` and `describe` methods ([#653](https://github.com/etna-team/etna/pull/653))
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
