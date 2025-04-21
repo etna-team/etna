@@ -9,25 +9,8 @@ from etna.models import AutoARIMAModel
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_prediction_components_are_present
-
-
-def _check_forecast(ts, model, horizon):
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res["target"].isnull().values.any()
-    assert len(res) == horizon * 2
-
-
-def _check_predict(ts, model):
-    model.fit(ts)
-    res = model.predict(ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res["target"].isnull().values.any()
-    assert len(res) == len(ts.timestamps) * 2
+from tests.test_models.utils import check_forecast_context_ignorant
+from tests.test_models.utils import check_predict_context_ignorant
 
 
 def test_fit_with_exogs_warning(ts_with_non_regressor_exog):
@@ -79,25 +62,25 @@ def test_select_regressors_correctly_int_timestamp(example_reg_tsds_int_timestam
         pd.testing.assert_frame_equal(segment_regressors, segment_regressors_expected)
 
 
-@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp", "ts_with_external_timestamp"])
 def test_prediction(ts_name, request):
     ts = request.getfixturevalue(ts_name)
-    _check_forecast(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=7)
-    _check_predict(ts=deepcopy(ts), model=AutoARIMAModel())
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=AutoARIMAModel())
 
 
 @pytest.mark.parametrize("ts_name", ["example_reg_tsds", "example_reg_tsds_int_timestamp"])
 def test_prediction_with_reg(ts_name, request):
     ts = request.getfixturevalue(ts_name)
-    _check_forecast(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=7)
-    _check_predict(ts=deepcopy(ts), model=AutoARIMAModel())
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=AutoARIMAModel())
 
 
 @pytest.mark.filterwarnings("ignore: Error fitting  ARIMA")
 def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
     ts = ts_with_short_regressor
     with pytest.raises(ValueError, match="Regressors .* contain NaN values"):
-        _check_forecast(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=20)
+        check_forecast_context_ignorant(ts=deepcopy(ts), model=AutoARIMAModel(), horizon=20)
 
 
 def test_prediction_with_params(example_reg_tsds):
@@ -117,8 +100,8 @@ def test_prediction_with_params(example_reg_tsds):
         m=2,
         seasonal=True,
     )
-    _check_forecast(ts=deepcopy(example_reg_tsds), model=deepcopy(model), horizon=horizon)
-    _check_predict(ts=deepcopy(example_reg_tsds), model=deepcopy(model))
+    check_forecast_context_ignorant(ts=deepcopy(example_reg_tsds), model=deepcopy(model), horizon=horizon)
+    check_predict_context_ignorant(ts=deepcopy(example_reg_tsds), model=deepcopy(model))
 
 
 @pytest.mark.parametrize("ts_name", ["example_tsds", "example_tsds_int_timestamp"])

@@ -14,25 +14,8 @@ from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_prediction_components_are_present
 from tests.test_models.utils import assert_sampling_is_valid
-
-
-def _check_forecast(ts, model, horizon):
-    model.fit(ts)
-    future_ts = ts.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res["target"].isnull().values.any()
-    assert len(res) == horizon * len(ts.segments)
-
-
-def _check_predict(ts, model):
-    model.fit(ts)
-    res = model.predict(ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res["target"].isnull().values.any()
-    assert len(res) == len(ts.timestamps) * len(ts.segments)
+from tests.test_models.utils import check_forecast_context_ignorant
+from tests.test_models.utils import check_predict_context_ignorant
 
 
 def test_fit_str_category_fail(ts_with_non_convertable_category_regressor):
@@ -101,8 +84,8 @@ def test_fit_external_timestamp_not_datetime_fail():
 )
 def test_prediction(ts_name, timestamp_column, request):
     ts = request.getfixturevalue(ts_name)
-    _check_forecast(ts=deepcopy(ts), model=ProphetModel(timestamp_column=timestamp_column), horizon=7)
-    _check_predict(ts=deepcopy(ts), model=ProphetModel(timestamp_column=timestamp_column))
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=ProphetModel(timestamp_column=timestamp_column), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=ProphetModel(timestamp_column=timestamp_column))
 
 
 def test_prediction_with_cap_floor():
@@ -141,7 +124,7 @@ def test_prediction_with_cap_floor():
 def test_forecast_with_short_regressors_fail(ts_with_short_regressor):
     ts = ts_with_short_regressor
     with pytest.raises(ValueError, match="Regressors .* contain NaN values"):
-        _check_forecast(ts=deepcopy(ts), model=ProphetModel(), horizon=20)
+        check_forecast_context_ignorant(ts=deepcopy(ts), model=ProphetModel(), horizon=20)
 
 
 @pytest.mark.parametrize(

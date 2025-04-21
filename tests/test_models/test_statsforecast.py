@@ -16,6 +16,8 @@ from etna.models import StatsForecastAutoThetaModel
 from etna.pipeline import Pipeline
 from tests.test_models.utils import assert_model_equals_loaded_original
 from tests.test_models.utils import assert_sampling_is_valid
+from tests.test_models.utils import check_forecast_context_ignorant
+from tests.test_models.utils import check_predict_context_ignorant
 
 
 @pytest.mark.parametrize(
@@ -127,44 +129,6 @@ def test_prediction_raise_error_if_not_fitted(model, method_name, example_tsds):
         StatsForecastAutoThetaModel(),
     ],
 )
-def test_predict_train(model, example_tsds):
-    model.fit(example_tsds)
-    res = model.predict(example_tsds)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == len(example_tsds.timestamps) * 2
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        StatsForecastARIMAModel(),
-        StatsForecastAutoARIMAModel(),
-        StatsForecastAutoCESModel(),
-        StatsForecastAutoETSModel(),
-        StatsForecastAutoThetaModel(),
-    ],
-)
-def test_predict_train_with_regressors(model, example_reg_tsds):
-    model.fit(example_reg_tsds)
-    res = model.predict(example_reg_tsds)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == len(example_reg_tsds.timestamps) * 2
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        StatsForecastARIMAModel(),
-        StatsForecastAutoARIMAModel(),
-        StatsForecastAutoCESModel(),
-        StatsForecastAutoETSModel(),
-        StatsForecastAutoThetaModel(),
-    ],
-)
 def test_predict_before_train_fail(model, example_tsds):
     train_ts = deepcopy(example_tsds)
     train_ts._df = train_ts._df.iloc[10:]
@@ -203,36 +167,11 @@ def test_predict_future_fail(model, example_tsds):
         StatsForecastAutoThetaModel(),
     ],
 )
-def test_forecast_future(model, example_tsds):
-    horizon = 7
-    model.fit(example_tsds)
-    future_ts = example_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == horizon * 2
-
-
-@pytest.mark.parametrize(
-    "model",
-    [
-        StatsForecastARIMAModel(),
-        StatsForecastAutoARIMAModel(),
-        StatsForecastAutoCESModel(),
-        StatsForecastAutoETSModel(),
-        StatsForecastAutoThetaModel(),
-    ],
-)
-def test_forecast_future_with_regressors(model, example_reg_tsds):
-    horizon = 7
-    model.fit(example_reg_tsds)
-    future_ts = example_reg_tsds.make_future(future_steps=horizon)
-    res = model.forecast(future_ts)
-    res = res.to_pandas(flatten=True)
-
-    assert not res.isnull().values.any()
-    assert len(res) == horizon * 2
+@pytest.mark.parametrize("ts_name", ["example_tsds", "example_reg_tsds", "ts_with_external_timestamp"])
+def test_prediction(model, ts_name, request):
+    ts = request.getfixturevalue(ts_name)
+    check_forecast_context_ignorant(ts=deepcopy(ts), model=deepcopy(model), horizon=7)
+    check_predict_context_ignorant(ts=deepcopy(ts), model=deepcopy(model))
 
 
 @pytest.mark.parametrize(

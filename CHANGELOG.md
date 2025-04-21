@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change signature `plot_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Change signature `get_residuals`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Change signature `log_backtest_metrics`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
+- **Breaking:** Rework handling `end_timestamp` to not take into account missing values at the end of segments for `TSDataset.info` and `TSDataset.describe` methods ([#653](https://github.com/etna-team/etna/pull/653))
 - **Breaking:** Prohibit `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` from using non-regressors ([#654](https://github.com/etna-team/etna/pull/654))
 
 ### Fixed
@@ -84,6 +85,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix `No space left on device error` during building docker images ([#632](https://github.com/etna-team/etna/pull/632))
 - Fix error with `repr` of `DeepStateModel` and `LevelTrendSSM` ([#642](https://github.com/etna-team/etna/pull/642))
 - Fix `get_residuals` to drop prediction intervals ([#645](https://github.com/etna-team/etna/pull/645))
+- Fix `SARIMAXModel`, `AutoARIMAModel` and `statsforecast` models to drop datetime external column ([#652](https://github.com/etna-team/etna/pull/652))
 
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
@@ -97,6 +99,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove properties `columns` and `loc` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/631))
 - **Breaking:** Remove `match_target_components` ([#634](https://github.com/etna-team/etna/pull/634))
 - **Breaking:** Remove `match_target_quantiles` and `get_target_with_quantiles` ([#633](https://github.com/etna-team/etna/pull/633))
+- 
 
 ## [2.10.0] - 2025-01-09
 ### Added

@@ -76,3 +76,41 @@ def assert_prediction_components_are_present(model, train, test, prediction_size
 
     forecast = model.forecast(**forecast_args)
     assert len(forecast.target_components_names) > 0
+
+
+def check_forecast_context_ignorant(ts, model, horizon):
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon)
+    res = model.forecast(future_ts)
+    res = res.to_pandas(flatten=True)
+
+    assert not res["target"].isnull().values.any()
+    assert len(res) == horizon * len(ts.segments)
+
+
+def check_forecast_context_required(ts, model, horizon):
+    model.fit(ts)
+    future_ts = ts.make_future(future_steps=horizon, tail_steps=model.context_size)
+    res = model.forecast(ts=future_ts, prediction_size=horizon)
+    res = res.to_pandas(flatten=True)
+
+    assert not res.isnull().values.any()
+    assert len(res) == horizon * len(ts.segments)
+
+
+def check_predict_context_ignorant(ts, model):
+    model.fit(ts)
+    res = model.predict(ts)
+    res = res.to_pandas(flatten=True)
+
+    assert not res["target"].isnull().values.any()
+    assert len(res) == len(ts.timestamps) * len(ts.segments)
+
+
+def check_predict_context_required(ts, model, prediction_size):
+    model.fit(ts)
+    res = model.predict(ts, prediction_size=prediction_size)
+    res = res.to_pandas(flatten=True)
+
+    assert not res.isnull().values.any()
+    assert len(res) == prediction_size * len(ts.segments)
