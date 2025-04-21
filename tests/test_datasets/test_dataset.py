@@ -1481,6 +1481,7 @@ def test_gather_common_data(ts_name, expected_answer, request):
     assert common_data["num_regressors"] == expected_answer["num_regressors"]
     assert common_data["num_known_future"] == expected_answer["num_known_future"]
     assert common_data["freq"] == expected_answer["freq"]
+    assert common_data["end_timestamp"] == pd.Timestamp("2021-02-01")
 
 
 def test_gather_segments_data(ts_info):
@@ -1491,14 +1492,11 @@ def test_gather_segments_data(ts_info):
     assert segment_df.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
     assert segment_df.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
     assert segment_df.loc["3", "start_timestamp"] is pd.NaT
-    assert segment_df.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
-    assert segment_df.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
-    assert segment_df.loc["3", "end_timestamp"] is pd.NaT
     assert segment_df.loc["1", "length"] == 32
-    assert segment_df.loc["2", "length"] == 24
+    assert segment_df.loc["2", "length"] == 27
     assert segment_df.loc["3", "length"] is pd.NA
     assert segment_df.loc["1", "num_missing"] == 1
-    assert segment_df.loc["2", "num_missing"] == 0
+    assert segment_df.loc["2", "num_missing"] == 3
     assert segment_df.loc["3", "num_missing"] is pd.NA
 
 
@@ -1510,20 +1508,18 @@ def test_describe(ts_info):
     assert description.loc["1", "start_timestamp"] == pd.Timestamp("2021-01-01")
     assert description.loc["2", "start_timestamp"] == pd.Timestamp("2021-01-06")
     assert description.loc["3", "start_timestamp"] is pd.NaT
-    assert description.loc["1", "end_timestamp"] == pd.Timestamp("2021-02-01")
-    assert description.loc["2", "end_timestamp"] == pd.Timestamp("2021-01-29")
-    assert description.loc["3", "end_timestamp"] is pd.NaT
     assert description.loc["1", "length"] == 32
-    assert description.loc["2", "length"] == 24
+    assert description.loc["2", "length"] == 27
     assert description.loc["3", "length"] is pd.NA
     assert description.loc["1", "num_missing"] == 1
-    assert description.loc["2", "num_missing"] == 0
+    assert description.loc["2", "num_missing"] == 3
     assert description.loc["3", "num_missing"] is pd.NA
     assert np.all(description["num_segments"] == 3)
     assert np.all(description["num_exogs"] == 2)
     assert np.all(description["num_regressors"] == 2)
     assert np.all(description["num_known_future"] == 2)
     assert np.all(description["freq"] == pd.offsets.Day().freqstr)
+    assert np.all(description["end_timestamp"] == pd.Timestamp("2021-02-01"))
 
 
 @pytest.fixture()
