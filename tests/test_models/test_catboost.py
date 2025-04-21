@@ -144,6 +144,12 @@ def test_select_regressors_multi_segment(example_reg_tsds):
     assert model.get_model().feature_names_ == example_reg_tsds.regressors
 
 
+@pytest.mark.parametrize("model", [CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()])
+def test_save_regressors_fail_no_features(model, example_tsds):
+    with pytest.raises(ValueError, match="There are not features for fitting the model"):
+        model.fit(example_tsds)
+
+
 @pytest.mark.parametrize(
     "encoder",
     [
