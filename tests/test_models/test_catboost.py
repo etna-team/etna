@@ -118,6 +118,38 @@ def test_get_model_per_segment_after_training(example_tsds):
         assert isinstance(models_dict[segment], CatBoostRegressor)
 
 
+def test_save_regressors_per_segment(example_reg_tsds):
+    model = CatBoostPerSegmentModel()
+    model.fit(ts=example_reg_tsds)
+    for segment_model in model._models.values():
+        assert sorted(segment_model.regressor_columns) == example_reg_tsds.regressors
+
+
+def test_select_regressors_per_segment(example_reg_tsds):
+    model = CatBoostPerSegmentModel()
+    model.fit(ts=example_reg_tsds)
+    for segment_model in model.get_model().values():
+        assert sorted(segment_model.feature_names_) == example_reg_tsds.regressors
+
+
+def test_save_regressors_multi_segment(example_reg_tsds):
+    model = CatBoostMultiSegmentModel()
+    model.fit(ts=example_reg_tsds)
+    assert model._base_model.regressor_columns == example_reg_tsds.regressors
+
+
+def test_select_regressors_multi_segment(example_reg_tsds):
+    model = CatBoostMultiSegmentModel()
+    model.fit(ts=example_reg_tsds)
+    assert model.get_model().feature_names_ == example_reg_tsds.regressors
+
+
+@pytest.mark.parametrize("model", [CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()])
+def test_save_regressors_fail_no_features(model, example_tsds):
+    with pytest.raises(ValueError, match="There are not features for fitting the model"):
+        model.fit(example_tsds)
+
+
 @pytest.mark.parametrize(
     "encoder",
     [
@@ -149,32 +181,34 @@ def test_save_load(model, example_tsds):
     assert_model_equals_loaded_original(model=model, ts=example_tsds, transforms=transforms, horizon=horizon)
 
 
-def test_forecast_components_equal_predict_components(dfs_w_exog):
+def test_forecast_components_equal_predict_components(dfs_w_exog, regressors=("f1", "f2")):
     train, test = dfs_w_exog
 
     model = _CatBoostAdapter(iterations=10)
-    model.fit(train, [])
+    model.fit(train, list(regressors))
 
     prediction_components = model.predict_components(df=test)
     forecast_components = model.forecast_components(df=test)
     pd.testing.assert_frame_equal(prediction_components, forecast_components)
 
 
-def test_forecast_components_names(dfs_w_exog, answer=("target_component_f1", "target_component_f2")):
+def test_forecast_components_names(
+    dfs_w_exog, regressors=("f1", "f2"), answer=("target_component_f1", "target_component_f2")
+):
     train, test = dfs_w_exog
 
     model = _CatBoostAdapter(iterations=10)
-    model.fit(train, [])
+    model.fit(train, list(regressors))
 
     components = model.forecast_components(df=test)
     assert set(components.columns) == set(answer)
 
 
-def test_decomposition_sums_to_target(dfs_w_exog):
+def test_decomposition_sums_to_target(dfs_w_exog, regressors=("f1", "f2")):
     train, test = dfs_w_exog
 
     model = _CatBoostAdapter(iterations=10)
-    model.fit(train, [])
+    model.fit(train, list(regressors))
 
     y_pred = model.predict(test)
     components = model.forecast_components(df=test)
@@ -189,9 +223,9 @@ def ts_with_features() -> TSDataset:
     df_exog = df.copy().rename(columns={"target": "exog"})
     df_exog["cat_exog"] = df_exog["exog"].astype(int).astype("category")
 
-    df = TSDataset.to_dataset(df)
+    df = TSDataset.to_dataset(df).iloc[:-1]
     df_exog = TSDataset.to_dataset(df_exog)
-    return TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day())
+    return TSDataset(df=df, df_exog=df_exog, freq=pd.offsets.Day(), known_future="all")
 
 
 @pytest.mark.parametrize("model", (CatBoostPerSegmentModel(), CatBoostMultiSegmentModel()))
