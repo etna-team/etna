@@ -10,11 +10,11 @@ import pandas as pd
 from typing_extensions import Literal
 
 from etna.datasets import TSDataset
-from etna.metrics import Metric
+from etna.metrics import BaseMetric
 
 
 def compute_metrics(
-    metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
+    metrics: List[BaseMetric], y_true: TSDataset, y_pred: TSDataset
 ) -> Dict[str, Union[Optional[float], Dict[str, Optional[float]]]]:
     """
     Compute metrics for given y_true, y_pred.

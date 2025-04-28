@@ -10,17 +10,73 @@ import numpy as np
 import pandas as pd
 
 from etna.datasets import TSDataset
-from etna.metrics.base import MetricWithMissingHandling
-from etna.metrics.functional_metrics import ArrayLike
+from etna.metrics import BaseMetric
+from etna.metrics.base import MetricMissingMode
 
 
-def dummy(y_true: ArrayLike, y_pred: ArrayLike) -> ArrayLike:
-    return np.nan
+class BaseIntervalsMetricWithMissingHandling(BaseMetric):
+    """Base class for metrics for prediction intervals."""
 
+    def __init__(
+        self,
+        quantiles: Optional[Tuple[float, float]] = None,
+        mode: str = "per-segment",
+        upper_name: Optional[str] = None,
+        lower_name: Optional[str] = None,
+        missing_mode: str = "error",
+        **kwargs,
+    ):
+        """Init metric.
 
-class _IntervalsMetricMixin:
+        Parameters
+        ----------
+        quantiles:
+            lower and upper quantiles
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+        upper_name:
+            name of column with upper border of the interval
+        lower_name:
+            name of column with lower border of the interval
+        missing_mode:
+            mode of handling missing values (see :py:class:`~etna.metrics.base.MetricMissingMode`)
+        kwargs:
+            metric's computation arguments
+        """
+        super().__init__(mode=mode)
+
+        self.missing_mode = missing_mode
+        self._missing_mode_enum = MetricMissingMode(missing_mode)
+
+        if (lower_name is None) ^ (upper_name is None):
+            raise ValueError("Both `lower_name` and `upper_name` must be set if using names to specify borders!")
+
+        if not (quantiles is None or lower_name is None):
+            raise ValueError(
+                "Both `quantiles` and border names are specified. Use only one way to set interval borders!"
+            )
+
+        if quantiles is not None and len(quantiles) != 2:
+            raise ValueError(f"Expected tuple with two values for `quantiles` parameter, got {len(quantiles)}")
+
+        # default behavior
+        if quantiles is None and lower_name is None:
+            quantiles = (0.025, 0.975)
+
+        self.quantiles = sorted(quantiles if quantiles is not None else tuple())
+        self.upper_name = upper_name
+        self.lower_name = lower_name
+        self.kwargs = kwargs
+
+    @staticmethod
     def _validate_tsdataset_intervals(
-        self, ts: TSDataset, quantiles: Sequence[float], upper_name: Optional[str], lower_name: Optional[str]
+        ts: TSDataset, quantiles: Sequence[float], upper_name: Optional[str], lower_name: Optional[str]
     ) -> None:
         """Check if intervals borders presented in ``y_pred``."""
         ts_intervals = set(ts.prediction_intervals_names)
@@ -56,8 +112,82 @@ class _IntervalsMetricMixin:
                         f"Series with missing values {repr(missing_per_segment[missing_per_segment].index.tolist())}"
                     )
 
+    def _validate_nans(self, y_true: TSDataset, y_pred: TSDataset):
+        """Check that ``y_true`` and ``y_pred`` doesn't have NaNs depending on ``missing_mode``.
 
-class Coverage(MetricWithMissingHandling, _IntervalsMetricMixin):
+        Parameters
+        ----------
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
+
+        Raises
+        ------
+        ValueError:
+            If there are NaNs in ``y_true`` or ``y_pred``
+        """
+        df_true = y_true._df.loc[:, pd.IndexSlice[:, "target"]]
+        df_pred = y_pred._df.loc[:, pd.IndexSlice[:, "target"]]
+
+        df_true_isna_sum = df_true.isna().sum()
+        if self._missing_mode_enum is MetricMissingMode.error and (df_true_isna_sum > 0).any():
+            error_segments = set(df_true_isna_sum[df_true_isna_sum > 0].index.droplevel("feature").tolist())
+            raise ValueError(f"There are NaNs in y_true! Segments with NaNs: {repr(error_segments)}.")
+
+        df_pred_isna_sum = df_pred.isna().sum()
+        if (df_pred_isna_sum > 0).any():
+            error_segments = set(df_pred_isna_sum[df_pred_isna_sum > 0].index.droplevel("feature").tolist())
+            raise ValueError(f"There are NaNs in y_pred Segments with NaNs: {repr(error_segments)}.")
+
+    @staticmethod
+    def _macro_average(metrics_per_segments: Dict[str, Optional[float]]) -> Optional[float]:
+        """
+        Compute macro averaging of metrics over segment.
+
+        None values are ignored during computation.
+
+        Parameters
+        ----------
+        metrics_per_segments: dict of {segment: metric_value} for segments to aggregate
+
+        Returns
+        -------
+        :
+            aggregated value of metric
+        """
+        with warnings.catch_warnings():
+            # this helps to prevent warning in case of all nans
+            warnings.filterwarnings(
+                message="Mean of empty slice",
+                action="ignore",
+            )
+            # dtype=float is used to cast None to np.nan
+            value = np.nanmean(np.fromiter(metrics_per_segments.values(), dtype=float)).item()
+        if np.isnan(value):
+            return None
+        else:
+            return value
+
+    def _all_interval_validations(self, y_true: TSDataset, y_pred: TSDataset):
+        """
+        Check that ``y_true`` and ``y_pred`` pass all validations for interval metrics with missing handling.
+
+        Parameters
+        ----------
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
+        """
+        self._all_base_validations(y_true=y_true, y_pred=y_pred)
+        self._validate_nans(y_true=y_true, y_pred=y_pred)
+        self._validate_tsdataset_intervals(
+            ts=y_pred, quantiles=self.quantiles, upper_name=self.upper_name, lower_name=self.lower_name
+        )
+
+
+class Coverage(BaseIntervalsMetricWithMissingHandling):
     """Coverage metric for prediction intervals - precenteage of samples in the interval ``[lower quantile, upper quantile]``.
 
     .. math::
@@ -105,25 +235,14 @@ class Coverage(MetricWithMissingHandling, _IntervalsMetricMixin):
         kwargs:
             metric's computation arguments
         """
-        if (lower_name is None) ^ (upper_name is None):
-            raise ValueError("Both `lower_name` and `upper_name` must be set if using names to specify borders!")
-
-        if not (quantiles is None or lower_name is None):
-            raise ValueError(
-                "Both `quantiles` and border names are specified. Use only one way to set interval borders!"
-            )
-
-        if quantiles is not None and len(quantiles) != 2:
-            raise ValueError(f"Expected tuple with two values for `quantiles` parameter, got {len(quantiles)}")
-
-        # default behavior
-        if quantiles is None and lower_name is None:
-            quantiles = (0.025, 0.975)
-
-        super().__init__(mode=mode, metric_fn=dummy, missing_mode=missing_mode, **kwargs)
-        self.quantiles = sorted(quantiles if quantiles is not None else tuple())
-        self.upper_name = upper_name
-        self.lower_name = lower_name
+        super().__init__(
+            quantiles=quantiles,
+            mode=mode,
+            upper_name=upper_name,
+            lower_name=lower_name,
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         """
@@ -144,13 +263,7 @@ class Coverage(MetricWithMissingHandling, _IntervalsMetricMixin):
         -------
             metric's value aggregated over segments or not (depends on mode)
         """
-        self._validate_segments(y_true=y_true, y_pred=y_pred)
-        self._validate_target_columns(y_true=y_true, y_pred=y_pred)
-        self._validate_index(y_true=y_true, y_pred=y_pred)
-        self._validate_nans(y_true=y_true, y_pred=y_pred)
-        self._validate_tsdataset_intervals(
-            ts=y_pred, quantiles=self.quantiles, lower_name=self.lower_name, upper_name=self.upper_name
-        )
+        self._all_interval_validations(y_true=y_true, y_pred=y_pred)
 
         if self.upper_name is not None:
             lower_border = self.lower_name
@@ -193,7 +306,7 @@ class Coverage(MetricWithMissingHandling, _IntervalsMetricMixin):
         return None
 
 
-class Width(MetricWithMissingHandling, _IntervalsMetricMixin):
+class Width(BaseIntervalsMetricWithMissingHandling):
     """Mean width of prediction intervals.
 
     .. math::
@@ -241,25 +354,14 @@ class Width(MetricWithMissingHandling, _IntervalsMetricMixin):
         kwargs:
             metric's computation arguments
         """
-        if (lower_name is None) ^ (upper_name is None):
-            raise ValueError("Both `lower_name` and `upper_name` must be set if using names to specify borders!")
-
-        if not (quantiles is None or lower_name is None):
-            raise ValueError(
-                "Both `quantiles` and border names are specified. Use only one way to set interval borders!"
-            )
-
-        if quantiles is not None and len(quantiles) != 2:
-            raise ValueError(f"Expected tuple with two values for `quantiles` parameter, got {len(quantiles)}")
-
-        # default behavior
-        if quantiles is None and lower_name is None:
-            quantiles = (0.025, 0.975)
-
-        super().__init__(mode=mode, metric_fn=dummy, missing_mode=missing_mode, **kwargs)
-        self.quantiles = sorted(quantiles if quantiles is not None else tuple())
-        self.upper_name = upper_name
-        self.lower_name = lower_name
+        super().__init__(
+            quantiles=quantiles,
+            mode=mode,
+            upper_name=upper_name,
+            lower_name=lower_name,
+            missing_mode=missing_mode,
+            **kwargs,
+        )
 
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         """
@@ -280,13 +382,7 @@ class Width(MetricWithMissingHandling, _IntervalsMetricMixin):
         -------
             metric's value aggregated over segments or not (depends on mode)
         """
-        self._validate_segments(y_true=y_true, y_pred=y_pred)
-        self._validate_target_columns(y_true=y_true, y_pred=y_pred)
-        self._validate_index(y_true=y_true, y_pred=y_pred)
-        self._validate_nans(y_true=y_true, y_pred=y_pred)
-        self._validate_tsdataset_intervals(
-            ts=y_pred, quantiles=self.quantiles, lower_name=self.lower_name, upper_name=self.upper_name
-        )
+        self._all_interval_validations(y_true=y_true, y_pred=y_pred)
 
         if self.upper_name is not None:
             lower_border = self.lower_name

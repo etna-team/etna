@@ -32,6 +32,7 @@ from etna.datasets.utils import timestamp_range
 from etna.distributions import BaseDistribution
 from etna.loggers import _Logger
 from etna.loggers import tslogger
+from etna.metrics import BaseMetric
 from etna.metrics import Metric
 from etna.metrics import MetricAggregationMode
 from etna.metrics.functional_metrics import ArrayLike
@@ -596,7 +597,7 @@ class BasePipeline(BaseMixin, AbstractSaveable):
         return masks
 
     @staticmethod
-    def _validate_backtest_metrics(metrics: List[Metric]):
+    def _validate_backtest_metrics(metrics: List[BaseMetric]):
         """Check that given metrics are valid for backtest."""
         if not metrics:
             raise ValueError("At least one metric required")
@@ -628,7 +629,7 @@ class BasePipeline(BaseMixin, AbstractSaveable):
             yield train, test
 
     def _compute_metrics(
-        self, metrics: List[Metric], y_true: TSDataset, y_pred: TSDataset
+        self, metrics: List[BaseMetric], y_true: TSDataset, y_pred: TSDataset
     ) -> Dict[str, Dict[str, float]]:
         """Compute metrics for given y_true, y_pred."""
         if y_true.has_hierarchy():
@@ -672,7 +673,7 @@ class BasePipeline(BaseMixin, AbstractSaveable):
         pipeline: "BasePipeline",
         fold_number: int,
         mask: FoldMask,
-        metrics: List[Metric],
+        metrics: List[BaseMetric],
         logger: _Logger,
     ) -> Dict[str, Any]:
         """Process forecast made for a fold."""
@@ -773,7 +774,7 @@ class BasePipeline(BaseMixin, AbstractSaveable):
         self,
         masks: List[FoldMask],
         ts: TSDataset,
-        metrics: List[Metric],
+        metrics: List[BaseMetric],
         n_jobs: int,
         refit: Union[bool, int],
         joblib_params: Dict[str, Any],
@@ -858,7 +859,7 @@ class BasePipeline(BaseMixin, AbstractSaveable):
     def backtest(
         self,
         ts: TSDataset,
-        metrics: List[Metric],
+        metrics: List[BaseMetric],
         n_folds: Union[int, List[FoldMask]] = 5,
         mode: Optional[str] = None,
         aggregate_metrics: bool = False,
