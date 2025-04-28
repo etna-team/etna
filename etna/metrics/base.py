@@ -369,7 +369,7 @@ class Metric(BaseMetric):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._log_start()
-        super()._all_base_validations(y_true=y_true, y_pred=y_pred)
+        self._all_base_validations(y_true=y_true, y_pred=y_pred)
         self._validate_nans(y_true=y_true, y_pred=y_pred)
 
         df_true = y_true[:, :, "target"].sort_index(axis=1)
