@@ -107,6 +107,8 @@ class BaseMetric(BaseMixin):
             self._aggregate_metrics = self._macro_average
         elif MetricAggregationMode(mode) is MetricAggregationMode.per_segment:
             self._aggregate_metrics = self._per_segment_average
+        else:
+            assert_never(mode)
 
         self.mode = mode
 
@@ -171,7 +173,7 @@ class BaseMetric(BaseMixin):
         """
         pass
 
-    def _all_base_validations(self, y_true: TSDataset, y_pred: TSDataset):
+    def _validate_base(self, y_true: TSDataset, y_pred: TSDataset):
         """
         Check that ``y_true`` and ``y_pred`` pass all base validations.
 
@@ -369,7 +371,7 @@ class Metric(BaseMetric):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._log_start()
-        self._all_base_validations(y_true=y_true, y_pred=y_pred)
+        self._validate_base(y_true=y_true, y_pred=y_pred)
         self._validate_nans(y_true=y_true, y_pred=y_pred)
 
         df_true = y_true[:, :, "target"].sort_index(axis=1)

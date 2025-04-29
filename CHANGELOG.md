@@ -66,7 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change signature `log_backtest_metrics`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Rework handling `end_timestamp` to not take into account missing values at the end of segments for `TSDataset.info` and `TSDataset.describe` methods ([#653](https://github.com/etna-team/etna/pull/653))
 - **Breaking:** Prohibit `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` from using non-regressors ([#654](https://github.com/etna-team/etna/pull/654))
-- **Breaking:** Rework `AbstractMetric` to `BaseMetric`. Now it contains base functionality for metrics ([#659](https://github.com/etna-team/etna/pull/659))
+- **Breaking:** Rename `AbstractMetric` into `BaseMetric`, add base functionality for metrics ([#659](https://github.com/etna-team/etna/pull/659))
+- **Breaking:** Change signature `BasePipeline.backtest`, `Auto`, `Auto.objective`, `Tune`, `Tune.objective` and `compute_metrics`; now the type hint for metric is `BaseMetric` instead of `Metric` ([#659](https://github.com/etna-team/etna/pull/659))
+- 
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))

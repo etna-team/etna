@@ -169,7 +169,7 @@ class BaseIntervalsMetricWithMissingHandling(BaseMetric):
         else:
             return value
 
-    def _all_interval_validations(self, y_true: TSDataset, y_pred: TSDataset):
+    def _validate_base_interval(self, y_true: TSDataset, y_pred: TSDataset):
         """
         Check that ``y_true`` and ``y_pred`` pass all validations for interval metrics with missing handling.
 
@@ -180,7 +180,7 @@ class BaseIntervalsMetricWithMissingHandling(BaseMetric):
         y_pred:
             y_pred dataset
         """
-        self._all_base_validations(y_true=y_true, y_pred=y_pred)
+        self._validate_base(y_true=y_true, y_pred=y_pred)
         self._validate_nans(y_true=y_true, y_pred=y_pred)
         self._validate_tsdataset_intervals(
             ts=y_pred, quantiles=self.quantiles, upper_name=self.upper_name, lower_name=self.lower_name
@@ -263,7 +263,7 @@ class Coverage(BaseIntervalsMetricWithMissingHandling):
         -------
             metric's value aggregated over segments or not (depends on mode)
         """
-        self._all_interval_validations(y_true=y_true, y_pred=y_pred)
+        self._validate_base_interval(y_true=y_true, y_pred=y_pred)
 
         if self.upper_name is not None:
             lower_border = self.lower_name
@@ -382,7 +382,7 @@ class Width(BaseIntervalsMetricWithMissingHandling):
         -------
             metric's value aggregated over segments or not (depends on mode)
         """
-        self._all_interval_validations(y_true=y_true, y_pred=y_pred)
+        self._validate_base_interval(y_true=y_true, y_pred=y_pred)
 
         if self.upper_name is not None:
             lower_border = self.lower_name
