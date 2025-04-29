@@ -103,12 +103,13 @@ class BaseMetric(BaseMixin):
         self._aggregate_metrics: Callable[
             [Dict[str, Optional[float]]], Union[Optional[float], Dict[str, Optional[float]]]
         ]
-        if MetricAggregationMode(mode) is MetricAggregationMode.macro:
+        mode_enum = MetricAggregationMode(mode)
+        if mode_enum is MetricAggregationMode.macro:
             self._aggregate_metrics = self._macro_average
-        elif MetricAggregationMode(mode) is MetricAggregationMode.per_segment:
+        elif mode_enum is MetricAggregationMode.per_segment:
             self._aggregate_metrics = self._per_segment_average
         else:
-            assert_never(mode)
+            assert_never(mode_enum)
 
         self.mode = mode
 
