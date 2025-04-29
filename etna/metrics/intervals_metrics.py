@@ -15,7 +15,7 @@ from etna.metrics.base import MetricMissingMode
 
 
 class BaseIntervalsMetricWithMissingHandling(BaseMetric):
-    """Base class for metrics for prediction intervals."""
+    """Base class for metrics for prediction intervals with missing handling."""
 
     def __init__(
         self,

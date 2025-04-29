@@ -20,8 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `ModelPredictionIntervalsMixin` with intervals forecasting logic for models ([#633](https://github.com/etna-team/etna/pull/633))
 - Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `_SARIMAXBaseAdapter`, `_StatsForecastBaseAdapter`, `_TBATSAdapter`, `_HoltWintersAdapter` ([#640](https://github.com/etna-team/etna/pull/640))
 - Add warning when features are dropped in `make_future` ([#644](https://github.com/etna-team/etna/pull/644))
-
-- 
+- Add `BaseIntervalsMetricWithMissingHandling` with base functionality for metrics for prediction intervals with missing handling. ([#659](https://github.com/etna-team/etna/pull/659))
 
 ### Changed
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
@@ -67,6 +66,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Change signature `log_backtest_metrics`, now it accepts list of `TSDataset` with forecast instead of `pd.DataFrame`. ([#643](https://github.com/etna-team/etna/pull/643))
 - **Breaking:** Rework handling `end_timestamp` to not take into account missing values at the end of segments for `TSDataset.info` and `TSDataset.describe` methods ([#653](https://github.com/etna-team/etna/pull/653))
 - **Breaking:** Prohibit `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` from using non-regressors ([#654](https://github.com/etna-team/etna/pull/654))
+- **Breaking:** Rework `AbstractMetric` to `BaseMetric`. Now it contains base functionality for metrics ([#659](https://github.com/etna-team/etna/pull/659))
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
