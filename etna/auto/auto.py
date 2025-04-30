@@ -35,8 +35,8 @@ from etna.loggers import tslogger
 from etna.metrics import MAE
 from etna.metrics import MSE
 from etna.metrics import SMAPE
+from etna.metrics import BaseMetric
 from etna.metrics import MedAE
-from etna.metrics import Metric
 from etna.metrics import Sign
 from etna.metrics.utils import MetricAggregationStatistics
 from etna.metrics.utils import aggregate_metrics_df
@@ -125,14 +125,14 @@ class AutoBase(AutoAbstract):
 
     def __init__(
         self,
-        target_metric: Metric,
+        target_metric: BaseMetric,
         horizon: int,
         metric_aggregation: MetricAggregationStatistics = "mean",
         backtest_params: Optional[dict] = None,
         experiment_folder: Optional[str] = None,
         runner: Optional[AbstractRunner] = None,
         storage: Optional[BaseStorage] = None,
-        metrics: Optional[List[Metric]] = None,
+        metrics: Optional[List[BaseMetric]] = None,
     ):
         """
         Initialize AutoBase class.
@@ -215,7 +215,7 @@ class Auto(AutoBase):
 
     def __init__(
         self,
-        target_metric: Metric,
+        target_metric: BaseMetric,
         horizon: int,
         metric_aggregation: MetricAggregationStatistics = "mean",
         backtest_params: Optional[dict] = None,
@@ -223,7 +223,7 @@ class Auto(AutoBase):
         pool: Union[Pool, PoolGenerator, List[BasePipeline]] = Pool.default,
         runner: Optional[AbstractRunner] = None,
         storage: Optional[BaseStorage] = None,
-        metrics: Optional[List[Metric]] = None,
+        metrics: Optional[List[BaseMetric]] = None,
     ):
         """
         Initialize Auto class.
@@ -438,9 +438,9 @@ class Auto(AutoBase):
     @staticmethod
     def objective(
         ts: TSDataset,
-        target_metric: Metric,
+        target_metric: BaseMetric,
         metric_aggregation: MetricAggregationStatistics,
-        metrics: List[Metric],
+        metrics: List[BaseMetric],
         backtest_params: dict,
         config_mapping: Dict[str, dict],
         initializer: Optional[_Initializer] = None,
@@ -633,14 +633,14 @@ class Tune(AutoBase):
     def __init__(
         self,
         pipeline: BasePipeline,
-        target_metric: Metric,
+        target_metric: BaseMetric,
         horizon: int,
         metric_aggregation: MetricAggregationStatistics = "mean",
         backtest_params: Optional[dict] = None,
         experiment_folder: Optional[str] = None,
         runner: Optional[AbstractRunner] = None,
         storage: Optional[BaseStorage] = None,
-        metrics: Optional[List[Metric]] = None,
+        metrics: Optional[List[BaseMetric]] = None,
         sampler: Optional[BaseSampler] = None,
         params_to_tune: Optional[Dict[str, BaseDistribution]] = None,
     ):
@@ -755,9 +755,9 @@ class Tune(AutoBase):
         ts: TSDataset,
         pipeline: BasePipeline,
         params_to_tune: Dict[str, BaseDistribution],
-        target_metric: Metric,
+        target_metric: BaseMetric,
         metric_aggregation: MetricAggregationStatistics,
-        metrics: List[Metric],
+        metrics: List[BaseMetric],
         backtest_params: dict,
         initializer: Optional[_Initializer] = None,
         callback: Optional[_Callback] = None,
