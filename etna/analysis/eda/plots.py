@@ -652,12 +652,14 @@ def distribution_plot(
         chosen_segments = np.random.choice(exist_segments, size=min(len(exist_segments), n_segments), replace=False)
         segments = list(chosen_segments)
     df_full = df_pd[df_pd.segment.isin(segments)]
-    df_full.loc[:, "mean"] = (
+    df_full.loc[:, "mean"] = (  # TODO fail
         df_full.groupby("segment").target.shift(shift).transform(lambda s: s.rolling(window).mean())
     )
-    df_full.loc[:, "std"] = df_full.groupby("segment").target.shift(shift).transform(lambda s: s.rolling(window).std())
+    df_full.loc[:, "std"] = (
+        df_full.groupby("segment").target.shift(shift).transform(lambda s: s.rolling(window).std())
+    )  # TODO fail
     df_full = df_full.dropna()
-    df_full.loc[:, "z"] = (df_full["target"] - df_full["mean"]) / df_full["std"]
+    df_full.loc[:, "z"] = (df_full["target"] - df_full["mean"]) / df_full["std"]  # TODO fail
 
     if ts.freq is None:
         # make only one group

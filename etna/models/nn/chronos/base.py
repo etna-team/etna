@@ -233,7 +233,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
 
             future_ts.add_prediction_intervals(prediction_intervals_df=quantiles_df)
 
-        future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = target_forecast.numpy().transpose(1, 0)
+        future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = target_forecast.numpy().transpose(1, 0)  # TODO fail
 
         return future_ts
 

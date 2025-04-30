@@ -307,6 +307,13 @@ class TSDataset:
             transform.fit_transform(self)
 
     @staticmethod
+    def _cast_target_to_float(df: pd.DataFrame) -> pd.DataFrame:
+        columns_frame = df.columns.to_frame()
+        columns_frame["target"] = columns_frame["target"].astype(np.float32)
+        df.columns = pd.MultiIndex.from_frame(columns_frame)
+        return df
+
+    @staticmethod
     def _cast_segment_to_str(df: pd.DataFrame) -> pd.DataFrame:
         columns_frame = df.columns.to_frame()
         dtype = columns_frame["segment"].dtype
@@ -340,6 +347,7 @@ class TSDataset:
         # cast segment to str type
         cls._cast_segment_to_str(df)
 
+        # cls._cast_target_to_float(df)
         # handle freq
         if freq_offset is None:
             if not pd.api.types.is_integer_dtype(df.index.dtype):
@@ -1070,6 +1078,8 @@ class TSDataset:
         2021-01-04           3           8
         2021-01-05           4           9
         """
+        if "target" in df.columns:
+            df["target"] = df["target"].astype(np.float64)
         df = df.set_index(["timestamp", "segment"])
 
         df = df.unstack(level=-1)
@@ -1384,7 +1394,7 @@ class TSDataset:
             raise ValueError("The dataset features set contains duplicates!")
 
         original_types = df.dtypes.to_dict()
-        self._df.iloc[:, column_idx] = df
+        self._df.iloc[:, column_idx] = df  # TODO fail 1 can fail when df_update has differect column dtypes
         self._df = self._df.astype(original_types)
 
     def add_features_from_pandas(

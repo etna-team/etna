@@ -175,11 +175,11 @@ class SeasonalMovingAverageModel(
         df = ts.to_pandas()
         y_pred = self._forecast(df=df, prediction_size=prediction_size)
         ts._df = ts._df.iloc[-prediction_size:]
-        ts._df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
+        ts._df.loc[:, pd.IndexSlice[:, "target"]] = y_pred  # TODO fail
 
         if return_components:
             # We use predicted targets as lags in autoregressive style
-            df.loc[df.index[-prediction_size:], pd.IndexSlice[:, "target"]] = y_pred
+            df.loc[df.index[-prediction_size:], pd.IndexSlice[:, "target"]] = y_pred  # TODO fail
             target_components_df = self._predict_components(df=df, prediction_size=prediction_size)
             ts.add_target_components(target_components_df=target_components_df)
         return ts
@@ -233,7 +233,7 @@ class SeasonalMovingAverageModel(
         y_pred = self._predict(df=df, prediction_size=prediction_size)
         ts._df = ts._df.iloc[-prediction_size:]
         col_types = {col: y_pred.dtype for col in df.columns if col[1] == "target"}
-        ts._df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
+        ts._df.loc[:, pd.IndexSlice[:, "target"]] = y_pred  # TODO fail
         ts._df = ts._df.astype(col_types)
 
         if return_components:

@@ -261,7 +261,7 @@ filterwarnings = [
     "ignore: os.fork.* was called", # os.fork() is incompatible with multithreaded code, and JAX is multithreaded, so this will likely lead to a deadlock.
     "ignore: The 'train_dataloader' does not have many workers which may be a bottleneck", # lightning
     "ignore: Unverified HTTPS request is being made",
-    "ignore: Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas"
+#    "ignore: Setting an item of incompatible dtype is deprecated and will raise in a future error of pandas"
 ]
 markers = [
     "smoke"
