@@ -1394,7 +1394,7 @@ class TSDataset:
             raise ValueError("The dataset features set contains duplicates!")
 
         original_types = df.dtypes.to_dict()
-        self._df.iloc[:, column_idx] = df  # TODO fail 1 can fail when df_update has differect column dtypes
+        self._df.iloc[:, column_idx] = df  # TODO fail 1 can fail when df_update has different column dtypes
         self._df = self._df.astype(original_types)
 
     def add_features_from_pandas(
