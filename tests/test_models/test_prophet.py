@@ -50,9 +50,9 @@ def test_fit_external_timestamp_not_regressor_fail():
     df = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
     df_wide = TSDataset.to_dataset(df)
     df_exog = generate_ar_df(periods=100, start_time=10, n_segments=1, freq=None)
-    df_exog["target"] = pd.date_range(start="2020-01-01", periods=100)
+    df_exog.rename(columns={"target": "external_timestamp"}, inplace=True)
+    df_exog["external_timestamp"] = pd.date_range(start="2020-01-01", periods=100)
     df_exog_wide = TSDataset.to_dataset(df_exog)
-    df_exog_wide.rename(columns={"target": "external_timestamp"}, level="feature", inplace=True)
     ts = TSDataset(df=df_wide, df_exog=df_exog_wide, known_future=[], freq=None)
 
     model = ProphetModel(timestamp_column="external_timestamp")

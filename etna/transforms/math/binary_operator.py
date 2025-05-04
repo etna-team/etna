@@ -82,7 +82,8 @@ class BinaryOperationTransform(ReversibleTransform):
     Examples
     --------
     >>> import numpy as np
-    >>> from etna.datasets import generate_ar_df
+    >>> from etna.datasets import generate_ar_df, TSDataset
+    >>> from etna.transforms import BinaryOperationTransform
     >>> df = generate_ar_df(start_time="2020-01-01", periods=30, freq="D", n_segments=1)
     >>> df["feature"] = np.full(30, 10)
     >>> df["target"] = np.full(30, 1)
@@ -91,24 +92,24 @@ class BinaryOperationTransform(ReversibleTransform):
     segment    segment_0
     feature      feature target
     timestamp
-    2020-01-01        10      1
-    2020-01-02        10      1
-    2020-01-03        10      1
-    2020-01-04        10      1
-    2020-01-05        10      1
-    2020-01-06        10      1
+    2020-01-01        10    1.0
+    2020-01-02        10    1.0
+    2020-01-03        10    1.0
+    2020-01-04        10    1.0
+    2020-01-05        10    1.0
+    2020-01-06        10    1.0
     >>> transformer = BinaryOperationTransform(left_column="feature", right_column="target", operator="+", out_column="target")
     >>> new_ts = transformer.fit_transform(ts=ts)
     >>> new_ts["2020-01-01":"2020-01-06", "segment_0", ["feature", "target"]]
     segment    segment_0
     feature      feature target
     timestamp
-    2020-01-01        10      11
-    2020-01-02        10      11
-    2020-01-03        10      11
-    2020-01-04        10      11
-    2020-01-05        10      11
-    2020-01-06        10      11
+    2020-01-01        10   11.0
+    2020-01-02        10   11.0
+    2020-01-03        10   11.0
+    2020-01-04        10   11.0
+    2020-01-05        10   11.0
+    2020-01-06        10   11.0
     """
 
     def __init__(self, left_column: str, right_column: str, operator: str, out_column: Optional[str] = None):

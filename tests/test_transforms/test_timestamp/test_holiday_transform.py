@@ -156,8 +156,8 @@ def two_segments_w_mon_external_int_timestamp(two_segments_w_mon_int_timestamp: 
     df_exog = pd.DataFrame(
         {
             "timestamp": list(range(len(ts._df_exog))) * 2,
-            "segment": ['segment_1'] * len(ts._df_exog) + ['segment_2'] * len(ts._df_exog),
-            "external_timestamp": list(range(len(ts._df_exog))) * 2
+            "segment": ["segment_1"] * len(ts._df_exog) + ["segment_2"] * len(ts._df_exog),
+            "external_timestamp": list(range(len(ts._df_exog))) * 2,
         }
     )
     df_exog = TSDataset.to_dataset(df_exog)
