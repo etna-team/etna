@@ -175,8 +175,7 @@ def test_deep_base_model_forecast_loop(simple_tsdf, deep_base_model_mock, ts_moc
     ts_after_tsdataset_idx_slice = MagicMock()
     horizon = 7
 
-    # raw_predict = {("A", "target"): np.arange(10).reshape(-1, 1), ("B", "target"): -np.arange(10).reshape(-1, 1)}
-    raw_predict = {("A", "target"): np.arange(10), ("B", "target"): -np.arange(10)}
+    raw_predict = {("A", "target"): np.arange(10).reshape(-1, 1), ("B", "target"): -np.arange(10).reshape(-1, 1)}
 
     deep_base_model_mock.raw_predict.return_value = raw_predict
 
