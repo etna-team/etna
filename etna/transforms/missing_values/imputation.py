@@ -239,7 +239,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
                     impute_values = bn.nanmean(df.iloc[indexes], axis=0)
                     df.iloc[i] = np.where(
                         nan_mask[i], impute_values, df.iloc[i]
-                    )  # TODO fail 1 can break when in_column isn't target
+                    )  # can fail when in_column isn't target
         elif self._strategy is ImputerMode.seasonal_nonautoreg:
             lag_transform = LagTransform(in_column=self.in_column, lags=[self.seasonality], out_column="lag")
             sma_transform = MeanTransform(

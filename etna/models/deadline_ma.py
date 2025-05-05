@@ -233,9 +233,9 @@ class DeadlineMovingAverageModel(
             for w in range(1, self.window + 1):
                 prev_date = self._get_previous_date(date=result_template.index[i], offset=w)
 
-                result_template.loc[index[i]] += context.loc[prev_date]  # TODO fail
+                result_template.loc[index[i]] += context.loc[prev_date]
 
-            result_template.loc[index[i]] = result_template.loc[index[i]] / self.window  # TODO fail
+            result_template.loc[index[i]] = result_template.loc[index[i]] / self.window
 
         result_values = result_template.values[-prediction_size:]
         return result_values
@@ -264,7 +264,7 @@ class DeadlineMovingAverageModel(
 
         df = df.iloc[-prediction_size:]
         y_pred = result_values[-prediction_size:]
-        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred  # TODO fail
+        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         target_components_df = None
         if return_components:
@@ -340,7 +340,7 @@ class DeadlineMovingAverageModel(
 
         df = df.iloc[-prediction_size:]
         y_pred = result_values[-prediction_size:]
-        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred  # TODO fail
+        df.loc[:, pd.IndexSlice[:, "target"]] = y_pred
 
         target_components_df = None
         if return_components:

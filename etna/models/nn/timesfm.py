@@ -337,7 +337,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                 normalize_xreg_target_per_input=self.normalize_exog,
                 xreg_mode=self.forecast_with_exog_mode,
             )
-            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)  # TODO fail
+            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = np.vstack(complex_forecast).swapaxes(1, 0)
         else:
             target = TSDataset.to_flatten(df=target_df)
             target = target.rename(columns={"segment": "unique_id", "timestamp": "ds"})
@@ -346,7 +346,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
                 target, freq=ts.freq, value_name="target", normalize=self.normalize_target
             )
 
-            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.swapaxes(1, 0)  # TODO fail
+            future_ts._df.loc[:, pd.IndexSlice[:, "target"]] = predictions.swapaxes(1, 0)
         return future_ts
 
     @staticmethod

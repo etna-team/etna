@@ -50,9 +50,7 @@ def get_residuals(forecast_ts_list: List["TSDataset"], ts: "TSDataset") -> "TSDa
     true_df = ts_copy[forecast_df.index, :, :]
     if set(ts_copy.segments) != set(forecast_df.columns.get_level_values("segment").unique()):
         raise KeyError("Segments of `ts` and `forecast_df` should be the same")
-    true_df.loc[:, pd.IndexSlice[ts.segments, "target"]] -= forecast_df.loc[
-        :, pd.IndexSlice[ts.segments, "target"]
-    ]  # TODO fail
+    true_df.loc[:, pd.IndexSlice[ts.segments, "target"]] -= forecast_df.loc[:, pd.IndexSlice[ts.segments, "target"]]
 
     # make TSDataset
     new_ts = TSDataset(df=true_df, freq=ts_copy.freq, hierarchical_structure=ts_copy.hierarchical_structure)

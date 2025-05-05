@@ -696,7 +696,7 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
             # we don't want to change dtype after assignment, but there can happen cast to float32
             future_ts._df.loc[:, pd.IndexSlice[segment, feature_nm]] = (
                 value[:prediction_size, :].squeeze().astype(np.float64)
-            )  # TODO fail
+            )
 
         return future_ts
 

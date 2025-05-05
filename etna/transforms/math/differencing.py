@@ -175,7 +175,7 @@ class _SingleDifferencingTransform(ReversibleTransform):
     def _make_inv_diff(self, to_transform: Union[pd.DataFrame, pd.Series]) -> Union[pd.DataFrame, pd.Series]:
         """Make inverse difference transform."""
         for i in range(self.period):
-            to_transform.iloc[i :: self.period] = to_transform.iloc[i :: self.period].cumsum()  # TODO fail
+            to_transform.iloc[i :: self.period] = to_transform.iloc[i :: self.period].cumsum()
         return to_transform
 
     def _reconstruct_train(self, df: pd.DataFrame, columns_to_inverse: Set[str]) -> pd.DataFrame:

@@ -174,7 +174,7 @@ class FourierDecomposeTransform(IrreversibleTransform):
         ts_max_timestamp = ts.timestamps.max()
         if ts_max_timestamp > self._last_timestamp:
             future_steps = determine_num_steps(self._last_timestamp, ts_max_timestamp, freq=ts.freq)
-            segment_df.iloc[-future_steps:] = np.nan  # TODO fail
+            segment_df.iloc[-future_steps:] = np.nan
 
         self._check_segments(df=segment_df)
 

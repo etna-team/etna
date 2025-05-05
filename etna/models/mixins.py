@@ -538,7 +538,7 @@ class PerSegmentModelMixin(ModelForecastingMixin):
         tsdf = tsdf.set_index(["timestamp", "segment"])
         # clear values to be filled, otherwise during in-sample prediction new values won't be set
         columns_to_clear = result_df.columns.intersection(tsdf.columns)
-        tsdf.loc[result_df.index, columns_to_clear] = np.NaN  # TODO fail
+        tsdf.loc[result_df.index, columns_to_clear] = np.NaN
         tsdf = tsdf.combine_first(result_df).reset_index()
 
         tsdf = TSDataset.to_dataset(tsdf)
@@ -628,7 +628,7 @@ class MultiSegmentModelMixin(ModelForecastingMixin):
 
     def _update_predictions_dataset(self, ts: TSDataset, result_df: pd.DataFrame, **kwargs) -> TSDataset:
         """Update the dataset from results."""
-        ts._df.loc[:, pd.IndexSlice[:, "target"]] = result_df  # TODO fail
+        ts._df.loc[:, pd.IndexSlice[:, "target"]] = result_df
         return ts
 
     def _make_component_predictions(self, ts: TSDataset, prediction_method: Callable, **kwargs) -> pd.DataFrame:
