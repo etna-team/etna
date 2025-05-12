@@ -163,7 +163,7 @@ def test_encoder_catboost(encoder):
     ts = TSDataset(ts, freq=pd.offsets.Day())
 
     transforms = [DateFlagsTransform(week_number_in_month=True, out_column="date_flag"), encoder]
-    model = CatBoostPerSegmentModel(iterations=100)
+    model = CatBoostMultiSegmentModel(iterations=100)
     pipeline = Pipeline(model=model, transforms=transforms, horizon=1)
     _ = pipeline.backtest(ts=ts, metrics=[MAE()], n_folds=1)
 

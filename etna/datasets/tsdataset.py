@@ -307,13 +307,6 @@ class TSDataset:
             transform.fit_transform(self)
 
     @staticmethod
-    def _cast_target_to_float(df: pd.DataFrame) -> pd.DataFrame:
-        columns_frame = df.columns.to_frame()
-        columns_frame["target"] = columns_frame["target"].astype(np.float32)
-        df.columns = pd.MultiIndex.from_frame(columns_frame)
-        return df
-
-    @staticmethod
     def _cast_segment_to_str(df: pd.DataFrame) -> pd.DataFrame:
         columns_frame = df.columns.to_frame()
         dtype = columns_frame["segment"].dtype
@@ -347,7 +340,6 @@ class TSDataset:
         # cast segment to str type
         cls._cast_segment_to_str(df)
 
-        # cls._cast_target_to_float(df)
         # handle freq
         if freq_offset is None:
             if not pd.api.types.is_integer_dtype(df.index.dtype):
