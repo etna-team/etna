@@ -1110,8 +1110,7 @@ class TSDataset:
             cur_level_to_next_level_edges = df_level_columns[[cur_level_name, next_level_name]].drop_duplicates()
             cur_level_to_next_level_adjacency_list = cur_level_to_next_level_edges.groupby(cur_level_name).agg(list)
 
-            # support for pandas>=1.4, <1.5
-            level_structure.update(cur_level_to_next_level_adjacency_list.itertuples(name=None))
+            level_structure.update(cur_level_to_next_level_adjacency_list.to_records())
             cur_level_name = next_level_name
 
         hierarchical_structure = HierarchicalStructure(
@@ -1381,8 +1380,7 @@ class TSDataset:
         try:
             column_idx = self._df.columns.get_indexer(df.columns)
 
-        # some older pandas versions <1.3 throw `ValueError`
-        except (pd.errors.InvalidIndexError, ValueError):
+        except pd.errors.InvalidIndexError:
             raise ValueError("The dataset features set contains duplicates!")
 
         original_types = df.dtypes.to_dict()
@@ -1528,12 +1526,10 @@ class TSDataset:
             target_level_df = self.to_pandas(features=target_names)
 
         target_components_df = target_level_df.loc[:, pd.IndexSlice[:, self.target_components_names]]
-        if len(self.target_components_names) > 0:  # for pandas >=1.1, <1.2
-            target_level_df = target_level_df.drop(columns=list(self.target_components_names), level="feature")
+        target_level_df = target_level_df.drop(columns=list(self.target_components_names), level="feature")
 
         prediction_intervals_df = target_level_df.loc[:, pd.IndexSlice[:, self.prediction_intervals_names]]
-        if len(self.prediction_intervals_names) > 0:  # for pandas >=1.1, <1.2
-            target_level_df = target_level_df.drop(columns=list(self.prediction_intervals_names), level="feature")
+        target_level_df = target_level_df.drop(columns=list(self.prediction_intervals_names), level="feature")
 
         ts = TSDataset(
             df=target_level_df,
@@ -1604,9 +1600,8 @@ class TSDataset:
 
     def drop_target_components(self):
         """Drop target components from dataset."""
-        if len(self.target_components_names) > 0:  # for pandas >=1.1, <1.2
-            self._df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
-            self._target_components_names = ()
+        self._df.drop(columns=list(self.target_components_names), level="feature", inplace=True)
+        self._target_components_names = ()
 
     def add_prediction_intervals(self, prediction_intervals_df: pd.DataFrame):
         """Add target components into dataset.
@@ -1656,9 +1651,8 @@ class TSDataset:
 
     def drop_prediction_intervals(self):
         """Drop prediction intervals from dataset."""
-        if len(self.prediction_intervals_names) > 0:  # for pandas >=1.1, <1.2
-            self._df.drop(columns=list(self.prediction_intervals_names), level="feature", inplace=True)
-            self._prediction_intervals_names = tuple()
+        self._df.drop(columns=list(self.prediction_intervals_names), level="feature", inplace=True)
+        self._prediction_intervals_names = tuple()
 
     def isnull(self) -> pd.DataFrame:
         """Return dataframe with flag that means if the correspondent element in wide representation of data is null.
