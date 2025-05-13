@@ -1529,6 +1529,23 @@ def ts_with_regressors(df_and_regressors):
     return ts
 
 
+def test_to_dataset_not_modify_dataframe():
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_original = pd.DataFrame({"timestamp": timestamp, "target": 11.0, "segment": 1})
+    df_copy = df_original.copy(deep=True)
+    _ = TSDataset.to_dataset(df_original)
+    pd.testing.assert_frame_equal(df_original, df_copy)
+
+
+def test_to_dataset_convert_target_to_float64():
+    timestamp = pd.date_range("2021-01-01", "2021-02-01")
+    df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": 'segment_0'})
+    df_copy = df_original.copy(deep=True)
+    df_mod = TSDataset.to_dataset(df_original)
+    assert df_copy['target'].dtypes == np.int64
+    assert df_mod.dtypes["segment_0"]['target'] == np.float64
+
+
 @pytest.mark.parametrize("start_idx,end_idx", [(1, None), (None, 1), (1, 2), (1, -1)])
 def test_tsdataset_idx_slice(tsdf_with_exog, start_idx, end_idx):
     ts_slice = tsdf_with_exog.tsdataset_idx_slice(start_idx=start_idx, end_idx=end_idx)
