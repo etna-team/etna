@@ -1071,7 +1071,7 @@ class TSDataset:
         2021-01-05           4           9
         """
         if "target" in df.columns:
-            df["target"] = df["target"].astype(np.float64)
+            df["target"] = df["target"].astype(np.float32)
         df = df.set_index(["timestamp", "segment"])
 
         df = df.unstack(level=-1)
