@@ -1539,11 +1539,11 @@ def test_to_dataset_not_modify_dataframe():
 
 def test_to_dataset_convert_target_to_float64():
     timestamp = pd.date_range("2021-01-01", "2021-02-01")
-    df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": 'segment_0'})
+    df_original = pd.DataFrame({"timestamp": timestamp, "target": 11, "segment": "segment_0"})
     df_copy = df_original.copy(deep=True)
     df_mod = TSDataset.to_dataset(df_original)
-    assert df_copy['target'].dtypes == np.int64
-    assert df_mod.dtypes["segment_0"]['target'] == np.float64
+    assert df_copy["target"].dtypes == np.int64
+    assert df_mod.dtypes["segment_0"]["target"] == np.float64
 
 
 @pytest.mark.parametrize("start_idx,end_idx", [(1, None), (None, 1), (1, 2), (1, -1)])
