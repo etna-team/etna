@@ -1,5 +1,6 @@
 """Module with metrics of forecasting quality."""
 
+from etna.metrics.base import BaseMetric
 from etna.metrics.base import Metric
 from etna.metrics.base import MetricAggregationMode
 from etna.metrics.base import MetricMissingMode

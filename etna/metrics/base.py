@@ -1,6 +1,5 @@
 import reprlib
 import warnings
-from abc import ABC
 from abc import abstractmethod
 from enum import Enum
 from typing import Callable
@@ -78,8 +77,79 @@ class MetricFunction(Protocol):
         pass
 
 
-class AbstractMetric(ABC):
-    """Abstract class for metric."""
+class BaseMetric(BaseMixin):
+    """Base class for metric."""
+
+    def __init__(self, mode: str = "per-segment"):
+        """
+        Init Metric.
+
+        Parameters
+        ----------
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+
+        Raises
+        ------
+        NotImplementedError:
+            If non-existent ``mode`` is used.
+        """
+        self._aggregate_metrics: Callable[
+            [Dict[str, Optional[float]]], Union[Optional[float], Dict[str, Optional[float]]]
+        ]
+        mode_enum = MetricAggregationMode(mode)
+        if mode_enum is MetricAggregationMode.macro:
+            self._aggregate_metrics = self._macro_average
+        elif mode_enum is MetricAggregationMode.per_segment:
+            self._aggregate_metrics = self._per_segment_average
+        else:
+            assert_never(mode_enum)
+
+        self.mode = mode
+
+    @staticmethod
+    def _macro_average(metrics_per_segments: Dict[str, Optional[float]]) -> Optional[float]:
+        """
+        Compute macro averaging of metrics over segment.
+
+        Parameters
+        ----------
+        metrics_per_segments:
+            dict of {segment: metric_value} for segments to aggregate
+
+        Returns
+        -------
+        :
+            aggregated value of metric
+        """
+        return np.mean(list(metrics_per_segments.values())).item()  # type: ignore
+
+    @staticmethod
+    def _per_segment_average(metrics_per_segments: Dict[str, Optional[float]]) -> Dict[str, Optional[float]]:
+        """
+        Compute per-segment averaging of metrics over segment.
+
+        Parameters
+        ----------
+        metrics_per_segments:
+            dict of {segment: metric_value} for segments to aggregate
+
+        Returns
+        -------
+        :
+            aggregated dict of metric
+        """
+        return metrics_per_segments
+
+    def _log_start(self):
+        """Log metric computation."""
+        tslogger.log(f"Metric {self.__repr__()} is calculated on dataset")
 
     @abstractmethod
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
@@ -104,81 +174,20 @@ class AbstractMetric(ABC):
         """
         pass
 
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Metric name."""
-        pass
-
-    @property
-    @abstractmethod
-    def greater_is_better(self) -> Optional[bool]:
-        """Whether higher metric value is better."""
-        pass
-
-
-class Metric(AbstractMetric, BaseMixin):
-    """
-    Base class for all the multi-segment metrics.
-
-    How it works: Metric computes ``metric_fn`` value for each segment in given forecast
-    dataset and aggregates it according to mode.
-    """
-
-    def __init__(
-        self,
-        metric_fn: MetricFunction,
-        mode: str = "per-segment",
-        metric_fn_signature: str = "array_to_scalar",
-        **kwargs,
-    ):
+    def _validate_base(self, y_true: TSDataset, y_pred: TSDataset):
         """
-        Init Metric.
+        Check that ``y_true`` and ``y_pred`` pass all base validations.
 
         Parameters
         ----------
-        metric_fn:
-            functional metric
-        mode:
-            "macro" or "per-segment", way to aggregate metric values over segments:
-
-            * if "macro" computes average value
-
-            * if "per-segment" -- does not aggregate metrics
-
-            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
-
-        metric_fn_signature:
-            type of signature of ``metric_fn`` (see :py:class:`~etna.metrics.base.MetricFunctionSignature`)
-        kwargs:
-            functional metric's params
-
-        Raises
-        ------
-        NotImplementedError:
-            If non-existent ``mode`` is used.
-        NotImplementedError:
-            If non-existent ``metric_fn_signature`` is used.
+        y_true:
+            y_true dataset
+        y_pred:
+            y_pred dataset
         """
-        self._aggregate_metrics: Callable[
-            [Dict[str, Optional[float]]], Union[Optional[float], Dict[str, Optional[float]]]
-        ]
-        if MetricAggregationMode(mode) is MetricAggregationMode.macro:
-            self._aggregate_metrics = self._macro_average
-        elif MetricAggregationMode(mode) is MetricAggregationMode.per_segment:
-            self._aggregate_metrics = self._per_segment_average
-
-        self._metric_fn_signature = MetricFunctionSignature(metric_fn_signature)
-
-        self.metric_fn = metric_fn
-        self.kwargs = kwargs
-        self.mode = mode
-        self.metric_fn_signature = metric_fn_signature
-
-    @property
-    def name(self) -> str:
-        """Name of the metric for representation."""
-        return self.__class__.__name__
+        self._validate_segments(y_true=y_true, y_pred=y_pred)
+        self._validate_target_columns(y_true=y_true, y_pred=y_pred)
+        self._validate_index(y_true=y_true, y_pred=y_pred)
 
     @staticmethod
     def _validate_segments(y_true: TSDataset, y_pred: TSDataset):
@@ -251,6 +260,69 @@ class Metric(AbstractMetric, BaseMixin):
         if not y_true.timestamps.equals(y_pred.timestamps):
             raise ValueError("y_true and y_pred have different timestamps")
 
+    @property
+    def name(self) -> str:
+        """Name of the metric for representation."""
+        return self.__class__.__name__
+
+    @property
+    @abstractmethod
+    def greater_is_better(self) -> Optional[bool]:
+        """Whether higher metric value is better."""
+        pass
+
+
+class Metric(BaseMetric):
+    """
+    Base class for all the multi-segment metrics.
+
+    How it works: Metric computes ``metric_fn`` value for each segment in given forecast
+    dataset and aggregates it according to mode.
+    """
+
+    def __init__(
+        self,
+        metric_fn: MetricFunction,
+        mode: str = "per-segment",
+        metric_fn_signature: str = "array_to_scalar",
+        **kwargs,
+    ):
+        """
+        Init Metric.
+
+        Parameters
+        ----------
+        metric_fn:
+            functional metric
+        mode:
+            "macro" or "per-segment", way to aggregate metric values over segments:
+
+            * if "macro" computes average value
+
+            * if "per-segment" -- does not aggregate metrics
+
+            See :py:class:`~etna.metrics.base.MetricAggregationMode`.
+
+        metric_fn_signature:
+            type of signature of ``metric_fn`` (see :py:class:`~etna.metrics.base.MetricFunctionSignature`)
+        kwargs:
+            functional metric's params
+
+        Raises
+        ------
+        NotImplementedError:
+            If non-existent ``mode`` is used.
+        NotImplementedError:
+            If non-existent ``metric_fn_signature`` is used.
+        """
+        super().__init__(mode)
+
+        self._metric_fn_signature = MetricFunctionSignature(metric_fn_signature)
+
+        self.metric_fn = metric_fn
+        self.kwargs = kwargs
+        self.metric_fn_signature = metric_fn_signature
+
     def _validate_nans(self, y_true: TSDataset, y_pred: TSDataset):
         """Check that ``y_true`` and ``y_pred`` doesn't have NaNs.
 
@@ -279,44 +351,6 @@ class Metric(AbstractMetric, BaseMixin):
             error_segments = set(df_pred_isna_sum[df_pred_isna_sum > 0].index.droplevel("feature").tolist())
             raise ValueError(f"There are NaNs in y_pred Segments with NaNs: {reprlib.repr(error_segments)}.")
 
-    @staticmethod
-    def _macro_average(metrics_per_segments: Dict[str, Optional[float]]) -> Optional[float]:
-        """
-        Compute macro averaging of metrics over segment.
-
-        Parameters
-        ----------
-        metrics_per_segments:
-            dict of {segment: metric_value} for segments to aggregate
-
-        Returns
-        -------
-        :
-            aggregated value of metric
-        """
-        return np.mean(list(metrics_per_segments.values())).item()  # type: ignore
-
-    @staticmethod
-    def _per_segment_average(metrics_per_segments: Dict[str, Optional[float]]) -> Dict[str, Optional[float]]:
-        """
-        Compute per-segment averaging of metrics over segment.
-
-        Parameters
-        ----------
-        metrics_per_segments:
-            dict of {segment: metric_value} for segments to aggregate
-
-        Returns
-        -------
-        :
-            aggregated dict of metric
-        """
-        return metrics_per_segments
-
-    def _log_start(self):
-        """Log metric computation."""
-        tslogger.log(f"Metric {self.__repr__()} is calculated on dataset")
-
     def __call__(self, y_true: TSDataset, y_pred: TSDataset) -> Union[Optional[float], Dict[str, Optional[float]]]:
         """
         Compute metric's value with ``y_true`` and ``y_pred``.
@@ -338,9 +372,7 @@ class Metric(AbstractMetric, BaseMixin):
             metric's value aggregated over segments or not (depends on mode)
         """
         self._log_start()
-        self._validate_segments(y_true=y_true, y_pred=y_pred)
-        self._validate_target_columns(y_true=y_true, y_pred=y_pred)
-        self._validate_index(y_true=y_true, y_pred=y_pred)
+        self._validate_base(y_true=y_true, y_pred=y_pred)
         self._validate_nans(y_true=y_true, y_pred=y_pred)
 
         df_true = y_true[:, :, "target"].sort_index(axis=1)
@@ -481,4 +513,4 @@ class MetricWithMissingHandling(Metric):
             return value
 
 
-__all__ = ["Metric", "MetricWithMissingHandling", "MetricAggregationMode", "MetricMissingMode"]
+__all__ = ["Metric", "MetricWithMissingHandling", "MetricAggregationMode", "MetricMissingMode", "BaseMetric"]

@@ -379,8 +379,8 @@ def test_all_missing_values_ignore_macro(metric, tsdataset_with_intervals_and_mi
         ("tsdataset_with_borders_missing_values", "target_lower", "target_upper"),
     ),
 )
-@patch("etna.metrics.MetricWithMissingHandling._validate_nans")
-@patch("etna.metrics.intervals_metrics._IntervalsMetricMixin._validate_tsdataset_intervals")
+@patch("etna.metrics.intervals_metrics.BaseIntervalsMetricWithMissingHandling._validate_nans")
+@patch("etna.metrics.intervals_metrics.BaseIntervalsMetricWithMissingHandling._validate_tsdataset_intervals")
 def test_mocked_width_missing_values_handling(
     pred_check_mock, intervals_check_mock, dataset_name, upper_name, lower_name, request
 ):
