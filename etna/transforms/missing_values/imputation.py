@@ -81,6 +81,9 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
     - This transform can't fill NaNs if all values are NaNs. In this case exception is raised.
 
+    Imputation with the values that differ from initial ``in_column`` column dtype
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform can suffer from look-ahead bias in 'mean' mode. For transforming data at some timestamp
@@ -237,9 +240,7 @@ class TimeSeriesImputerTransform(ReversibleTransform):
                 indexes = indexes[indexes >= 0]
                 if len(indexes) > 0:
                     impute_values = bn.nanmean(df.iloc[indexes], axis=0)
-                    df.iloc[i] = np.where(
-                        nan_mask[i], impute_values, df.iloc[i]
-                    )  # can fail when in_column isn't target
+                    df.iloc[i] = np.where(nan_mask[i], impute_values, df.iloc[i])
         elif self._strategy is ImputerMode.seasonal_nonautoreg:
             lag_transform = LagTransform(in_column=self.in_column, lags=[self.seasonality], out_column="lag")
             sma_transform = MeanTransform(

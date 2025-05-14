@@ -79,6 +79,9 @@ class BinaryOperationTransform(ReversibleTransform):
     - If during the operation a division by zero of a positive number occurs, writes +inf to this cell of the column, if negative - -inf, if 0/0 - nan.
     - In the case of raising a negative number to a non-integer power, writes nan to this cell of the column.
 
+    Different ``out_column`` column dtype and result dtype in inplace operations
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Examples
     --------
     >>> import numpy as np

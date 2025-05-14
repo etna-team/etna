@@ -1353,6 +1353,9 @@ class TSDataset:
         Columns in ``df_exog`` are not updated. If you wish to update the ``df_exog``, create the new
         instance of TSDataset.
 
+        Updating ``df`` with ``df_update`` with different column dtypes
+        could lead to unexpected behaviour in different ``pandas`` versions.
+
         Parameters
         ----------
         df_update:
@@ -1384,7 +1387,7 @@ class TSDataset:
             raise ValueError("The dataset features set contains duplicates!")
 
         original_types = df.dtypes.to_dict()
-        self._df.iloc[:, column_idx] = df  # can fail when df_update has different column dtypes
+        self._df.iloc[:, column_idx] = df
         self._df = self._df.astype(original_types)
 
     def add_features_from_pandas(

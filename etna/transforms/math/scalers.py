@@ -20,6 +20,9 @@ class StandardScalerTransform(SklearnTransform):
 
     Uses :py:class:`sklearn.preprocessing.StandardScaler` inside.
 
+    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
@@ -97,6 +100,9 @@ class RobustScalerTransform(SklearnTransform):
     """Scale features using statistics that are robust to outliers.
 
     Uses :py:class:`sklearn.preprocessing.RobustScaler` inside.
+
+    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
 
     Warning
     -------
@@ -195,6 +201,9 @@ class MinMaxScalerTransform(SklearnTransform):
 
     Uses :py:class:`sklearn.preprocessing.MinMaxScaler` inside.
 
+    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
@@ -270,6 +279,9 @@ class MaxAbsScalerTransform(SklearnTransform):
     """Scale each feature by its maximum absolute value.
 
     Uses :py:class:`sklearn.preprocessing.MaxAbsScaler` inside.
+
+    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
 
     Warning
     -------

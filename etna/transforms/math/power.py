@@ -26,6 +26,9 @@ def _replace_warnings():
 class YeoJohnsonTransform(SklearnTransform):
     """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame.
 
+    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform can suffer from look-ahead bias. For transforming data at some timestamp
@@ -94,6 +97,9 @@ class YeoJohnsonTransform(SklearnTransform):
 
 class BoxCoxTransform(SklearnTransform):
     """BoxCoxTransform applies Box-Cox transformation to DataFrame.
+
+    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
 
     Warning
     -------

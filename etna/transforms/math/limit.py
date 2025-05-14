@@ -30,6 +30,9 @@ class LimitTransform(ReversibleTransform):
     where :math:`x` is feature, :math:`a` is lower bound, :math:`b` is upper bound, :math:`tol` is offset.
 
     For more details visit https://datasciencestunt.com/time-series-forecasting-within-limits/ .
+
+    Applying transform to ``in_column`` column of dtype int could lead to unexpected behaviour
+    in different ``pandas`` versions. Convert it to float.
     """
 
     def __init__(

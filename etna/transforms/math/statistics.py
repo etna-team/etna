@@ -141,6 +141,9 @@ class MeanTransform(WindowStatisticsTransform):
     .. math::
        MeanTransform(x_t) = \\sum_{i=1}^{window}{x_{t - i}\\cdot\\alpha^{i - 1}}
 
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -247,6 +250,9 @@ class MeanTransform(WindowStatisticsTransform):
 class StdTransform(WindowStatisticsTransform):
     """StdTransform computes std value for given window.
 
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -314,6 +320,9 @@ class StdTransform(WindowStatisticsTransform):
 
 class QuantileTransform(WindowStatisticsTransform):
     """QuantileTransform computes quantile value for given window.
+
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
 
     Warning
     -------
@@ -398,6 +407,9 @@ class QuantileTransform(WindowStatisticsTransform):
 class MinTransform(WindowStatisticsTransform):
     """MinTransform computes min value for given window.
 
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -457,6 +469,9 @@ class MinTransform(WindowStatisticsTransform):
 
 class MaxTransform(WindowStatisticsTransform):
     """MaxTransform computes max value for given window.
+
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
 
     Warning
     -------
@@ -518,6 +533,9 @@ class MaxTransform(WindowStatisticsTransform):
 class MedianTransform(WindowStatisticsTransform):
     """MedianTransform computes median value for given window.
 
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -577,6 +595,9 @@ class MedianTransform(WindowStatisticsTransform):
 
 class MADTransform(WindowStatisticsTransform):
     """MADTransform computes Mean Absolute Deviation over the window.
+
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
 
     Warning
     -------
@@ -644,6 +665,9 @@ class MADTransform(WindowStatisticsTransform):
 class MinMaxDifferenceTransform(WindowStatisticsTransform):
     """MinMaxDifferenceTransform computes difference between max and min values for given window.
 
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -705,6 +729,9 @@ class MinMaxDifferenceTransform(WindowStatisticsTransform):
 
 class SumTransform(WindowStatisticsTransform):
     """SumTransform computes sum of values over given window.
+
+    Applying transform to ``in_column`` column of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions.
 
     Warning
     -------
