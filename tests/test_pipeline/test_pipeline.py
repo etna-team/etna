@@ -423,7 +423,7 @@ def test_forecast_prediction_interval_size(example_tsds, quantiles_narrow, quant
 
 
 def test_forecast_prediction_interval_noise(constant_ts, constant_noisy_ts):
-    """Test that prediction interval for noisy dataset is wider then for the dataset without noise."""
+    """Test that prediction interval for noisy dataset is wider than for the dataset without noise."""
     pipeline = Pipeline(model=MovingAverageModel(), transforms=[], horizon=5)
     pipeline.fit(constant_ts)
     forecast = pipeline.forecast(prediction_interval=True, quantiles=[0.025, 0.975])

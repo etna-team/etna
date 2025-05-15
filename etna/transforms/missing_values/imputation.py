@@ -81,6 +81,9 @@ class TimeSeriesImputerTransform(ReversibleTransform):
 
     - This transform can't fill NaNs if all values are NaNs. In this case exception is raised.
 
+    Imputation with the values that differ from initial ``in_column`` column dtype
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Warning
     -------
     This transform can suffer from look-ahead bias in 'mean' mode. For transforming data at some timestamp

@@ -183,9 +183,9 @@ def test_transformed_names(ts_name, lag, horizon, expected, request):
 @pytest.mark.parametrize(
     "lag,horizon,expected_types",
     (
-        (1, None, {"feat1_shift_1": "float", "feat2_shift_1": "float", "feat3_shift_1": "float", "target": "int"}),
-        ("auto", 1, {"feat1_shift_1": "float", "feat2_shift_2": "float", "feat3": "int", "target": "int"}),
-        ("auto", 2, {"feat1_shift_2": "float", "feat2_shift_3": "float", "feat3_shift_1": "float", "target": "int"}),
+        (1, None, {"feat1_shift_1": "float", "feat2_shift_1": "float", "feat3_shift_1": "float", "target": "float"}),
+        ("auto", 1, {"feat1_shift_1": "float", "feat2_shift_2": "float", "feat3": "int", "target": "float"}),
+        ("auto", 2, {"feat1_shift_2": "float", "feat2_shift_3": "float", "feat3_shift_1": "float", "target": "float"}),
     ),
 )
 @pytest.mark.parametrize(

@@ -58,7 +58,7 @@ def ts_with_exog(regular_ts) -> TSDataset:
     df_exog_common = pd.DataFrame(
         {
             "timestamp": timestamp,
-            "positive": 1,
+            "positive": 1.0,
             "weekday": timestamp.weekday,
             "monthday": timestamp.day,
             "month": timestamp.month,

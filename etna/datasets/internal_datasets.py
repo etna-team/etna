@@ -1049,6 +1049,6 @@ datasets_dict: Dict[str, Dict] = {
         "get_dataset_function": get_australian_wine_sales_dataset,
         "freq": pd.offsets.MonthBegin(),
         "parts": ("full",),
-        "hash": {"full": "2dd34b5306d5e5372727e4d610b713be"},
+        "hash": {"full": "a44a58333fb79678a275c96a0160f756"},
     },
 }

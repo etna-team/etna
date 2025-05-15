@@ -112,7 +112,7 @@ def test_lags_values_two_segments(lags: Union[int, Sequence[int]], int_ts_two_se
 
 
 @pytest.mark.parametrize(
-    "lags, expected_types", [(3, {"lag_1": "float", "lag_2": "float", "lag_3": "float", "target": "int"})]
+    "lags, expected_types", [(3, {"lag_1": "float", "lag_2": "float", "lag_3": "float", "target": "float"})]
 )
 def test_transform_type_changes(lags, expected_types, int_ts_two_segments):
     ts = int_ts_two_segments

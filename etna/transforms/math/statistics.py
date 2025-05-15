@@ -141,6 +141,9 @@ class MeanTransform(WindowStatisticsTransform):
     .. math::
        MeanTransform(x_t) = \\sum_{i=1}^{window}{x_{t - i}\\cdot\\alpha^{i - 1}}
 
+    Applying transform to ``in_column`` of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -247,6 +250,9 @@ class MeanTransform(WindowStatisticsTransform):
 class StdTransform(WindowStatisticsTransform):
     """StdTransform computes std value for given window.
 
+    Applying transform to ``in_column`` of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -314,6 +320,9 @@ class StdTransform(WindowStatisticsTransform):
 
 class QuantileTransform(WindowStatisticsTransform):
     """QuantileTransform computes quantile value for given window.
+
+    Applying transform to ``in_column`` of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -518,6 +527,9 @@ class MaxTransform(WindowStatisticsTransform):
 class MedianTransform(WindowStatisticsTransform):
     """MedianTransform computes median value for given window.
 
+    Applying transform to ``in_column`` of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
+
     Warning
     -------
     This transform, applied to non-regressor column, generates non-regressor column.
@@ -577,6 +589,9 @@ class MedianTransform(WindowStatisticsTransform):
 
 class MADTransform(WindowStatisticsTransform):
     """MADTransform computes Mean Absolute Deviation over the window.
+
+    Applying transform to ``in_column`` of dtype int inplace
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------

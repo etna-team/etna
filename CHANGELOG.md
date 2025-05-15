@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Make `level_names` property of `HierarchicalStructure` read-only ([#582](https://github.com/etna-team/etna/pull/582))
 - **Breaking:** Set `fast_redundancy=True` as a default value in `MRMRFeatureSelectionTransform` ([#592](https://github.com/etna-team/etna/pull/592))
 - **Breaking:** Remove `return_features` parameter from `FilterFeaturesTransform`, `GaleShapleyFeatureSelectionTransform`, `TreeFeatureSelectionTransform`, `MRMRFeatureSelectionTransform` ([#594](https://github.com/etna-team/etna/pull/594))
-- 
+- **Breaking:** Convert `target` to float64 during `TSDataset.to_dataset` and `TSDataset.__init__` ([#660](https://github.com/etna-team/etna/pull/660))
 - **Breaking:** Bump minimum `pandas` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
 - **Breaking:** Bump minimum `torch` version to 2.0 ([#599](https://github.com/etna-team/etna/pull/599))
 - **Breaking:** Bump minimum `statsmodels` version to 0.14 ([#599](https://github.com/etna-team/etna/pull/599))
@@ -88,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix error with `repr` of `DeepStateModel` and `LevelTrendSSM` ([#642](https://github.com/etna-team/etna/pull/642))
 - Fix `get_residuals` to drop prediction intervals ([#645](https://github.com/etna-team/etna/pull/645))
 - Fix `SARIMAXModel`, `AutoARIMAModel` and `statsforecast` models to drop datetime external column ([#652](https://github.com/etna-team/etna/pull/652))
+- Remove unnecessary pieces of code for pandas <2 ([#660](https://github.com/etna-team/etna/pull/660))
 
 ### Removed
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))

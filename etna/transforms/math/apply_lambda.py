@@ -11,7 +11,11 @@ from etna.transforms.base import ReversibleTransform
 
 
 class LambdaTransform(ReversibleTransform):
-    """``LambdaTransform`` applies input function for given series."""
+    """``LambdaTransform`` applies input function for given series.
+
+    Different ``in_column`` dtype and result dtype with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
+    """
 
     def __init__(
         self,

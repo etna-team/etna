@@ -136,8 +136,8 @@ def constant_ts(size=40) -> TSDataset:
 @pytest.fixture
 def constant_noisy_ts(size=40, use_noise=True) -> TSDataset:
     noise = RandomState(seed=42).normal(scale=3, size=size * 2)
-    segment_1 = [7] * size
-    segment_2 = [50] * size
+    segment_1 = [7.0] * size
+    segment_2 = [50.0] * size
     ts_range = list(pd.date_range("2020-01-03", freq=pd.offsets.Day(), periods=size))
     df = pd.DataFrame(
         {

@@ -283,6 +283,9 @@ class DifferencingTransform(ReversibleTransform):
     During ``fit`` this transform can work with NaNs at the beginning of the segment, but fails when meets NaN inside the segment.
     During ``transform`` and ``inverse_transform`` there is no special treatment of NaNs.
 
+    Different ``in_column`` dtype and result dtype with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
+
     Notes
     -----
     To understand how transform works we recommend:

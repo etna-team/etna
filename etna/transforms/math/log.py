@@ -11,7 +11,11 @@ from etna.transforms.base import ReversibleTransform
 
 
 class LogTransform(ReversibleTransform):
-    """LogTransform applies logarithm transformation for given series."""
+    """LogTransform applies logarithm transformation for given series.
+
+    Applying transform to ``in_column`` of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
+    """
 
     def __init__(self, in_column: str, base: int = 10, inplace: bool = True, out_column: Optional[str] = None):
         """Init LogTransform.

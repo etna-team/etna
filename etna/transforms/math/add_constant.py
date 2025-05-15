@@ -10,7 +10,11 @@ from etna.transforms.base import ReversibleTransform
 
 
 class AddConstTransform(ReversibleTransform):
-    """AddConstTransform add constant for given series."""
+    """AddConstTransform add constant for given series.
+
+    Different ``value`` dtype and ``in_column`` dtype with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions.
+    """
 
     def __init__(self, in_column: str, value: float, inplace: bool = True, out_column: Optional[str] = None):
         """

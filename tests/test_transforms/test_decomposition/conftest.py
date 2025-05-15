@@ -15,7 +15,7 @@ def ts_with_exogs() -> TSDataset:
         start_time="2020-01-01", periods=periods_exog, freq=pd.offsets.Day(), n_segments=2, random_seed=2
     )
     df_exog.rename(columns={"target": "exog"}, inplace=True)
-    df_exog["holiday"] = np.random.choice([0, 1], size=periods_exog * 2)
+    df_exog["holiday"] = np.random.choice([0.0, 1.0], size=periods_exog * 2)
 
     ts = TSDataset(df, freq=pd.offsets.Day(), df_exog=df_exog, known_future="all")
     return ts
