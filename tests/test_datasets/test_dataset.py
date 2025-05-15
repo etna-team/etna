@@ -21,6 +21,20 @@ from etna.transforms import LagTransform
 from etna.transforms import TimeSeriesImputerTransform
 
 
+def convert_flatten_to_wide_df(df):
+    df = df.set_index(["timestamp", "segment"])
+
+    df = df.unstack(level=-1)
+
+    df.columns = df.columns.reorder_levels([1, 0])
+    df.columns.names = ["segment", "feature"]
+    df.sort_index(axis=1, level=(0, 1), inplace=True)
+
+    if df._is_view or df._is_copy is None:
+        df = df.copy(deep=True)
+    return df
+
+
 @pytest.fixture
 def tsdf_with_exog(random_seed) -> TSDataset:
     df_1 = pd.DataFrame.from_dict({"timestamp": pd.date_range("2021-02-01", "2021-07-01", freq=pd.offsets.Day())})
@@ -1544,6 +1558,37 @@ def test_to_dataset_convert_target_to_float64():
     df_mod = TSDataset.to_dataset(df_original)
     assert df_copy["target"].dtypes == np.int64
     assert df_mod.dtypes["segment_0"]["target"] == np.float64
+
+
+def test_wide_df_different_target_dtypes():
+    df_1 = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2021-06-01", periods=5),
+            "target": [0, 1, 2, 3, 4],
+            "segment": "segment_0",
+            "exog": "exog1",
+        }
+    )
+    df_2 = pd.DataFrame(
+        {
+            "timestamp": pd.date_range(start="2021-06-01", periods=5),
+            "target": [0.0, 1.0, 2.0, 3.0, 4.0],
+            "segment": "segment_1",
+            "exog": "exog2",
+        }
+    )
+    df1_wide = convert_flatten_to_wide_df(df_1)
+    df2_wide = convert_flatten_to_wide_df(df_2)
+    df_wide = pd.concat([df1_wide, df2_wide], axis=1)
+    ts = TSDataset(df_wide, freq="D")
+
+    target_dtypes_before = df_wide.loc[:, pd.IndexSlice[:, "target"]].dtypes
+    not_float_target_before = target_dtypes_before[target_dtypes_before != np.float64].index
+
+    target_dtypes_after = ts._df.loc[:, pd.IndexSlice[:, "target"]].dtypes
+    not_float_target_after = target_dtypes_after[target_dtypes_after != np.float64].index
+    assert len(not_float_target_before) == 1
+    assert len(not_float_target_after) == 0
 
 
 @pytest.mark.parametrize("start_idx,end_idx", [(1, None), (None, 1), (1, 2), (1, -1)])

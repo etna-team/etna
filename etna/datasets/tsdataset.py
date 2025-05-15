@@ -320,6 +320,17 @@ class TSDataset:
         return df
 
     @staticmethod
+    def _cast_target_to_float(df: pd.DataFrame) -> pd.DataFrame:
+        if "target" in df.columns.get_level_values("feature").unique():
+            target_dtypes = df.loc[:, pd.IndexSlice[:, "target"]].dtypes
+            not_float_target = target_dtypes[target_dtypes != np.float64].index
+            if len(not_float_target) > 0:
+                float_target = df.loc[:, not_float_target].astype(np.float64)
+                df = df.drop(columns=not_float_target)
+                df = pd.concat([df, float_target], axis=1).sort_index(axis=1)
+        return df
+
+    @staticmethod
     def _cast_index_to_datetime(df: pd.DataFrame, freq_offset: pd.DateOffset) -> pd.DataFrame:
         if pd.api.types.is_numeric_dtype(df.index):
             warnings.warn(
@@ -339,6 +350,9 @@ class TSDataset:
 
         # cast segment to str type
         cls._cast_segment_to_str(df)
+
+        # cast target columns to float64
+        df = cls._cast_target_to_float(df)
 
         # handle freq
         if freq_offset is None:
