@@ -26,8 +26,8 @@ def _replace_warnings():
 class YeoJohnsonTransform(SklearnTransform):
     """YeoJohnsonTransform applies Yeo-Johns transformation to a DataFrame.
 
-    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
-    could lead to unexpected behaviour in different ``pandas`` versions.
+    Applying transform to ``in_column`` of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
 
     Warning
     -------
@@ -98,8 +98,8 @@ class YeoJohnsonTransform(SklearnTransform):
 class BoxCoxTransform(SklearnTransform):
     """BoxCoxTransform applies Box-Cox transformation to DataFrame.
 
-    Applying transform to ``in_column`` column of dtype int with ``inplace=True`` option
-    could lead to unexpected behaviour in different ``pandas`` versions.
+    Applying transform to ``in_column`` of dtype int with ``inplace=True`` option
+    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
 
     Warning
     -------

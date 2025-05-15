@@ -12,7 +12,7 @@ from etna.transforms.base import ReversibleTransform
 class AddConstTransform(ReversibleTransform):
     """AddConstTransform add constant for given series.
 
-    Different ``value`` dtype and ``in_column`` column dtype with ``inplace=True`` option
+    Different ``value`` dtype and ``in_column`` dtype with ``inplace=True`` option
     could lead to unexpected behaviour in different ``pandas`` versions.
     """
 
