@@ -1367,7 +1367,7 @@ class TSDataset:
         Columns in ``df_exog`` are not updated. If you wish to update the ``df_exog``, create the new
         instance of TSDataset.
 
-        Updating ``df`` with ``df_update`` with different column dtypes
+        Updating ``df`` with ``df_update`` with different corresponding column dtypes
         could lead to unexpected behaviour in different ``pandas`` versions.
 
         Parameters
