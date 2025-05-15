@@ -83,7 +83,7 @@ def test_prepare_ts_in_column_feature(ts_name, in_column, request):
     assert "feature" not in prepared_ts.features
     assert prepared_ts._df_exog is None
     pd.testing.assert_frame_equal(
-        prepared_ts._df, ts[..., in_column].rename({in_column: "target"}, axis=1, level="feature")
+        prepared_ts._df.astype(int), ts[..., in_column].rename({in_column: "target"}, axis=1, level="feature")
     )
 
 
