@@ -32,7 +32,7 @@ class LimitTransform(ReversibleTransform):
     For more details visit https://datasciencestunt.com/time-series-forecasting-within-limits/ .
 
     Applying transform to ``in_column`` of dtype int could lead to unexpected behaviour
-    in different ``pandas`` versions. Convert it to float.
+    in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
     """
 
     def __init__(

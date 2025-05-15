@@ -21,7 +21,7 @@ class StandardScalerTransform(SklearnTransform):
     Uses :py:class:`sklearn.preprocessing.StandardScaler` inside.
 
     Applying transform to ``in_column`` of dtype int with ``inplace=True`` option
-    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -102,7 +102,7 @@ class RobustScalerTransform(SklearnTransform):
     Uses :py:class:`sklearn.preprocessing.RobustScaler` inside.
 
     Applying transform to ``in_column`` of dtype int with ``inplace=True`` option
-    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -202,7 +202,7 @@ class MinMaxScalerTransform(SklearnTransform):
     Uses :py:class:`sklearn.preprocessing.MinMaxScaler` inside.
 
     Applying transform to ``in_column`` of dtype int with ``inplace=True`` option
-    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -281,7 +281,7 @@ class MaxAbsScalerTransform(SklearnTransform):
     Uses :py:class:`sklearn.preprocessing.MaxAbsScaler` inside.
 
     Applying transform to ``in_column`` of dtype int with ``inplace=True`` option
-    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------

@@ -142,7 +142,7 @@ class MeanTransform(WindowStatisticsTransform):
        MeanTransform(x_t) = \\sum_{i=1}^{window}{x_{t - i}\\cdot\\alpha^{i - 1}}
 
     Applying transform to ``in_column`` of dtype int inplace
-    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -251,7 +251,7 @@ class StdTransform(WindowStatisticsTransform):
     """StdTransform computes std value for given window.
 
     Applying transform to ``in_column`` of dtype int inplace
-    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -322,7 +322,7 @@ class QuantileTransform(WindowStatisticsTransform):
     """QuantileTransform computes quantile value for given window.
 
     Applying transform to ``in_column`` of dtype int inplace
-    could lead to unexpected behaviour in different ``pandas`` versions. Convert it to float.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -528,7 +528,7 @@ class MedianTransform(WindowStatisticsTransform):
     """MedianTransform computes median value for given window.
 
     Applying transform to ``in_column`` of dtype int inplace
-    could lead to unexpected behaviour in different ``pandas`` versions.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
@@ -591,7 +591,7 @@ class MADTransform(WindowStatisticsTransform):
     """MADTransform computes Mean Absolute Deviation over the window.
 
     Applying transform to ``in_column`` of dtype int inplace
-    could lead to unexpected behaviour in different ``pandas`` versions.
+    could lead to unexpected behaviour in different ``pandas`` versions. Try converting ``in_column`` to float dtype.
 
     Warning
     -------
