@@ -551,6 +551,8 @@ class DeepBaseModel(DeepBaseAbstractModel, SaveDeepBaseModelMixin, NonPrediction
     def fit(self, ts: TSDataset) -> "DeepBaseModel":
         """Fit model.
 
+        Model continues training after each ``fit`` call.
+
         Parameters
         ----------
         ts:
