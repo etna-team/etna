@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add support for `pd.DateOffset` values for `freq` in `TSDataset`, `_SARIMAXBaseAdapter`, `_StatsForecastBaseAdapter`, `_TBATSAdapter`, `_HoltWintersAdapter` ([#640](https://github.com/etna-team/etna/pull/640))
 - Add warning when features are dropped in `make_future` ([#644](https://github.com/etna-team/etna/pull/644))
 - Add `BaseIntervalsMetricWithMissingHandling` with base functionality for metrics for prediction intervals with missing handling. ([#659](https://github.com/etna-team/etna/pull/659))
+- Update native DL models docs with statement that they continue training after each ``fit`` call ([#663](https://github.com/etna-team/etna/pull/663))
 
 ### Changed
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
