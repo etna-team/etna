@@ -211,6 +211,10 @@ class Auto(AutoBase):
     ----
     This class requires ``auto`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
+
+    Note
+    ----
+    Class initialization could be slow due to downloading of pretrained models when using default pools
     """
 
     def __init__(
@@ -220,7 +224,8 @@ class Auto(AutoBase):
         metric_aggregation: MetricAggregationStatistics = "mean",
         backtest_params: Optional[dict] = None,
         experiment_folder: Optional[str] = None,
-        pool: Union[Pool, PoolGenerator, List[BasePipeline]] = Pool.default,
+        pool: Union[Pool, PoolGenerator, List[BasePipeline]] = Pool.no_freq_super_fast,
+        generate_params: Optional[Dict[str, Any]] = None,
         runner: Optional[AbstractRunner] = None,
         storage: Optional[BaseStorage] = None,
         metrics: Optional[List[BaseMetric]] = None,
@@ -242,7 +247,10 @@ class Auto(AutoBase):
             Name for saving experiment results, it determines the name for optuna study. By default, isn't set.
         pool:
             Pool of pipelines to choose from.
-            By default, default pool from :py:class:`~etna.auto.pool.generator.Pool` is used.
+            By default, ``no_freq_super_fast`` pool is used.
+            For description of all available pools see :py:class:`~etna.auto.pool.generator.Pool`
+        generate_params:
+            Dictionary with parameters to fill pool templates.
         runner:
             Runner to use for distributed training. By default, :py:class:`~etna.auto.runner.local.LocalRunner` is used.
         storage:
@@ -264,7 +272,8 @@ class Auto(AutoBase):
             metrics=metrics,
         )
         self.pool = pool
-        self._pool = self._make_pool(pool=pool, horizon=horizon)
+        self.generate_params = generate_params if generate_params is not None else {}
+        self._pool = self._make_pool(pool=pool, horizon=horizon, generate_params=self.generate_params)
         self._configs_mapping = {config_hash(config=pipeline.to_dict()): pipeline.to_dict() for pipeline in self._pool}
         self._pool_optuna: Optional[Optuna] = None
 
@@ -272,15 +281,21 @@ class Auto(AutoBase):
         self._pool_folder = f"{root_folder}pool"
 
     @staticmethod
-    def _make_pool(pool: Union[Pool, PoolGenerator, List[BasePipeline]], horizon: int) -> List[BasePipeline]:
+    def _make_pool(
+        pool: Union[Pool, PoolGenerator, List[BasePipeline]], horizon: int, generate_params: Dict[str, Any]
+    ) -> List[BasePipeline]:
         if isinstance(pool, Pool):
-            list_pool: List[BasePipeline] = list(pool.value.generate(horizon=horizon))
+            list_pool: List[BasePipeline] = list(pool.value.generate(horizon=horizon, generate_params=generate_params))
         elif isinstance(pool, PoolGenerator):
-            list_pool = list(pool.generate(horizon=horizon))
+            list_pool = list(pool.generate(horizon=horizon, generate_params=generate_params))
         else:
             list_pool = list(pool)
 
         return list_pool
+
+    def get_configs(self) -> List[Dict[str, Any]]:
+        """Get pipelines from ``pool``."""
+        return [pipeline_dict.to_dict() for pipeline_dict in self._pool]
 
     def _get_tuner_timeout(self, timeout: Optional[int], tune_size: int, elapsed_time: float) -> Optional[int]:
         if timeout is None or tune_size < 1:
@@ -477,12 +492,16 @@ class Auto(AutoBase):
         def _objective(trial: Trial) -> float:
 
             pipeline_config = config_mapping[trial.relative_params["hash"]]
+            tslogger.log(f"Running pipeline: {pipeline_config}")
 
             pipeline: BasePipeline = get_from_params(**pipeline_config)
             if initializer is not None:
                 initializer(pipeline=pipeline)
 
+            start_time = time.perf_counter()
             backtest_result = pipeline.backtest(ts, metrics=metrics, **backtest_params)
+            end_time = time.perf_counter()
+
             metrics_df = backtest_result["metrics"]
             metrics_df = cast(pd.DataFrame, metrics_df)
             forecast_ts_list = backtest_result["forecasts"]
@@ -504,6 +523,8 @@ class Auto(AutoBase):
 
             for metric in aggregated_metrics:
                 trial.set_user_attr(metric, aggregated_metrics[metric])
+
+            trial.set_user_attr("elapsed_time", end_time - start_time)
 
             result_value = aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
             if result_value is None:
@@ -594,6 +615,7 @@ class Auto(AutoBase):
         - hash: hash of the pipeline;
         - pipeline: pipeline object;
         - metrics: columns with metrics' values;
+        - elapsed_time: fitting time of pipeline (doesn't include model initialization);
         - state: state of the trial;
         - study: name of the study in which trial was made.
 
@@ -806,6 +828,8 @@ class Tune(AutoBase):
 
         def _objective(trial: Trial) -> float:
             params_suggested = suggest_parameters(trial=trial, params_to_tune=params_to_tune)
+            tslogger.log(f"Running pipeline: {params_suggested}")
+
             pipeline_trial_params: BasePipeline = pipeline.set_params(**params_suggested)
 
             duplicate_trial = _find_duplicate_trial(trial, pipeline_trial_params)
@@ -820,7 +844,10 @@ class Tune(AutoBase):
                 if initializer is not None:
                     initializer(pipeline=pipeline_trial_params)
 
+                start_time = time.perf_counter()
                 backtest_result = pipeline_trial_params.backtest(ts, metrics=metrics, **backtest_params)
+                end_time = time.perf_counter()
+
                 metrics_df = backtest_result["metrics"]
                 metrics_df = cast(pd.DataFrame, metrics_df)
                 forecast_ts_list = backtest_result["forecasts"]
@@ -843,6 +870,8 @@ class Tune(AutoBase):
                 aggregated_metrics = aggregate_metrics_df(metrics_df)
                 for metric in aggregated_metrics:
                     trial.set_user_attr(metric, aggregated_metrics[metric])
+
+                trial.set_user_attr("elapsed_time", end_time - start_time)
 
                 result_value = aggregated_metrics[f"{target_metric.name}_{metric_aggregation}"]
                 if result_value is None:
@@ -891,6 +920,7 @@ class Tune(AutoBase):
         - hash: hash of the pipeline;
         - pipeline: pipeline object;
         - metrics: columns with metrics' values;
+        - elapsed_time: fitting time of pipeline (doesn't include model initialization);
         - state: state of the trial.
 
         Returns

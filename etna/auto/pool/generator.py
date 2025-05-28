@@ -1,9 +1,11 @@
 from enum import Enum
+from typing import Any
+from typing import Dict
 from typing import List
 
 from hydra_slayer import get_from_params
 
-from etna.auto.pool.templates import DEFAULT
+from etna.auto.pool.templates import *
 from etna.auto.pool.utils import fill_template
 from etna.pipeline import Pipeline
 
@@ -33,7 +35,7 @@ class PoolGenerator:
         """
         self.configs_template = configs_template
 
-    def generate(self, horizon: int) -> List[Pipeline]:
+    def generate(self, horizon: int, generate_params: Dict[str, Any]) -> List[Pipeline]:
         """
         Fill templates with args.
 
@@ -41,13 +43,33 @@ class PoolGenerator:
         ----------
         horizon:
             horizon to forecast
+        generate_params
+            Dictionary with parameters to fill pool templates.
         """
-        filled_templates: List[dict] = [fill_template(config, {"horizon": horizon}) for config in self.configs_template]
+        params_to_fill = REQUIRED_PARAMS | generate_params
+        params_to_fill["horizon"] = horizon
+        filled_templates: List[dict] = [fill_template(config, params_to_fill) for config in self.configs_template]
         return [get_from_params(**filled_template) for filled_template in filled_templates]
 
 
 class Pool(Enum):
     """Predefined pools of pipelines.
+
+    Pools are divided into types by freq (``D``, ``H``, ``MS``, ``W``, ``no_freq``) and
+    duration (``super_fast``, ``fast``, ``medium`` and ``heavy``).
+
+    Division by freq:
+
+    In this case freq means "global" freq.
+    For example, if your "exact" freq is D-MON, D-SUN, ..., etc (when the gap between timestamps equals 1).
+    The same with ``H``, ``MS``, ``W`` freqs.
+    The ``no_freq`` freq should be chosen in a case of other freqs and freqs with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc).
+
+    Division by duration:
+
+    Each pool is a subset of the next one: ``fast`` pool contains all configs from ``super_fast`` plus some other.
+
+    To get final pool choose one freq and duration, for example ``D_super_fast``.
 
     Note
     ----
@@ -56,4 +78,27 @@ class Pool(Enum):
     """
 
     #: Default pool of pipelines
-    default = PoolGenerator(configs_template=DEFAULT)  # type: ignore
+    no_freq_super_fast = PoolGenerator(configs_template=NO_FREQ_SUPER_FAST)  # type: ignore
+    no_freq_fast = PoolGenerator(configs_template=NO_FREQ_FAST)  # type: ignore
+    no_freq_medium = PoolGenerator(configs_template=NO_FREQ_MEDIUM)  # type: ignore
+    no_freq_heavy = PoolGenerator(configs_template=NO_FREQ_HEAVY)  # type: ignore
+
+    D_super_fast = PoolGenerator(configs_template=D_SUPER_FAST)  # type: ignore
+    D_fast = PoolGenerator(configs_template=D_FAST)  # type: ignore
+    D_medium = PoolGenerator(configs_template=D_MEDIUM)  # type: ignore
+    D_heavy = PoolGenerator(configs_template=D_HEAVY)  # type: ignore
+
+    H_super_fast = PoolGenerator(configs_template=H_SUPER_FAST)  # type: ignore
+    H_fast = PoolGenerator(configs_template=H_FAST)  # type: ignore
+    H_medium = PoolGenerator(configs_template=H_MEDIUM)  # type: ignore
+    H_heavy = PoolGenerator(configs_template=H_HEAVY)  # type: ignore
+
+    MS_super_fast = PoolGenerator(configs_template=MS_SUPER_FAST)  # type: ignore
+    MS_fast = PoolGenerator(configs_template=MS_FAST)  # type: ignore
+    MS_medium = PoolGenerator(configs_template=MS_MEDIUM)  # type: ignore
+    MS_heavy = PoolGenerator(configs_template=MS_HEAVY)  # type: ignore
+
+    W_super_fast = PoolGenerator(configs_template=W_SUPER_FAST)  # type: ignore
+    W_fast = PoolGenerator(configs_template=W_FAST)  # type: ignore
+    W_medium = PoolGenerator(configs_template=W_MEDIUM)  # type: ignore
+    W_heavy = PoolGenerator(configs_template=W_HEAVY)  # type: ignore

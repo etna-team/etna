@@ -222,7 +222,7 @@ def test_fit_without_tuning_list(ts_name, optuna_storage, pool, request):
     assert len(auto.top_k(k=5)) == 2
     assert len(auto.top_k(k=1)) == 1
     if isinstance(pool, PoolGenerator):
-        pool = pool.generate(7)
+        pool = pool.generate(horizon=7, generate_params={})
     assert auto.top_k(k=1)[0].to_dict() == pool[0].to_dict()
 
 
@@ -363,3 +363,4 @@ def test_summary_after_fit(
     assert len(df_summary_tune_1) == 4
     assert isinstance(df_summary_tune_0.iloc[0]["pipeline"].model, LinearPerSegmentModel)
     assert isinstance(df_summary_tune_1.iloc[0]["pipeline"].model, MovingAverageModel)
+    assert {"elapsed_time", "hash", "study", "pipeline", "state"}.issubset(set(df_summary.columns))

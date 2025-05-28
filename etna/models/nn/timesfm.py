@@ -22,7 +22,8 @@ if SETTINGS.timesfm_required:
     from etna.libs.timesfm import TimesFmTorch
     from etna.libs.timesfm.timesfm_base import freq_map
 
-_DOWNLOAD_PATH = Path.home() / ".etna" / "timesfm"
+# _DOWNLOAD_PATH = "/Users/e.a.baturin/.etna/timesfm"
+_DOWNLOAD_PATH = str(Path.home() / ".etna" / "timesfm")
 
 
 class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
@@ -57,7 +58,7 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         time_varying_categoricals: Optional[List[str]] = None,
         normalize_exog: bool = True,
         forecast_with_exog_mode: Literal["timesfm + xreg", "xreg + timesfm"] = "xreg + timesfm",
-        cache_dir: Path = _DOWNLOAD_PATH,
+        cache_dir: str = _DOWNLOAD_PATH,
     ):
         """
         Init TimesFM model.
