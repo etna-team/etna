@@ -214,7 +214,7 @@ class Auto(AutoBase):
 
     Note
     ----
-    Class initialization could be slow due to downloading of pretrained models when using default pools
+    Class initialization could be slow due to downloading of pretrained models when using default pools.
     """
 
     def __init__(

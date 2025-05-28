@@ -22,7 +22,6 @@ if SETTINGS.timesfm_required:
     from etna.libs.timesfm import TimesFmTorch
     from etna.libs.timesfm.timesfm_base import freq_map
 
-# _DOWNLOAD_PATH = "/Users/e.a.baturin/.etna/timesfm"
 _DOWNLOAD_PATH = str(Path.home() / ".etna" / "timesfm")
 
 
