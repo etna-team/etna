@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add warning when features are dropped in `make_future` ([#644](https://github.com/etna-team/etna/pull/644))
 - Add `BaseIntervalsMetricWithMissingHandling` with base functionality for metrics for prediction intervals with missing handling. ([#659](https://github.com/etna-team/etna/pull/659))
 - Update native DL models docs with statement that they continue training after each ``fit`` call ([#663](https://github.com/etna-team/etna/pull/663))
+- **Breaking:** Add new default pools to `Pool` ([#666](https://github.com/etna-team/etna/pull/666))
+- Add `arange` resolver ([#666](https://github.com/etna-team/etna/pull/666))
 
 ### Changed
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
@@ -29,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement non-empty `params_to_tune` for `VotingEnsemble` ([#557](https://github.com/etna-team/etna/pull/557))
 - Allow `TimesFMModel` to forecast misaligned data with `freq=None` without exogenous features ([#641](https://github.com/etna-team/etna/pull/641))
 - Implement non-empty `params_to_tune` for `DirectEnsemble` ([#559](https://github.com/etna-team/etna/pull/559))
-- 
+- **Breaking:** Change dtype of `cache_dir` to `str` in pretrained models ([#666](https://github.com/etna-team/etna/pull/666))
 - Implement non-empty `params_to_tune` for `StackingEnsemble` ([#561](https://github.com/etna-team/etna/pull/561))
 - 
 - **Breaking:** Make `level_names` property of `HierarchicalStructure` read-only ([#582](https://github.com/etna-team/etna/pull/582))
