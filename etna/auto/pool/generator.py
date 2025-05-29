@@ -5,7 +5,7 @@ from typing import List
 
 from hydra_slayer import get_from_params
 
-from etna.auto.pool.templates import *
+from etna.auto.pool import templates
 from etna.auto.pool.utils import fill_template
 from etna.pipeline import Pipeline
 
@@ -46,7 +46,7 @@ class PoolGenerator:
         generate_params
             Dictionary with parameters to fill pool templates.
         """
-        params_to_fill = REQUIRED_PARAMS | generate_params
+        params_to_fill = templates.REQUIRED_PARAMS | generate_params
         params_to_fill["horizon"] = horizon
         filled_templates: List[dict] = [fill_template(config, params_to_fill) for config in self.configs_template]
         return [get_from_params(**filled_template) for filled_template in filled_templates]
@@ -79,27 +79,27 @@ class Pool(Enum):
     """
 
     #: Default pool of pipelines
-    no_freq_super_fast = PoolGenerator(configs_template=NO_FREQ_SUPER_FAST)  # type: ignore
-    no_freq_fast = PoolGenerator(configs_template=NO_FREQ_FAST)  # type: ignore
-    no_freq_medium = PoolGenerator(configs_template=NO_FREQ_MEDIUM)  # type: ignore
-    no_freq_heavy = PoolGenerator(configs_template=NO_FREQ_HEAVY)  # type: ignore
+    no_freq_super_fast = PoolGenerator(configs_template=templates.NO_FREQ_SUPER_FAST)  # type: ignore
+    no_freq_fast = PoolGenerator(configs_template=templates.NO_FREQ_FAST)  # type: ignore
+    no_freq_medium = PoolGenerator(configs_template=templates.NO_FREQ_MEDIUM)  # type: ignore
+    no_freq_heavy = PoolGenerator(configs_template=templates.NO_FREQ_HEAVY)  # type: ignore
 
-    D_super_fast = PoolGenerator(configs_template=D_SUPER_FAST)  # type: ignore
-    D_fast = PoolGenerator(configs_template=D_FAST)  # type: ignore
-    D_medium = PoolGenerator(configs_template=D_MEDIUM)  # type: ignore
-    D_heavy = PoolGenerator(configs_template=D_HEAVY)  # type: ignore
+    D_super_fast = PoolGenerator(configs_template=templates.D_SUPER_FAST)  # type: ignore
+    D_fast = PoolGenerator(configs_template=templates.D_FAST)  # type: ignore
+    D_medium = PoolGenerator(configs_template=templates.D_MEDIUM)  # type: ignore
+    D_heavy = PoolGenerator(configs_template=templates.D_HEAVY)  # type: ignore
 
-    H_super_fast = PoolGenerator(configs_template=H_SUPER_FAST)  # type: ignore
-    H_fast = PoolGenerator(configs_template=H_FAST)  # type: ignore
-    H_medium = PoolGenerator(configs_template=H_MEDIUM)  # type: ignore
-    H_heavy = PoolGenerator(configs_template=H_HEAVY)  # type: ignore
+    H_super_fast = PoolGenerator(configs_template=templates.H_SUPER_FAST)  # type: ignore
+    H_fast = PoolGenerator(configs_template=templates.H_FAST)  # type: ignore
+    H_medium = PoolGenerator(configs_template=templates.H_MEDIUM)  # type: ignore
+    H_heavy = PoolGenerator(configs_template=templates.H_HEAVY)  # type: ignore
 
-    MS_super_fast = PoolGenerator(configs_template=MS_SUPER_FAST)  # type: ignore
-    MS_fast = PoolGenerator(configs_template=MS_FAST)  # type: ignore
-    MS_medium = PoolGenerator(configs_template=MS_MEDIUM)  # type: ignore
-    MS_heavy = PoolGenerator(configs_template=MS_HEAVY)  # type: ignore
+    MS_super_fast = PoolGenerator(configs_template=templates.MS_SUPER_FAST)  # type: ignore
+    MS_fast = PoolGenerator(configs_template=templates.MS_FAST)  # type: ignore
+    MS_medium = PoolGenerator(configs_template=templates.MS_MEDIUM)  # type: ignore
+    MS_heavy = PoolGenerator(configs_template=templates.MS_HEAVY)  # type: ignore
 
-    W_super_fast = PoolGenerator(configs_template=W_SUPER_FAST)  # type: ignore
-    W_fast = PoolGenerator(configs_template=W_FAST)  # type: ignore
-    W_medium = PoolGenerator(configs_template=W_MEDIUM)  # type: ignore
-    W_heavy = PoolGenerator(configs_template=W_HEAVY)  # type: ignore
+    W_super_fast = PoolGenerator(configs_template=templates.W_SUPER_FAST)  # type: ignore
+    W_fast = PoolGenerator(configs_template=templates.W_FAST)  # type: ignore
+    W_medium = PoolGenerator(configs_template=templates.W_MEDIUM)  # type: ignore
+    W_heavy = PoolGenerator(configs_template=templates.W_HEAVY)  # type: ignore
