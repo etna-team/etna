@@ -1,4 +1,4 @@
-REQUIRED_PARAMS = {"timestamp_column": None}
+REQUIRED_PARAMS = {"timestamp_column": None, "chronos_device": "auto", "timesfm_device": "gpu"}
 
 NO_FREQ_SUPER_FAST = [
     {
@@ -32,8 +32,41 @@ NO_FREQ_SUPER_FAST = [
             {"_target_": "etna.transforms.TimeSeriesImputerTransform", "in_column": "target", "strategy": "mean"},
         ],
     },
-    # {"_target_": "etna.pipeline.Pipeline", "horizon": '${__aux__.horizon}', "model": {"_target_": "etna.models.DeadlineMovingAverageModel", "seasonality": "month", "window": 3}, "transforms": [{"_target_": "etna.transforms.TimeSeriesImputerTransform", "in_column": "target", "strategy": "forward_fill"}, {"_target_": "etna.transforms.DensityOutliersTransform", "distance_coef": 3, "in_column": "target", "window_size": '${horizon}'}, {"_target_": "etna.transforms.TimeSeriesImputerTransform", "in_column": "target", "strategy": "mean"}]},
-    # {"_target_": "etna.ensembles.VotingEnsemble", "pipelines": [{"_target_": "etna.pipeline.Pipeline", "horizon": '${__aux__.horizon}', "model": {"_target_": "etna.models.SeasonalMovingAverageModel", "seasonality": '${horizon}', "window": 1}, "transforms": []}, {"_target_": "etna.pipeline.Pipeline", "horizon": '${__aux__.horizon}', "model": {"_target_": "etna.models.SeasonalMovingAverageModel", "seasonality": '${horizon}', "window": 2}, "transforms": []}, {"_target_": "etna.pipeline.Pipeline", "horizon": '${__aux__.horizon}', "model": {"_target_": "etna.models.SeasonalMovingAverageModel", "seasonality": '${horizon}', "window": 7}, "transforms": []}]},
+    {
+        "_target_": "etna.ensembles.VotingEnsemble",
+        "pipelines": [
+            {
+                "_target_": "etna.pipeline.Pipeline",
+                "horizon": "${__aux__.horizon}",
+                "model": {
+                    "_target_": "etna.models.SeasonalMovingAverageModel",
+                    "seasonality": "${__aux__.horizon}",
+                    "window": 1,
+                },
+                "transforms": [],
+            },
+            {
+                "_target_": "etna.pipeline.Pipeline",
+                "horizon": "${__aux__.horizon}",
+                "model": {
+                    "_target_": "etna.models.SeasonalMovingAverageModel",
+                    "seasonality": "${__aux__.horizon}",
+                    "window": 2,
+                },
+                "transforms": [],
+            },
+            {
+                "_target_": "etna.pipeline.Pipeline",
+                "horizon": "${__aux__.horizon}",
+                "model": {
+                    "_target_": "etna.models.SeasonalMovingAverageModel",
+                    "seasonality": "${__aux__.horizon}",
+                    "window": 7,
+                },
+                "transforms": [],
+            },
+        ],
+    },
     {
         "_target_": "etna.pipeline.Pipeline",
         "horizon": "${__aux__.horizon}",
@@ -41,7 +74,7 @@ NO_FREQ_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -55,7 +88,7 @@ NO_FREQ_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -69,7 +102,7 @@ NO_FREQ_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -178,7 +211,7 @@ NO_FREQ_FAST = NO_FREQ_SUPER_FAST + [
             "_target_": "etna.models.nn.TimesFMModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -192,7 +225,7 @@ NO_FREQ_FAST = NO_FREQ_SUPER_FAST + [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -304,7 +337,7 @@ NO_FREQ_MEDIUM = NO_FREQ_FAST + [
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -487,7 +520,7 @@ NO_FREQ_HEAVY = NO_FREQ_MEDIUM + [
             "_target_": "etna.models.nn.ChronosModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -588,7 +621,7 @@ D_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -602,7 +635,7 @@ D_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -616,7 +649,7 @@ D_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -725,7 +758,7 @@ D_FAST = D_SUPER_FAST + [
             "_target_": "etna.models.nn.TimesFMModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -739,7 +772,7 @@ D_FAST = D_SUPER_FAST + [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -851,7 +884,7 @@ D_MEDIUM = D_FAST + [
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1105,7 +1138,7 @@ D_HEAVY = D_MEDIUM + [
             "_target_": "etna.models.nn.ChronosModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1160,7 +1193,7 @@ H_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1174,7 +1207,7 @@ H_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1188,7 +1221,7 @@ H_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1339,7 +1372,7 @@ H_FAST = H_SUPER_FAST + [
             "_target_": "etna.models.nn.TimesFMModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1353,7 +1386,7 @@ H_FAST = H_SUPER_FAST + [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1490,7 +1523,7 @@ H_MEDIUM = H_FAST + [
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1787,7 +1820,7 @@ H_HEAVY = H_MEDIUM + [
             "_target_": "etna.models.nn.ChronosModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1823,7 +1856,7 @@ MS_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1837,7 +1870,7 @@ MS_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1851,7 +1884,7 @@ MS_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1977,7 +2010,7 @@ MS_FAST = MS_SUPER_FAST + [
             "_target_": "etna.models.nn.TimesFMModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -1991,7 +2024,7 @@ MS_FAST = MS_SUPER_FAST + [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2256,7 +2289,7 @@ MS_MEDIUM = MS_FAST + [
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2312,7 +2345,7 @@ MS_HEAVY = MS_MEDIUM + [
             "_target_": "etna.models.nn.ChronosModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2373,7 +2406,7 @@ W_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2387,7 +2420,7 @@ W_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2401,7 +2434,7 @@ W_SUPER_FAST = [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2566,7 +2599,7 @@ W_FAST = W_SUPER_FAST + [
             "_target_": "etna.models.nn.TimesFMModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2580,7 +2613,7 @@ W_FAST = W_SUPER_FAST + [
             "_target_": "etna.models.nn.ChronosBoltModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -2734,7 +2767,7 @@ W_MEDIUM = W_FAST + [
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
-            "device": "gpu",
+            "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
         },
         "transforms": [
@@ -3051,7 +3084,7 @@ W_HEAVY = W_MEDIUM + [
             "_target_": "etna.models.nn.ChronosModel",
             "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
-            "device": "auto",
+            "device": "${__aux__.chronos_device}",
             "batch_size": 128,
         },
         "transforms": [
