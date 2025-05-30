@@ -11,7 +11,7 @@ from etna.models.nn.chronos.base import ChronosBaseModel
 if SETTINGS.chronos_required:
     import torch
 
-_DOWNLOAD_PATH = Path.home() / ".etna" / "chronos-models" / "chronos"
+_DOWNLOAD_PATH = str(Path.home() / ".etna" / "chronos-models" / "chronos")
 
 
 class ChronosModel(ChronosBaseModel):
@@ -40,7 +40,7 @@ class ChronosModel(ChronosBaseModel):
         top_p: float = 1.0,
         limit_prediction_length: bool = False,
         batch_size: int = 128,
-        cache_dir: Path = _DOWNLOAD_PATH,
+        cache_dir: str = _DOWNLOAD_PATH,
     ):
         """
         Init Chronos model.

@@ -1,3 +1,5 @@
+import json
+import os
 from functools import partial
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -10,6 +12,7 @@ from etna.auto import Auto
 from etna.auto.auto import PoolGenerator
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
+from etna.auto.pool import Pool
 from etna.metrics import MAE
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
@@ -222,7 +225,7 @@ def test_fit_without_tuning_list(ts_name, optuna_storage, pool, request):
     assert len(auto.top_k(k=5)) == 2
     assert len(auto.top_k(k=1)) == 1
     if isinstance(pool, PoolGenerator):
-        pool = pool.generate(7)
+        pool = pool.generate(horizon=7, generate_params={})
     assert auto.top_k(k=1)[0].to_dict() == pool[0].to_dict()
 
 
@@ -354,7 +357,7 @@ def test_summary_after_fit(
     auto.fit(ts=example_tsds, n_trials=11, tune_size=2)
 
     df_summary = auto.summary()
-    assert {"hash", "pipeline", "state", "study"}.issubset(set(df_summary.columns))
+    assert {"elapsed_time", "hash", "pipeline", "state", "study"}.issubset(set(df_summary.columns))
     assert len(df_summary) == 11
     assert len(df_summary[df_summary["study"] == "pool"]) == 3
     df_summary_tune_0 = df_summary[df_summary["study"] == "tuning/edddb11f9acb86ea0cd5568f13f53874"]
@@ -363,3 +366,43 @@ def test_summary_after_fit(
     assert len(df_summary_tune_1) == 4
     assert isinstance(df_summary_tune_0.iloc[0]["pipeline"].model, LinearPerSegmentModel)
     assert isinstance(df_summary_tune_1.iloc[0]["pipeline"].model, MovingAverageModel)
+
+
+@pytest.mark.filterwarnings("ignore: Objective did not converge.")
+@pytest.mark.filterwarnings("ignore: Stepwise search was stopped early due to reaching the model number limit")
+@pytest.mark.filterwarnings("ignore: Path .+ already exists. Model .+ will not be downloaded.")
+@pytest.mark.filterwarnings("ignore: Actual length of a dataset is less that context size.")
+@pytest.mark.skipif(json.loads(os.getenv("skip_large_tests", "false")), reason="Pool is large for testing in GitHub.")
+@pytest.mark.parametrize(
+    "pool",
+    [
+        Pool.no_freq_medium,
+        Pool.D_medium,
+        Pool.H_medium,
+        Pool.MS_medium,
+        Pool.W_medium,
+    ],
+)
+def test_medium_default_pools(pool, optuna_storage, big_daily_example_tsdf):
+    auto = Auto(target_metric=MAE(), horizon=3, pool=pool, backtest_params=dict(n_folds=1), storage=optuna_storage)
+    _ = auto.fit(ts=big_daily_example_tsdf, tune_size=0)
+
+
+@pytest.mark.filterwarnings("ignore: Objective did not converge.")
+@pytest.mark.filterwarnings("ignore: Stepwise search was stopped early due to reaching the model number limit")
+@pytest.mark.filterwarnings("ignore: Path .+ already exists. Model .+ will not be downloaded.")
+@pytest.mark.filterwarnings("ignore: Actual length of a dataset is less that context size.")
+@pytest.mark.skip(reason="Pool is large for testing locally.")
+@pytest.mark.parametrize(
+    "pool",
+    [
+        Pool.no_freq_heavy,
+        Pool.D_heavy,
+        Pool.H_heavy,
+        Pool.MS_heavy,
+        Pool.W_heavy,
+    ],
+)
+def test_heavy_default_pools(pool, optuna_storage, big_daily_example_tsdf):
+    auto = Auto(target_metric=MAE(), horizon=3, pool=pool, backtest_params=dict(n_folds=1), storage=optuna_storage)
+    _ = auto.fit(ts=big_daily_example_tsdf, tune_size=0)

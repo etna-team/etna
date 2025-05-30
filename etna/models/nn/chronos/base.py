@@ -33,7 +33,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         encoder_length: int,
         device: str,
         dtype: Union[str, torch.dtype],
-        cache_dir: Path,
+        cache_dir: str,
     ):
         """
         Init Chronos-like model.
