@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `BaseIntervalsMetricWithMissingHandling` with base functionality for metrics for prediction intervals with missing handling. ([#659](https://github.com/etna-team/etna/pull/659))
 - Update native DL models docs with statement that they continue training after each ``fit`` call ([#663](https://github.com/etna-team/etna/pull/663))
 - **Breaking:** Add new default pools to `Pool` ([#666](https://github.com/etna-team/etna/pull/666))
-- Add `arange` resolver ([#666](https://github.com/etna-team/etna/pull/666))
+- Add `arange` resolver for `OmegaConf` ([#666](https://github.com/etna-team/etna/pull/666))
 
 ### Changed
 - Optimize dataset updates with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
