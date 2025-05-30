@@ -368,6 +368,7 @@ def test_summary_after_fit(
     assert isinstance(df_summary_tune_1.iloc[0]["pipeline"].model, MovingAverageModel)
 
 
+@pytest.mark.filterwarnings("ignore: Objective did not converge.")
 @pytest.mark.filterwarnings("ignore: Stepwise search was stopped early due to reaching the model number limit")
 @pytest.mark.filterwarnings("ignore: Path .+ already exists. Model .+ will not be downloaded.")
 @pytest.mark.filterwarnings("ignore: Actual length of a dataset is less that context size.")
@@ -382,11 +383,26 @@ def test_summary_after_fit(
         Pool.W_medium,
     ],
 )
-def test_huge_default_pools(pool, optuna_storage, example_tsds):
-    from etna.datasets import TSDataset
-    from etna.datasets import generate_ar_df
-
-    df = generate_ar_df(periods=300, start_time="2001-01-01", freq="D")
-    ts = TSDataset(df, freq="D")
+def test_medium_default_pools(pool, optuna_storage, big_daily_example_tsdf):
     auto = Auto(target_metric=MAE(), horizon=3, pool=pool, backtest_params=dict(n_folds=1), storage=optuna_storage)
-    _ = auto.fit(ts=ts, tune_size=0)
+    _ = auto.fit(ts=big_daily_example_tsdf, tune_size=0)
+
+
+@pytest.mark.filterwarnings("ignore: Objective did not converge.")
+@pytest.mark.filterwarnings("ignore: Stepwise search was stopped early due to reaching the model number limit")
+@pytest.mark.filterwarnings("ignore: Path .+ already exists. Model .+ will not be downloaded.")
+@pytest.mark.filterwarnings("ignore: Actual length of a dataset is less that context size.")
+@pytest.mark.skip(reason="Pool is large for testing locally.")
+@pytest.mark.parametrize(
+    "pool",
+    [
+        Pool.no_freq_heavy,
+        Pool.D_heavy,
+        Pool.H_heavy,
+        Pool.MS_heavy,
+        Pool.W_heavy,
+    ],
+)
+def test_heavy_default_pools(pool, optuna_storage, big_daily_example_tsdf):
+    auto = Auto(target_metric=MAE(), horizon=3, pool=pool, backtest_params=dict(n_folds=1), storage=optuna_storage)
+    _ = auto.fit(ts=big_daily_example_tsdf, tune_size=0)
