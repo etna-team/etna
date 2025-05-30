@@ -1,3 +1,5 @@
+import json
+import os
 from functools import partial
 from unittest.mock import MagicMock
 from unittest.mock import patch
@@ -10,6 +12,7 @@ from etna.auto import Auto
 from etna.auto.auto import PoolGenerator
 from etna.auto.auto import _Callback
 from etna.auto.auto import _Initializer
+from etna.auto.pool import Pool
 from etna.metrics import MAE
 from etna.models import LinearPerSegmentModel
 from etna.models import MovingAverageModel
@@ -354,7 +357,7 @@ def test_summary_after_fit(
     auto.fit(ts=example_tsds, n_trials=11, tune_size=2)
 
     df_summary = auto.summary()
-    assert {"hash", "pipeline", "state", "study"}.issubset(set(df_summary.columns))
+    assert {"elapsed_time", "hash", "pipeline", "state", "study"}.issubset(set(df_summary.columns))
     assert len(df_summary) == 11
     assert len(df_summary[df_summary["study"] == "pool"]) == 3
     df_summary_tune_0 = df_summary[df_summary["study"] == "tuning/edddb11f9acb86ea0cd5568f13f53874"]
@@ -363,4 +366,27 @@ def test_summary_after_fit(
     assert len(df_summary_tune_1) == 4
     assert isinstance(df_summary_tune_0.iloc[0]["pipeline"].model, LinearPerSegmentModel)
     assert isinstance(df_summary_tune_1.iloc[0]["pipeline"].model, MovingAverageModel)
-    assert {"elapsed_time", "hash", "study", "pipeline", "state"}.issubset(set(df_summary.columns))
+
+
+@pytest.mark.filterwarnings("ignore: Stepwise search was stopped early due to reaching the model number limit")
+@pytest.mark.filterwarnings("ignore: Path .+ already exists. Model .+ will not be downloaded.")
+@pytest.mark.filterwarnings("ignore: Actual length of a dataset is less that context size.")
+@pytest.mark.skipif(json.loads(os.getenv("skip_large_tests", "false")), reason="Pool is large for testing in GitHub.")
+@pytest.mark.parametrize(
+    "pool",
+    [
+        Pool.no_freq_medium,
+        Pool.D_medium,
+        Pool.H_medium,
+        Pool.MS_medium,
+        Pool.W_medium,
+    ],
+)
+def test_huge_default_pools(pool, optuna_storage, example_tsds):
+    from etna.datasets import TSDataset
+    from etna.datasets import generate_ar_df
+
+    df = generate_ar_df(periods=300, start_time="2001-01-01", freq="D")
+    ts = TSDataset(df, freq="D")
+    auto = Auto(target_metric=MAE(), horizon=3, pool=pool, backtest_params=dict(n_folds=1), storage=optuna_storage)
+    _ = auto.fit(ts=ts, tune_size=0)
