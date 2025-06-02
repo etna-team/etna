@@ -76,3 +76,46 @@ def test_generate_params(
 
     assert pipelines[0].model.device == expected_params["chronos_device"]
     assert pipelines[1].model.timestamp_column == expected_params["timestamp_column"]
+
+
+def test_not_required_generate_params(
+    pool=(
+        {
+            "_target_": "etna.pipeline.Pipeline",
+            "horizon": "${__aux__.horizon}",
+            "model": {
+                "_target_": "etna.models.ProphetModel",
+                "seasonality_mode": "${__aux__.mode}",
+                "timestamp_column": "${__aux__.timestamp_column}",
+            },
+            "transforms": [],
+        },
+    ),
+):
+    horizon = 7
+    generate_params = {"timestamp_column": None}
+
+    generator = PoolGenerator(pool)
+    with pytest.raises(ValueError, match="Interpolation key .+ not found"):
+        _ = generator.generate(horizon=horizon, generate_params=generate_params)
+
+
+def test_horizon_collision(
+    pool=(
+        {
+            "_target_": "etna.pipeline.Pipeline",
+            "horizon": "${__aux__.horizon}",
+            "model": {
+                "_target_": "etna.models.ProphetModel",
+                "seasonality_mode": "additive",
+            },
+            "transforms": [],
+        },
+    ),
+):
+    expected_horizon = 7
+    generate_params = {"horizon": 1}
+
+    generator = PoolGenerator(pool)
+    pipe = generator.generate(horizon=expected_horizon, generate_params=generate_params)
+    assert expected_horizon == pipe[0].horizon
