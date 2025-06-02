@@ -55,23 +55,23 @@ class PoolGenerator:
 class Pool(Enum):
     """Predefined pools of pipelines.
 
-    Pools are divided into types by freq (``D`` (daily), ``H`` (hourly), ``MS`` (monthly), ``W`` (weekly), ``no_freq``) and
+    Pools are divided into types by frequency (``D`` (daily), ``H`` (hourly), ``MS`` (monthly), ``W`` (weekly), ``no_freq``) and
     duration (``super_fast``, ``fast``, ``medium`` and ``heavy``).
 
-    Division by freq:
+    Division by frequency:
 
-    The ``D`` freq should be chosen in a case of "D" frequency.
-    The ``H`` freq should be chosen in a case of "h" frequency.
-    The ``MS`` freq should be chosen in a case of "ME" and "MS" frequencies.
-    The ``W`` freq should be chosen in a case of following frequencies: "W", "W-MON", "W-SUN", ..., etc.
-    The ``no_freq`` freq should be chosen in a case of other freqs and freqs with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc).
+    The ``D`` group of pools should be chosen in a case of "D" frequency.
+    The ``H`` group of pools should be chosen in a case of "h" frequency.
+    The ``MS`` group of pools should be chosen in a case of "ME" and "MS" frequencies.
+    The ``W`` group of pools should be chosen in a case of following frequencies: "W", "W-MON", "W-SUN", ..., etc.
+    The ``no_freq`` group of pools should be chosen in a case of other frequencies and frequencies with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc).
 
     Division by duration:
 
     Each subsequent pool is a subset of the next one: ``fast`` pool contains all configs from ``super_fast`` plus some other,
     ``medium`` contains all configs from ``fast`` plus some other and ``heavy`` contains all configs from ``medium`` plus some other.
 
-    To get final pool choose one freq and duration, for example ``D_super_fast``.
+    To get final pool choose one frequency and duration, for example ``D_super_fast``.
 
     Note
     ----
