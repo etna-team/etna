@@ -60,9 +60,10 @@ class Pool(Enum):
 
     Division by freq:
 
-    In this case freq means "global" freq.
-    For example, if your "exact" freq is W-MON, W-SUN, ..., etc (when the gap between timestamps equals 1) choose ``W`` freq.
-    The same with ``D``, ``H`` and ``MS``  freqs.
+    The ``D`` freq should be chosen in a case of "D" frequency.
+    The ``H`` freq should be chosen in a case of "h" frequency.
+    The ``MS`` freq should be chosen in a case of "ME" and "MS" frequencies.
+    The ``W`` freq should be chosen in a case of following frequencies: "W", "W-MON", "W-SUN", ..., etc.
     The ``no_freq`` freq should be chosen in a case of other freqs and freqs with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc).
 
     Division by duration:
