@@ -60,11 +60,11 @@ class Pool(Enum):
 
     Division by frequency:
 
-    The ``D`` group of pools should be chosen in a case of "D" frequency.
-    The ``H`` group of pools should be chosen in a case of "h" frequency.
-    The ``MS`` group of pools should be chosen in a case of "ME" and "MS" frequencies.
-    The ``W`` group of pools should be chosen in a case of following frequencies: "W", "W-MON", "W-SUN", ..., etc.
-    The ``no_freq`` group of pools should be chosen in a case of other frequencies and frequencies with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc).
+    - The ``D`` group of pools should be chosen in a case of "D" frequency.
+    - The ``H`` group of pools should be chosen in a case of "h" frequency.
+    - The ``MS`` group of pools should be chosen in a case of "ME" and "MS" frequencies.
+    - The ``W`` group of pools should be chosen in a case of following frequencies: "W", "W-MON", "W-SUN", ..., etc.
+    - The ``no_freq`` group of pools should be chosen in a case of other frequencies and frequencies with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc).
 
     Division by duration:
 
@@ -73,13 +73,19 @@ class Pool(Enum):
 
     To get final pool choose one frequency and duration, for example ``D_super_fast``.
 
+    Pools can contain ``timestamp_column``, ``chronos_device`` and ``timesfm_device`` parameters that can be filled by user.
+    Default values are ``None``, ``auto`` and ``gpu`` respectively.
+
+    - Parameter ``timestamp_column`` can be used starting from ``fast`` pools.
+    - Parameter ``chronos_device`` can be used starting from ``super_fast`` pools.
+    - Parameter ``timesfm_device`` can be used starting from ``fast`` pools.
+
     Note
     ----
     This class requires ``auto`` extension to be installed.
     Read more about this at :ref:`installation page <installation>`.
     """
 
-    #: Default pool of pipelines
     no_freq_super_fast = PoolGenerator(configs_template=templates.NO_FREQ_SUPER_FAST)  # type: ignore
     no_freq_fast = PoolGenerator(configs_template=templates.NO_FREQ_FAST)  # type: ignore
     no_freq_medium = PoolGenerator(configs_template=templates.NO_FREQ_MEDIUM)  # type: ignore
