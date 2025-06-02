@@ -64,7 +64,9 @@ class Pool(Enum):
     - The ``H`` group of pools should be chosen in a case of "h" frequency.
     - The ``MS`` group of pools should be chosen in a case of "ME" and "MS" frequencies.
     - The ``W`` group of pools should be chosen in a case of following frequencies: "W", "W-MON", "W-SUN", ..., etc.
-    - The ``no_freq`` group of pools should be chosen in a case of other frequencies and frequencies with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc).
+    - The ``no_freq`` group of pools should be chosen in a case of other frequencies, frequencies with the gap between timestamps more than 1 (T, Q, 2D, 4H, ..., etc) and series without datetime timestamps.
+
+    Frequency in your data is defined by value of ``freq`` parameter passed to ``TSDataset`` constructor or ``TSDataset.create_from_misaligned`` method.
 
     Division by duration:
 
