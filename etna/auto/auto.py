@@ -248,10 +248,10 @@ class Auto(AutoBase):
         pool:
             Pool of pipelines to choose from.
             By default, ``no_freq_super_fast`` pool is used.
-            For description of all available pools see :py:class:`~etna.auto.pool.generator.Pool`
+            For description of all available pools see :py:class:`~etna.auto.pool.generator.Pool` docs.
         generate_params:
             Dictionary with parameters to fill pool templates. Available parameters are ``timestamp_column``, ``chronos_device`` and ``timesfm_device``.
-            For full description see :py:class:`~etna.auto.pool.generator.Pool` For usage example see ``205-automl`` notebook.
+            For full description see :py:class:`~etna.auto.pool.generator.Pool` docs. For usage example see ``205-automl`` notebook.
         runner:
             Runner to use for distributed training. By default, :py:class:`~etna.auto.runner.local.LocalRunner` is used.
         storage:
