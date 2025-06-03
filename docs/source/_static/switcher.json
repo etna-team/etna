@@ -5,7 +5,12 @@
         "url": "https://docs.etna.ai/latest/"
     },
     {
-        "name": "2.10.0 (stable)",
+        "name": "3.0.0 (stable)",
+        "version": "3.0.0",
+        "url": "https://docs.etna.ai/stable/"
+    },
+    {
+        "name": "2.10.0",
         "version": "2.10.0",
         "url": "https://docs.etna.ai/stable/"
     },
