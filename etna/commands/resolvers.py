@@ -15,3 +15,8 @@ def mult(first: int, second: int) -> int:
 def concat(first: Union[int, str], second: Union[int, str]) -> str:
     """Concat arguments."""
     return str(first) + str(second)
+
+
+def arange(start: int, stop: int, gap: int = 1) -> List[int]:
+    """Make range."""
+    return list(range(start, stop, gap))

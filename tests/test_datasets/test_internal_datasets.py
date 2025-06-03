@@ -205,26 +205,29 @@ def test_not_present_part():
             46,
             ("train", "test"),
         ),
-        (
+        pytest.param(
             "tourism_monthly",
             (309 + 24, 732),
             0,
             332,
             ("train", "test"),
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
         ),
-        (
+        pytest.param(
             "tourism_quarterly",
             (122 + 8, 854),
             0,
             129,
             ("train", "test"),
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
         ),
-        (
+        pytest.param(
             "tourism_yearly",
             (43 + 4, 1036),
             0,
             46,
             ("train", "test"),
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
         ),
         pytest.param(
             "weather_10T",
@@ -330,7 +333,7 @@ def test_dataset_statistics(
             ),
             ("full", "train", "test"),
         ),
-        (
+        pytest.param(
             "tourism_monthly",
             ((333, 366), (333, 366), (24, 366)),
             (
@@ -339,8 +342,9 @@ def test_dataset_statistics(
                 (309, 332),
             ),
             ("full", "train", "test"),
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
         ),
-        (
+        pytest.param(
             "tourism_quarterly",
             ((130, 427), (130, 427), (8, 427)),
             (
@@ -349,8 +353,9 @@ def test_dataset_statistics(
                 (122, 129),
             ),
             ("full", "train", "test"),
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
         ),
-        (
+        pytest.param(
             "tourism_yearly",
             ((47, 518), (47, 518), (4, 518)),
             (
@@ -359,6 +364,7 @@ def test_dataset_statistics(
                 (43, 46),
             ),
             ("full", "train", "test"),
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
         ),
     ],
 )
@@ -430,9 +436,18 @@ def test_list_datasets():
         "m3_quarterly",
         "m3_other",
         "m3_yearly",
-        "tourism_monthly",
-        "tourism_quarterly",
-        "tourism_yearly",
+        pytest.param(
+            "tourism_monthly",
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
+        ),
+        pytest.param(
+            "tourism_quarterly",
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
+        ),
+        pytest.param(
+            "tourism_yearly",
+            marks=pytest.mark.skip(reason="Downloading for this dataset is now failing."),
+        ),
         pytest.param(
             "weather_10T",
             marks=pytest.mark.skipif(
