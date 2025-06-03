@@ -7,6 +7,63 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+### Changed
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+### Fixed
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+### Removed
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+
+## [3.0.0] - 2025-06-03
+### Added
 - Add `ClearMLLogger` ([#568](https://github.com/etna-team/etna/pull/568))
 - **Breaking:** Add a restriction on equal feature sets across segments in the dataset ([#581](https://github.com/etna-team/etna/pull/581))
 - Add `concat` resolver for `OmegaConf` ([#604](https://github.com/etna-team/etna/pull/604))
@@ -33,7 +90,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implement non-empty `params_to_tune` for `DirectEnsemble` ([#559](https://github.com/etna-team/etna/pull/559))
 - **Breaking:** Change dtype of `cache_dir` to `str` in `ChronosModel`, `ChronosBoltModel` and `TimesFMModel` ([#666](https://github.com/etna-team/etna/pull/666))
 - Implement non-empty `params_to_tune` for `StackingEnsemble` ([#561](https://github.com/etna-team/etna/pull/561))
-- 
 - **Breaking:** Make `level_names` property of `HierarchicalStructure` read-only ([#582](https://github.com/etna-team/etna/pull/582))
 - **Breaking:** Set `fast_redundancy=True` as a default value in `MRMRFeatureSelectionTransform` ([#592](https://github.com/etna-team/etna/pull/592))
 - **Breaking:** Remove `return_features` parameter from `FilterFeaturesTransform`, `GaleShapleyFeatureSelectionTransform`, `TreeFeatureSelectionTransform`, `MRMRFeatureSelectionTransform` ([#594](https://github.com/etna-team/etna/pull/594))
@@ -71,7 +127,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Prohibit `CatBoostPerSegmentModel` and `CatBoostMultiSegmentModel` from using non-regressors ([#654](https://github.com/etna-team/etna/pull/654))
 - **Breaking:** Rename `AbstractMetric` into `BaseMetric`, add base functionality for metrics ([#659](https://github.com/etna-team/etna/pull/659))
 - **Breaking:** Change signature `BasePipeline.backtest`, `Auto`, `Auto.objective`, `Tune`, `Tune.objective` and `compute_metrics`; now the type hint for metric is `BaseMetric` instead of `Metric` ([#659](https://github.com/etna-team/etna/pull/659))
-- 
 
 ### Fixed
 - Fix possibility of silent handling of duplicate features when updating dataset with `TSDataset.update_columns_from_pandas` ([#522](https://github.com/etna-team/etna/pull/552))
@@ -97,7 +152,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove `FutureMixin`, `OutliersTransform.outliers_timestamps` and `OutliersTransform.original_values` ([#577](https://github.com/etna-team/etna/pull/577))
 - **Breaking:** Remove parameters `freq` and `dates` from `SARIMAXModel` and `HoltWintersModel` ([#590](https://github.com/etna-team/etna/pull/590))
 - **Breaking:** Remove `pytorch-forecasting` models and utilities (`DeepARModel`, `TFTModel` and `PytorchForecastingDatasetBuilder`) ([#578](https://github.com/etna-team/etna/pull/578))
-- 
 - **Breaking:** Remove Python versions 3.8 and 3.9 ([#599](https://github.com/etna-team/etna/pull/599))
 - **Breaking:** Remove argument `verbose` from `SimpleImputerSubsegment` ([#599](https://github.com/etna-team/etna/pull/599))
 - **Breaking:** Remove attributes `df`, `raw_df`, `df_exog` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/630))
@@ -105,7 +159,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking:** Remove properties `columns` and `loc` from `TSDataset` ([#630](https://github.com/etna-team/etna/pull/631))
 - **Breaking:** Remove `match_target_components` ([#634](https://github.com/etna-team/etna/pull/634))
 - **Breaking:** Remove `match_target_quantiles` and `get_target_with_quantiles` ([#633](https://github.com/etna-team/etna/pull/633))
-- 
 
 ## [2.10.0] - 2025-01-09
 ### Added
