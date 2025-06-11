@@ -56,7 +56,7 @@ Installing on computing platforms
 
 The library, starting with version 3.0, can be installed on the Google Colab and Kaggle platforms. To do this, you can use any of the instructions above.
 
-On Google Colab you should don't forget to restart the environment after installing the library.
+On Google Colab you shouldn't forget to restart the environment after installing the library.
 
 Installing on Apple M1 (ARM)
 -------------------------------------

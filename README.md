@@ -169,7 +169,7 @@ For example, `etna.models.ProphetModel` needs `prophet` extension and can't be u
 
 Also, the library, starting with version 3.0, can be installed on the Google Colab and Kaggle platforms. To do this, you can use any of the instructions above.
 
-On Google Colab, do not forget to restart the environment after installing the library.
+On Google Colab, don't forget to restart the environment after installing the library.
 
 ### Configuration
 
