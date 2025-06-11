@@ -167,6 +167,10 @@ There are also developer extensions. All the extensions are listed in [`pyprojec
 Without the appropriate extension you will get an `ImportError` trying to import the model that needs it.
 For example, `etna.models.ProphetModel` needs `prophet` extension and can't be used without it.
 
+Also, the library, starting with version 3.0, can be installed on the Google Colab and Kaggle platforms. To do this, you can use any of the instructions above.
+
+On Google Colab, do not forget to restart the environment after installing the library.
+
 ### Configuration
 
 ETNA supports configuration files. It means that library will check that all the specified packages are installed prior to script start and NOT during runtime. 
