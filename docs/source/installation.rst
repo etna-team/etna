@@ -54,12 +54,9 @@ where you could replace ``master`` branch with some other identifier.
 Installing on computing platforms
 ---------------------------------
 
-The library can be installed on Google Colab and Kaggle platforms. You could use any of the instructions above for this.
+The library, starting with version 3.0, can be installed on the Google Colab and Kaggle platforms. To do this, you can use any of the instructions above.
 
-On Google Colab you should don't forget to restart the environment after installing the library.
-
-On Kaggle for versions of the library less than 2.2 you should add ``import numba`` before installation like in `this notebook <https://www.kaggle.com/code/goolmonika/forecasting-using-etna-library-60-lines-catboost>`_.
-
+On Google Colab you shouldn't forget to restart the environment after installing the library.
 
 Installing on Apple M1 (ARM)
 -------------------------------------
