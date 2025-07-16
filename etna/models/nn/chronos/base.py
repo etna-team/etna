@@ -1,4 +1,3 @@
-import hashlib
 import os
 import warnings
 import zipfile
@@ -14,6 +13,7 @@ from urllib import request
 import pandas as pd
 
 from etna import SETTINGS
+from etna.core.utils import get_known_hash, verify_file_hash
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel
@@ -24,43 +24,6 @@ if SETTINGS.chronos_required:
     from etna.libs.chronos import BaseChronosPipeline
     from etna.libs.chronos import ChronosBoltModelForForecasting
     from etna.libs.chronos import ChronosModelForForecasting
-
-# Known model hashes for integrity verification
-# To add a hash for a model URL, download the file and compute its MD5 hash
-_KNOWN_MODEL_HASHES = {
-    # Add known model URL -> hash mappings here
-    # Example: "http://example.com/model.zip": "abcd1234...",
-}
-
-
-def _verify_file_hash(file_path: str, expected_hash: Optional[str] = None) -> bool:
-    """
-    Verify file integrity using MD5 hash.
-
-    Parameters
-    ----------
-    file_path:
-        Path to the file to verify
-    expected_hash:
-        Expected MD5 hash. If None, verification is skipped.
-
-    Returns
-    -------
-    :
-        True if hash matches or no expected hash provided, False otherwise
-    """
-    if expected_hash is None:
-        return True
-
-    if not os.path.exists(file_path):
-        return False
-
-    try:
-        with open(file_path, "rb") as f:
-            file_hash = hashlib.md5(f.read()).hexdigest()
-        return file_hash == expected_hash
-    except Exception:
-        return False
 
 
 class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
@@ -128,12 +91,12 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         model_dir = model_file.split(".zip")[0]
         full_model_path = f"{self.cache_dir}/{model_dir}"
         zip_file_path = f"{self.cache_dir}/{model_file}"
-        expected_hash = _KNOWN_MODEL_HASHES.get(self.path_or_url)
+        expected_hash = get_known_hash(self.path_or_url)
 
         # Check if extracted model directory exists and verify ZIP file integrity if it still exists
         if os.path.exists(full_model_path):
             if os.path.exists(zip_file_path):
-                if _verify_file_hash(zip_file_path, expected_hash):
+                if verify_file_hash(zip_file_path, expected_hash):
                     return full_model_path
                 else:
                     # ZIP file exists but hash doesn't match, re-download
@@ -157,7 +120,7 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
             request.urlretrieve(url=self.path_or_url, filename=zip_file_path)
 
             # Verify the downloaded file
-            if not _verify_file_hash(zip_file_path, expected_hash):
+            if not verify_file_hash(zip_file_path, expected_hash):
                 if expected_hash is not None:
                     os.remove(zip_file_path)
                     raise RuntimeError(

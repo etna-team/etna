@@ -1,4 +1,3 @@
-import hashlib
 import os
 import warnings
 from typing import Dict
@@ -9,47 +8,11 @@ from urllib import request
 import numpy as np
 from sklearn.base import ClassifierMixin
 
+from etna.core.utils import get_known_hash, verify_file_hash
 from etna.datasets import TSDataset
 from etna.experimental.classification.classification import TimeSeriesBinaryClassifier
 from etna.experimental.classification.feature_extraction.base import BaseTimeSeriesFeatureExtractor
 from etna.experimental.classification.utils import crop_nans_single_series
-
-# Known model hashes for integrity verification
-# To add a hash for a model URL, download the file and compute its MD5 hash
-_KNOWN_MODEL_HASHES = {
-    # Add known model URL -> hash mappings here
-    # Example: "http://example.com/model.pickle": "abcd1234...",
-}
-
-
-def _verify_file_hash(file_path: str, expected_hash: Optional[str] = None) -> bool:
-    """
-    Verify file integrity using MD5 hash.
-
-    Parameters
-    ----------
-    file_path:
-        Path to the file to verify
-    expected_hash:
-        Expected MD5 hash. If None, verification is skipped.
-
-    Returns
-    -------
-    :
-        True if hash matches or no expected hash provided, False otherwise
-    """
-    if expected_hash is None:
-        return True
-
-    if not os.path.exists(file_path):
-        return False
-
-    try:
-        with open(file_path, "rb") as f:
-            file_hash = hashlib.md5(f.read()).hexdigest()
-        return file_hash == expected_hash
-    except Exception:
-        return False
 
 
 class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
@@ -139,11 +102,11 @@ class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
             If the model does not exist in s3.
         """
         url = f"http://etna-github-prod.cdn-tinkoff.ru/series_classification/22_11_2022/{dataset_freq}/{model_name}.pickle"
-        expected_hash = _KNOWN_MODEL_HASHES.get(url)
+        expected_hash = get_known_hash(url)
         
         # Check if file exists and verify integrity
         if os.path.exists(path):
-            if _verify_file_hash(path, expected_hash):
+            if verify_file_hash(path, expected_hash):
                 return  # File exists and is valid (or no hash to check)
             else:
                 # File exists but hash doesn't match, re-download
@@ -159,7 +122,7 @@ class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
             request.urlretrieve(url=url, filename=path)
             
             # Verify the downloaded file
-            if not _verify_file_hash(path, expected_hash):
+            if not verify_file_hash(path, expected_hash):
                 if expected_hash is not None:
                     os.remove(path)
                     raise RuntimeError(

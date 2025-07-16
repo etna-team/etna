@@ -1,13 +1,126 @@
+import hashlib
 import inspect
 import json
+import os
 import pathlib
+import warnings
 import zipfile
 from copy import deepcopy
 from functools import wraps
 from typing import Any
 from typing import Callable
+from typing import Dict
+from typing import Optional
+from urllib import request
 
 from hydra_slayer import get_factory
+
+
+# Known model hashes for integrity verification
+# To add a hash for a model URL, download the file and compute its MD5 hash
+KNOWN_MODEL_HASHES: Dict[str, str] = {
+    # Add known model URL -> hash mappings here
+    # Example: "http://example.com/model.ckpt": "abcd1234...",
+}
+
+
+def verify_file_hash(file_path: str, expected_hash: Optional[str] = None) -> bool:
+    """
+    Verify file integrity using MD5 hash.
+
+    Parameters
+    ----------
+    file_path:
+        Path to the file to verify
+    expected_hash:
+        Expected MD5 hash. If None, verification is skipped.
+
+    Returns
+    -------
+    :
+        True if hash matches or no expected hash provided, False otherwise
+    """
+    if expected_hash is None:
+        return True
+
+    if not os.path.exists(file_path):
+        return False
+
+    try:
+        with open(file_path, "rb") as f:
+            file_hash = hashlib.md5(f.read()).hexdigest()
+        return file_hash == expected_hash
+    except Exception:
+        return False
+
+
+def download_with_integrity_check(
+    url: str, 
+    destination_path: str, 
+    expected_hash: Optional[str] = None,
+    force_redownload: bool = False
+) -> None:
+    """
+    Download a file with integrity verification.
+    
+    Parameters
+    ----------
+    url:
+        URL to download from
+    destination_path:
+        Local path to save the file
+    expected_hash:
+        Expected MD5 hash for verification. If None, no verification is performed.
+    force_redownload:
+        If True, download even if file exists and passes verification
+        
+    Raises
+    ------
+    RuntimeError:
+        If download fails integrity check
+    """
+    # Check if file exists and verify integrity
+    if os.path.exists(destination_path) and not force_redownload:
+        if verify_file_hash(destination_path, expected_hash):
+            return  # File exists and is valid
+        else:
+            # File exists but hash doesn't match, re-download
+            if expected_hash is not None:
+                warnings.warn(
+                    f"Local file hash does not match expected hash. "
+                    f"This may indicate a corrupted download. Re-downloading from {url}"
+                )
+            os.remove(destination_path)
+
+    # Download the file
+    os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+    request.urlretrieve(url=url, filename=destination_path)
+
+    # Verify the downloaded file
+    if not verify_file_hash(destination_path, expected_hash):
+        if expected_hash is not None:
+            os.remove(destination_path)
+            raise RuntimeError(
+                f"Downloaded file from {url} failed integrity check. "
+                f"This may indicate a network issue or corrupted download."
+            )
+
+
+def get_known_hash(url: str) -> Optional[str]:
+    """
+    Get known hash for a URL from the registry.
+    
+    Parameters
+    ----------
+    url:
+        URL to look up
+        
+    Returns
+    -------
+    :
+        Known hash for the URL, or None if not found
+    """
+    return KNOWN_MODEL_HASHES.get(url)
 
 
 def load(path: pathlib.Path, **kwargs: Any) -> Any:
