@@ -12,7 +12,7 @@ from urllib import request
 import numpy as np
 
 from etna import SETTINGS
-from etna.core.utils import get_known_hash, verify_file_hash
+from etna.models.utils import get_known_hash, verify_file_hash
 from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 if SETTINGS.torch_required:
