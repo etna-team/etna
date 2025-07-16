@@ -1,3 +1,4 @@
+import hashlib
 import os
 import warnings
 import zipfile
@@ -5,6 +6,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Sequence
 from typing import Union
 from urllib import request
@@ -22,6 +24,43 @@ if SETTINGS.chronos_required:
     from etna.libs.chronos import BaseChronosPipeline
     from etna.libs.chronos import ChronosBoltModelForForecasting
     from etna.libs.chronos import ChronosModelForForecasting
+
+# Known model hashes for integrity verification
+# To add a hash for a model URL, download the file and compute its MD5 hash
+_KNOWN_MODEL_HASHES = {
+    # Add known model URL -> hash mappings here
+    # Example: "http://example.com/model.zip": "abcd1234...",
+}
+
+
+def _verify_file_hash(file_path: str, expected_hash: Optional[str] = None) -> bool:
+    """
+    Verify file integrity using MD5 hash.
+
+    Parameters
+    ----------
+    file_path:
+        Path to the file to verify
+    expected_hash:
+        Expected MD5 hash. If None, verification is skipped.
+
+    Returns
+    -------
+    :
+        True if hash matches or no expected hash provided, False otherwise
+    """
+    if expected_hash is None:
+        return True
+
+    if not os.path.exists(file_path):
+        return False
+
+    try:
+        with open(file_path, "rb") as f:
+            file_hash = hashlib.md5(f.read()).hexdigest()
+        return file_hash == expected_hash
+    except Exception:
+        return False
 
 
 class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
@@ -84,18 +123,55 @@ class ChronosBaseModel(PredictionIntervalContextRequiredAbstractModel):
         return self.path_or_url.startswith("https://") or self.path_or_url.startswith("http://")
 
     def _download_model_from_url(self) -> str:
-        """Download model from url to local cache_dir."""
+        """Download model from url to local cache_dir with integrity verification."""
         model_file = self.path_or_url.split("/")[-1]
         model_dir = model_file.split(".zip")[0]
         full_model_path = f"{self.cache_dir}/{model_dir}"
-        if not os.path.exists(full_model_path):
-            try:
-                request.urlretrieve(url=self.path_or_url, filename=model_file)
+        zip_file_path = f"{self.cache_dir}/{model_file}"
+        expected_hash = _KNOWN_MODEL_HASHES.get(self.path_or_url)
 
-                with zipfile.ZipFile(model_file, "r") as zip_ref:
-                    zip_ref.extractall(self.cache_dir)
-            finally:
-                os.remove(model_file)
+        # Check if extracted model directory exists and verify ZIP file integrity if it still exists
+        if os.path.exists(full_model_path):
+            if os.path.exists(zip_file_path):
+                if _verify_file_hash(zip_file_path, expected_hash):
+                    return full_model_path
+                else:
+                    # ZIP file exists but hash doesn't match, re-download
+                    if expected_hash is not None:
+                        warnings.warn(
+                            f"Local model ZIP file hash does not match expected hash. "
+                            f"This may indicate a corrupted download. Re-downloading from {self.path_or_url}"
+                        )
+                    # Remove both ZIP and extracted directory for clean re-download
+                    os.remove(zip_file_path)
+                    import shutil
+                    shutil.rmtree(full_model_path)
+            else:
+                # Extracted directory exists but no ZIP file - assume it's valid
+                # (ZIP was cleaned up after successful extraction)
+                return full_model_path
+
+        # Download and extract the file
+        Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
+        try:
+            request.urlretrieve(url=self.path_or_url, filename=zip_file_path)
+
+            # Verify the downloaded file
+            if not _verify_file_hash(zip_file_path, expected_hash):
+                if expected_hash is not None:
+                    os.remove(zip_file_path)
+                    raise RuntimeError(
+                        f"Downloaded model file from {self.path_or_url} failed integrity check. "
+                        f"This may indicate a network issue or corrupted download."
+                    )
+
+            with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
+                zip_ref.extractall(self.cache_dir)
+        finally:
+            # Clean up ZIP file after successful extraction
+            if os.path.exists(zip_file_path):
+                os.remove(zip_file_path)
+
         return full_model_path
 
     @property
