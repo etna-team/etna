@@ -47,8 +47,11 @@ def verify_file_hash(file_path: str, expected_hash: Optional[str] = None) -> boo
         return False
 
     try:
+        hash_md5 = hashlib.md5()
         with open(file_path, "rb") as f:
-            file_hash = hashlib.md5(f.read()).hexdigest()
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        file_hash = hash_md5.hexdigest()
         return file_hash == expected_hash
     except Exception:
         return False
