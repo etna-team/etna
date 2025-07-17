@@ -13,7 +13,7 @@ from urllib import request
 import pandas as pd
 
 from etna import SETTINGS
-from etna.models.utils import get_known_hash, verify_file_hash
+from etna.core.utils import get_known_hash, verify_file_hash
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.models.base import PredictionIntervalContextRequiredAbstractModel

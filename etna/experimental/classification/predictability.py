@@ -8,7 +8,7 @@ from urllib import request
 import numpy as np
 from sklearn.base import ClassifierMixin
 
-from etna.models.utils import get_known_hash, verify_file_hash
+from etna.core.utils import get_known_hash, verify_file_hash
 from etna.datasets import TSDataset
 from etna.experimental.classification.classification import TimeSeriesBinaryClassifier
 from etna.experimental.classification.feature_extraction.base import BaseTimeSeriesFeatureExtractor
