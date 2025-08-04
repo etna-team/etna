@@ -8,6 +8,7 @@ from etna.models import LinearPerSegmentModel
 from etna.pipeline import Pipeline
 from etna.transforms.feature_selection import FilterFeaturesTransform
 from etna.transforms.timestamp import EventTransform
+from etna.transforms.timestamp import HolidayTransform
 from tests.test_transforms.utils import assert_sampling_is_valid
 
 
@@ -144,3 +145,16 @@ def test_params_to_tune(ts_with_binary_exog: TSDataset, n_pre: int, n_post: int)
     transform = EventTransform(in_column="holiday", out_column="holiday", n_pre=n_pre, n_post=n_post)
     assert len(transform.params_to_tune()) == 3
     assert_sampling_is_valid(transform=transform, ts=ts_with_binary_exog)
+
+
+@pytest.mark.parametrize("n_pre,n_post", [(1, 1), (3, 4)])
+def test_one_segment_with_category_input(example_df: pd.DataFrame, n_pre: int, n_post: int):
+    """Check that transform works correctly with one segment after `HolidayTransform`"""
+    example_df = example_df[example_df.segment == "segment_1"]
+    ts = TSDataset(df=example_df, freq="D")
+    model = LinearPerSegmentModel()
+    holiday = HolidayTransform(iso_code="RUS", mode="binary", out_column="holiday")
+    event = EventTransform(in_column="holiday", out_column="holiday", n_pre=1, n_post=1)
+    filter_feature = FilterFeaturesTransform(exclude=["holiday"])
+    pipeline = Pipeline(model=model, transforms=[holiday, event, filter_feature], horizon=10)
+    pipeline.backtest(ts=ts, metrics=[MSE()], n_folds=2)
