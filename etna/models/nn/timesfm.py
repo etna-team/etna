@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from etna import SETTINGS
+from etna.core.utils import get_known_hash, verify_file_hash
 from etna.datasets import TSDataset
 from etna.distributions import BaseDistribution
 from etna.models.base import NonPredictionIntervalContextRequiredAbstractModel
@@ -152,12 +153,37 @@ class TimesFMModel(NonPredictionIntervalContextRequiredAbstractModel):
         return self.path_or_url.startswith("https://") or self.path_or_url.startswith("http://")
 
     def _download_model_from_url(self) -> str:
-        """Download model from url to local cache_dir."""
+        """Download model from url to local cache_dir with integrity verification."""
         model_file = self.path_or_url.split("/")[-1]
         full_model_path = f"{self.cache_dir}/{model_file}"
-        if not os.path.exists(full_model_path):
-            Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
-            request.urlretrieve(url=self.path_or_url, filename=full_model_path)
+        expected_hash = get_known_hash(self.path_or_url)
+
+        # Check if file exists and verify integrity
+        if os.path.exists(full_model_path):
+            if verify_file_hash(full_model_path, expected_hash):
+                return full_model_path
+            else:
+                # File exists but hash doesn't match, re-download
+                if expected_hash is not None:
+                    warnings.warn(
+                        f"Local model file hash does not match expected hash. "
+                        f"This may indicate a corrupted download. Re-downloading from {self.path_or_url}"
+                    )
+                os.remove(full_model_path)
+
+        # Download the file
+        Path(self.cache_dir).mkdir(parents=True, exist_ok=True)
+        request.urlretrieve(url=self.path_or_url, filename=full_model_path)
+
+        # Verify the downloaded file
+        if not verify_file_hash(full_model_path, expected_hash):
+            if expected_hash is not None:
+                os.remove(full_model_path)
+                raise RuntimeError(
+                    f"Downloaded model file from {self.path_or_url} failed integrity check. "
+                    f"This may indicate a network issue or corrupted download."
+                )
+
         return full_model_path
 
     @property

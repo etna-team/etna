@@ -12,6 +12,7 @@ from urllib import request
 import numpy as np
 
 from etna import SETTINGS
+from etna.core.utils import get_known_hash, verify_file_hash
 from etna.transforms.embeddings.models import BaseEmbeddingModel
 
 if SETTINGS.torch_required:
@@ -303,16 +304,39 @@ class TSTCCEmbeddingModel(BaseEmbeddingModel):
         if model_name is not None:
             if path is None:
                 path = _DOWNLOAD_PATH / f"{model_name}.zip"
+            
+            url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/tstcc/{model_name}.zip"
+            expected_hash = get_known_hash(url)
+            
+            # Check if file exists and verify integrity
             if os.path.exists(path):
-                warnings.warn(
-                    f"Path {path} already exists. Model {model_name} will not be downloaded. Loading existing local model."
-                )
-            else:
+                if verify_file_hash(str(path), expected_hash):
+                    # File exists and is valid (or no hash to check)
+                    pass
+                else:
+                    # File exists but hash doesn't match, re-download
+                    if expected_hash is not None:
+                        warnings.warn(
+                            f"Local model file hash does not match expected hash. "
+                            f"This may indicate a corrupted download. Re-downloading {model_name} from {url}"
+                        )
+                    os.remove(path)
+            
+            # Download if file doesn't exist (or was removed due to hash mismatch)
+            if not os.path.exists(path):
                 Path(path).parent.mkdir(exist_ok=True, parents=True)
 
                 if model_name in cls.list_models():
-                    url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/tstcc/{model_name}.zip"
                     request.urlretrieve(url=url, filename=path)
+                    
+                    # Verify the downloaded file
+                    if not verify_file_hash(str(path), expected_hash):
+                        if expected_hash is not None:
+                            os.remove(path)
+                            raise RuntimeError(
+                                f"Downloaded model file {model_name} from {url} failed integrity check. "
+                                f"This may indicate a network issue or corrupted download."
+                            )
                 else:
                     raise NotImplementedError(
                         f"Model {model_name} is not available. To get list of available models use `list_models` method."
