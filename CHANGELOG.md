@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -
 
 ### Fixed
--
+- Fix error when using `EventTransform` with `TSDataset` with only one segment ([#679](https://github.com/etna-team/etna/pull/641))
 -
 -
 -

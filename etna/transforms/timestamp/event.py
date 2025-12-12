@@ -131,8 +131,8 @@ class EventTransform(IrreversibleTransform):
 
     def _compute_event_column(self, df: pd.DataFrame, column: str, max_distance: int) -> pd.DataFrame:
         """Compute event column."""
-        indexes = df.copy()
-        indexes[:] = np.repeat((np.arange(len(indexes)) + 1).reshape(-1, 1), len(indexes.columns), axis=1)
+        indexes_values = np.repeat((np.arange(len(df)) + 1).reshape(-1, 1), len(df.columns), axis=1)
+        indexes = pd.DataFrame(indexes_values, columns=df.columns, index=df.index)
 
         col = indexes.copy()
         col.mask(df != 1, None, inplace=True)
