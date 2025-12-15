@@ -315,7 +315,7 @@ class TS2VecEmbeddingModel(BaseEmbeddingModel):
                 Path(path).parent.mkdir(exist_ok=True, parents=True)
 
                 if model_name in cls.list_models():
-                    url = f"http://etna-github-prod.cdn-tinkoff.ru/embeddings/ts2vec/{model_name}.zip"
+                    url = f"https://etna-github.t-static.ru/embeddings/ts2vec/{model_name}.zip"
                     request.urlretrieve(url=url, filename=path)
                 else:
                     raise NotImplementedError(

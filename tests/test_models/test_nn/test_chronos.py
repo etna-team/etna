@@ -35,7 +35,7 @@ def expected_ts_increasing_integers():
 def test_chronos_url(tmp_path):
     model_name = "chronos-t5-tiny.zip"
     model_dir = model_name.split(".zip")[0]
-    url = f"http://etna-github-prod.cdn-tinkoff.ru/chronos/{model_name}"
+    url = f"http://etna-github.t-static.ru/chronos/{model_name}"
     _ = ChronosModel(path_or_url=url, cache_dir=tmp_path)
     assert os.path.exists(tmp_path / f"{tmp_path}/{model_dir}")
 
@@ -44,7 +44,7 @@ def test_chronos_url(tmp_path):
 def test_chronos_bolt_url(tmp_path):
     model_name = "chronos-bolt-tiny.zip"
     model_dir = model_name.split(".zip")[0]
-    url = f"http://etna-github-prod.cdn-tinkoff.ru/chronos/{model_name}"
+    url = f"http://etna-github.t-static.ru/chronos/{model_name}"
     _ = ChronosBoltModel(path_or_url=url, cache_dir=tmp_path)
     assert os.path.exists(tmp_path / f"{tmp_path}/{model_dir}")
 
