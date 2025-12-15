@@ -83,7 +83,7 @@ def ts_exog_all_nan():
 @pytest.mark.smoke
 def test_url(tmp_path):
     model_name = "timesfm-1.0-200m-pytorch.ckpt"
-    url = f"etna-github.t-static.ru/timesfm/{model_name}"
+    url = f"https://etna-github.t-static.ru/timesfm/{model_name}"
     _ = TimesFMModel(path_or_url=url, cache_dir=tmp_path)
     assert os.path.exists(tmp_path / model_name)
 
