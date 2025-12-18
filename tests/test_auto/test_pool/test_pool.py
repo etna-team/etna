@@ -47,7 +47,7 @@ def test_generate_params(
             "horizon": "${__aux__.horizon}",
             "model": {
                 "_target_": "etna.models.nn.ChronosBoltModel",
-                "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
+                "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-tiny.zip",
                 "encoder_length": 2048,
                 "device": "${__aux__.chronos_device}",
                 "batch_size": 128,

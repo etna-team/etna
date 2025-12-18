@@ -72,7 +72,7 @@ NO_FREQ_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -86,7 +86,7 @@ NO_FREQ_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -100,7 +100,7 @@ NO_FREQ_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -209,7 +209,7 @@ NO_FREQ_FAST = NO_FREQ_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
             "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
@@ -223,7 +223,7 @@ NO_FREQ_FAST = NO_FREQ_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -333,7 +333,7 @@ NO_FREQ_MEDIUM = NO_FREQ_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
@@ -528,7 +528,7 @@ NO_FREQ_HEAVY = NO_FREQ_MEDIUM + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -629,7 +629,7 @@ D_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -643,7 +643,7 @@ D_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -657,7 +657,7 @@ D_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -766,7 +766,7 @@ D_FAST = D_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
             "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
@@ -780,7 +780,7 @@ D_FAST = D_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -890,7 +890,7 @@ D_MEDIUM = D_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
@@ -1146,7 +1146,7 @@ D_HEAVY = D_MEDIUM + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1201,7 +1201,7 @@ H_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1215,7 +1215,7 @@ H_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1229,7 +1229,7 @@ H_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1380,7 +1380,7 @@ H_FAST = H_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
             "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
@@ -1394,7 +1394,7 @@ H_FAST = H_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1529,7 +1529,7 @@ H_MEDIUM = H_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
@@ -1828,7 +1828,7 @@ H_HEAVY = H_MEDIUM + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1864,7 +1864,7 @@ MS_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1878,7 +1878,7 @@ MS_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -1892,7 +1892,7 @@ MS_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -2018,7 +2018,7 @@ MS_FAST = MS_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
             "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
@@ -2032,7 +2032,7 @@ MS_FAST = MS_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -2295,7 +2295,7 @@ MS_MEDIUM = MS_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
@@ -2353,7 +2353,7 @@ MS_HEAVY = MS_MEDIUM + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -2414,7 +2414,7 @@ W_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-tiny.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-tiny.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -2428,7 +2428,7 @@ W_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-mini.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-mini.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -2442,7 +2442,7 @@ W_SUPER_FAST = [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-small.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-small.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -2607,7 +2607,7 @@ W_FAST = W_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-1.0-200m-pytorch.ckpt",
             "encoder_length": 512,
             "device": "${__aux__.timesfm_device}",
             "batch_size": 128,
@@ -2621,7 +2621,7 @@ W_FAST = W_SUPER_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosBoltModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-bolt-base.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-bolt-base.zip",
             "encoder_length": 2048,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,
@@ -2773,7 +2773,7 @@ W_MEDIUM = W_FAST + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.TimesFMModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
+            "path_or_url": "https://etna-github.t-static.ru/timesfm/timesfm-2.0-500m-pytorch.ckpt",
             "encoder_length": 2048,
             "num_layers": 50,
             "use_positional_embedding": False,
@@ -3092,7 +3092,7 @@ W_HEAVY = W_MEDIUM + [
         "horizon": "${__aux__.horizon}",
         "model": {
             "_target_": "etna.models.nn.ChronosModel",
-            "path_or_url": "http://etna-github-prod.cdn-tinkoff.ru/chronos/chronos-t5-large.zip",
+            "path_or_url": "https://etna-github.t-static.ru/chronos/chronos-t5-large.zip",
             "encoder_length": 512,
             "device": "${__aux__.chronos_device}",
             "batch_size": 128,

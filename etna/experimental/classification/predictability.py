@@ -97,7 +97,7 @@ class PredictabilityAnalyzer(TimeSeriesBinaryClassifier):
         ValueError:
             If the model does not exist in s3.
         """
-        url = f"http://etna-github-prod.cdn-tinkoff.ru/series_classification/22_11_2022/{dataset_freq}/{model_name}.pickle"
+        url = f"https://etna-github.t-static.ru/series_classification/22_11_2022/{dataset_freq}/{model_name}.pickle"
         try:
             request.urlretrieve(url=url, filename=path)
         except Exception:
