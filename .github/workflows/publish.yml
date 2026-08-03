@@ -1,13 +1,54 @@
 name: Publish
 
 on:
-  workflow_dispatch:
   release:
     types:
       - created
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to publish (must already exist, e.g. 2.5.0)"
+        required: true
+        type: string
+      publish_pypi:
+        description: "Publish package to PyPI"
+        required: false
+        type: boolean
+        default: true
+      build_docs:
+        description: "Build and deploy docs"
+        required: false
+        type: boolean
+        default: true
+      build_docker:
+        description: "Build and push Docker images"
+        required: false
+        type: boolean
+        default: true
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      ref: ${{ steps.resolve.outputs.ref }}
+    steps:
+      - name: Resolve version and ref
+        id: resolve
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.tag }}"
+            REF="refs/tags/${{ inputs.tag }}"
+          else
+            VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+            REF="${{ github.ref }}"
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+
   publish-package:
+    needs: prepare
+    if: ${{ github.event_name == 'release' || inputs.publish_pypi }}
     runs-on: ubuntu-latest
     steps:
       - name: Dump GitHub context
@@ -15,6 +56,8 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -34,10 +77,13 @@ jobs:
         run: poetry publish -u "${{ secrets.PYPI_LOGIN }}" -p "${{ secrets.PYPI_PASS }}"
 
   build-docs:
-    needs: publish-package
+    needs: [prepare, publish-package]
+    if: ${{ always() && !failure() && !cancelled() && (github.event_name == 'release' || inputs.build_docs) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -75,12 +121,13 @@ jobs:
           echo "${{ secrets.DOCS_S3CMD_CONFIG }}" > .s3cfg
           s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/stable/"
           s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/stable/"
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          VERSION="${{ needs.prepare.outputs.version }}"
           s3cmd -c .s3cfg rm -r "s3://docs.etna.ai/$VERSION/"
           s3cmd -c .s3cfg put --recursive --guess-mime-type --no-mime-magic ./site/ "s3://docs.etna.ai/$VERSION/"
 
   docker-build-and-push:
-    needs: publish-package
+    needs: [prepare, publish-package]
+    if: ${{ always() && !failure() && !cancelled() && (github.event_name == 'release' || inputs.build_docker) }}
     runs-on: ubuntu-latest
 
     strategy:
@@ -92,6 +139,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -108,7 +157,7 @@ jobs:
       - name: Build image
         run: |
           cd $( dirname ${{ matrix.dockerfile.path }})
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          VERSION="${{ needs.prepare.outputs.version }}"
           echo "etna[all]==$VERSION" > requirements.txt
           poetry export -E "all jupyter" --without-hashes --format=requirements.txt >> requirements.txt
           cat requirements.txt
@@ -118,7 +167,7 @@ jobs:
       - name: Push image
         run: |
           IMAGE_ID=ghcr.io/${{ github.repository }}/${{ matrix.dockerfile.name }}
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          VERSION="${{ needs.prepare.outputs.version }}"
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
           docker tag image $IMAGE_ID:$VERSION
