@@ -193,16 +193,46 @@ def get_etna_version() -> Tuple[int, int, int]:
     """Get current version of etna library."""
     python_version = sys.version_info
     if python_version[0] == 3 and python_version[1] >= 8:
+        from importlib.metadata import PackageNotFoundError
         from importlib.metadata import version
 
-        str_version = version("ts-etna")
+        str_version = None
+        try:
+            str_version = version("etna")
+        except PackageNotFoundError:
+            pass
+
+        if str_version is None:
+            try:
+                str_version = version("ts-etna")
+            except PackageNotFoundError:
+                pass
+
+        if str_version is None:
+            raise PackageNotFoundError("etna or ts-etna")
+
         result = tuple([int(x) for x in str_version.split(".")])
         result = cast(Tuple[int, int, int], result)
         return result
     else:
-        import pkg_resources
+        from pkg_resources import DistributionNotFound
+        from pkg_resources import get_distribution
 
-        str_version = pkg_resources.get_distribution("etna").version
+        str_version = None
+        try:
+            str_version = get_distribution("etna").version
+        except DistributionNotFound:
+            pass
+
+        if str_version is None:
+            try:
+                str_version = get_distribution("ts-etna").version
+            except DistributionNotFound:
+                pass
+
+        if str_version is None:
+            raise DistributionNotFound("etna or ts-etna")
+
         result = tuple([int(x) for x in str_version.split(".")])
         result = cast(Tuple[int, int, int], result)
         return result
