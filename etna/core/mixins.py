@@ -195,7 +195,7 @@ def get_etna_version() -> Tuple[int, int, int]:
     if python_version[0] == 3 and python_version[1] >= 8:
         from importlib.metadata import version
 
-        str_version = version("etna")
+        str_version = version("ts-etna")
         result = tuple([int(x) for x in str_version.split(".")])
         result = cast(Tuple[int, int, int], result)
         return result
