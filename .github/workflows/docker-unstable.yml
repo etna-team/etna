@@ -33,7 +33,7 @@ jobs:
       - name: Build image
         run: |
           cd $( dirname ${{ matrix.dockerfile.path }})
-          echo "etna[all] @ git+https://github.com/${{ github.repository }}.git@${{ github.sha }}" > requirements.txt
+          echo "ts-etna[all] @ git+https://github.com/${{ github.repository }}.git@${{ github.sha }}" > requirements.txt
           poetry export -E "all jupyter" --without-hashes --format=requirements.txt >> requirements.txt
           cat requirements.txt
           docker build . --tag image
