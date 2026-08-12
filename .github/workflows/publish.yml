@@ -158,7 +158,7 @@ jobs:
         run: |
           cd $( dirname ${{ matrix.dockerfile.path }})
           VERSION="${{ needs.prepare.outputs.version }}"
-          echo "etna[all]==$VERSION" > requirements.txt
+          echo "ts-etna[all]==$VERSION" > requirements.txt
           poetry export -E "all jupyter" --without-hashes --format=requirements.txt >> requirements.txt
           cat requirements.txt
           docker build . --tag image

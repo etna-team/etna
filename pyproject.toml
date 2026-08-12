@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "etna"
+name = "ts-etna"
 version = "3.0.0"
 repository = "https://github.com/etna-team/etna"
 readme = "README.md"
